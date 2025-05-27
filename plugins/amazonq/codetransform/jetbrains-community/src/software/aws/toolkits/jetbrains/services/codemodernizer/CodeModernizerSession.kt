@@ -20,6 +20,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.Transformation
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationProgressUpdateStatus
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStatus
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationUserActionStatus
+import software.amazon.awssdk.services.codewhispererruntime.model.UploadContext
 import software.amazon.awssdk.services.codewhispererstreaming.model.TransformationDownloadArtifactType
 import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
 import software.aws.toolkits.core.utils.Waiters.waitUntil
@@ -50,6 +51,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.STATES_AFTE
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.calculateTotalLatency
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getModuleOrProjectNameForFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilDependencyReportDir
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isPlanComplete
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isValidCodeTransformConnection
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.pollTransformationStatusAndPlan
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.toTransformationLanguage
@@ -71,7 +73,6 @@ import javax.net.ssl.SSLHandshakeException
 
 const val MAX_ZIP_SIZE = 2000000000 // 2GB
 const val EXPLAINABILITY_V1 = "EXPLAINABILITY_V1"
-const val SELECTIVE_TRANSFORMATION_V1 = "SELECTIVE_TRANSFORMATION_V1"
 
 // constants for handling SDKClientException
 const val CONNECTION_REFUSED_ERROR: String = "Connection refused"
@@ -174,6 +175,7 @@ class CodeModernizerSession(
             }
             // for language upgrades, copyResult should always be Successful here, failure cases already handled
             val result = sessionContext.createZipWithModuleFiles(copyResult)
+            sessionContext.originalUploadZipPath = result.payload.toPath()
 
             if (result is ZipCreationResult.Missing1P) {
                 telemetryErrorMessage = "Missing 1p dependencies"
@@ -283,9 +285,7 @@ class CodeModernizerSession(
             return CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.OTHER(e.localizedMessage))
         } finally {
             telemetry.uploadProject(payloadSize, startTime, true, telemetryErrorMessage)
-            if (payload != null) {
-                deleteUploadArtifact(payload)
-            }
+            // do not delete upload ZIP; re-used for client-side build
         }
 
         // Send upload completion message to chat (only if successful)
@@ -306,12 +306,6 @@ class CodeModernizerSession(
             state.currentJobStatus = TransformationStatus.FAILED
             telemetry.jobStart(startTime, null, e.localizedMessage)
             CodeModernizerStartJobResult.UnableToStartJob(e.message.toString())
-        }
-    }
-
-    internal fun deleteUploadArtifact(payload: File) {
-        if (!payload.delete()) {
-            LOG.warn { "Unable to delete upload artifact." }
         }
     }
 
@@ -341,9 +335,10 @@ class CodeModernizerSession(
      */
     fun resumeJob(startTime: Instant, jobId: JobId) = state.putJobHistory(sessionContext, TransformationStatus.STARTED, jobId.id, startTime)
 
-    fun resumeTransformFromHil() {
+    fun resumeTransformation() {
         val clientAdaptor = GumbyClient.getInstance(sessionContext.project)
         clientAdaptor.resumeCodeTransformation(state.currentJobId as JobId, TransformationUserActionStatus.COMPLETED)
+        getLogger<CodeModernizerManager>().info { "Successfully resumed transformation with status of COMPLETED" }
     }
 
     fun rejectHilAndContinue(): ResumeTransformationResponse {
@@ -390,7 +385,7 @@ class CodeModernizerSession(
     /**
      * Adapted from [CodeWhispererCodeScanSession]
      */
-    suspend fun uploadPayload(payload: File): String {
+    suspend fun uploadPayload(payload: File, uploadContext: UploadContext? = null): String {
         val sha256checksum: String = Base64.getEncoder().encodeToString(
             withContext(getCoroutineBgContext()) {
                 DigestUtils.sha256(FileInputStream(payload))
@@ -400,7 +395,7 @@ class CodeModernizerSession(
             throw AlreadyDisposedException("Disposed when about to create upload URL")
         }
         val clientAdaptor = GumbyClient.getInstance(sessionContext.project)
-        val createUploadUrlResponse = clientAdaptor.createGumbyUploadUrl(sha256checksum)
+        val createUploadUrlResponse = clientAdaptor.createGumbyUploadUrl(sha256checksum, uploadContext)
 
         LOG.info {
             "Uploading project artifact at ${payload.path} with checksum $sha256checksum using uploadId: ${
@@ -428,9 +423,9 @@ class CodeModernizerSession(
                 createUploadUrlResponse.kmsKeyArn().orEmpty(),
             ) { shouldStop.get() }
         }
-        LOG.info { "Upload to S3 succeeded" }
+        LOG.info { "Upload of ${payload.path} to S3 succeeded with upload context of $uploadContext" }
         if (!shouldStop.get()) {
-            LOG.info { "Uploaded artifact. Latency: ${calculateTotalLatency(uploadStartTime, Instant.now())}ms" }
+            LOG.info { "Uploaded artifact. Latency: ${calculateTotalLatency(uploadStartTime, Instant.now())} ms" }
         }
         return createUploadUrlResponse.uploadId()
     }
@@ -483,10 +478,12 @@ class CodeModernizerSession(
                     }
                 }
 
-                // Open the transformation plan detail panel once transformation plan is available (no plan for SQL conversions)
-                if (transformType != CodeTransformType.SQL_CONVERSION && state.transformationPlan != null && !isTransformationPlanEditorOpened) {
-                    tryOpenTransformationPlanEditor()
-                    isTransformationPlanEditorOpened = true
+                if (!isTransformationPlanEditorOpened && transformType == CodeTransformType.LANGUAGE_UPGRADE) {
+                    val isPlanComplete = isPlanComplete(state.transformationPlan)
+                    if (isPlanComplete) {
+                        tryOpenTransformationPlanEditor()
+                        isTransformationPlanEditorOpened = true
+                    }
                 }
                 val instant = Instant.now()
                 // Set the job start time

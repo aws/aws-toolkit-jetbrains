@@ -25,12 +25,12 @@ class DynamicResourceStateChangedNotificationHandler(private val project: Projec
                 message(
                     "dynamic_resources.operation_status_notification_title",
                     state.resourceIdentifier ?: state.resourceType,
-                    state.operation.name.toLowerCase()
+                    state.operation.name.lowercase()
                 ),
                 message(
                     "dynamic_resources.operation_status_success",
                     state.resourceIdentifier ?: state.resourceType,
-                    state.operation.name.toLowerCase()
+                    state.operation.name.lowercase()
                 ),
                 project
             )
@@ -48,7 +48,7 @@ class DynamicResourceStateChangedNotificationHandler(private val project: Projec
                     message(
                         "dynamic_resources.operation_status_failed_no_message",
                         state.resourceIdentifier ?: state.resourceType,
-                        state.operation.name.toLowerCase()
+                        state.operation.name.lowercase()
                     )
                 )
             } else {
@@ -57,7 +57,7 @@ class DynamicResourceStateChangedNotificationHandler(private val project: Projec
                     message(
                         "dynamic_resources.operation_status_failed",
                         state.resourceIdentifier ?: state.resourceType,
-                        state.operation.name.toLowerCase(),
+                        state.operation.name.lowercase(),
                         state.message
                     )
                 )
@@ -79,7 +79,7 @@ class DynamicResourceStateChangedNotificationHandler(private val project: Projec
             message(
                 "dynamic_resources.operation_status_notification_title",
                 state.resourceIdentifier ?: state.resourceType,
-                state.operation.name.toLowerCase()
+                state.operation.name.lowercase()
             ),
             errorMessage,
             project

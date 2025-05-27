@@ -37,7 +37,9 @@ import software.amazon.awssdk.services.codewhispererruntime.model.TargetCode
 import software.amazon.awssdk.services.codewhispererruntime.model.UserIntent
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.jetbrains.core.credentials.sono.isInternalUser
 import software.aws.toolkits.jetbrains.services.amazonq.codeWhispererUserContext
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
@@ -47,6 +49,10 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestCon
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getTelemetryOptOutPreference
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.DiagnosticDifferences
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.getDiagnosticDifferences
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.getDocumentDiagnostics
+import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererSuggestionState
 import java.time.Instant
@@ -78,7 +84,7 @@ interface CodeWhispererClientAdaptor {
 
     fun getCodeFixJob(request: GetCodeFixJobRequest): GetCodeFixJobResponse
 
-    fun listAvailableCustomizations(): List<CodeWhispererCustomization>
+    fun listAvailableCustomizations(profile: QRegionProfile): List<CodeWhispererCustomization>
 
     fun startTestGeneration(uploadId: String, targetCode: List<TargetCode>, userInput: String): StartTestGenerationResponse
 
@@ -282,9 +288,9 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
     override fun getCodeFixJob(request: GetCodeFixJobRequest): GetCodeFixJobResponse = bearerClient().getCodeFixJob(request)
 
     // DO NOT directly use this method to fetch customizations, use wrapper [CodeWhispererModelConfigurator.listCustomization()] instead
-    override fun listAvailableCustomizations(): List<CodeWhispererCustomization> =
-        bearerClient().listAvailableCustomizationsPaginator(
-            ListAvailableCustomizationsRequest.builder().profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn).build()
+    override fun listAvailableCustomizations(profile: QRegionProfile): List<CodeWhispererCustomization> =
+        QRegionProfileManager.getInstance().getQClient<CodeWhispererRuntimeClient>(project, profile).listAvailableCustomizationsPaginator(
+            ListAvailableCustomizationsRequest.builder().profileArn(profile.arn).build()
         )
             .stream()
             .toList()
@@ -298,7 +304,8 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
                     CodeWhispererCustomization(
                         arn = it.arn(),
                         name = it.name(),
-                        description = it.description()
+                        description = it.description(),
+                        profile = profile
                     )
                 }
             }
@@ -340,7 +347,17 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         ) {
             e2eLatency = 0.0
         }
-
+        var diffDiagnostics = DiagnosticDifferences(
+            added = emptyList(),
+            removed = emptyList()
+        )
+        if (suggestionState == CodewhispererSuggestionState.Accept && isInternalUser(getStartUrl(project))) {
+            val oldDiagnostics = requestContext.diagnostics.orEmpty()
+            // wait for the IDE itself to update its diagnostics for current file
+            Thread.sleep(500)
+            val newDiagnostics = getDocumentDiagnostics(requestContext.editor.document, project)
+            diffDiagnostics = getDiagnosticDifferences(oldDiagnostics, newDiagnostics)
+        }
         return bearerClient().sendTelemetryEvent { requestBuilder ->
             requestBuilder.telemetryEvent { telemetryEventBuilder ->
                 telemetryEventBuilder.userTriggerDecisionEvent {
@@ -358,6 +375,8 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
                     it.customizationArn(requestContext.customizationArn.nullize(nullizeSpaces = true))
                     it.numberOfRecommendations(numberOfRecommendations)
                     it.acceptedCharacterCount(acceptedCharCount)
+                    it.addedIdeDiagnostics(diffDiagnostics.added)
+                    it.removedIdeDiagnostics(diffDiagnostics.removed)
                 }
             }
             requestBuilder.optOutPreference(getTelemetryOptOutPreference())

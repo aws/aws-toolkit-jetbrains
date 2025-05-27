@@ -89,8 +89,9 @@ export class QuickActionHandler {
             this.connector.onTabChange(existingTransformTab.id)
 
             this.mynahUI.notify({
-                title: "Q - Transform",
-                content: "Switched to the opened transformation tab",
+                duration: 5000,
+                title: "Q CodeTransformation",
+                content: "Switched to the existing /transform tab; click 'Start a new transformation' below to run another transformation"
             });
             return
         }

@@ -14,7 +14,6 @@ class CodeWhispererR private constructor() : CodeWhispererProgrammingLanguage() 
     override fun isCodeCompletionSupported(): Boolean = true
 
     companion object {
-        // TODO: confirm with service team language id
         const val ID = "r"
 
         val INSTANCE = CodeWhispererR()

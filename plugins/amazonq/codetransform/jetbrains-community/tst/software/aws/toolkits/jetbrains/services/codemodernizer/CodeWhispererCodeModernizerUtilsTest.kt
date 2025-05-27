@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 package software.aws.toolkits.jetbrains.services.codemodernizer
+
+import com.fasterxml.jackson.module.kotlin.readValue
+import com.intellij.testFramework.LightVirtualFile
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockkStatic
@@ -9,6 +12,7 @@ import io.mockk.runs
 import io.mockk.verify
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
+import org.jetbrains.yaml.YAMLFileType
 import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito
@@ -17,20 +21,31 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import software.amazon.awssdk.services.codewhispererruntime.model.AccessDeniedException
+import software.amazon.awssdk.services.codewhispererruntime.model.TransformationDownloadArtifact
+import software.amazon.awssdk.services.codewhispererruntime.model.TransformationPlan
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationProgressUpdate
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStatus
+import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStep
 import software.amazon.awssdk.services.ssooidc.model.InvalidGrantException
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerArtifact.Companion.MAPPER
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformType
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.PlanTable
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.combineTableRows
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.createClientSideBuildUploadZip
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getBillingText
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getClientInstructionArtifactId
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getTableMapping
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isPlanComplete
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.parseBuildFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.pollTransformationStatusAndPlan
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.refreshToken
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.validateCustomVersionsFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.validateSctMetadata
 import software.aws.toolkits.jetbrains.utils.notifyStickyWarn
 import software.aws.toolkits.jetbrains.utils.rules.addFileToModule
 import software.aws.toolkits.resources.message
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.zip.ZipFile
 import kotlin.io.path.createTempFile
 
 class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase() {
@@ -214,8 +229,148 @@ class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase
         val step0Update2 = TransformationProgressUpdate.builder().name("2").status("COMPLETED").description(apiChanges).build()
         val step0Update3 = TransformationProgressUpdate.builder().name("-1").status("COMPLETED").description(fileChanges).build()
         val actual = getTableMapping(listOf(step0Update0, step0Update1, step0Update2, step0Update3))
-        val expected = mapOf("0" to jobStats, "1" to depChanges, "2" to apiChanges, "-1" to fileChanges)
+        val expected = mapOf("0" to listOf(jobStats), "1" to listOf(depChanges), "2" to listOf(apiChanges), "-1" to listOf(fileChanges))
         assertThat(expected).isEqualTo(actual)
+    }
+
+    @Test
+    fun `combineTableRows combines multiple dependency tables correctly`() {
+        val table1Json = """
+        {"name":"Dependency changes", "columnNames":["dependencyName","action","currentVersion","targetVersion"],
+        "rows":[{"dependencyName":"org.springframework.boot","action":"Update","currentVersion":"2.1","targetVersion":"2.4"}]}
+        """.trimIndent()
+        val table2Json = """
+        {"name":"Dependency changes", "columnNames":["dependencyName","action","currentVersion","targetVersion"],
+        "rows":[{"dependencyName":"junit","action":"Add","currentVersion":"","targetVersion":"4.13"}]}
+        """.trimIndent()
+        val tables = listOf(
+            MAPPER.readValue<PlanTable>(table1Json),
+            MAPPER.readValue<PlanTable>(table2Json)
+        )
+        val combinedTable = combineTableRows(tables)
+        assertThat(combinedTable?.rows).hasSize(2)
+        assertThat(combinedTable?.name).isEqualTo("Dependency changes")
+        assertThat(combinedTable?.columns).hasSize(4)
+    }
+
+    @Test
+    fun `isPlanComplete returns true when plan has progress update with name '1'`() {
+        // Arrange
+        val plan = TransformationPlan.builder()
+            .transformationSteps(
+                listOf(
+                    TransformationStep.builder()
+                        .progressUpdates(
+                            listOf(
+                                TransformationProgressUpdate.builder()
+                                    .name("1")
+                                    .build()
+                            )
+                        )
+                        .build()
+                )
+            )
+            .build()
+        val result = isPlanComplete(plan)
+        assertThat(result).isTrue()
+    }
+
+    @Test
+    fun `isPlanComplete returns false when plan has no progress update with name '1'`() {
+        val plan = TransformationPlan.builder()
+            .transformationSteps(
+                listOf(
+                    TransformationStep.builder()
+                        .progressUpdates(
+                            listOf(
+                                TransformationProgressUpdate.builder()
+                                    .name("2")
+                                    .build()
+                            )
+                        )
+                        .build()
+                )
+            )
+            .build()
+        val result = isPlanComplete(plan)
+        assertThat(result).isFalse()
+    }
+
+    @Test
+    fun `getClientInstructionArtifactId extracts artifact ID from transformation plan`() {
+        val step1 = TransformationStep.builder()
+            .name("name of step 1")
+            .description("description of step 1")
+            .build()
+        val step2 = TransformationStep.builder()
+            .name("name of step 2")
+            .description("description of step 2")
+            .build()
+        val step3 = TransformationStep.builder()
+            .name("name of step 3")
+            .description("description of step 3")
+            .progressUpdates(
+                TransformationProgressUpdate.builder()
+                    .name("Requesting client-side build")
+                    .status("AWAITING_CLIENT_ACTION")
+                    .downloadArtifacts(
+                        TransformationDownloadArtifact.builder()
+                            .downloadArtifactId("id-123")
+                            .build()
+                    )
+                    .build()
+            )
+            .build()
+        val plan = TransformationPlan.builder()
+            .transformationSteps(listOf(step1, step2, step3))
+            .build()
+
+        val actual = getClientInstructionArtifactId(plan)
+        assertThat(actual).isEqualTo("id-123")
+    }
+
+    @Test
+    fun `getClientInstructionArtifactId returns null when no download artifacts present`() {
+        val step1 = TransformationStep.builder()
+            .name("name of step 1")
+            .description("description of step 1")
+            .build()
+        val step2 = TransformationStep.builder()
+            .name("name of step 2")
+            .description("description of step 2")
+            .progressUpdates(
+                TransformationProgressUpdate.builder()
+                    .name("NOT requesting client-side build")
+                    .status("NOT awaiting_client_action")
+                    .build()
+            )
+            .build()
+        val plan = TransformationPlan.builder()
+            .transformationSteps(listOf(step1, step2))
+            .build()
+
+        val actual = getClientInstructionArtifactId(plan)
+        assertThat(actual).isNull()
+    }
+
+    @Test
+    fun `createClientSideBuildUploadZip creates zip with manifest and build output`() {
+        val exitCode = 0
+        val stdout = "Build completed successfully"
+        val zipFile = createClientSideBuildUploadZip(exitCode, stdout)
+        ZipFile(zipFile).use { zip ->
+            val manifestEntry = zip.getEntry("manifest.json")
+            assertThat(manifestEntry).isNotNull
+            val manifestContent = zip.getInputStream(manifestEntry).bufferedReader().use { it.readText() }
+            assertThat(manifestContent).contains("\"capability\":\"CLIENT_SIDE_BUILD\"")
+            assertThat(manifestContent).contains("\"exitCode\":0")
+            assertThat(manifestContent).contains("\"commandLogFileName\":\"build-output.log\"")
+            val logEntry = zip.getEntry("build-output.log")
+            assertThat(logEntry).isNotNull
+            val logContent = zip.getInputStream(logEntry).bufferedReader().use { it.readText() }
+            assertThat(logContent).isEqualTo("Build completed successfully")
+        }
+        zipFile.delete()
     }
 
     @Test
@@ -238,6 +393,69 @@ class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase
             "Amazon Q Developer pricing</a>.</p>"
         val actual = getBillingText(376)
         assertThat(expected).isEqualTo(actual)
+    }
+
+    @Test
+    fun `WHEN validateCustomVersionsFile on fully valid yaml file THEN passes validation`() {
+        val sampleFileContents = """name: "custom-dependency-management"
+description: "Custom dependency version management for Java migration from JDK 8/11/17 to JDK 17/21"
+dependencyManagement:
+  dependencies:
+    - identifier: "com.example:library1"
+        targetVersion: "2.1.0"
+        versionProperty: "library1.version"
+        originType: "FIRST_PARTY"
+  plugins:
+    - identifier: "com.example.plugin"
+        targetVersion: "1.2.0"
+        versionProperty: "plugin.version"
+        """.trimIndent()
+
+        val virtualFile = LightVirtualFile("test-valid.yaml", YAMLFileType.YML, sampleFileContents)
+        val isValidFile = validateCustomVersionsFile(virtualFile)
+        assertThat(isValidFile).isTrue()
+    }
+
+    @Test
+    fun `WHEN validateCustomVersionsFile on invalid yaml file THEN fails validation`() {
+        val sampleFileContents = """name: "custom-dependency-management"
+description: "Custom dependency version management for Java migration from JDK 8/11/17 to JDK 17/21"
+invalidKey:
+  dependencies:
+    - identifier: "com.example:library1"
+        targetVersion: "2.1.0"
+        versionProperty: "library1.version"
+        originType: "FIRST_PARTY"
+  plugins:
+    - identifier: "com.example.plugin"
+        targetVersion: "1.2.0"
+        versionProperty: "plugin.version"
+        """.trimIndent()
+
+        val virtualFile = LightVirtualFile("test-invalid.yaml", YAMLFileType.YML, sampleFileContents)
+        val isValidFile = validateCustomVersionsFile(virtualFile)
+        assertThat(isValidFile).isFalse()
+    }
+
+    @Test
+    fun `WHEN validateCustomVersionsFile on non-yaml file THEN fails validation`() {
+        val sampleFileContents = """name: "custom-dependency-management"
+description: "Custom dependency version management for Java migration from JDK 8/11/17 to JDK 17/21"
+dependencyManagement:
+  dependencies:
+    - identifier: "com.example:library1"
+        targetVersion: "2.1.0"
+        versionProperty: "library1.version"
+        originType: "FIRST_PARTY"
+  plugins:
+    - identifier: "com.example.plugin"
+        targetVersion: "1.2.0"
+        versionProperty: "plugin.version"
+        """.trimIndent()
+
+        val virtualFile = LightVirtualFile("test-invalid-file-type.txt", sampleFileContents)
+        val isValidFile = validateCustomVersionsFile(virtualFile)
+        assertThat(isValidFile).isFalse()
     }
 
     @Test

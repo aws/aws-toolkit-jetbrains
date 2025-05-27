@@ -24,16 +24,13 @@ import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.core.coroutines.EDT
-import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.NoTokenInitializedException
 import software.aws.toolkits.jetbrains.services.amazonq.CODE_TRANSFORM_TROUBLESHOOT_DOC_DOWNLOAD_ERROR_OVERVIEW
 import software.aws.toolkits.jetbrains.services.amazonq.CODE_TRANSFORM_TROUBLESHOOT_DOC_DOWNLOAD_EXPIRED
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformMessageListener
-import software.aws.toolkits.jetbrains.services.codemodernizer.constants.createViewDiffButton
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.getDownloadedArtifactTextFromType
-import software.aws.toolkits.jetbrains.services.codemodernizer.constants.viewSummaryButton
 import software.aws.toolkits.jetbrains.services.codemodernizer.controller.CodeTransformChatHelper
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformChatMessageContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformChatMessageType
@@ -44,19 +41,17 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.DownloadArt
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.DownloadFailureReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.ParseZipFailureReason
-import software.aws.toolkits.jetbrains.services.codemodernizer.model.PatchInfo
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.UnzipFailureReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeModernizerSessionState
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilArtifactDir
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isValidCodeTransformConnection
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.openTroubleshootingGuideNotificationAction
-import software.aws.toolkits.jetbrains.utils.notifyInfo
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.zipToPath
 import software.aws.toolkits.jetbrains.utils.notifyStickyInfo
 import software.aws.toolkits.jetbrains.utils.notifyStickyWarn
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformArtifactType
 import java.io.File
-import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
@@ -64,20 +59,6 @@ import java.util.concurrent.atomic.AtomicBoolean
 const val DOWNLOAD_PROXY_WILDCARD_ERROR: String = "Dangling meta character '*' near index 0"
 const val DOWNLOAD_SSL_HANDSHAKE_ERROR: String = "Unable to execute HTTP request: javax.net.ssl.SSLHandshakeException"
 const val INVALID_ARTIFACT_ERROR: String = "Invalid artifact"
-val patchDescriptions = mapOf(
-    "Prepare minimal upgrade to Java 17" to "This diff patch covers the set of upgrades for Springboot, JUnit, and PowerMockito frameworks in Java 17.",
-    "Prepare minimal upgrade to Java 21" to "This diff patch covers the set of upgrades for Springboot, JUnit, and PowerMockito frameworks in Java 21.",
-    "Popular Enterprise Specifications and Application Frameworks upgrade" to "This diff patch covers the set of upgrades for Jakarta EE 10, Hibernate 6.2, " +
-        "and Micronaut 3.",
-    "HTTP Client Utilities, Apache Commons Utilities, and Web Frameworks" to "This diff patch covers the set of upgrades for Apache HTTP Client 5, Apache " +
-        "Commons utilities (Collections, IO, Lang, Math), and Struts 6.0.",
-    "Testing Tools and Frameworks upgrade" to "This diff patch covers the set of upgrades for ArchUnit, Mockito, TestContainers, and Cucumber, in addition " +
-        "to the Jenkins plugins and the Maven Wrapper.",
-    "Miscellaneous Processing Documentation upgrade" to "This diff patch covers a diverse set of upgrades spanning ORMs, XML processing, API documentation, " +
-        "and more.",
-    "Deprecated API replacement, dependency upgrades, and formatting" to "This diff patch replaces deprecated APIs, makes additional dependency version " +
-        "upgrades, and formats code changes."
-)
 
 class ArtifactHandler(
     private val project: Project,
@@ -89,21 +70,13 @@ class ArtifactHandler(
     private val downloadedSummaries = mutableMapOf<JobId, TransformationSummary>()
     private val downloadedBuildLogPath = mutableMapOf<JobId, Path>()
     private var isCurrentlyDownloading = AtomicBoolean(false)
-    private var totalPatchFiles: Int = 0
-    private var sharedPatchIndex: Int = 0
 
     internal suspend fun displayDiff(job: JobId) {
         if (isCurrentlyDownloading.get()) return
         when (val result = downloadArtifact(job, TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS)) {
             is DownloadArtifactResult.Success -> {
                 if (result.artifact !is CodeModernizerArtifact) return notifyUnableToApplyPatch("")
-                totalPatchFiles = result.artifact.patches.size
-                if (result.artifact.description == null) {
-                    displayDiffUsingPatch(result.artifact.patches.first(), totalPatchFiles, null, job)
-                } else {
-                    val diffDescription = result.artifact.description[getCurrentPatchIndex()]
-                    displayDiffUsingPatch(result.artifact.patches[getCurrentPatchIndex()], totalPatchFiles, diffDescription, job)
-                }
+                displayDiffUsingPatch(result.artifact.patch, job)
             }
             is DownloadArtifactResult.ParseZipFailure -> notifyUnableToApplyPatch(result.failureReason.errorMessage)
             is DownloadArtifactResult.UnzipFailure -> notifyUnableToApplyPatch(result.failureReason.errorMessage)
@@ -112,32 +85,12 @@ class ArtifactHandler(
         }
     }
 
-    suspend fun unzipToPath(byteArrayList: List<ByteArray>, outputDirPath: Path? = null): Pair<Path, Int> {
-        val zipFilePath = withContext(getCoroutineBgContext()) {
-            if (outputDirPath == null) {
-                Files.createTempFile(null, ".zip")
-            } else {
-                Files.createTempFile(outputDirPath, null, ".zip")
-            }
-        }
-        var totalDownloadBytes = 0
-        withContext(getCoroutineBgContext()) {
-            Files.newOutputStream(zipFilePath).use {
-                for (bytes in byteArrayList) {
-                    it.write(bytes)
-                    totalDownloadBytes += bytes.size
-                }
-            }
-        }
-        return zipFilePath to totalDownloadBytes
-    }
-
     suspend fun downloadHilArtifact(jobId: JobId, artifactId: String, tmpDir: File): CodeTransformHilDownloadArtifact? {
         val downloadResultsResponse = clientAdaptor.downloadExportResultArchive(jobId, artifactId)
 
         return try {
             val tmpPath = tmpDir.toPath()
-            val (downloadZipFilePath, _) = unzipToPath(downloadResultsResponse, tmpPath)
+            val (downloadZipFilePath, _) = zipToPath(downloadResultsResponse, tmpPath)
             LOG.info { "Successfully converted the hil artifact download to a zip at ${downloadZipFilePath.toAbsolutePath()}." }
             CodeTransformHilDownloadArtifact.create(downloadZipFilePath, getPathToHilArtifactDir(tmpPath))
         } catch (e: Exception) {
@@ -211,7 +164,7 @@ class ArtifactHandler(
             val totalDownloadBytes: Int
             val zipPath: String
             try {
-                val result = unzipToPath(downloadResultsResponse)
+                val result = zipToPath(downloadResultsResponse)
                 path = result.first
                 totalDownloadBytes = result.second
                 zipPath = path.toAbsolutePath().toString()
@@ -281,8 +234,6 @@ class ArtifactHandler(
      */
     internal suspend fun displayDiffUsingPatch(
         patchFile: VirtualFile,
-        totalPatchFiles: Int,
-        diffDescription: PatchInfo?,
         jobId: JobId,
     ) {
         withContext(EDT) {
@@ -295,11 +246,7 @@ class ArtifactHandler(
                 null,
                 ChangeListManager.getInstance(project)
                     .addChangeList(
-                        if (diffDescription != null) {
-                            "${diffDescription.name} (${if (diffDescription.isSuccessful) "Success" else "Failure"})"
-                        } else {
-                            patchFile.name
-                        },
+                        patchFile.name,
                         ""
                     ),
                 null,
@@ -310,42 +257,12 @@ class ArtifactHandler(
             dialog.isModal = true
 
             if (dialog.showAndGet()) {
-                telemetry.submitSelection("Submit-${diffDescription?.name}", jobId.toString())
-                if (diffDescription == null) {
-                    val resultContent = CodeTransformChatMessageContent(
-                        type = CodeTransformChatMessageType.PendingAnswer,
-                        message = message("codemodernizer.chat.message.changes_applied"),
-                    )
-                    codeTransformChatHelper?.updateLastPendingMessage(resultContent)
-                } else {
-                    if (getCurrentPatchIndex() < totalPatchFiles) {
-                        val message = "I applied the changes in diff patch ${getCurrentPatchIndex() + 1} of $totalPatchFiles. " +
-                            "${patchDescriptions[diffDescription.name]}"
-                        val notificationMessage = "Amazon Q applied the changes in diff patch ${getCurrentPatchIndex() + 1} of $totalPatchFiles " +
-                            "to your project."
-                        val notificationTitle = "Diff patch ${getCurrentPatchIndex() + 1} of $totalPatchFiles applied"
-                        setCurrentPatchIndex(getCurrentPatchIndex() + 1)
-                        notifyInfo(notificationTitle, notificationMessage, project)
-                        if (getCurrentPatchIndex() == totalPatchFiles) {
-                            codeTransformChatHelper?.updateLastPendingMessage(
-                                CodeTransformChatMessageContent(type = CodeTransformChatMessageType.PendingAnswer, message = message)
-                            )
-                        } else {
-                            codeTransformChatHelper?.updateLastPendingMessage(
-                                CodeTransformChatMessageContent(
-                                    type = CodeTransformChatMessageType.PendingAnswer,
-                                    message = message,
-                                    buttons = listOf(
-                                        createViewDiffButton("View diff ${getCurrentPatchIndex() + 1}/$totalPatchFiles"),
-                                        viewSummaryButton
-                                    )
-                                )
-                            )
-                        }
-                    } else {
-                        // no-op; start a new transformation button already visible at this point
-                    }
-                }
+                telemetry.submitSelection("Submit", jobId.toString())
+                val resultContent = CodeTransformChatMessageContent(
+                    type = CodeTransformChatMessageType.PendingAnswer,
+                    message = message("codemodernizer.chat.message.changes_applied"),
+                )
+                codeTransformChatHelper?.updateLastPendingMessage(resultContent)
             } else {
                 telemetry.submitSelection("Cancel", jobId.toString())
             }
@@ -432,7 +349,7 @@ class ArtifactHandler(
         ),
     )
 
-    fun notifyUnableToShowSummary() {
+    private fun notifyUnableToShowSummary() {
         LOG.error { "Unable to display summary" }
         notifyStickyWarn(
             message("codemodernizer.notification.warn.view_summary_failed.title"),
@@ -446,7 +363,7 @@ class ArtifactHandler(
         )
     }
 
-    fun notifyUnableToShowBuildLog() {
+    private fun notifyUnableToShowBuildLog() {
         LOG.error { "Unable to display build log" }
         notifyStickyWarn(
             message("codemodernizer.notification.warn.view_build_log_failed.title"),
@@ -467,12 +384,6 @@ class ArtifactHandler(
     }
 
     fun getSummary(job: JobId) = downloadedSummaries[job]
-
-    private fun getCurrentPatchIndex() = sharedPatchIndex
-
-    private fun setCurrentPatchIndex(index: Int) {
-        sharedPatchIndex = index
-    }
 
     private fun showSummaryFromFile(summaryFile: File) {
         val summaryMarkdownVirtualFile = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(summaryFile)

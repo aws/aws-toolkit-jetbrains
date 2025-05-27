@@ -1,3 +1,31 @@
+# _3.72_ (2025-05-22)
+- **(Removal)** /transform: remove option to receive multiple diffs
+
+# _3.71_ (2025-05-15)
+- **(Feature)** Add inline completion support for abap language
+- **(Bug Fix)** Fix UI freezes that may occur when interacting with large files in the editor
+
+# _3.70_ (2025-05-08)
+- **(Feature)** Amazon Q: Support selecting customizations across all Q profiles with automatic profile switching for enterprise users
+- **(Bug Fix)** Do not always show 'Amazon Q Code Issues' tab when switching to the 'Problems' tool window
+- **(Bug Fix)** /dev: Fix missing Amazon Q feature dev auto build setting.
+- **(Bug Fix)** increase /review timeout
+- **(Bug Fix)** Fix JavascriptLanguage not found on 2025.1+
+
+# _3.69_ (2025-04-28)
+- **(Bug Fix)** Amazon Q: Fix issue where context menu items are not available after re-opening projects or restarting the IDE
+- **(Bug Fix)** Fix LinkageError while attempting to do Amazon Q inline suggestions in certain environments
+- **(Bug Fix)** Fix issue where user can become stuck because Amazon Q Chat does not show authentication prompt
+- **(Removal)** Removed support for 2024.1.x IDEs
+- **(Removal)** Removed support for Gateway 2024.3
+
+# _3.68_ (2025-04-23)
+- **(Feature)** Amazon Q: Show visual indicator in status bar if profile selection is needed to continue with Q Inline / Q Chat
+- **(Feature)** Amazon Q /test: Remove unsupported message for non-java python languages
+- **(Bug Fix)** /dev: Fix prompt to enable devfile build not triggering when devfile is present.
+- **(Bug Fix)** /review disable auto scan by default
+- **(Bug Fix)** /review: disabled highlighter for ignored issues
+
 # _3.67_ (2025-04-18)
 - **(Bug Fix)** Amazon Q: Customization now resets with a warning if unavailable in the selected profile.
 - **(Bug Fix)** Q panel will get stuck while signin if users have multiple windows

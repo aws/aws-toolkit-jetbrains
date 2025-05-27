@@ -16,6 +16,7 @@ import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererLanguageManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererAbap
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererC
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererCpp
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererCsharp
@@ -136,6 +137,7 @@ class CodeWhispererLanguageManagerTest {
         testGetProgrammingLanguageUtil<CodeWhispererSwift>(listOf("foo"), listOf("swift"))
         testGetProgrammingLanguageUtil<CodeWhispererSystemVerilog>(listOf("foo"), listOf("sv", "svh", "vh"))
         testGetProgrammingLanguageUtil<CodeWhispererVue>(listOf("foo"), listOf("vue"))
+        testGetProgrammingLanguageUtil<CodeWhispererAbap>(listOf("foo"), listOf("abap"))
     }
 
     @Test

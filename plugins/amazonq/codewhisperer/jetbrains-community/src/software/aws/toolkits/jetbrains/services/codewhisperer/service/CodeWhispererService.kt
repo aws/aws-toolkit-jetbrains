@@ -36,6 +36,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.Completion
 import software.amazon.awssdk.services.codewhispererruntime.model.FileContext
 import software.amazon.awssdk.services.codewhispererruntime.model.GenerateCompletionsRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.GenerateCompletionsResponse
+import software.amazon.awssdk.services.codewhispererruntime.model.IdeDiagnostic
 import software.amazon.awssdk.services.codewhispererruntime.model.ProgrammingLanguage
 import software.amazon.awssdk.services.codewhispererruntime.model.RecommendationsWithReferencesPreference
 import software.amazon.awssdk.services.codewhispererruntime.model.ResourceNotFoundException
@@ -87,6 +88,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.notifyErrorCodeWhispererUsageLimit
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.promptReAuth
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.FileContextProvider
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.getDocumentDiagnostics
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.utils.isInjectedText
 import software.aws.toolkits.jetbrains.utils.isQExpired
@@ -691,6 +693,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         } catch (e: Exception) {
             LOG.warn { "Cannot get workspaceId from LSP'$e'" }
         }
+        val diagnostics = getDocumentDiagnostics(editor.document, project)
         return RequestContext(
             project,
             editor,
@@ -703,6 +706,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
             customizationArn,
             profileArn,
             workspaceId,
+            diagnostics
         )
     }
 
@@ -856,6 +860,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                 .leftFileContent(fileContextInfo.caretContext.leftFileContext)
                 .rightFileContent(fileContextInfo.caretContext.rightFileContext)
                 .filename(fileContextInfo.fileRelativePath ?: fileContextInfo.filename)
+                .fileUri(fileContextInfo.fileUri)
                 .programmingLanguage(programmingLanguage)
                 .build()
             val supplementalContexts = supplementalContext?.contents?.map {
@@ -895,6 +900,7 @@ data class RequestContext(
     val customizationArn: String?,
     val profileArn: String?,
     val workspaceId: String?,
+    val diagnostics: List<IdeDiagnostic>?,
 ) {
     // TODO: should make the entire getRequestContext() suspend function instead of making supplemental context only
     var supplementalContext: SupplementalContextInfo? = null

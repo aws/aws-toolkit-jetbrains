@@ -160,7 +160,7 @@ class ResourceSelector<T> private constructor(
             setEditable(false)
 
             if (sortOnLoad) {
-                model.replaceAll(value.sortedBy { it.toString().toLowerCase() })
+                model.replaceAll(value.sortedBy { it.toString().lowercase() })
             } else {
                 model.replaceAll(value.toList())
             }

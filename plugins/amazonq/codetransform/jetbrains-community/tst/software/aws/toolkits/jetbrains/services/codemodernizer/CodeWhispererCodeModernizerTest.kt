@@ -7,6 +7,7 @@ import com.intellij.openapi.vcs.changes.patch.ApplyPatchDifferentiatedDialog
 import com.intellij.testFramework.LightVirtualFile
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertFalse
+import junit.framework.TestCase.assertTrue
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test
@@ -30,11 +31,17 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransfo
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.DownloadArtifactResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.DownloadFailureReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.InvalidTelemetryReason
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.ParseZipFailureReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.ValidationResult
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.downloadClientInstructions
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.filterOnlyParentFiles
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.unzipFile
 import software.aws.toolkits.telemetry.CodeTransformPreValidationError
+import java.io.ByteArrayOutputStream
+import java.io.FileOutputStream
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 import kotlin.io.path.Path
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.exists
@@ -135,13 +142,11 @@ class CodeWhispererCodeModernizerTest : CodeWhispererCodeModernizerTestBase() {
         doAnswer {
             mockDialog.showAndGet()
             mockDialog
-        }.whenever(handler).displayDiffUsingPatch(any(), any(), any(), any())
+        }.whenever(handler).displayDiffUsingPatch(any(), any())
         handler.displayDiff(jobId)
         verify(handler, never()).notifyUnableToApplyPatch(any())
         verify(handler, times(1)).displayDiffUsingPatch(
-            testCodeModernizerArtifact.patches[0],
-            testCodeModernizerArtifact.patches.size,
-            testCodeModernizerArtifact.description?.get(0),
+            testCodeModernizerArtifact.patch,
             jobId,
         )
     }
@@ -154,13 +159,41 @@ class CodeWhispererCodeModernizerTest : CodeWhispererCodeModernizerTestBase() {
             DownloadArtifactResult.ParseZipFailure(
                 ParseZipFailureReason(TransformationDownloadArtifactType.LOGS, "Could not find build log")
             )
-        val mockDownloadResult = listOf<ByteArray>()
-        doReturn(mockDownloadResult).whenever(clientAdaptorSpy)
+        val mockZipBytes = ByteArrayOutputStream().use { bos ->
+            ZipOutputStream(bos).use { zos ->
+                zos.putNextEntry(ZipEntry("some-other-file.txt"))
+                zos.write("mock content".toByteArray())
+                zos.closeEntry()
+            }
+            bos.toByteArray()
+        }
+        doReturn(listOf(mockZipBytes)).whenever(clientAdaptorSpy)
             .downloadExportResultArchive(jobId, null, TransformationDownloadArtifactType.LOGS)
-        doReturn(Pair(exampleZipPath, 0)).whenever(handler).unzipToPath(mockDownloadResult)
         val result = handler.downloadArtifact(jobId, TransformationDownloadArtifactType.LOGS, false)
         verify(clientAdaptorSpy, times(1)).downloadExportResultArchive(jobId, null, TransformationDownloadArtifactType.LOGS)
         assertEquals(expected, result)
+    }
+
+    @Test
+    fun `downloadClientInstructions downloads and extracts patch file`() = runBlocking {
+        val jobId = JobId("test-job-id")
+        val artifactId = "test-artifact-id"
+        val mockZipBytes = ByteArrayOutputStream().use { bos ->
+            ZipOutputStream(bos).use { zos ->
+                zos.putNextEntry(ZipEntry("diff.patch"))
+                zos.write("mock content".toByteArray())
+                zos.closeEntry()
+            }
+            bos.toByteArray()
+        }
+        doReturn(listOf(mockZipBytes)).whenever(clientAdaptorSpy).downloadExportResultArchive(
+            jobId,
+            artifactId,
+            TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS
+        )
+        val result = downloadClientInstructions(jobId, artifactId, project)
+        verify(clientAdaptorSpy).downloadExportResultArchive(jobId, artifactId, TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS)
+        assertEquals(result.fileName.toString(), "diff.patch")
     }
 
     @Test
@@ -168,14 +201,6 @@ class CodeWhispererCodeModernizerTest : CodeWhispererCodeModernizerTestBase() {
         val artifact = CodeModernizerArtifact.create(exampleZipPath.toAbsolutePath().toString())
         assertEquals(validManifest, artifact.manifest)
         assertEquals(validMetrics.linesOfCodeChanged, artifact.metrics?.linesOfCodeChanged)
-    }
-
-    @Test
-    fun `CodeModernizerArtifact can process a valid zip file with multiple diffs`() {
-        val artifact = CodeModernizerArtifact.create(multipleDiffZipPath.toAbsolutePath().toString())
-        assertEquals(4, artifact.patches.size)
-        assertEquals(validManifest, artifact.manifest)
-        assertEquals(validMetricsMultipleDiffs.linesOfCodeChanged, artifact.metrics?.linesOfCodeChanged)
     }
 
     @Test
@@ -188,12 +213,27 @@ class CodeWhispererCodeModernizerTest : CodeWhispererCodeModernizerTestBase() {
     }
 
     @Test
-    fun `can unzip a file with multiple diffs`() {
-        val tempDir = createTempDirectory()
-        val result = unzipFile(multipleDiffZipPath, tempDir)
-        assert(result)
-        assert(tempDir.resolve(validZipManifestPath).exists())
-        assert(tempDir.resolve(validZipPatchFilePath).exists())
+    fun `can unzip only sources folder`() {
+        val tempDir = createTempDirectory("test_zip")
+        val destDir = createTempDirectory("test_unzip")
+        // create test zip file with both source and non-source files
+        val zipPath = tempDir.resolve("test.zip")
+        ZipOutputStream(FileOutputStream(zipPath.toFile())).use { zos ->
+            zos.putNextEntry(ZipEntry("sources/Test.kt"))
+            zos.write("test content".toByteArray())
+            zos.closeEntry()
+
+            zos.putNextEntry(ZipEntry("other/Other.kt"))
+            zos.write("other content".toByteArray())
+            zos.closeEntry()
+        }
+
+        val result = unzipFile(zipPath, destDir, extractOnlySources = true)
+        assertTrue(result)
+        assertTrue(destDir.resolve("sources/Test.kt").exists())
+        assertFalse(destDir.resolve("other/Other.kt").exists())
+        tempDir.toFile().deleteRecursively()
+        destDir.toFile().deleteRecursively()
     }
 
     @Test

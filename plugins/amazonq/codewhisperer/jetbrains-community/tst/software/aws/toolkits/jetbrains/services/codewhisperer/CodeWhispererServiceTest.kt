@@ -117,7 +117,8 @@ class CodeWhispererServiceTest {
                 CaretContext(leftFileContext = "", rightFileContext = "public class Main {}", leftContextOnCurrentLine = ""),
                 "main.java",
                 CodeWhispererJava.INSTANCE,
-                "main.java"
+                "main.java",
+                "temp:///src/main.java"
             )
         )
     }
@@ -215,6 +216,7 @@ class CodeWhispererServiceTest {
                 customizationArn = "fake-arn",
                 profileArn = "fake-arn",
                 workspaceId = null,
+                diagnostics = emptyList()
             )
         )
 
@@ -239,6 +241,7 @@ private fun CodeWhispererProgrammingLanguage.toSdkModel(): ProgrammingLanguage =
 
 private fun FileContextInfo.toSdkModel(): FileContext = FileContext.builder()
     .filename(fileRelativePath)
+    .fileUri(fileUri)
     .programmingLanguage(programmingLanguage.toCodeWhispererRuntimeLanguage().toSdkModel())
     .leftFileContent(caretContext.leftFileContext)
     .rightFileContent(caretContext.rightFileContext)
