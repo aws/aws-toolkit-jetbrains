@@ -99,16 +99,8 @@ class ChatCommunicationManager(private val cs: CoroutineScope) {
     fun removeTabOpenRequest(requestId: String) =
         pendingTabRequests.remove(requestId)
 
-    fun setPartialResultLock(token: String, lock: Any) {
-        partialResultLocks[token] = lock
-    }
-
     fun removePartialResultLock(token: String) {
         partialResultLocks.remove(token)
-    }
-
-    fun setFinalResultProcessed(token: String, processed: Boolean) {
-        finalResultProcessed[token] = processed
     }
 
     fun removeFinalResultProcessed(token: String) {
