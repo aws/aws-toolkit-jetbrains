@@ -476,13 +476,23 @@ class BrowserConnector(
                 )
                 browser.postChat(messageToChat)
                 chatCommunicationManager.removeInflightRequestForTab(tabId)
-            } catch (_: CancellationException) {
+            } catch (e: CancellationException) {
                 LOG.warn { "Cancelled chat generation" }
+                handleCancellation(tabId, partialResultToken, browser)
             } catch (e: Exception) {
                 LOG.warn(e) { "Failed to send chat message" }
                 browser.postChat(chatCommunicationManager.getErrorUiMessage(tabId, e, partialResultToken))
             }
         }
+    }
+    
+    private fun handleCancellation(tabId: String, partialResultToken: String, browser: Browser) {
+        chatCommunicationManager.removePartialChatMessage(partialResultToken)
+        chatCommunicationManager.removeInflightRequestForTab(tabId)
+        
+        // Send a message to hide the stop button without showing an error
+        val cancelMessage = chatCommunicationManager.getCancellationUiMessage(tabId)
+        browser.postChat(cancelMessage)
     }
 
     private fun cancelInflightRequests(tabId: String) {

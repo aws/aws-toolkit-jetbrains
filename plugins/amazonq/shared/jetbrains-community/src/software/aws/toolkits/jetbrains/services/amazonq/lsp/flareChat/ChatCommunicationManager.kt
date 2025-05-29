@@ -147,6 +147,21 @@ class ChatCommunicationManager(private val cs: CoroutineScope) {
         """.trimIndent()
         return uiMessage
     }
+    
+    fun getCancellationUiMessage(tabId: String): String {
+        // Create a minimal error params with empty error message to hide the stop button
+        // without showing an actual error message to the user
+        val errorParams = Gson().toJson(ErrorParams(tabId, null, "", "")).toString()
+        
+        return """
+            {
+            "command":"$CHAT_ERROR_PARAMS",
+            "tabId": "$tabId",
+            "params": $errorParams,
+            "isPartialResult": false
+            }
+        """.trimIndent()
+    }
 
     fun handleAuthFollowUpClicked(project: Project, params: AuthFollowUpClickedParams) {
         val incomingType = params.authFollowupType
