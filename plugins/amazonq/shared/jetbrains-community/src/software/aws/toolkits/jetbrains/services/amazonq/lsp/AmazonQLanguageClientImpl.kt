@@ -77,7 +77,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
             val name = telemetryMap["name"] as? String ?: return
 
             @Suppress("UNCHECKED_CAST")
-            val data = telemetryMap["data"] as? Map<String, Any> ?: return
+            val data = telemetryMap["data"] as? Map<String, Any?> ?: return
 
             TelemetryService.getInstance().record(project) {
                 datum(name) {
@@ -90,7 +90,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                     }
 
                     data.forEach { (key, value) ->
-                        metadata(key, value.toString())
+                        metadata(key, value?.toString() ?: "null")
                     }
                 }
             }
