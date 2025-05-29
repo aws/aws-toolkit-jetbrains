@@ -252,13 +252,6 @@ internal val DEFAULT_PREFETCH_DURATION = Duration.ofMinutes(20)
 val ssoOidcClientConfigurationBuilder: (ClientOverrideConfiguration.Builder) -> ClientOverrideConfiguration.Builder = { configuration ->
     configuration.nullDefaultProfileFile()
 
-    // Add InvalidGrantException to the RetryOnExceptionsCondition
-    configuration.retryStrategy { strategy ->
-        strategy.retryOnException {
-            it is InvalidGrantException
-        }
-    }
-
     configuration.addExecutionInterceptor(object : ExecutionInterceptor {
         override fun modifyException(context: Context.FailedExecution, executionAttributes: ExecutionAttributes): Throwable {
             val exception = context.exception()
