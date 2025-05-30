@@ -1,4 +1,0 @@
-{
-  "type" : "bugfix",
-  "description" : "/transform: handle InvalidGrantException properly when polling job status"
-}

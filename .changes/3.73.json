@@ -1,0 +1,8 @@
+{
+  "date" : "2025-05-29",
+  "version" : "3.73",
+  "entries" : [ {
+    "type" : "bugfix",
+    "description" : "/transform: handle InvalidGrantException properly when polling job status"
+  } ]
+}
