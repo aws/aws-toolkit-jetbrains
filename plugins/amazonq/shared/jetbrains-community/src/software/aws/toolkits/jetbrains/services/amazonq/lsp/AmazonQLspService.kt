@@ -88,9 +88,9 @@ import java.io.PrintWriter
 import java.io.StringWriter
 import java.net.Proxy
 import java.net.URI
-import java.nio.file.Path
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
+import java.nio.file.Path
 import java.util.concurrent.Future
 import kotlin.time.Duration.Companion.seconds
 
@@ -401,9 +401,7 @@ private class AmazonQServerInstance(private val project: Project, private val cs
                         ) { _, notification -> notification.expire() }
                     )
                 )
-
             }
-
         }
 
         val cmd = NodeExePatcher.patch(nodePath)
