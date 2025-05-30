@@ -8,8 +8,8 @@ import org.eclipse.lsp4j.jsonrpc.services.JsonRequest
 import org.eclipse.lsp4j.services.LanguageClient
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LSPAny
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_OPEN_TAB
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_CONTEXT_COMMANDS
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_OPTIONS_UPDATE_NOTIFICATION
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_CONTEXT_COMMANDS
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_UPDATE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CopyFileParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.DID_APPEND_FILE
