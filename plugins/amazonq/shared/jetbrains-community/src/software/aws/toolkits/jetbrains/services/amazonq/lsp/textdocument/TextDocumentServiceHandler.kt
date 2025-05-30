@@ -178,7 +178,10 @@ class TextDocumentServiceHandler(
                             contentChanges = listOf(
                                 TextDocumentContentChangeEvent().apply {
                                     text = event.newFragment.toString()
-                                    range = Range(Position(logicalPosition.line, logicalPosition.column), Position(newLogicalPosition.line, newLogicalPosition.column))
+                                    range = Range(
+                                        Position(logicalPosition.line, logicalPosition.column),
+                                        Position(newLogicalPosition.line, newLogicalPosition.column)
+                                    )
                                 }
                             )
                         }
