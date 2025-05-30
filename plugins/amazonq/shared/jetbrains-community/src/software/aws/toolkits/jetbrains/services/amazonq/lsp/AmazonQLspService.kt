@@ -378,9 +378,9 @@ private class AmazonQServerInstance(private val project: Project, private val cs
 
         val node = if (SystemInfo.isWindows) "node.exe" else "node"
         var nodePath = artifact.resolve(node)
-        // download node runtime is not found
+        // download node runtime if it is not found
         if (!Files.exists(nodePath) || !Files.isExecutable(nodePath)) {
-            LOG.warn() { "Node Runtime download failed. Fallback to user specified node runtime " }
+            LOG.warn { "Node Runtime download failed. Fallback to user specified node runtime " }
             // attempt to use user provided node runtime path
             val nodeRuntime = LspSettings.getInstance().getNodeRuntimePath()
             if (!nodeRuntime.isNullOrEmpty()) {
@@ -394,7 +394,7 @@ private class AmazonQServerInstance(private val project: Project, private val cs
                         NotificationAction.create(
                             message("codewhisperer.actions.open_settings.title")
                         ) { _, notification ->
-                            ShowSettingsUtil.getInstance().showSettingsDialog(project, CodeWhispererConfigurable::class.java)
+                            ShowSettingsUtil.getInstance().showSettingsDialog(project, message("aws.settings.codewhisperer.configurable.title"))
                         },
                         NotificationAction.create(
                             message("codewhisperer.notification.custom.simple.button.got_it")
