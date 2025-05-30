@@ -485,7 +485,7 @@ class BrowserConnector(
                 try {
                     chatAsyncResultManager.createRequestId(partialResultToken)
                     chatAsyncResultManager.getResult(partialResultToken)
-                    handleCancellation(tabId, partialResultToken, browser)
+                    handleCancellation(tabId, browser)
                 } catch (ex: Exception) {
                     LOG.warn(ex) { "An error occurred while processing cancellation" }
                 } finally {
@@ -500,7 +500,7 @@ class BrowserConnector(
         }
     }
 
-    private fun handleCancellation(tabId: String, partialResultToken: String, browser: Browser) {
+    private fun handleCancellation(tabId: String, browser: Browser) {
         // Send a message to hide the stop button without showing an error
         val cancelMessage = chatCommunicationManager.getCancellationUiMessage(tabId)
         browser.postChat(cancelMessage)
