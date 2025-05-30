@@ -100,7 +100,7 @@ class ArtifactManager @NonInjectable internal constructor(private val manifestFe
                 SemVer.parseFromText(serverVersion)?.let { semVer ->
                     when {
                         version.isDelisted != false -> Pair(version, true) // Is deListed
-                        semVer in DEFAULT_VERSION_RANGE.let { it.startVersion..it.endVersion } -> Pair(version, false) // Is in range
+                        (semVer >= DEFAULT_VERSION_RANGE.startVersion && semVer < DEFAULT_VERSION_RANGE.endVersion) -> Pair(version, false) // Is in range
                         else -> null
                     }
                 }

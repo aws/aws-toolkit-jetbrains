@@ -146,7 +146,7 @@ class WorkspaceServiceHandlerTest {
         every { mockInitializeResult.capabilities } returns mockCapabilities
 
         // Create WorkspaceServiceHandler with mocked InitializeResult
-        sut = WorkspaceServiceHandler(project, mockInitializeResult, mockk())
+        sut = WorkspaceServiceHandler(project, mockInitializeResult)
     }
 
     @Test

@@ -95,7 +95,7 @@ class DefaultModuleDependenciesServiceTest {
         every { mockModuleManager.modules } returns arrayOf(module)
         prepDependencyProvider(listOf(Pair(module, params)))
 
-        sut = DefaultModuleDependenciesService(project, mockk())
+        sut = DefaultModuleDependenciesService(project)
 
         verify { mockLanguageServer.didChangeDependencyPaths(params) }
     }
@@ -127,7 +127,7 @@ class DefaultModuleDependenciesServiceTest {
             )
         )
 
-        sut = DefaultModuleDependenciesService(project, mockk())
+        sut = DefaultModuleDependenciesService(project)
 
         verify { mockLanguageServer.didChangeDependencyPaths(params1) }
         verify { mockLanguageServer.didChangeDependencyPaths(params2) }
@@ -148,7 +148,7 @@ class DefaultModuleDependenciesServiceTest {
         val event = mockk<ModuleRootEvent>()
         every { event.isCausedByFileTypesChange } returns true
 
-        sut = DefaultModuleDependenciesService(project, mockk())
+        sut = DefaultModuleDependenciesService(project)
 
         sut.rootsChanged(event)
 
@@ -173,7 +173,7 @@ class DefaultModuleDependenciesServiceTest {
 
         prepDependencyProvider(listOf(Pair(module, params)))
 
-        sut = DefaultModuleDependenciesService(project, mockk())
+        sut = DefaultModuleDependenciesService(project)
 
         sut.rootsChanged(event)
 
