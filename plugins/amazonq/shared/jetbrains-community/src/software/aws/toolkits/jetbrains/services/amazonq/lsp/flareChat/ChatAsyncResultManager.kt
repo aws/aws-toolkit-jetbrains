@@ -16,7 +16,7 @@ import java.util.concurrent.TimeoutException
  * between partial results and final results during cancellation.
  */
 @Service(Service.Level.PROJECT)
-class ChatAsyncResultManager() {
+class ChatAsyncResultManager {
     private val results = ConcurrentHashMap<String, CompletableFuture<Any>>()
     private val completedResults = ConcurrentHashMap<String, Any>()
     private val timeout = 30L
@@ -45,9 +45,8 @@ class ChatAsyncResultManager() {
         completedResults[requestId] = result
     }
 
-    fun getResult(requestId: String): Any? {
-        return getResult(requestId, timeout, timeUnit)
-    }
+    fun getResult(requestId: String): Any? =
+        getResult(requestId, timeout, timeUnit)
 
     private fun getResult(requestId: String, timeout: Long, unit: TimeUnit): Any? {
         val completedResult = completedResults[requestId]
