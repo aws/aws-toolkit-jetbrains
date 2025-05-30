@@ -11,10 +11,12 @@ import com.intellij.execution.process.KillableProcessHandler
 import com.intellij.execution.process.ProcessEvent
 import com.intellij.execution.process.ProcessListener
 import com.intellij.execution.process.ProcessOutputType
+import com.intellij.notification.NotificationAction
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.components.serviceIfCreated
+import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.Key
@@ -76,6 +78,8 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.workspace.WorkspaceS
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QDefaultServiceConfig
 import software.aws.toolkits.jetbrains.services.telemetry.ClientMetadata
 import software.aws.toolkits.jetbrains.settings.LspSettings
+import software.aws.toolkits.jetbrains.utils.notifyInfo
+import software.aws.toolkits.resources.message
 import java.io.IOException
 import java.io.OutputStreamWriter
 import java.io.PipedInputStream
@@ -84,6 +88,7 @@ import java.io.PrintWriter
 import java.io.StringWriter
 import java.net.Proxy
 import java.net.URI
+import java.nio.file.Path
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.util.concurrent.Future
@@ -372,7 +377,36 @@ private class AmazonQServerInstance(private val project: Project, private val cs
         }
 
         val node = if (SystemInfo.isWindows) "node.exe" else "node"
-        val cmd = NodeExePatcher.patch(artifact.resolve(node))
+        var nodePath = artifact.resolve(node)
+        // download node runtime is not found
+        if (!Files.exists(nodePath) || !Files.isExecutable(nodePath)) {
+            LOG.warn() { "Node Runtime download failed. Fallback to user specified node runtime " }
+            // attempt to use user provided node runtime path
+            val nodeRuntime = LspSettings.getInstance().getNodeRuntimePath()
+            if (!nodeRuntime.isNullOrEmpty()) {
+                nodePath = Path.of(nodeRuntime)
+            } else {
+                notifyInfo(
+                    "Amazon Q",
+                    message("amazonqFeatureDev.placeholder.node_runtime_message"),
+                    project = project,
+                    listOf(
+                        NotificationAction.create(
+                            message("codewhisperer.actions.open_settings.title")
+                        ) { _, notification ->
+                            ShowSettingsUtil.getInstance().showSettingsDialog(project, CodeWhispererConfigurable::class.java)
+                        },
+                        NotificationAction.create(
+                            message("codewhisperer.notification.custom.simple.button.got_it")
+                        ) { _, notification -> notification.expire() }
+                    )
+                )
+
+            }
+
+        }
+
+        val cmd = NodeExePatcher.patch(nodePath)
             .withParameters(
                 LspSettings.getInstance().getArtifactPath() ?: artifact.resolve("aws-lsp-codewhisperer.js").toString(),
                 "--stdio",
