@@ -92,6 +92,7 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.Future
+import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.seconds
 
 // https://github.com/redhat-developer/lsp4ij/blob/main/src/main/java/com/redhat/devtools/lsp4ij/server/LSPProcessListener.java
@@ -377,32 +378,7 @@ private class AmazonQServerInstance(private val project: Project, private val cs
         }
 
         val node = if (SystemInfo.isWindows) "node.exe" else "node"
-        var nodePath = artifact.resolve(node)
-        // download node runtime if it is not found
-        if (!Files.exists(nodePath) || !Files.isExecutable(nodePath)) {
-            LOG.warn { "Node Runtime download failed. Fallback to user specified node runtime " }
-            // attempt to use user provided node runtime path
-            val nodeRuntime = LspSettings.getInstance().getNodeRuntimePath()
-            if (!nodeRuntime.isNullOrEmpty()) {
-                nodePath = Path.of(nodeRuntime)
-            } else {
-                notifyInfo(
-                    "Amazon Q",
-                    message("amazonqFeatureDev.placeholder.node_runtime_message"),
-                    project = project,
-                    listOf(
-                        NotificationAction.create(
-                            message("codewhisperer.actions.open_settings.title")
-                        ) { _, notification ->
-                            ShowSettingsUtil.getInstance().showSettingsDialog(project, message("aws.settings.codewhisperer.configurable.title"))
-                        },
-                        NotificationAction.create(
-                            message("codewhisperer.notification.custom.simple.button.got_it")
-                        ) { _, notification -> notification.expire() }
-                    )
-                )
-            }
-        }
+        var nodePath = getNodeRuntimePath(artifact.resolve(node))
 
         val cmd = NodeExePatcher.patch(nodePath)
             .withParameters(
@@ -521,6 +497,125 @@ private class AmazonQServerInstance(private val project: Project, private val cs
                     Disposer.register(this, it)
                 }
             }
+        }
+    }
+
+    /**
+     * Resolves the path to a valid Node.js runtime in the following order of preference:
+     * 1. Uses the provided nodePath if it exists and is executable
+     * 2. Uses user-specified runtime path from LSP settings if available
+     * 3. Uses system Node.js if version 18+ is available
+     * 4. Falls back to original nodePath with a notification to configure runtime
+     *
+     * @param nodePath The initial Node.js runtime path to check, typically from the artifact directory
+     * @return Path The resolved Node.js runtime path to use for the LSP server
+     *
+     * Side effects:
+     * - Logs warnings if initial runtime path is invalid
+     * - Logs info when using alternative runtime path
+     * - Shows notification to user if no valid Node.js runtime is found
+     *
+     * Note: The function will return a path even if no valid runtime is found, but the LSP server
+     * may fail to start in that case. The caller should handle potential runtime initialization failures.
+     */
+    private fun getNodeRuntimePath(nodePath: Path): Path {
+        if (Files.exists(nodePath) && Files.isExecutable(nodePath)) {
+            return nodePath
+        }
+        // use alternative node runtime if it is not found
+        LOG.warn { "Node Runtime download failed. Fallback to user specified node runtime " }
+        // attempt to use user provided node runtime path
+        val nodeRuntime = LspSettings.getInstance().getNodeRuntimePath()
+        if (!nodeRuntime.isNullOrEmpty()) {
+            LOG.info { "Using node from $nodeRuntime " }
+            return Path.of(nodeRuntime)
+        } else {
+            val localNode = locateNodeCommand()
+            if (localNode != null) {
+                LOG.info { "Using node from ${localNode.toAbsolutePath()}" }
+                return localNode
+            }
+            notifyInfo(
+                "Amazon Q",
+                message("amazonqFeatureDev.placeholder.node_runtime_message"),
+                project = project,
+                listOf(
+                    NotificationAction.create(
+                        message("codewhisperer.actions.open_settings.title")
+                    ) { _, notification ->
+                        ShowSettingsUtil.getInstance().showSettingsDialog(project, message("aws.settings.codewhisperer.configurable.title"))
+                    },
+                    NotificationAction.create(
+                        message("codewhisperer.notification.custom.simple.button.got_it")
+                    ) { _, notification -> notification.expire() }
+                )
+            )
+            return nodePath
+        }
+    }
+
+    /**
+     * Locates node executable using platform-specific command.
+     * Uses 'where' on Windows and 'which' on Unix-like systems.
+     * Only gets node newer than node 18!
+     * @return Path? The absolute path to node if found via where/which, null otherwise
+     */
+    private fun locateNodeCommand(): Path? {
+        val command = if (SystemInfo.isWindows) {
+            arrayOf("where", "node.exe")
+        } else {
+            arrayOf("which", "node")
+        }
+
+        return try {
+            val process = ProcessBuilder(*command)
+                .redirectErrorStream(true)
+                .start()
+
+            if (!process.waitFor(2, TimeUnit.SECONDS)) {
+                process.destroy()
+                return null
+            }
+
+            if (process.exitValue() != 0) {
+                return null
+            }
+
+            // where/which can return multiple lines - check each path until we find node ≥18
+            process.inputStream.bufferedReader()
+                .lineSequence()
+                .map { Path.of(it.trim()) }
+                .filter { Files.isRegularFile(it) && Files.isExecutable(it) }
+                .firstNotNullOfOrNull { path ->
+                    // Check version for each found node
+                    val versionProcess = ProcessBuilder(path.toString(), "--version")
+                        .redirectErrorStream(true)
+                        .start()
+
+                    try {
+                        if (!versionProcess.waitFor(2, TimeUnit.SECONDS)) {
+                            versionProcess.destroy()
+                            null
+                        } else if (versionProcess.exitValue() == 0) {
+                            val version = versionProcess.inputStream.bufferedReader().readText().trim()
+                            val majorVersion = version.removePrefix("v").split(".")[0].toIntOrNull()
+
+                            if (majorVersion != null && majorVersion >= 18) {
+                                path.toAbsolutePath()
+                            } else {
+                                null
+                            }
+                        } else {
+                            null
+                        }
+                    } catch (e: Exception) {
+                        LOG.debug(e) { "Failed to check version for node at: $path" }
+                        null
+                    }
+                }
+        } catch (e: Exception) {
+            LOG.debug(e) { "Failed to locate node using ${command.joinToString(" ")}" }
+            null
         }
     }
 
