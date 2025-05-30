@@ -114,10 +114,12 @@ class ThemeBrowserAdapter {
 
     // darkest = bg, second darkest is alt bg, lightest is input bg
     private fun determineInputAndBgColor(theme: AmazonQTheme): Triple<Color, Color, Color> {
-        val colors = arrayOf(theme.editorBackground, theme.background, theme.textFieldBackground).sortedWith(Comparator.comparing {
-            // luma calculation for brightness
-            (0.2126 * it.red) + (0.7152 * it.green) + (0.0722 * it.blue)
-        })
+        val colors = arrayOf(theme.editorBackground, theme.background, theme.textFieldBackground).sortedWith(
+            Comparator.comparing {
+                // luma calculation for brightness
+                (0.2126 * it.red) + (0.7152 * it.green) + (0.0722 * it.blue)
+            }
+        )
         return Triple(colors[0], colors[1], colors[2])
     }
 }
