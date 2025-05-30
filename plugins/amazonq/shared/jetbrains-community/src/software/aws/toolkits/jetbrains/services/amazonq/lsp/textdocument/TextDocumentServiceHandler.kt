@@ -22,6 +22,8 @@ import org.eclipse.lsp4j.DidChangeTextDocumentParams
 import org.eclipse.lsp4j.DidCloseTextDocumentParams
 import org.eclipse.lsp4j.DidOpenTextDocumentParams
 import org.eclipse.lsp4j.DidSaveTextDocumentParams
+import org.eclipse.lsp4j.Position
+import org.eclipse.lsp4j.Range
 import org.eclipse.lsp4j.TextDocumentContentChangeEvent
 import org.eclipse.lsp4j.TextDocumentIdentifier
 import org.eclipse.lsp4j.TextDocumentItem
@@ -164,6 +166,9 @@ class TextDocumentServiceHandler(
             pluginAwareExecuteOnPooledThread {
                 val vFile = FileDocumentManager.getInstance().getFile(event.document) ?: return@pluginAwareExecuteOnPooledThread
                 toUriString(vFile)?.let { uri ->
+                    val editor = FileEditorManager.getInstance(project).selectedTextEditor ?: return@pluginAwareExecuteOnPooledThread
+                    val logicalPosition = editor.offsetToLogicalPosition(event.offset)
+                    val newLogicalPosition = editor.offsetToLogicalPosition(event.offset + event.newLength)
                     languageServer.textDocumentService.didChange(
                         DidChangeTextDocumentParams().apply {
                             textDocument = VersionedTextDocumentIdentifier().apply {
@@ -173,6 +178,10 @@ class TextDocumentServiceHandler(
                             contentChanges = listOf(
                                 TextDocumentContentChangeEvent().apply {
                                     text = event.newFragment.toString()
+                                    range = Range(
+                                        Position(logicalPosition.line, logicalPosition.column),
+                                        Position(newLogicalPosition.line, newLogicalPosition.column)
+                                    )
                                 }
                             )
                         }
