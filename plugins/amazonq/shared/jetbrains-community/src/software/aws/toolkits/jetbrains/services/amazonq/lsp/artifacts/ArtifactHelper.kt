@@ -114,7 +114,6 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH,
             logger.info { "Attempt ${currentAttempt.get()} of $maxDownloadAttempts to download LSP artifacts" }
 
             try {
-                throw Error("ee")
                 return withBackgroundProgress(
                     project,
                     AwsCoreBundle.message("amazonqFeatureDev.placeholder.downloading_and_extracting_lsp_artifacts"),
