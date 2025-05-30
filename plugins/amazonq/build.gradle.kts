@@ -114,9 +114,7 @@ val prepareBundledFlare by tasks.registering(Copy::class) {
     inputs.files(downloadFlareArtifacts)
 
     val dest = layout.buildDirectory.dir("tmp/extractFlare")
-    outputs.dir(dest)
     into(dest)
-
 
     from(downloadFlareArtifacts.map { it.outputFiles.filterNot { it.name.endsWith(".zip") } })
     doLast {
@@ -124,6 +122,7 @@ val prepareBundledFlare by tasks.registering(Copy::class) {
             into(dest)
             includeEmptyDirs = false
             downloadFlareArtifacts.get().outputFiles.filter { it.name.endsWith(".zip") }.forEach {
+                dest.get().file(it.parentFile.name).asFile.createNewFile()
                 from(zipTree(it)) {
                     include("*.js")
                     include("*.txt")
