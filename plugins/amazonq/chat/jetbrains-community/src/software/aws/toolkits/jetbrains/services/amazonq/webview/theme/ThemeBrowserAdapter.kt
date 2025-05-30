@@ -26,7 +26,7 @@ class ThemeBrowserAdapter {
     }
 
     private fun buildJsCodeToUpdateTheme(theme: AmazonQTheme) = buildString {
-        var (bg, altBg, inputBg) = determineInputAndBgColor(theme)
+        val (bg, altBg, inputBg) = determineInputAndBgColor(theme)
         appendDarkMode(theme.darkMode)
 
         append("{\n")
