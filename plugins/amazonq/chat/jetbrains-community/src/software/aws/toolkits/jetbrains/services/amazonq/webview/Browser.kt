@@ -149,6 +149,7 @@ class Browser(parent: Disposable, private val webUri: URI, val project: Project)
                         {
                         agenticMode: true,
                         quickActionCommands: commands,
+                        modelSelectionEnabled: true,
                         disclaimerAcknowledged: ${MeetQSettings.getInstance().disclaimerAcknowledged},
                         pairProgrammingAcknowledged: ${MeetQSettings.getInstance().pairProgrammingAcknowledged}
                         },
