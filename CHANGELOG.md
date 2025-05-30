@@ -1,3 +1,6 @@
+# _3.73_ (2025-05-29)
+- **(Bug Fix)** /transform: handle InvalidGrantException properly when polling job status
+
 # _3.72_ (2025-05-22)
 - **(Removal)** /transform: remove option to receive multiple diffs
 
