@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp
 
 import com.google.gson.ToNumberPolicy
 import com.intellij.execution.configurations.GeneralCommandLine
+import com.intellij.execution.configurations.PathEnvironmentVariableUtil
 import com.intellij.execution.impl.ExecutionManagerImpl
 import com.intellij.execution.process.KillableColoredProcessHandler
 import com.intellij.execution.process.KillableProcessHandler
@@ -555,68 +556,46 @@ private class AmazonQServerInstance(private val project: Project, private val cs
     }
 
     /**
-     * Locates node executable using platform-specific command.
-     * Uses 'where' on Windows and 'which' on Unix-like systems.
-     * Only gets node newer than node 18!
-     * @return Path? The absolute path to node if found via where/which, null otherwise
+     * Locates node executable ≥18 in system PATH.
+     * Uses IntelliJ's PathEnvironmentVariableUtil to find executables.
+     *
+     * @return Path? The absolute path to node ≥18 if found, null otherwise
      */
     private fun locateNodeCommand(): Path? {
-        val command = if (SystemInfo.isWindows) {
-            arrayOf("where", "node.exe")
-        } else {
-            arrayOf("which", "node")
-        }
+        val exeName = if (SystemInfo.isWindows) "node.exe" else "node"
 
-        return try {
-            val process = ProcessBuilder(*command)
-                .redirectErrorStream(true)
-                .start()
-
-            if (!process.waitFor(2, TimeUnit.SECONDS)) {
-                process.destroy()
-                return null
-            }
-
-            if (process.exitValue() != 0) {
-                return null
-            }
-
-            // where/which can return multiple lines - check each path until we find node ≥18
-            process.inputStream.bufferedReader()
-                .lineSequence()
-                .map { Path.of(it.trim()) }
-                .filter { Files.isRegularFile(it) && Files.isExecutable(it) }
-                .firstNotNullOfOrNull { path ->
-                    // Check version for each found node
-                    val versionProcess = ProcessBuilder(path.toString(), "--version")
+        return PathEnvironmentVariableUtil.findAllExeFilesInPath(exeName)
+            .asSequence()
+            .map { it.toPath() }
+            .filter { Files.isRegularFile(it) && Files.isExecutable(it) }
+            .firstNotNullOfOrNull { path ->
+                try {
+                    val process = ProcessBuilder(path.toString(), "--version")
                         .redirectErrorStream(true)
                         .start()
 
-                    try {
-                        if (!versionProcess.waitFor(2, TimeUnit.SECONDS)) {
-                            versionProcess.destroy()
-                            null
-                        } else if (versionProcess.exitValue() == 0) {
-                            val version = versionProcess.inputStream.bufferedReader().readText().trim()
-                            val majorVersion = version.removePrefix("v").split(".")[0].toIntOrNull()
+                    if (!process.waitFor(2, TimeUnit.SECONDS)) {
+                        process.destroy()
+                        null
+                    } else if (process.exitValue() == 0) {
+                        val version = process.inputStream.bufferedReader().readText().trim()
+                        val majorVersion = version.removePrefix("v").split(".")[0].toIntOrNull()
 
-                            if (majorVersion != null && majorVersion >= 18) {
-                                path.toAbsolutePath()
-                            } else {
-                                null
-                            }
+                        if (majorVersion != null && majorVersion >= 18) {
+                            path.toAbsolutePath()
                         } else {
+                            LOG.debug { "Node version < 18 found at: $path (version: $version)" }
                             null
                         }
-                    } catch (e: Exception) {
-                        LOG.debug(e) { "Failed to check version for node at: $path" }
+                    } else {
+                        LOG.debug { "Failed to get version from node at: $path" }
                         null
                     }
+                } catch (e: Exception) {
+                    LOG.debug(e) { "Failed to check version for node at: $path" }
+                    null
                 }
-        } catch (e: Exception) {
-            LOG.debug(e) { "Failed to locate node using ${command.joinToString(" ")}" }
-            null
-        }
+            }
     }
 
     override fun dispose() {
