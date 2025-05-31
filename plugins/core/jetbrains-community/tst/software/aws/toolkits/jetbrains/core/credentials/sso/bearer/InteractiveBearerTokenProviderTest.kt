@@ -84,16 +84,14 @@ class InteractiveBearerTokenProviderTest {
     }
 
     @Test
-    fun `oidcClient retries twice on InvalidGrantException failure`() {
+    fun `oidcClient does not retry on InvalidGrantException failure`() {
         fun verifyRetryAttempts(configuration: ClientOverrideConfiguration.Builder) {
             configuration.addExecutionInterceptor(
                 object : ExecutionInterceptor {
                     override fun onExecutionFailure(context: Context.FailedExecution?, executionAttributes: ExecutionAttributes?) {
                         super.onExecutionFailure(context, executionAttributes)
 
-                        // 3 total network calls, showing 4 since the sdk increments the attempt count at the beginning
-                        // of the loop before it checks whether it's allowed to retry.
-                        assertThat(executionAttributes?.getAttribute(InternalCoreExecutionAttribute.EXECUTION_ATTEMPT)).isEqualTo(4)
+                        assertThat(executionAttributes?.getAttribute(InternalCoreExecutionAttribute.EXECUTION_ATTEMPT)).isEqualTo(1)
                     }
                 }
             )

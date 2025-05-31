@@ -17,7 +17,6 @@ import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.ssooidc.SsoOidcClient
 import software.amazon.awssdk.services.ssooidc.SsoOidcTokenProvider
 import software.amazon.awssdk.services.ssooidc.internal.OnDiskTokenManager
-import software.amazon.awssdk.services.ssooidc.model.InvalidGrantException
 import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
 import software.amazon.awssdk.utils.SdkAutoCloseable
 import software.amazon.awssdk.utils.cache.CachedSupplier
@@ -251,13 +250,6 @@ internal val DEFAULT_PREFETCH_DURATION = Duration.ofMinutes(20)
 
 val ssoOidcClientConfigurationBuilder: (ClientOverrideConfiguration.Builder) -> ClientOverrideConfiguration.Builder = { configuration ->
     configuration.nullDefaultProfileFile()
-
-    // Add InvalidGrantException to the RetryOnExceptionsCondition
-    configuration.retryStrategy { strategy ->
-        strategy.retryOnException {
-            it is InvalidGrantException
-        }
-    }
 
     configuration.addExecutionInterceptor(object : ExecutionInterceptor {
         override fun modifyException(context: Context.FailedExecution, executionAttributes: ExecutionAttributes): Throwable {
