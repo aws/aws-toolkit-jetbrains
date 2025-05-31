@@ -17,7 +17,6 @@ import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.ssooidc.SsoOidcClient
 import software.amazon.awssdk.services.ssooidc.SsoOidcTokenProvider
 import software.amazon.awssdk.services.ssooidc.internal.OnDiskTokenManager
-import software.amazon.awssdk.services.ssooidc.model.InvalidGrantException
 import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
 import software.amazon.awssdk.utils.SdkAutoCloseable
 import software.amazon.awssdk.utils.cache.CachedSupplier
