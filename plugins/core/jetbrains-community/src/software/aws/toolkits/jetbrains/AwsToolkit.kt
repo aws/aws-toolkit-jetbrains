@@ -37,12 +37,7 @@ data class PluginInfo(val id: String, val name: String) {
     val version: String?
         get() = descriptor?.version
     val path: Path?
-        get() =
-            if (ApplicationManager.getApplication().isUnitTestMode) {
-                Paths.get(System.getProperty("plugin.path"))
-            } else {
-                descriptor?.pluginPath
-            }
+        get() = descriptor?.pluginPath
 }
 
 enum class AwsPlugin {
