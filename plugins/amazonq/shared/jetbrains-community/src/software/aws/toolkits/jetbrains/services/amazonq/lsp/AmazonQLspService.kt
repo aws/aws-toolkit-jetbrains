@@ -372,35 +372,35 @@ private class AmazonQServerInstance(private val project: Project, private val cs
         }
 
         val node = if (SystemInfo.isWindows) "node.exe" else "node"
-        val cmd = GeneralCommandLine(
-            artifact.resolve(node).toString(),
-            LspSettings.getInstance().getArtifactPath() ?: artifact.resolve("aws-lsp-codewhisperer.js").toString(),
-            "--stdio",
-            "--set-credentials-encryption-key",
-        ).withEnvironment(
-            buildMap {
-                put("NODE_EXTRA_CA_CERTS", extraCaCerts.toAbsolutePath().toString())
+        val cmd = NodeExePatcher.patch(artifact.resolve(node))
+            .withParameters(
+                LspSettings.getInstance().getArtifactPath() ?: artifact.resolve("aws-lsp-codewhisperer.js").toString(),
+                "--stdio",
+                "--set-credentials-encryption-key",
+            ).withEnvironment(
+                buildMap {
+                    put("NODE_EXTRA_CA_CERTS", extraCaCerts.toAbsolutePath().toString())
 
-                val proxy = JdkProxyProvider.getInstance().proxySelector.select(qUri)
-                    // log if only socks proxy available
-                    .firstOrNull { it.type() == Proxy.Type.HTTP }
+                    val proxy = JdkProxyProvider.getInstance().proxySelector.select(qUri)
+                        // log if only socks proxy available
+                        .firstOrNull { it.type() == Proxy.Type.HTTP }
 
-                if (proxy != null) {
-                    val address = proxy.address()
-                    if (address is java.net.InetSocketAddress) {
-                        put(
-                            "HTTPS_PROXY",
-                            URIBuilder("http://${address.hostName}:${address.port}").apply {
-                                val login = HttpConfigurable.getInstance().proxyLogin
-                                if (login != null) {
-                                    setUserInfo(login, HttpConfigurable.getInstance().plainProxyPassword)
-                                }
-                            }.build().toASCIIString()
-                        )
+                    if (proxy != null) {
+                        val address = proxy.address()
+                        if (address is java.net.InetSocketAddress) {
+                            put(
+                                "HTTPS_PROXY",
+                                URIBuilder("http://${address.hostName}:${address.port}").apply {
+                                    val login = HttpConfigurable.getInstance().proxyLogin
+                                    if (login != null) {
+                                        setUserInfo(login, HttpConfigurable.getInstance().plainProxyPassword)
+                                    }
+                                }.build().toASCIIString()
+                            )
+                        }
                     }
                 }
-            }
-        )
+            )
             .withParentEnvironmentType(GeneralCommandLine.ParentEnvironmentType.CONSOLE)
 
         launcherHandler = KillableColoredProcessHandler.Silent(cmd)

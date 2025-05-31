@@ -101,6 +101,7 @@ class ArtifactHelperTest {
         tempDir.resolve("1.0.0").createDirectories()
         tempDir.resolve("1.0.1").createDirectories()
         tempDir.resolve("1.0.2").createDirectories()
+
         manifestVersionRanges = SupportedManifestVersionRange(
             startVersion = SemVer("1.0.0", 1, 0, 0),
             endVersion = SemVer("2.0.0", 2, 0, 0)
@@ -110,6 +111,21 @@ class ArtifactHelperTest {
         assertThat(actualResult).isNotNull()
         assertThat(actualResult.size).isEqualTo(3)
         assertThat(actualResult.first().first.fileName.toString()).isEqualTo("1.0.2")
+    }
+
+    @Test
+    fun `getAllLocalLspArtifactsWithinManifestRange does not return end major version path`() {
+        tempDir.resolve("1.0.0").createDirectories()
+        tempDir.resolve("2.0.0").createDirectories()
+        manifestVersionRanges = SupportedManifestVersionRange(
+            startVersion = SemVer("1.0.0", 1, 0, 0),
+            endVersion = SemVer("2.0.0", 2, 0, 0)
+        )
+
+        val actualResult = artifactHelper.getAllLocalLspArtifactsWithinManifestRange(manifestVersionRanges)
+        assertThat(actualResult).isNotNull()
+        assertThat(actualResult.size).isEqualTo(1)
+        assertThat(actualResult.first().first.fileName.toString()).isNotEqualTo("2.0.0")
     }
 
     @Test
