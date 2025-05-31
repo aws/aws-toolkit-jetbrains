@@ -25,8 +25,14 @@ class LspSettings : PersistentStateComponent<LspConfiguration> {
 
     fun getArtifactPath() = state.artifactPath
 
+    fun getNodeRuntimePath() = state.nodeRuntimePath
+
     fun setArtifactPath(artifactPath: String?) {
         state.artifactPath = artifactPath.nullize(nullizeSpaces = true)
+    }
+
+    fun setNodeRuntimePath(nodeRuntimePath: String?) {
+        state.nodeRuntimePath = nodeRuntimePath.nullize(nullizeSpaces = true)
     }
 
     companion object {
@@ -36,4 +42,5 @@ class LspSettings : PersistentStateComponent<LspConfiguration> {
 
 class LspConfiguration : BaseState() {
     var artifactPath by string()
+    var nodeRuntimePath by string()
 }

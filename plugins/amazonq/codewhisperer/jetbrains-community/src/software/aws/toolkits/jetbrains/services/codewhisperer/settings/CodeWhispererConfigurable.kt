@@ -83,6 +83,21 @@ class CodeWhispererConfigurable(private val project: Project) :
                     .resizableColumn()
                     .align(Align.FILL)
             }
+            row(message("amazonqFeatureDev.placeholder.node_runtime_path")) {
+                val fileChooserDescriptor = FileChooserDescriptorFactory.createSingleFileDescriptor()
+                fileChooserDescriptor.isForcedToUseIdeaFileChooser = true
+
+                textFieldWithBrowseButton(fileChooserDescriptor = fileChooserDescriptor)
+                    .bindText(
+                        { LspSettings.getInstance().getNodeRuntimePath().orEmpty() },
+                        { LspSettings.getInstance().setNodeRuntimePath(it) }
+                    )
+                    .applyToComponent {
+                        emptyText.text = message("executableCommon.auto_managed")
+                    }
+                    .resizableColumn()
+                    .align(Align.FILL)
+            }
         }
 
         group(message("aws.settings.codewhisperer.group.general")) {
