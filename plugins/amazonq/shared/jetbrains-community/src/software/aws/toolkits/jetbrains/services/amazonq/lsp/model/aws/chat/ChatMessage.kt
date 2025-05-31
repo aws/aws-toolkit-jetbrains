@@ -19,6 +19,12 @@ data class ChatMessage(
     val codeReference: List<ReferenceTrackerInformation>? = null,
     val fileList: FileList? = null,
     val contextList: FileList? = null,
+    val summary: Summary? = null,
+)
+
+data class Summary(
+    val content: ChatMessage? = null,
+    val collapsedContent: List<ChatMessage>? = null,
 )
 
 data class MessageHeader(
