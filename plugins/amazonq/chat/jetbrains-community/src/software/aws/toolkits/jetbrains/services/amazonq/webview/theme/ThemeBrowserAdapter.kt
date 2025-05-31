@@ -52,7 +52,7 @@ class ThemeBrowserAdapter {
         append(CssVariable.BorderFocused, theme.inputBorderFocused)
         append(CssVariable.BorderUnfocused, theme.inputBorderUnfocused)
         append(CssVariable.TabActive, theme.activeTab)
-        
+
         append(CssVariable.InputBackground, inputBg)
 
         append(CssVariable.ButtonBackground, theme.buttonBackground)
