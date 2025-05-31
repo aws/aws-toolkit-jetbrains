@@ -401,7 +401,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
         return CompletableFuture.completedFuture(Unit)
     }
 
-    override fun chatOptionsUpdate(params: LSPAny): CompletableFuture<Unit> {
+    override fun sendChatOptionsUpdate(params: LSPAny): CompletableFuture<Unit> {
         val chatManager = ChatCommunicationManager.getInstance(project)
         chatManager.notifyUi(
             FlareUiMessage(

@@ -70,5 +70,5 @@ interface AmazonQLanguageClient : LanguageClient {
     fun createDirectory(params: FileParams)
 
     @JsonNotification(CHAT_OPTIONS_UPDATE_NOTIFICATION)
-    fun chatOptionsUpdate(params: LSPAny): CompletableFuture<Unit>
+    fun sendChatOptionsUpdate(params: LSPAny): CompletableFuture<Unit>
 }
