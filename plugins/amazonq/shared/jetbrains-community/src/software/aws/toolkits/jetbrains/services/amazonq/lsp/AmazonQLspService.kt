@@ -374,8 +374,6 @@ private class AmazonQServerInstance(private val project: Project, private val cs
         val node = if (SystemInfo.isWindows) "node.exe" else "node"
         val cmd = NodeExePatcher.patch(artifact.resolve(node))
             .withParameters(
-                "--inspect-brk=8057",
-                "--nolazy",
                 LspSettings.getInstance().getArtifactPath() ?: artifact.resolve("aws-lsp-codewhisperer.js").toString(),
                 "--stdio",
                 "--set-credentials-encryption-key",
