@@ -115,8 +115,8 @@ val prepareBundledFlare by tasks.registering(Copy::class) {
 
     val dest = layout.buildDirectory.dir("tmp/extractFlare")
     into(dest)
-
     from(downloadFlareArtifacts.map { it.outputFiles.filterNot { file -> file.name.endsWith(".zip") } })
+
     doLast {
         copy {
             into(dest)
