@@ -97,7 +97,7 @@ val downloadFlareArtifacts by tasks.registering(Download::class) {
     val latest = manifest.map { it.versions.first() }
     val latestVersion = latest.map { it.serverVersion }
     val licensesUrl = latest.map { it.thirdPartyLicenses }
-    val darwin = latest.map { it.targets.first { it.platform == "darwin" && it.arch == "arm64" } }
+    val darwin = latest.map { it.targets.first { target -> target.platform == "darwin" && target.arch == "arm64" } }
     val contentUrls = darwin.map { it.contents.map { content -> content.url } }
 
     val destination = layout.buildDirectory.dir(latestVersion.map { "flare/$it" })
@@ -116,7 +116,7 @@ val prepareBundledFlare by tasks.registering(Copy::class) {
     val dest = layout.buildDirectory.dir("tmp/extractFlare")
     into(dest)
 
-    from(downloadFlareArtifacts.map { it.outputFiles.filterNot { it.name.endsWith(".zip") } })
+    from(downloadFlareArtifacts.map { it.outputFiles.filterNot { file -> file.name.endsWith(".zip") } })
     doLast {
         copy {
             into(dest)
