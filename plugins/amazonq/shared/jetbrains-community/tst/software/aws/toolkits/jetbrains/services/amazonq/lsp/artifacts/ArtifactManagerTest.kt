@@ -19,7 +19,6 @@ import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
 import org.junit.jupiter.api.io.TempDir
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts.ArtifactManager.SupportedManifestVersionRange
@@ -55,10 +54,6 @@ class ArtifactManagerTest {
     @Test
     fun `fetch artifact fetcher returns bundled if manifest is null`() = runTest {
         every { manifestFetcher.fetch() }.returns(null)
-
-        val exception = assertThrows<LspException> {
-            artifactManager.fetchArtifact(projectExtension.project)
-        }
 
         assertThat(artifactManager.fetchArtifact(projectExtension.project))
             .isEqualTo(
