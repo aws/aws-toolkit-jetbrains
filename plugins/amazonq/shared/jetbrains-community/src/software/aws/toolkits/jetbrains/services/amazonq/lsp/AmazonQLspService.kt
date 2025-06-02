@@ -574,7 +574,7 @@ private class AmazonQServerInstance(private val project: Project, private val cs
                         .redirectErrorStream(true)
                         .start()
 
-                    if (!process.waitFor(2, TimeUnit.SECONDS)) {
+                    if (!process.waitFor(5, TimeUnit.SECONDS)) {
                         process.destroy()
                         null
                     } else if (process.exitValue() == 0) {
