@@ -54,6 +54,7 @@ class QStatusBarLoggedInActionGroup : DefaultActionGroup() {
 
     override fun getChildren(e: AnActionEvent?) = e?.project?.let {
         val isPendingActiveProfile = QRegionProfileManager.getInstance().hasValidConnectionButNoActiveProfile(it)
+        val actionManager = ActionManager.getInstance()
         buildList {
             if (!isPendingActiveProfile) {
                 addAll(buildActionListForActiveProfileSelected(it, actionProvider))
@@ -64,15 +65,18 @@ class QStatusBarLoggedInActionGroup : DefaultActionGroup() {
             addAll(buildActionListForConnectHelp(actionProvider))
 
             add(Separator.create())
-            add(CodeWhispererShowSettingsAction())
-            (
-                ToolkitConnectionManager.getInstance(it).activeConnectionForFeature(QConnection.getInstance()) as? AwsBearerTokenConnection
-                )?.takeIf { !it.isSono() }
-                ?.let { add(QSwitchProfilesAction()) }
-            ToolkitConnectionManager.getInstance(it).activeConnectionForFeature(CodeWhispererConnection.getInstance())?.let { c ->
-                (c as? AwsBearerTokenConnection)?.let { connection ->
-                    add(SsoLogoutAction(connection))
+            add(actionManager.getAction("codewhisperer.settings"))
+
+            val connection = ToolkitConnectionManager.getInstance(it).activeConnectionForFeature(QConnection.getInstance()) as? AwsBearerTokenConnection
+
+            if (connection != null) {
+                if (!connection.isSono()) {
+                    add(actionManager.getAction("codewhisperer.switchProfiles"))
+                } else {
+                    add(actionManager.getAction("q.manage.subscription"))
                 }
+
+                add(SsoLogoutAction(connection))
             }
         }.toTypedArray()
     }.orEmpty()
