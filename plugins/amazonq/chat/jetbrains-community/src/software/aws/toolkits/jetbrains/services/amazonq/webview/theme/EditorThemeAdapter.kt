@@ -124,6 +124,10 @@ class EditorThemeAdapter {
                 editorString = currentScheme.foregroundColor(DefaultLanguageHighlighterColors.STRING),
                 editorProperty = currentScheme.foregroundColor(DefaultLanguageHighlighterColors.INSTANCE_FIELD),
                 editorClassName = currentScheme.foregroundColor(DefaultLanguageHighlighterColors.CLASS_NAME),
+                lightText = themeColor("TextField.inactiveForeground", default = 0xA8ADBD, darkDefault = 0x5A5D63),
+                emptyText = themeColor("TextField.inactiveForeground", default = 0xA8ADBD, darkDefault = 0x5A5D63),
+                inputBorderFocused = themeColor("ActionButton.focusedBorderColor", default = 0x4682FA, darkDefault = 0x3574f0),
+                inputBorderUnfocused = themeColor("TextField.borderColor", default = 0xEBECF0, darkDefault = 0x4E5157),
             )
         }
 
