@@ -4,12 +4,10 @@
 package software.aws.toolkits.jetbrains.services.redshift.auth
 
 import com.intellij.credentialStore.Credentials
-import com.intellij.database.access.DatabaseCredentials
 import com.intellij.database.dataSource.DatabaseAuthProvider.AuthWidget
 import com.intellij.database.dataSource.DatabaseConnectionInterceptor.ProtoConnection
 import com.intellij.database.dataSource.DatabaseCredentialsAuthProvider
 import com.intellij.database.dataSource.LocalDataSource
-import com.intellij.openapi.project.Project
 import kotlinx.coroutines.future.future
 import software.amazon.awssdk.services.redshift.RedshiftClient
 import software.aws.toolkits.core.ConnectionSettings
@@ -37,7 +35,7 @@ class IamAuth : DatabaseAuthProviderCompatabilityAdapter {
     override fun isApplicable(dataSource: LocalDataSource): Boolean = dataSource.dbms.isRedshift
     override fun getDisplayName(): String = message("redshift.auth.aws")
 
-    override fun createWidget(project: Project?, creds: DatabaseCredentials, source: LocalDataSource): AuthWidget? = IamAuthWidget()
+    override fun createWidget(): AuthWidget? = IamAuthWidget()
 
     override fun intercept(connection: ProtoConnection, silent: Boolean): CompletionStage<ProtoConnection>? {
         LOG.info { "Intercepting db connection [$connection]" }

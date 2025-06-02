@@ -4,8 +4,9 @@
 package software.aws.toolkits.jetbrains.ui
 
 import com.intellij.database.dataSource.DataSourceUiUtil
+import com.intellij.database.dataSource.DatabaseConnectionConfig
+import com.intellij.database.dataSource.DatabaseConnectionPoint
 import com.intellij.database.dataSource.DatabaseCredentialsAuthProviderUi
-import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.database.dataSource.url.template.ParametersHolder
 import com.intellij.database.dataSource.url.template.UrlEditorModel
 import com.intellij.ui.components.JBLabel
@@ -53,28 +54,28 @@ abstract class AwsAuthWidgetBase(private val userFieldEnabled: Boolean) : Databa
         return panel
     }
 
-    override fun save(dataSource: LocalDataSource, copyCredentials: Boolean) {
-        super.save(dataSource, copyCredentials)
+    override fun save(config: DatabaseConnectionConfig, copyCredentials: Boolean) {
+        super.save(config, copyCredentials)
 
         DataSourceUiUtil.putOrRemove(
-            dataSource.additionalProperties,
+            config.additionalProperties,
             CREDENTIAL_ID_PROPERTY,
             credentialSelector.getSelectedCredentialsProvider()
         )
         DataSourceUiUtil.putOrRemove(
-            dataSource.additionalProperties,
+            config.additionalProperties,
             REGION_ID_PROPERTY,
             regionSelector.selectedRegion?.id
         )
     }
 
-    override fun reset(dataSource: LocalDataSource, resetCredentials: Boolean) {
-        super.reset(dataSource, resetCredentials)
+    override fun reset(config: DatabaseConnectionPoint, resetCredentials: Boolean) {
+        super.reset(config, resetCredentials)
 
         val regionProvider = AwsRegionProvider.getInstance()
         val allRegions = regionProvider.allRegionsForService(serviceId)
         regionSelector.setRegions(allRegions.values.toMutableList())
-        val regionId = dataSource.additionalProperties[REGION_ID_PROPERTY]?.nullize()
+        val regionId = config.additionalProperties[REGION_ID_PROPERTY]?.nullize()
         regionId?.let {
             allRegions[regionId]?.let { region ->
                 regionSelector.selectedRegion = region
@@ -83,7 +84,7 @@ abstract class AwsAuthWidgetBase(private val userFieldEnabled: Boolean) : Databa
 
         val credentialManager = CredentialManager.getInstance()
         credentialSelector.setCredentialsProviders(credentialManager.getCredentialIdentifiers())
-        val credentialId = dataSource.additionalProperties[CREDENTIAL_ID_PROPERTY]?.nullize()
+        val credentialId = config.additionalProperties[CREDENTIAL_ID_PROPERTY]?.nullize()
         if (credentialId != null) {
             val credentialIdentifierById = credentialManager.getCredentialIdentifierById(credentialId)
             if (credentialIdentifierById != null) {
