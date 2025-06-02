@@ -8,6 +8,7 @@ import org.eclipse.lsp4j.jsonrpc.services.JsonRequest
 import org.eclipse.lsp4j.services.LanguageClient
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LSPAny
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_OPEN_TAB
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_OPTIONS_UPDATE_NOTIFICATION
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_CONTEXT_COMMANDS
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_UPDATE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CopyFileParams
@@ -67,4 +68,7 @@ interface AmazonQLanguageClient : LanguageClient {
 
     @JsonNotification(DID_CREATE_DIRECTORY)
     fun createDirectory(params: FileParams)
+
+    @JsonNotification(CHAT_OPTIONS_UPDATE_NOTIFICATION)
+    fun sendChatOptionsUpdate(params: LSPAny)
 }

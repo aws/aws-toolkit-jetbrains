@@ -41,6 +41,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommun
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.FlareUiMessage
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LSPAny
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_OPEN_TAB
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_OPTIONS_UPDATE_NOTIFICATION
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_CONTEXT_COMMANDS
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_UPDATE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CopyFileParams
@@ -411,6 +412,16 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
     override fun copyFile(params: CopyFileParams) {
         refreshVfs(params.oldPath)
         return refreshVfs(params.newPath)
+    }
+
+    override fun sendChatOptionsUpdate(params: LSPAny) {
+        val chatManager = ChatCommunicationManager.getInstance(project)
+        chatManager.notifyUi(
+            FlareUiMessage(
+                command = CHAT_OPTIONS_UPDATE_NOTIFICATION,
+                params = params,
+            )
+        )
     }
 
     private fun refreshVfs(path: String) {
