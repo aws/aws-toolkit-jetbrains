@@ -4,11 +4,9 @@
 package software.aws.toolkits.jetbrains
 
 import com.intellij.ide.plugins.PluginManagerCore
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.extensions.PluginDescriptor
 import com.intellij.openapi.extensions.PluginId
 import java.nio.file.Path
-import java.nio.file.Paths
 import java.util.EnumMap
 
 object AwsToolkit {

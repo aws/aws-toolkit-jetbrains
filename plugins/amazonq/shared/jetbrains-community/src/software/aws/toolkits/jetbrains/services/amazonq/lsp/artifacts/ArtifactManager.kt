@@ -88,7 +88,7 @@ class ArtifactManager @NonInjectable internal constructor(private val manifestFe
                         }
                         artifactHelper.deleteOlderLspArtifacts(DEFAULT_VERSION_RANGE)
                         return@async artifactPath
-                    } catch(e: Exception) {
+                    } catch (e: Exception) {
                         logger.warn(e) { "Failed to resolve assets from Flare CDN" }
                         val path = AwsToolkit.PLUGINS_INFO[AwsPlugin.Q]?.path?.resolve("flare") ?: error("not even bundled")
                         logger.info { "Falling back to bundled assets at $path" }
