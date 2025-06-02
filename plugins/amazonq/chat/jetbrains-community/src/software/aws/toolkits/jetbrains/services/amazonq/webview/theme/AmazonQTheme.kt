@@ -17,7 +17,7 @@ data class AmazonQTheme(
     val inactiveText: Color,
     val linkText: Color,
     val lightText: Color,
-    val watermarkText: Color,
+    val emptyText: Color,
 
     val background: Color,
     val border: Color,
