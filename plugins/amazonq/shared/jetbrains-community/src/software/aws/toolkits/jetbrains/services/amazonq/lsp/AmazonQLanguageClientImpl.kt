@@ -158,7 +158,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
             // The filepath sent by the server contains unicode characters which need to be
             // decoded for JB file handling APIs to be handle to handle file operations
             val fileToOpen = URLDecoder.decode(params.uri, StandardCharsets.UTF_8.name())
-            ApplicationManager.getApplication().invokeLater {
+            ApplicationManager.getApplication().invokeAndWait {
                 try {
                     val virtualFile = VirtualFileManager.getInstance().findFileByUrl(fileToOpen)
                         ?: throw IllegalArgumentException("Cannot find file: $fileToOpen")
