@@ -15,7 +15,6 @@ import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
@@ -26,11 +25,13 @@ class ManageSubscription : AnAction(), DumbAware {
     override fun update(e: AnActionEvent) {
         val project = e.project
         // disable if user is IdC
-
         if (project == null) {
             e.presentation.isEnabledAndVisible = false
         } else {
-            e.presentation.isEnabledAndVisible = (ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance()) as? AwsBearerTokenConnection).isSono()
+            val connection = ToolkitConnectionManager.getInstance(project)
+                .activeConnectionForFeature(QConnection.getInstance()) as? AwsBearerTokenConnection
+
+            e.presentation.isEnabledAndVisible = connection.isSono()
         }
     }
 
