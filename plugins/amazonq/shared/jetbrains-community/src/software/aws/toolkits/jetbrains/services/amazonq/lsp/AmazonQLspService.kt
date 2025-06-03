@@ -371,15 +371,21 @@ private class AmazonQServerInstance(private val project: Project, private val cs
         // make assumption that all requests will resolve to the same CA
         // also terrible assumption that default endpoint is reachable
         val qUri = URI(QDefaultServiceConfig.ENDPOINT)
-        val rtsTrustChain = TrustChainUtil.getTrustChain(qUri)
-        val extraCaCerts = Files.createTempFile("q-extra-ca", ".pem").apply {
-            writeText(
-                TrustChainUtil.certsToPem(rtsTrustChain)
-            )
+        val extraCaCerts = try {
+            val rtsTrustChain = TrustChainUtil.getTrustChain(qUri)
+
+            Files.createTempFile("q-extra-ca", ".pem").apply {
+                writeText(
+                    TrustChainUtil.certsToPem(rtsTrustChain)
+                )
+            }
+        } catch (e: Exception) {
+            LOG.info(e) { "Could not resolve trust chain for $qUri, skipping NODE_EXTRA_CA_CERTS" }
+            null
         }
 
         val node = if (SystemInfo.isWindows) "node.exe" else "node"
-        var nodePath = getNodeRuntimePath(artifact.resolve(node))
+        val nodePath = getNodeRuntimePath(artifact.resolve(node))
 
         val cmd = NodeExePatcher.patch(nodePath)
             .withParameters(
@@ -388,7 +394,7 @@ private class AmazonQServerInstance(private val project: Project, private val cs
                 "--set-credentials-encryption-key",
             ).withEnvironment(
                 buildMap {
-                    put("NODE_EXTRA_CA_CERTS", extraCaCerts.toAbsolutePath().toString())
+                    extraCaCerts?.let { put("NODE_EXTRA_CA_CERTS", it.toAbsolutePath().toString()) }
 
                     val proxy = JdkProxyProvider.getInstance().proxySelector.select(qUri)
                         // log if only socks proxy available
