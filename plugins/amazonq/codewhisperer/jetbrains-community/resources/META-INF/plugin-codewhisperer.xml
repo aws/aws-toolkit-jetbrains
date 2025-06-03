@@ -139,7 +139,5 @@
                 class="software.aws.toolkits.jetbrains.services.cwc.commands.codescan.actions.CodeScanCompleteAction" />
         </group>
 
-        <action id="q.manage.subscription"
-                class="software.aws.toolkits.jetbrains.services.codewhisperer.actions.ManageSubscription"/>
     </actions>
 </idea-plugin>
