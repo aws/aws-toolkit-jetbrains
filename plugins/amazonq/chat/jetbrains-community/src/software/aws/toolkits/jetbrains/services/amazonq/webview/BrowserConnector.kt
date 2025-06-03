@@ -41,6 +41,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.JsonRpcNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.JsonRpcRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AwsServerCapabilitiesProvider
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatAsyncResultManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommunicationManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.FlareUiMessage
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.AUTH_FOLLOW_UP_CLICKED
@@ -106,6 +107,7 @@ class BrowserConnector(
 ) {
     var uiReady = CompletableDeferred<Boolean>()
     private val chatCommunicationManager = ChatCommunicationManager.getInstance(project)
+    private val chatAsyncResultManager = ChatAsyncResultManager.getInstance(project)
 
     suspend fun connect(
         browser: Browser,
@@ -227,6 +229,7 @@ class BrowserConnector(
 
                 val tabId = requestFromUi.params.tabId
                 val partialResultToken = chatCommunicationManager.addPartialChatMessage(tabId)
+                chatCommunicationManager.registerPartialResultToken(partialResultToken)
 
                 var encryptionManager: JwtEncryptionManager? = null
                 val result = AmazonQLspService.executeIfRunning(project) { server ->
@@ -247,6 +250,7 @@ class BrowserConnector(
                 val tabId = requestFromUi.params.tabId
                 val quickActionParams = node.params ?: error("empty payload")
                 val partialResultToken = chatCommunicationManager.addPartialChatMessage(tabId)
+                chatCommunicationManager.registerPartialResultToken(partialResultToken)
                 var encryptionManager: JwtEncryptionManager? = null
                 val result = AmazonQLspService.executeIfRunning(project) { server ->
                     encryptionManager = this.encryptionManager
@@ -476,13 +480,30 @@ class BrowserConnector(
                 )
                 browser.postChat(messageToChat)
                 chatCommunicationManager.removeInflightRequestForTab(tabId)
-            } catch (_: CancellationException) {
+            } catch (e: CancellationException) {
                 LOG.warn { "Cancelled chat generation" }
+                try {
+                    chatAsyncResultManager.createRequestId(partialResultToken)
+                    chatAsyncResultManager.getResult(partialResultToken)
+                    handleCancellation(tabId, browser)
+                } catch (ex: Exception) {
+                    LOG.warn(ex) { "An error occurred while processing cancellation" }
+                } finally {
+                    chatAsyncResultManager.removeRequestId(partialResultToken)
+                    chatCommunicationManager.removePartialResultLock(partialResultToken)
+                    chatCommunicationManager.removeFinalResultProcessed(partialResultToken)
+                }
             } catch (e: Exception) {
-                LOG.error(e) { "Failed to send chat message" }
+                LOG.warn(e) { "Failed to send chat message" }
                 browser.postChat(chatCommunicationManager.getErrorUiMessage(tabId, e, partialResultToken))
             }
         }
+    }
+
+    private fun handleCancellation(tabId: String, browser: Browser) {
+        // Send a message to hide the stop button without showing an error
+        val cancelMessage = chatCommunicationManager.getCancellationUiMessage(tabId)
+        browser.postChat(cancelMessage)
     }
 
     private fun cancelInflightRequests(tabId: String) {

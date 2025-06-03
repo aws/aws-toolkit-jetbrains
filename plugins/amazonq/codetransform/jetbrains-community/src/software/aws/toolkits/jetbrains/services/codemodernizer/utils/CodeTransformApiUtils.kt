@@ -144,16 +144,10 @@ suspend fun JobId.pollTransformationStatusAndPlan(
                 refreshToken(project)
                 return@waitUntil state
             } catch (e: InvalidGrantException) {
-                CodeTransformMessageListener.instance.onCheckAuth()
+                CodeTransformMessageListener.instance.onReauthStarted()
                 notifyStickyWarn(
                     message("codemodernizer.notification.warn.expired_credentials.title"),
                     message("codemodernizer.notification.warn.expired_credentials.content"),
-                    project,
-                    listOf(
-                        NotificationAction.createSimpleExpiring(message("codemodernizer.notification.warn.action.reauthenticate")) {
-                            CodeTransformMessageListener.instance.onReauthStarted()
-                        }
-                    )
                 )
                 return@waitUntil state
             } finally {
@@ -161,6 +155,7 @@ suspend fun JobId.pollTransformationStatusAndPlan(
             }
         }
     } catch (e: Exception) {
+        getLogger<CodeModernizerManager>().error(e) { "Error when polling for job status & plan" }
         // Still call onStateChange to update the UI
         onStateChange(state, TransformationStatus.FAILED, transformationPlan)
         when (e) {

@@ -82,6 +82,36 @@ class AmazonQLanguageClientImplTest {
     }
 
     @Test
+    fun `telemetryEvent handles null`() {
+        val telemetryService = mockk<TelemetryService>(relaxed = true)
+        mockkObject(TelemetryService)
+        every { TelemetryService.getInstance() } returns telemetryService
+
+        val builderCaptor = slot<MetricEvent.Builder.() -> Unit>()
+        every { telemetryService.record(project, capture(builderCaptor)) } returns Unit
+
+        val event = mapOf(
+            "name" to "test_event",
+            "data" to mapOf(
+                "key1" to null,
+            )
+        )
+
+        sut.telemetryEvent(event)
+
+        val builder = DefaultMetricEvent.builder()
+        builderCaptor.captured.invoke(builder)
+
+        val metricEvent = builder.build()
+        val datum = metricEvent.data.first()
+
+        assertThat(datum.name).isEqualTo("test_event")
+        assertThat(datum.metadata).contains(
+            entry("key1", "null"),
+        )
+    }
+
+    @Test
     fun `telemetryEvent handles event with result field`() {
         val telemetryService = mockk<TelemetryService>(relaxed = true)
         mockkObject(TelemetryService)
