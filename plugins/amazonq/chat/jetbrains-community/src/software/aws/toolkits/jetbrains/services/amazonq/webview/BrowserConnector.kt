@@ -224,7 +224,7 @@ class BrowserConnector(
                 )
 
                 val serializedEnrichmentParams = serializer.objectMapper.valueToTree<ObjectNode>(enrichmentParams)
-                val chatParams: ObjectNode = (node as ObjectNode)
+                val chatParams: ObjectNode = (node.params as ObjectNode)
                     .setAll(serializedEnrichmentParams)
 
                 val tabId = requestFromUi.params.tabId
@@ -235,7 +235,7 @@ class BrowserConnector(
                 val result = AmazonQLspService.executeIfRunning(project) { server ->
                     encryptionManager = this.encryptionManager
 
-                    val encryptedParams = EncryptedChatParams(this.encryptionManager.encrypt(chatParams.params), partialResultToken)
+                    val encryptedParams = EncryptedChatParams(this.encryptionManager.encrypt(chatParams), partialResultToken)
                     rawEndpoint.request(SEND_CHAT_COMMAND_PROMPT, encryptedParams) as CompletableFuture<String>
                 } ?: (CompletableFuture.failedFuture(IllegalStateException("LSP Server not running")))
 
