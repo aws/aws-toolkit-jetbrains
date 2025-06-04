@@ -158,18 +158,21 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
             // The filepath sent by the server contains unicode characters which need to be
             // decoded for JB file handling APIs to be handle to handle file operations
             val fileToOpen = URLDecoder.decode(params.uri, StandardCharsets.UTF_8.name())
-            ApplicationManager.getApplication().invokeLater {
-                try {
-                    val virtualFile = VirtualFileManager.getInstance().findFileByUrl(fileToOpen)
-                        ?: throw IllegalArgumentException("Cannot find file: $fileToOpen")
+            return CompletableFuture.supplyAsync(
+                {
+                    try {
+                        val virtualFile = VirtualFileManager.getInstance().refreshAndFindFileByUrl(fileToOpen)
+                            ?: throw IllegalArgumentException("Cannot find file: $fileToOpen")
 
-                    FileEditorManager.getInstance(project).openFile(virtualFile, true)
-                } catch (e: Exception) {
-                    LOG.warn { "Failed to show document: $fileToOpen" }
-                }
-            }
-
-            return CompletableFuture.completedFuture(ShowDocumentResult(true))
+                        FileEditorManager.getInstance(project).openFile(virtualFile, true)
+                        ShowDocumentResult(true)
+                    } catch (e: Exception) {
+                        LOG.warn { "Failed to show document: $fileToOpen" }
+                        ShowDocumentResult(false)
+                    }
+                },
+                ApplicationManager.getApplication()::invokeLater
+            )
         } catch (e: Exception) {
             LOG.warn { "Error showing document" }
             return CompletableFuture.completedFuture(ShowDocumentResult(false))
