@@ -26,8 +26,8 @@
             :isSelected="selectedLoginOption === LoginOption.BUILDER_ID"
             :itemId="LoginOption.BUILDER_ID"
             :login-type="LoginOption.BUILDER_ID"
-            :itemTitle="'Use for free'"
-            :itemText="'No AWS account required'"
+            :itemTitle="'Personal account'"
+            :itemText="'Best for personal use. Free to start with a Builder ID'"
             class="font-amazon bottom-small-gap"
         ></SelectableItem>
         <!-- TODO: IdC description undecided -->
@@ -37,7 +37,8 @@
             :isSelected="selectedLoginOption === LoginOption.ENTERPRISE_SSO"
             :itemId="LoginOption.ENTERPRISE_SSO"
             :login-type="LoginOption.ENTERPRISE_SSO"
-            :itemTitle="'Use with Pro license'"
+            :itemTitle="'Company account'"
+            :itemText="'Best for individual teams or organizations'"
             class="font-amazon bottom-small-gap"
         ></SelectableItem>
         <button
