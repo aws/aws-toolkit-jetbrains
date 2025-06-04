@@ -38,7 +38,7 @@ class TransformMavenRunner(val project: Project) {
 
                 override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
                     // IntelliJ includes some unneeded lines in stdout; exclude those from build logs
-                    if (!event.text.startsWith("[IJ]")) {
+                    if (!event.text.startsWith("[IJ]") && !event.text.startsWith("Progress (")) {
                         output += event.text
                     }
                 }

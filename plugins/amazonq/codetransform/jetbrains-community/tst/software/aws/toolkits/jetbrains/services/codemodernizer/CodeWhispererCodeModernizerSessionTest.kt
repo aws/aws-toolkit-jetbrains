@@ -166,12 +166,11 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
                         assertThat(fileContent).contains(MAVEN_BUILD_SKIP_UNIT_TESTS)
                     }
                     Path("sources/src/tmp.txt") -> assertThat(fileContent).isEqualTo(fileText)
-                    Path("build-logs.txt") -> assertThat(fileContent).isNotNull()
                     else -> fail("Unexpected entry in zip file: $entry")
                 }
             }
             zipFile.close()
-            assert(numEntries == 3)
+            assert(numEntries == 2)
         }
     }
 
@@ -205,7 +204,6 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
                     Path("manifest.json") -> assertThat(fileContent).isNotNull()
                     Path("sources/src/tmp.java") -> assertThat(fileContent).isEqualTo(fileText)
                     Path("sources/pom.xml") -> assertThat(fileContent).isEqualTo(fileText)
-                    Path("build-logs.txt") -> assertThat(fileContent).isNotNull()
                     else -> fail("Unexpected entry in zip file: $entry")
                 }
             }
@@ -242,7 +240,6 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
                     Path("manifest.json") -> assertThat(fileContent).isNotNull()
                     Path("sources/src/tmp.java") -> assertThat(fileContent).isEqualTo(fileText)
                     Path("sources/pom.xml") -> assertThat(fileContent).isEqualTo(fileText)
-                    Path("build-logs.txt") -> assertThat(fileContent).isNotNull()
                     else -> fail("Unexpected entry in zip file: $entry")
                 }
             }
@@ -282,7 +279,6 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
                     Path("sources/pom.xml") -> assertThat(fileContent).isEqualTo("pom.xml")
                     Path("sources/someModule/src/helloworld.java") -> assertThat(fileContent).isEqualTo("someModule/src/helloworld.java")
                     Path("sources/someModule/pom.xml") -> assertThat(fileContent).isEqualTo("someModule/pom.xml")
-                    Path("build-logs.txt") -> assertThat(fileContent).isNotNull()
                     else -> fail("Unexpected entry in zip file: $entry")
                 }
             }
@@ -322,7 +318,6 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
                     Path("sources/pom.xml") -> assertThat(fileContent).isEqualTo("pom.xml")
                     Path("sources/someModule/src/helloworld.java") -> assertThat(fileContent).isEqualTo("someModule\\src\\helloworld.java")
                     Path("sources/someModule/pom.xml") -> assertThat(fileContent).isEqualTo("someModule\\pom.xml")
-                    Path("build-logs.txt") -> assertThat(fileContent).isNotNull()
                     else -> fail("Unexpected entry in zip file: $entry")
                 }
             }
@@ -360,7 +355,6 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
                     Path("sources/pom.xml") -> assertThat(fileContent).isEqualTo("pom.xml")
                     Path("sources/src/tmp.java") -> assertThat(fileContent).isEqualTo("src/tmp.java")
                     Path("sources/someModule/pom.xml") -> assertThat(fileContent).isEqualTo("someModule/pom.xml")
-                    Path("build-logs.txt") -> assertThat(fileContent).isNotNull()
                     else -> throw AssertionError("Unexpected entry in zip file: $entry")
                 }
             }
