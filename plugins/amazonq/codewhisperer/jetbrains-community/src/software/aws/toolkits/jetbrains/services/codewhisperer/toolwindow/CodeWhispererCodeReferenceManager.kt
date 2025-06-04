@@ -23,6 +23,7 @@ import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.ui.awt.RelativePoint
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionItem
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionReference
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil.getPopupPositionAboveText
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil.getRelativePathToContentRoot
@@ -68,6 +69,10 @@ class CodeWhispererCodeReferenceManager(private val project: Project) {
 
     fun insertCodeReference(originalCode: String, references: List<InlineCompletionReference>?, editor: Editor, caretPosition: CaretPosition) {
         val startOffset = caretPosition.offset
+        insertCodeReference(originalCode, references, editor, startOffset)
+    }
+
+    fun insertCodeReference(originalCode: String, references: List<InlineCompletionReference>?, editor: Editor, startOffset: Int) {
         val relativePath = getRelativePathToContentRoot(editor)
         references?.forEachIndexed { i, reference ->
             // TODO YUX: validate this
@@ -120,6 +125,10 @@ class CodeWhispererCodeReferenceManager(private val project: Project) {
             states.requestContext.editor,
             states.requestContext.caretPosition,
         )
+    }
+
+    fun insertCodeReference(editor: Editor, item: InlineCompletionItem, offset: Int) {
+        insertCodeReference(item.insertText, item.references, editor, offset)
     }
 
     fun getReferenceLineNums(editor: Editor, start: Int, end: Int): String {

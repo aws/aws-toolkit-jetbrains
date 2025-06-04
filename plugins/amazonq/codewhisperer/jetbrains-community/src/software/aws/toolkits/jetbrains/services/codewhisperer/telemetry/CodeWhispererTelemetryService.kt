@@ -14,8 +14,10 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LogInlineC
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanIssue
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CodeScanTelemetryEvent
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.InlineCompletionSessionContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.LatencyContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.RecommendationContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.popup.QInlineCompletionProvider
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getCodeWhispererStartUrl
@@ -60,6 +62,53 @@ class CodeWhispererTelemetryService {
                     ?.toMillis()?.toDouble(),
                 typeaheadLength = recommendationContext.userInput.length.toLong()
             )
+            server.logInlineCompletionSessionResults(params)
+        }
+    }
+
+    fun sendUserTriggerDecisionEventForTriggerSession(
+        project: Project,
+        latencyContext: LatencyContext,
+        sessionContext: InlineCompletionSessionContext,
+        triggerSessionId: Int,
+    ) {
+        if (sessionContext.sessionId.isEmpty()) {
+            QInlineCompletionProvider.logInline(triggerSessionId) {
+                "Did not receive a valid sessionId from language server, skipping telemetry"
+            }
+            return
+        }
+        QInlineCompletionProvider.logInline(triggerSessionId) {
+            "Sending UserTriggerDecision for ${sessionContext.sessionId}:"
+        }
+        sessionContext.itemContexts.forEachIndexed { i, itemContext ->
+            QInlineCompletionProvider.logInline(triggerSessionId) {
+                "Index: $i, item: ${itemContext.item?.itemId}, seen: ${itemContext.hasSeen}, " +
+                    "accepted: ${itemContext.isAccepted}, discarded: ${itemContext.isDiscarded}"
+            }
+        }
+        QInlineCompletionProvider.logInline(triggerSessionId) {
+            "Perceived latency: ${latencyContext.perceivedLatency}, " +
+                "total session display time: ${CodeWhispererInvocationStatus.getInstance().completionShownTime?.let { Duration.between(it, Instant.now()) }
+                    ?.toMillis()?.toDouble()}"
+        }
+        val params = LogInlineCompletionSessionResultsParams(
+            sessionId = sessionContext.sessionId,
+            completionSessionResult = sessionContext.itemContexts.filter { it.item != null }.associate {
+                (it.item?.itemId ?: "") to InlineCompletionStates(
+                    seen = it.hasSeen,
+                    accepted = it.isAccepted,
+                    discarded = it.isDiscarded
+                )
+            },
+            firstCompletionDisplayLatency = latencyContext.perceivedLatency,
+            totalSessionDisplayTime = CodeWhispererInvocationStatus.getInstance().completionShownTime?.let { Duration.between(it, Instant.now()) }
+                ?.toMillis()?.toDouble(),
+            // no userInput in JB inline completion API, every new char input will discard the previous trigger so
+            // user input is always 0
+            typeaheadLength = 0
+        )
+        AmazonQLspService.executeIfRunning(project) { server ->
             server.logInlineCompletionSessionResults(params)
         }
     }

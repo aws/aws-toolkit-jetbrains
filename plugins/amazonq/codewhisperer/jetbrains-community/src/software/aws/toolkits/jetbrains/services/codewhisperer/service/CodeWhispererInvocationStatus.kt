@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.service
 
+import com.intellij.codeInsight.inline.completion.session.InlineCompletionSession
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
@@ -15,7 +16,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 @Service
 class CodeWhispererInvocationStatus {
-    private val isInvokingCodeWhisperer: AtomicBoolean = AtomicBoolean(false)
+    private val isInvokingQInline: AtomicBoolean = AtomicBoolean(false)
     private var invokingSessionId: String? = null
     private var timeAtLastInvocationComplete: Instant? = null
     var timeAtLastDocumentChanged: Instant = Instant.now()
@@ -24,9 +25,18 @@ class CodeWhispererInvocationStatus {
     private var timeAtLastInvocationStart: Instant? = null
     var completionShownTime: Instant? = null
         private set
+    private var currentSession: InlineCompletionSession? = null
+
+    fun setIsInvokingQInline(session: InlineCompletionSession, value: Boolean) {
+        if (!value && currentSession != session) return
+        currentSession = session
+        isInvokingQInline.set(value)
+        // TODO: set true or false? prob doesn't matter
+        ApplicationManager.getApplication().messageBus.syncPublisher(CODEWHISPERER_INVOCATION_STATE_CHANGED).invocationStateChanged(true)
+    }
 
     fun checkExistingInvocationAndSet(): Boolean =
-        if (isInvokingCodeWhisperer.getAndSet(true)) {
+        if (isInvokingQInline.getAndSet(true)) {
             LOG.debug { "Have existing CodeWhisperer invocation, sessionId: $invokingSessionId" }
             true
         } else {
@@ -35,10 +45,10 @@ class CodeWhispererInvocationStatus {
             false
         }
 
-    fun hasExistingServiceInvocation(): Boolean = isInvokingCodeWhisperer.get()
+    fun hasExistingServiceInvocation(): Boolean = isInvokingQInline.get()
 
     fun finishInvocation() {
-        if (isInvokingCodeWhisperer.compareAndSet(true, false)) {
+        if (isInvokingQInline.compareAndSet(true, false)) {
             ApplicationManager.getApplication().messageBus.syncPublisher(CODEWHISPERER_INVOCATION_STATE_CHANGED).invocationStateChanged(false)
             LOG.debug { "Ending CodeWhisperer invocation" }
             invokingSessionId = null
