@@ -44,6 +44,7 @@ import kotlin.io.path.pathString
 const val MANIFEST_PATH = "manifest.json"
 const val ZIP_SOURCES_PATH = "sources"
 const val ZIP_DEPENDENCIES_PATH = "dependencies"
+const val COMPILATIONS_JSON_FILE = "compilations.json"
 const val CUSTOM_DEPENDENCY_VERSIONS_FILE_PATH = "dependency_upgrade.yml"
 const val UPLOAD_ZIP_MANIFEST_VERSION = "1.0"
 const val HIL_1P_UPGRADE_CAPABILITY = "HIL_1pDependency_VersionUpgrade"

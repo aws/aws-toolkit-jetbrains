@@ -486,7 +486,7 @@ dependencyManagement:
       versionProperty: "plugin.version"  # Optional
         """.trimIndent()
 
-        val virtualFile = LightVirtualFile("sample-dependency-upgrade.yaml", YAMLFileType.YML, sampleYAML)
+        val virtualFile = LightVirtualFile("dependency_upgrade.yml", YAMLFileType.YML, sampleYAML)
         virtualFile.isWritable = true
         ApplicationManager.getApplication().invokeLater {
             FileEditorManager.getInstance(context.project).openFile(virtualFile, true)
