@@ -62,12 +62,14 @@ class ArtifactManager @NonInjectable internal constructor(private val manifestFe
             coroutineScope {
                 async {
                     Telemetry.languageserver.setup.use { all ->
+                        all.id("q")
                         all.languageServerSetupStage(LanguageServerSetupStage.All)
                         all.metadata("credentialStartUrl", getStartUrl(project))
                         all.result(MetricResult.Succeeded)
 
                         try {
                             val lspVersions = Telemetry.languageserver.setup.use { telemetry ->
+                                telemetry.id("q")
                                 telemetry.languageServerSetupStage(LanguageServerSetupStage.GetManifest)
                                 telemetry.metadata("credentialStartUrl", getStartUrl(project))
 
@@ -107,6 +109,7 @@ class ArtifactManager @NonInjectable internal constructor(private val manifestFe
                             artifactHelper.deleteOlderLspArtifacts(DEFAULT_VERSION_RANGE)
 
                             Telemetry.languageserver.setup.use {
+                                it.id("q")
                                 it.languageServerSetupStage(LanguageServerSetupStage.Launch)
                                 it.metadata("credentialStartUrl", getStartUrl(project))
                                 it.setAttribute("isBundledArtifact", false)
@@ -121,6 +124,7 @@ class ArtifactManager @NonInjectable internal constructor(private val manifestFe
                             all.result(MetricResult.Failed)
 
                             Telemetry.languageserver.setup.use {
+                                it.id("q")
                                 it.languageServerSetupStage(LanguageServerSetupStage.Launch)
                                 it.metadata("credentialStartUrl", getStartUrl(project))
                                 it.setAttribute("isBundledArtifact", true)

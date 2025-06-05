@@ -188,6 +188,7 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH,
     private fun downloadAndValidateFile(project: Project, url: String, filePath: Path, expectedHash: String) {
         val recordDownload = { runnable: () -> Unit ->
             Telemetry.languageserver.setup.use { telemetry ->
+                telemetry.id("q")
                 telemetry.languageServerSetupStage(LanguageServerSetupStage.GetServer)
                 telemetry.metadata("credentialStartUrl", getStartUrl(project))
                 telemetry.success(true)
@@ -212,6 +213,7 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH,
                 recordDownload { saveFileFromUrl(url, filePath) }
 
                 Telemetry.languageserver.setup.use {
+                    it.id("q")
                     it.languageServerSetupStage(LanguageServerSetupStage.Validate)
                     it.metadata("credentialStartUrl", getStartUrl(project))
                     it.success(true)

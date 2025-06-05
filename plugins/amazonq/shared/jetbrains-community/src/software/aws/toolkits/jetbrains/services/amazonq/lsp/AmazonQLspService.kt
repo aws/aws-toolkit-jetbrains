@@ -530,6 +530,7 @@ private class AmazonQServerInstance(private val project: Project, private val cs
     private fun getNodeRuntimePath(nodePath: Path): Path {
         val resolveNodeMetric = { isBundled: Boolean, success: Boolean ->
             Telemetry.languageserver.setup.use {
+                it.id("q")
                 it.metadata("languageServerSetupStage", "resolveNode")
                 it.metadata("credentialStartUrl", getStartUrl(project))
                 it.setAttribute("isBundledNode", isBundled)
