@@ -38,6 +38,12 @@ class MeetQSettings : PersistentStateComponent<MeetQSettingsConfiguration> {
             state.disclaimerAcknowledged = value
         }
 
+    var pairProgrammingAcknowledged: Boolean
+        get() = state.pairProgrammingAcknowledged
+        set(value) {
+            state.pairProgrammingAcknowledged = value
+        }
+
     companion object {
         fun getInstance(): MeetQSettings = service()
     }
@@ -46,4 +52,5 @@ data class MeetQSettingsConfiguration(
     var shouldDisplayPage: Boolean = true,
     var reinvent2024OnboardingCount: Int = 0,
     var disclaimerAcknowledged: Boolean = false,
+    var pairProgrammingAcknowledged: Boolean = false,
 )

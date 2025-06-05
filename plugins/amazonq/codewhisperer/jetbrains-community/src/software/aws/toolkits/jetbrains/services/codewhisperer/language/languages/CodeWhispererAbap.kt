@@ -11,8 +11,6 @@ class CodeWhispererAbap private constructor() : CodeWhispererProgrammingLanguage
 
     override fun toTelemetryType(): CodewhispererLanguage = CodewhispererLanguage.Abap
 
-    override fun isCodeCompletionSupported(): Boolean = true
-
     companion object {
         const val ID = "abap"
 

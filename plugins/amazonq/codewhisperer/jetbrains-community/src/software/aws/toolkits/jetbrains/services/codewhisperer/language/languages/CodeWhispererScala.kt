@@ -11,8 +11,6 @@ class CodeWhispererScala private constructor() : CodeWhispererProgrammingLanguag
 
     override fun toTelemetryType(): CodewhispererLanguage = CodewhispererLanguage.Scala
 
-    override fun isCodeCompletionSupported(): Boolean = true
-
     companion object {
         const val ID = "scala"
 

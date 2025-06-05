@@ -31,7 +31,7 @@ enum class EditorContextCommand(
         actionId = "aws.amazonq.generateUnitTests",
     ),
     SendToPrompt(
-        verb = "SendToPrompt",
+        verb = "sendToPrompt",
         actionId = "aws.amazonq.sendToPrompt",
     ),
     ExplainCodeScanIssue(

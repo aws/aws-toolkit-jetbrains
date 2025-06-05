@@ -113,11 +113,9 @@ class EditorThemeAdapter {
                 warning = themeColor("Component.warningFocusColor", default = 0xE2A53A),
                 error = themeColor("ProgressBar.failedColor", default = 0xD64F4F, darkDefault = 0xE74848),
 
-                cardBackground = cardBackground,
-
                 editorFont = currentScheme.getFont(EditorFontType.PLAIN),
-                editorBackground = chatBackground,
-                editorForeground = text,
+                editorBackground = currentScheme.defaultBackground,
+                editorForeground = currentScheme.defaultForeground,
                 editorVariable = currentScheme.foregroundColor(DefaultLanguageHighlighterColors.LOCAL_VARIABLE),
                 editorOperator = currentScheme.foregroundColor(DefaultLanguageHighlighterColors.OPERATION_SIGN),
                 editorFunction = currentScheme.foregroundColor(DefaultLanguageHighlighterColors.FUNCTION_DECLARATION),
@@ -125,6 +123,11 @@ class EditorThemeAdapter {
                 editorKeyword = currentScheme.foregroundColor(DefaultLanguageHighlighterColors.KEYWORD),
                 editorString = currentScheme.foregroundColor(DefaultLanguageHighlighterColors.STRING),
                 editorProperty = currentScheme.foregroundColor(DefaultLanguageHighlighterColors.INSTANCE_FIELD),
+                editorClassName = currentScheme.foregroundColor(DefaultLanguageHighlighterColors.CLASS_NAME),
+                lightText = themeColor("TextField.inactiveForeground", default = 0xA8ADBD, darkDefault = 0x5A5D63),
+                emptyText = themeColor("TextField.inactiveForeground", default = 0xA8ADBD, darkDefault = 0x5A5D63),
+                inputBorderFocused = themeColor("ActionButton.focusedBorderColor", default = 0x4682FA, darkDefault = 0x3574f0),
+                inputBorderUnfocused = themeColor("TextField.borderColor", default = 0xEBECF0, darkDefault = 0x4E5157),
             )
         }
 

@@ -8,7 +8,6 @@ import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.actionSystem.EditorActionHandler
-import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil.shouldSkipInvokingBasedOnRightContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutoTriggerService
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutomatedTriggerType
 import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
@@ -17,12 +16,8 @@ class CodeWhispererEnterHandler(private val originalHandler: EditorActionHandler
     override fun executeWriteAction(editor: Editor, caret: Caret?, dataContext: DataContext?) {
         originalHandler.execute(editor, caret, dataContext)
 
-        if (shouldSkipInvokingBasedOnRightContext(editor)) {
-            return
-        }
-
         pluginAwareExecuteOnPooledThread {
-            CodeWhispererAutoTriggerService.getInstance().tryInvokeAutoTrigger(editor, CodeWhispererAutomatedTriggerType.Enter())
+            CodeWhispererAutoTriggerService.getInstance().invoke(editor, CodeWhispererAutomatedTriggerType.Enter())
         }
     }
 }

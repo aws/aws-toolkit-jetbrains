@@ -22,6 +22,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryp
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LspServerConfigurations
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.UpdateConfigurationParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.BearerCredentials
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.ConnectionMetadata
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.UpdateCredentialsPayload
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.UpdateCredentialsPayloadData
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
@@ -37,7 +38,6 @@ import java.util.concurrent.TimeUnit
 class DefaultAuthCredentialsService(
     private val project: Project,
     private val encryptionManager: JwtEncryptionManager,
-    serverInstance: Disposable,
 ) : AuthCredentialsService,
     BearerTokenProviderListener,
     ToolkitConnectionManagerListener,
@@ -46,10 +46,10 @@ class DefaultAuthCredentialsService(
 
     private val scheduler: ScheduledExecutorService = AppExecutorUtil.getAppScheduledExecutorService()
     private var tokenSyncTask: ScheduledFuture<*>? = null
-    private val tokenSyncIntervalSeconds = 10L
+    private val tokenSyncIntervalMinutes = 5L
 
     init {
-        project.messageBus.connect(serverInstance).apply {
+        project.messageBus.connect(this).apply {
             subscribe(BearerTokenProviderListener.TOPIC, this@DefaultAuthCredentialsService)
             subscribe(ToolkitConnectionManagerListener.TOPIC, this@DefaultAuthCredentialsService)
             subscribe(QRegionProfileSelectedListener.TOPIC, this@DefaultAuthCredentialsService)
@@ -98,14 +98,18 @@ class DefaultAuthCredentialsService(
                     LOG.warn(e) { "Failed to sync bearer token to Flare" }
                 }
             },
-            tokenSyncIntervalSeconds,
-            tokenSyncIntervalSeconds,
-            TimeUnit.SECONDS
+            tokenSyncIntervalMinutes,
+            tokenSyncIntervalMinutes,
+            TimeUnit.MINUTES
         )
     }
 
-    override fun updateTokenCredentials(accessToken: String, encrypted: Boolean): CompletableFuture<ResponseMessage> {
-        val payload = createUpdateCredentialsPayload(accessToken, encrypted)
+    override fun updateTokenCredentials(connection: ToolkitConnection, encrypted: Boolean): CompletableFuture<ResponseMessage> {
+        val payload = try {
+            createUpdateCredentialsPayload(connection, encrypted)
+        } catch (e: Exception) {
+            return CompletableFuture.failedFuture(e)
+        }
 
         return AmazonQLspService.executeIfRunning(project) { server ->
             server.updateTokenCredentials(payload)
@@ -142,35 +146,39 @@ class DefaultAuthCredentialsService(
     }
 
     private fun updateTokenFromConnection(connection: ToolkitConnection): CompletableFuture<ResponseMessage> =
-        (connection.getConnectionSettings() as? TokenConnectionSettings)
-            ?.tokenProvider
-            ?.delegate
-            ?.let { it as? BearerTokenProvider }
-            ?.currentToken()
-            ?.accessToken
-            ?.let { token -> updateTokenCredentials(token, true) }
-            ?: CompletableFuture.failedFuture(IllegalStateException("Unable to get token from connection"))
+        updateTokenCredentials(connection, true)
 
     override fun invalidate(providerId: String) {
         deleteTokenCredentials()
     }
 
-    private fun createUpdateCredentialsPayload(token: String, encrypted: Boolean): UpdateCredentialsPayload =
-        if (encrypted) {
+    private fun createUpdateCredentialsPayload(connection: ToolkitConnection, encrypted: Boolean): UpdateCredentialsPayload {
+        val token = (connection.getConnectionSettings() as? TokenConnectionSettings)
+            ?.tokenProvider
+            ?.delegate
+            ?.let { it as? BearerTokenProvider }
+            ?.currentToken()
+            ?.accessToken
+            ?: error("Unable to get token from connection")
+
+        return if (encrypted) {
             UpdateCredentialsPayload(
                 data = encryptionManager.encrypt(
                     UpdateCredentialsPayloadData(
                         BearerCredentials(token)
                     )
                 ),
+                metadata = ConnectionMetadata.fromConnection(connection),
                 encrypted = true
             )
         } else {
             UpdateCredentialsPayload(
                 data = token,
+                metadata = ConnectionMetadata.fromConnection(connection),
                 encrypted = false
             )
         }
+    }
 
     override fun onProfileSelected(project: Project, profile: QRegionProfile?) {
         updateConfiguration()

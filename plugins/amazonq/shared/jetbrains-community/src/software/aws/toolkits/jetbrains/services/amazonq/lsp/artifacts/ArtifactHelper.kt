@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts
 
+import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.Project
 import com.intellij.platform.ide.progress.withBackgroundProgress
 import com.intellij.util.io.createDirectories
@@ -16,8 +17,11 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.saveFileFromUrl
-import software.aws.toolkits.jetbrains.services.amazonq.project.manifest.ManifestManager
+import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
 import software.aws.toolkits.resources.AwsCoreBundle
+import software.aws.toolkits.telemetry.LanguageServerSetupStage
+import software.aws.toolkits.telemetry.Telemetry
+import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.concurrent.atomic.AtomicInteger
@@ -25,13 +29,13 @@ import java.util.concurrent.atomic.AtomicInteger
 class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH, private val maxDownloadAttempts: Int = MAX_DOWNLOAD_ATTEMPTS) {
 
     companion object {
-        private val DEFAULT_ARTIFACT_PATH = getToolkitsCommonCacheRoot().resolve(Paths.get("aws", "toolkits", "language-servers", "AmazonQ"))
+        private val DEFAULT_ARTIFACT_PATH = getToolkitsCommonCacheRoot().resolve(Paths.get("aws", "toolkits", "language-servers", "AmazonQ-JetBrains-temp"))
         private val logger = getLogger<ArtifactHelper>()
         private const val MAX_DOWNLOAD_ATTEMPTS = 3
     }
     private val currentAttempt = AtomicInteger(0)
 
-    fun removeDelistedVersions(delistedVersions: List<ManifestManager.Version>) {
+    fun removeDelistedVersions(delistedVersions: List<Version>) {
         val localFolders = getSubFolders(lspArtifactsPath)
 
         delistedVersions.forEach { delistedVersion ->
@@ -70,7 +74,7 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH,
         return localFolders
             .mapNotNull { localFolder ->
                 SemVer.parseFromText(localFolder.fileName.toString())?.let { semVer ->
-                    if (semVer in manifestVersionRanges.startVersion..manifestVersionRanges.endVersion) {
+                    if (semVer >= manifestVersionRanges.startVersion && semVer < manifestVersionRanges.endVersion) {
                         localFolder to semVer
                     } else {
                         null
@@ -80,10 +84,10 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH,
             .sortedByDescending { (_, semVer) -> semVer }
     }
 
-    fun getExistingLspArtifacts(versions: List<ManifestManager.Version>, target: ManifestManager.VersionTarget?): Boolean {
-        if (versions.isEmpty() || target?.contents == null) return false
+    fun getExistingLspArtifacts(targetVersion: Version, target: VersionTarget): Boolean {
+        if (target.contents == null) return false
 
-        val localLSPPath = lspArtifactsPath.resolve(versions.first().serverVersion.toString())
+        val localLSPPath = lspArtifactsPath.resolve(targetVersion.serverVersion.toString())
         if (!localLSPPath.exists()) return false
 
         val hasInvalidFiles = target.contents.any { content ->
@@ -104,13 +108,13 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH,
         return !hasInvalidFiles
     }
 
-    suspend fun tryDownloadLspArtifacts(project: Project, versions: List<ManifestManager.Version>, target: ManifestManager.VersionTarget?): Path? {
-        val temporaryDownloadPath = lspArtifactsPath.resolve("temp")
-        val downloadPath = lspArtifactsPath.resolve(versions.first().serverVersion.toString())
+    suspend fun tryDownloadLspArtifacts(project: Project, targetVersion: Version, target: VersionTarget): Path? {
+        val destinationPath = lspArtifactsPath.resolve(targetVersion.serverVersion.toString())
 
         while (currentAttempt.get() < maxDownloadAttempts) {
             currentAttempt.incrementAndGet()
             logger.info { "Attempt ${currentAttempt.get()} of $maxDownloadAttempts to download LSP artifacts" }
+            val temporaryDownloadPath = Files.createTempDirectory("lsp-dl")
 
             try {
                 return withBackgroundProgress(
@@ -118,14 +122,20 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH,
                     AwsCoreBundle.message("amazonqFeatureDev.placeholder.downloading_and_extracting_lsp_artifacts"),
                     cancellable = true
                 ) {
-                    if (downloadLspArtifacts(temporaryDownloadPath, target) && target != null && !target.contents.isNullOrEmpty()) {
-                        moveFilesFromSourceToDestination(temporaryDownloadPath, downloadPath)
+                    if (downloadLspArtifacts(project, temporaryDownloadPath, target) && !target.contents.isNullOrEmpty()) {
+                        moveFilesFromSourceToDestination(temporaryDownloadPath, destinationPath)
                         target.contents
                             .mapNotNull { it.filename }
-                            .forEach { filename -> extractZipFile(downloadPath.resolve(filename), downloadPath) }
-                        logger.info { "Successfully downloaded and moved LSP artifacts to $downloadPath" }
+                            .forEach { filename -> extractZipFile(destinationPath.resolve(filename), destinationPath) }
+                        logger.info { "Successfully downloaded and moved LSP artifacts to $destinationPath" }
 
-                        return@withBackgroundProgress downloadPath
+                        val thirdPartyLicenses = targetVersion.thirdPartyLicenses
+                        logger.info {
+                            "Installing Amazon Q Language Server v${targetVersion.serverVersion} to: $destinationPath. " +
+                                if (thirdPartyLicenses == null) "" else "Attribution notice can be found at $thirdPartyLicenses"
+                        }
+
+                        return@withBackgroundProgress destinationPath
                     }
 
                     return@withBackgroundProgress null
@@ -139,7 +149,7 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH,
                     else -> { logger.error(e) { "Failed to download/move LSP artifacts on attempt ${currentAttempt.get()}" } }
                 }
                 temporaryDownloadPath.toFile().deleteRecursively()
-                downloadPath.toFile().deleteRecursively()
+                destinationPath.toFile().deleteRecursively()
             }
         }
         logger.error { "Failed to download LSP artifacts after $maxDownloadAttempts attempts" }
@@ -147,7 +157,7 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH,
     }
 
     @VisibleForTesting
-    internal fun downloadLspArtifacts(downloadPath: Path, target: ManifestManager.VersionTarget?): Boolean {
+    internal fun downloadLspArtifacts(project: Project, downloadPath: Path, target: VersionTarget?): Boolean {
         if (target == null || target.contents.isNullOrEmpty()) {
             logger.warn { "No target contents available for download" }
             return false
@@ -164,7 +174,7 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH,
                     logger.warn { "No hash available for ${content.filename}" }
                     return@forEach
                 }
-                downloadAndValidateFile(content.url, filePath, contentHash)
+                downloadAndValidateFile(project, content.url, filePath, contentHash)
             }
             validateDownloadedFiles(downloadPath, target.contents)
         } catch (e: Exception) {
@@ -175,18 +185,46 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH,
         return true
     }
 
-    private fun downloadAndValidateFile(url: String, filePath: Path, expectedHash: String) {
+    private fun downloadAndValidateFile(project: Project, url: String, filePath: Path, expectedHash: String) {
+        val recordDownload = { runnable: () -> Unit ->
+            Telemetry.languageserver.setup.use { telemetry ->
+                telemetry.id("q")
+                telemetry.languageServerSetupStage(LanguageServerSetupStage.GetServer)
+                telemetry.metadata("credentialStartUrl", getStartUrl(project))
+                telemetry.success(true)
+
+                try {
+                    runnable()
+                } catch (t: Throwable) {
+                    telemetry.success(false)
+                    telemetry.recordException(t)
+                }
+            }
+        }
+
         try {
             if (!filePath.exists()) {
                 logger.info { "Downloading file: ${filePath.fileName}" }
-                saveFileFromUrl(url, filePath)
+                recordDownload { saveFileFromUrl(url, filePath, ProgressManager.getInstance().progressIndicator) }
             }
             if (!validateFileHash(filePath, expectedHash)) {
                 logger.warn { "Hash mismatch for ${filePath.fileName}, re-downloading" }
                 filePath.deleteIfExists()
-                saveFileFromUrl(url, filePath)
-                if (!validateFileHash(filePath, expectedHash)) {
-                    throw LspException("Hash mismatch after re-download for ${filePath.fileName}", LspException.ErrorCode.HASH_MISMATCH)
+                recordDownload { saveFileFromUrl(url, filePath) }
+
+                Telemetry.languageserver.setup.use {
+                    it.id("q")
+                    it.languageServerSetupStage(LanguageServerSetupStage.Validate)
+                    it.metadata("credentialStartUrl", getStartUrl(project))
+                    it.success(true)
+
+                    if (!validateFileHash(filePath, expectedHash)) {
+                        it.success(false)
+
+                        val exception = LspException("Hash mismatch after re-download for ${filePath.fileName}", LspException.ErrorCode.HASH_MISMATCH)
+                        it.recordException(exception)
+                        throw exception
+                    }
                 }
             }
         } catch (e: Exception) {
@@ -201,7 +239,7 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH,
         return "sha384:$contentHash" == expectedHash
     }
 
-    private fun validateDownloadedFiles(downloadPath: Path, contents: List<ManifestManager.TargetContent>) {
+    private fun validateDownloadedFiles(downloadPath: Path, contents: List<TargetContent>) {
         val missingFiles = contents
             .mapNotNull { it.filename }
             .filter { filename ->
