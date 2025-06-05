@@ -56,7 +56,10 @@ fun codeWhispererUserContext(): UserContext = ClientMetadata.getDefault().let {
 }
 
 fun isQSupportedInThisVersion(): Boolean {
-    val currentBuild = ApplicationInfo.getInstance().build
-    val version242Cutoff = BuildNumber.fromString("242.22855.74")
-    return !(currentBuild.baselineVersion == 242 && currentBuild.compareTo(version242Cutoff) < 0)
+    val currentBuild = ApplicationInfo.getInstance().build.withoutProductCode()
+
+    return !(
+        currentBuild.baselineVersion == 242 &&
+            BuildNumber.fromString("242.22855.74")?.let { currentBuild.compareTo(it) < 0 } == true
+        )
 }
