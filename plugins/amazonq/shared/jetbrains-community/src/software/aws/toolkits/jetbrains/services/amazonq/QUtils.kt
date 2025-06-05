@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq
 
+import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.SystemInfo
 import software.amazon.awssdk.services.codewhispererruntime.model.IdeCategory
@@ -52,3 +53,7 @@ fun codeWhispererUserContext(): UserContext = ClientMetadata.getDefault().let {
         .ideVersion(it.awsVersion)
         .build()
 }
+
+fun isQSupportedInThisVersion(): Boolean = ApplicationInfo.getInstance().build.asStringWithoutProductCode() !in unSupportedIdeVersionInQ
+
+val unSupportedIdeVersionInQ = listOf("242.21829.142")

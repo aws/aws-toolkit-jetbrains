@@ -23,6 +23,7 @@ import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenPr
 import software.aws.toolkits.jetbrains.core.notifications.NotificationPanel
 import software.aws.toolkits.jetbrains.core.notifications.ProcessNotificationsBase
 import software.aws.toolkits.jetbrains.core.webview.BrowserState
+import software.aws.toolkits.jetbrains.services.amazonq.isQSupportedInThisVersion
 import software.aws.toolkits.jetbrains.services.amazonq.QWebviewPanel
 import software.aws.toolkits.jetbrains.services.amazonq.RefreshQChatPanelButtonPressedListener
 import software.aws.toolkits.jetbrains.services.amazonq.gettingstarted.openMeetQPage
@@ -149,7 +150,7 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
         )
     }
 
-    override fun shouldBeAvailable(project: Project): Boolean = isQWebviewsAvailable()
+    override fun shouldBeAvailable(project: Project): Boolean = isQWebviewsAvailable() && isQSupportedInThisVersion()
 
     companion object {
         private val LOG = getLogger<AmazonQToolWindowFactory>()

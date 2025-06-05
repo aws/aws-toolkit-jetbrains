@@ -25,6 +25,7 @@ import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AppConnection
 import software.aws.toolkits.jetbrains.services.amazonq.commands.MessageTypeRegistry
+import software.aws.toolkits.jetbrains.services.amazonq.isQSupportedInThisVersion
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts.ArtifactManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AsyncChatUiListener
@@ -44,6 +45,7 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.auth.isFeature
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isCodeTransformAvailable
 import java.util.concurrent.CompletableFuture
 import javax.swing.JButton
+import software.aws.toolkits.resources.message
 
 class AmazonQPanel(val project: Project, private val scope: CoroutineScope) : Disposable {
     private val browser = CompletableFuture<Browser>()
@@ -101,6 +103,9 @@ class AmazonQPanel(val project: Project, private val scope: CoroutineScope) : Di
             } else {
                 webviewContainer.add(JBTextArea("JCEF not supported"))
             }
+            browser.complete(null)
+        } else if (!isQSupportedInThisVersion()){
+            webviewContainer.add(JBTextArea("${message("q.unavailable")}\n  ${message("q.unavailable.node")}"))
             browser.complete(null)
         } else {
             val loadingPanel = JBLoadingPanel(null, this)
