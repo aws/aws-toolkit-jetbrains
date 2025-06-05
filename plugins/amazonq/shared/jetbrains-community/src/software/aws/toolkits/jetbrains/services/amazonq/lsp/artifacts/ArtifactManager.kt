@@ -19,6 +19,10 @@ import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.AwsPlugin
 import software.aws.toolkits.jetbrains.AwsToolkit
+import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
+import software.aws.toolkits.telemetry.LanguageServerSetupStage
+import software.aws.toolkits.telemetry.MetricResult
+import software.aws.toolkits.telemetry.Telemetry
 import java.nio.file.Path
 
 @Service
@@ -57,42 +61,82 @@ class ArtifactManager @NonInjectable internal constructor(private val manifestFe
         return mutex.withLock {
             coroutineScope {
                 async {
-                    try {
-                        val manifest = manifestFetcher.fetch() ?: throw LspException(
-                            "Language Support is not available, as manifest is missing.",
-                            LspException.ErrorCode.MANIFEST_FETCH_FAILED
-                        )
-                        val lspVersions = getLSPVersionsFromManifestWithSpecifiedRange(manifest)
+                    Telemetry.languageserver.setup.use { all ->
+                        all.id("q")
+                        all.languageServerSetupStage(LanguageServerSetupStage.All)
+                        all.metadata("credentialStartUrl", getStartUrl(project))
+                        all.result(MetricResult.Succeeded)
 
-                        artifactHelper.removeDelistedVersions(lspVersions.deListedVersions)
+                        try {
+                            val lspVersions = Telemetry.languageserver.setup.use { telemetry ->
+                                telemetry.id("q")
+                                telemetry.languageServerSetupStage(LanguageServerSetupStage.GetManifest)
+                                telemetry.metadata("credentialStartUrl", getStartUrl(project))
 
-                        if (lspVersions.inRangeVersions.isEmpty()) {
-                            // No versions are found which are in the given range. Fallback to local lsp artifacts.
-                            val localLspArtifacts = artifactHelper.getAllLocalLspArtifactsWithinManifestRange(DEFAULT_VERSION_RANGE)
-                            if (localLspArtifacts.isNotEmpty()) {
-                                return@async localLspArtifacts.first().first
+                                val exception = LspException(
+                                    "Language Support is not available, as manifest is missing.",
+                                    LspException.ErrorCode.MANIFEST_FETCH_FAILED
+                                )
+                                telemetry.success(true)
+                                val manifest = manifestFetcher.fetch() ?: run {
+                                    telemetry.recordException(exception)
+                                    telemetry.success(false)
+                                    throw exception
+                                }
+
+                                getLSPVersionsFromManifestWithSpecifiedRange(manifest)
                             }
-                            throw LspException("Language server versions not found in manifest.", LspException.ErrorCode.NO_COMPATIBLE_LSP_VERSION)
-                        }
 
-                        val targetVersion = lspVersions.inRangeVersions.first()
+                            artifactHelper.removeDelistedVersions(lspVersions.deListedVersions)
 
-                        // If there is an LSP Manifest with the same version
-                        val target = getTargetFromLspManifest(targetVersion)
-                        // Get Local LSP files and check if we can re-use existing LSP Artifacts
-                        val artifactPath: Path = if (artifactHelper.getExistingLspArtifacts(targetVersion, target)) {
-                            artifactHelper.getAllLocalLspArtifactsWithinManifestRange(DEFAULT_VERSION_RANGE).first().first
-                        } else {
-                            artifactHelper.tryDownloadLspArtifacts(project, targetVersion, target)
-                                ?: throw LspException("Failed to download LSP artifacts", LspException.ErrorCode.DOWNLOAD_FAILED)
+                            if (lspVersions.inRangeVersions.isEmpty()) {
+                                // No versions are found which are in the given range. Fallback to local lsp artifacts.
+                                val localLspArtifacts = artifactHelper.getAllLocalLspArtifactsWithinManifestRange(DEFAULT_VERSION_RANGE)
+                                if (localLspArtifacts.isNotEmpty()) {
+                                    return@async localLspArtifacts.first().first
+                                }
+                                throw LspException("Language server versions not found in manifest.", LspException.ErrorCode.NO_COMPATIBLE_LSP_VERSION)
+                            }
+
+                            val targetVersion = lspVersions.inRangeVersions.first()
+
+                            // If there is an LSP Manifest with the same version
+                            val target = getTargetFromLspManifest(targetVersion)
+                            // Get Local LSP files and check if we can re-use existing LSP Artifacts
+                            val artifactPath: Path = if (artifactHelper.getExistingLspArtifacts(targetVersion, target)) {
+                                artifactHelper.getAllLocalLspArtifactsWithinManifestRange(DEFAULT_VERSION_RANGE).first().first
+                            } else {
+                                artifactHelper.tryDownloadLspArtifacts(project, targetVersion, target)
+                                    ?: throw LspException("Failed to download LSP artifacts", LspException.ErrorCode.DOWNLOAD_FAILED)
+                            }
+
+                            artifactHelper.deleteOlderLspArtifacts(DEFAULT_VERSION_RANGE)
+
+                            Telemetry.languageserver.setup.use {
+                                it.id("q")
+                                it.languageServerSetupStage(LanguageServerSetupStage.Launch)
+                                it.metadata("credentialStartUrl", getStartUrl(project))
+                                it.setAttribute("isBundledArtifact", false)
+                                it.success(true)
+                            }
+                            return@async artifactPath
+                        } catch (e: Exception) {
+                            logger.warn(e) { "Failed to resolve assets from Flare CDN" }
+                            val path = AwsToolkit.PLUGINS_INFO[AwsPlugin.Q]?.path?.resolve("flare") ?: error("not even bundled")
+                            logger.info { "Falling back to bundled assets at $path" }
+
+                            all.recordException(e)
+                            all.result(MetricResult.Failed)
+
+                            Telemetry.languageserver.setup.use {
+                                it.id("q")
+                                it.languageServerSetupStage(LanguageServerSetupStage.Launch)
+                                it.metadata("credentialStartUrl", getStartUrl(project))
+                                it.setAttribute("isBundledArtifact", true)
+                                it.success(false)
+                            }
+                            return@async path
                         }
-                        artifactHelper.deleteOlderLspArtifacts(DEFAULT_VERSION_RANGE)
-                        return@async artifactPath
-                    } catch (e: Exception) {
-                        logger.warn(e) { "Failed to resolve assets from Flare CDN" }
-                        val path = AwsToolkit.PLUGINS_INFO[AwsPlugin.Q]?.path?.resolve("flare") ?: error("not even bundled")
-                        logger.info { "Falling back to bundled assets at $path" }
-                        return@async path
                     }
                 }
             }.also {

@@ -77,10 +77,12 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.textdocument.TextDoc
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.WorkspaceFolderUtil.createWorkspaceFolders
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.workspace.WorkspaceServiceHandler
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QDefaultServiceConfig
+import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
 import software.aws.toolkits.jetbrains.services.telemetry.ClientMetadata
 import software.aws.toolkits.jetbrains.settings.LspSettings
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.Telemetry
 import java.io.IOException
 import java.io.OutputStreamWriter
 import java.io.PipedInputStream
@@ -526,20 +528,36 @@ private class AmazonQServerInstance(private val project: Project, private val cs
      * may fail to start in that case. The caller should handle potential runtime initialization failures.
      */
     private fun getNodeRuntimePath(nodePath: Path): Path {
+        val resolveNodeMetric = { isBundled: Boolean, success: Boolean ->
+            Telemetry.languageserver.setup.use {
+                it.id("q")
+                it.metadata("languageServerSetupStage", "resolveNode")
+                it.metadata("credentialStartUrl", getStartUrl(project))
+                it.setAttribute("isBundledNode", isBundled)
+                it.success(success)
+            }
+        }
+
         if (Files.exists(nodePath) && Files.isExecutable(nodePath)) {
+            resolveNodeMetric(true, true)
             return nodePath
         }
+
         // use alternative node runtime if it is not found
         LOG.warn { "Node Runtime download failed. Fallback to user specified node runtime " }
         // attempt to use user provided node runtime path
         val nodeRuntime = LspSettings.getInstance().getNodeRuntimePath()
         if (!nodeRuntime.isNullOrEmpty()) {
             LOG.info { "Using node from $nodeRuntime " }
+
+            resolveNodeMetric(false, true)
             return Path.of(nodeRuntime)
         } else {
             val localNode = locateNodeCommand()
             if (localNode != null) {
                 LOG.info { "Using node from ${localNode.toAbsolutePath()}" }
+
+                resolveNodeMetric(false, true)
                 return localNode
             }
             notifyInfo(
@@ -557,6 +575,8 @@ private class AmazonQServerInstance(private val project: Project, private val cs
                     ) { _, notification -> notification.expire() }
                 )
             )
+
+            resolveNodeMetric(false, false)
             return nodePath
         }
     }
