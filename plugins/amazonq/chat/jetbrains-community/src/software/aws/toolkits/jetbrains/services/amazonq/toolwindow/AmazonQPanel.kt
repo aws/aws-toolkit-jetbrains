@@ -105,7 +105,8 @@ class AmazonQPanel(val project: Project, private val scope: CoroutineScope) : Di
             }
             browser.complete(null)
         } else if (!isQSupportedInThisVersion()) {
-            webviewContainer.add(JBTextArea("${message("q.unavailable")}\n  ${message("q.unavailable.node")}"))
+            val currentBuild = com.intellij.openapi.application.ApplicationInfo.getInstance().build
+            webviewContainer.add(JBTextArea("Amazon Q is not supported in your version ${currentBuild}. Please update to the latest version of your IDE."))
             browser.complete(null)
         } else {
             val loadingPanel = JBLoadingPanel(null, this)
