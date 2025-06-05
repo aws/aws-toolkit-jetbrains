@@ -77,8 +77,12 @@ class ArtifactManager @NonInjectable internal constructor(private val manifestFe
                                     "Language Support is not available, as manifest is missing.",
                                     LspException.ErrorCode.MANIFEST_FETCH_FAILED
                                 )
-                                telemetry.recordException(exception)
-                                val manifest = manifestFetcher.fetch() ?: throw exception
+                                telemetry.success(true)
+                                val manifest = manifestFetcher.fetch() ?: run {
+                                    telemetry.recordException(exception)
+                                    telemetry.success(false)
+                                    throw exception
+                                }
 
                                 getLSPVersionsFromManifestWithSpecifiedRange(manifest)
                             }
@@ -113,6 +117,7 @@ class ArtifactManager @NonInjectable internal constructor(private val manifestFe
                                 it.languageServerSetupStage(LanguageServerSetupStage.Launch)
                                 it.metadata("credentialStartUrl", getStartUrl(project))
                                 it.setAttribute("isBundledArtifact", false)
+                                it.success(true)
                             }
                             return@async artifactPath
                         } catch (e: Exception) {
@@ -128,6 +133,7 @@ class ArtifactManager @NonInjectable internal constructor(private val manifestFe
                                 it.languageServerSetupStage(LanguageServerSetupStage.Launch)
                                 it.metadata("credentialStartUrl", getStartUrl(project))
                                 it.setAttribute("isBundledArtifact", true)
+                                it.success(false)
                             }
                             return@async path
                         }
