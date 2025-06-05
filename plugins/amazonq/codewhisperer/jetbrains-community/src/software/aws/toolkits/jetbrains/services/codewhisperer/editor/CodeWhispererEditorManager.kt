@@ -12,27 +12,24 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiDocumentManager
+import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretPosition
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererConfigurable
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.QFeatureEvent
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.broadcastQEvent
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CaretMovement
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.PAIRED_BRACKETS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.PAIRED_QUOTES
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
-import java.time.Instant
 import java.util.Stack
 
 @Service
 class CodeWhispererEditorManager {
     fun updateEditorWithRecommendation(states: InvocationContext, sessionContext: SessionContext) {
-        val (requestContext, responseContext, recommendationContext) = states
+        val (requestContext, _, recommendationContext) = states
         val (project, editor) = requestContext
         val document = editor.document
         val primaryCaret = editor.caretModel.primaryCaret
@@ -41,7 +38,7 @@ class CodeWhispererEditorManager {
         val detail = recommendationContext.details[selectedIndex]
         val reformatted = CodeWhispererPopupManager.getInstance().getReformattedRecommendation(
             detail,
-            recommendationContext.userInputSinceInvocation
+            recommendationContext.userInput
         )
         val remainingRecommendation = reformatted.substring(typeahead.length)
         val originalOffset = primaryCaret.offset - typeahead.length
@@ -51,30 +48,17 @@ class CodeWhispererEditorManager {
         val insertEndOffset = sessionContext.insertEndOffset
         val endOffsetToReplace = if (insertEndOffset != -1) insertEndOffset else primaryCaret.offset
 
+        detail.isAccepted = true
+
         WriteCommandAction.runWriteCommandAction(project) {
-            broadcastQEvent(QFeatureEvent.STARTS_EDITING)
             document.replaceString(originalOffset, endOffsetToReplace, reformatted)
             PsiDocumentManager.getInstance(project).commitDocument(document)
-            primaryCaret.moveToOffset(endOffset + detail.rightOverlap.length)
-
-            broadcastQEvent(QFeatureEvent.FINISHES_EDITING)
+            primaryCaret.moveToOffset(endOffset)
         }
 
         ApplicationManager.getApplication().invokeLater {
             WriteCommandAction.runWriteCommandAction(project) {
                 val rangeMarker = document.createRangeMarker(originalOffset, endOffset, true)
-
-                CodeWhispererTelemetryService.getInstance().enqueueAcceptedSuggestionEntry(
-                    detail.requestId,
-                    requestContext,
-                    responseContext,
-                    Instant.now(),
-                    PsiDocumentManager.getInstance(project).getPsiFile(document)?.virtualFile,
-                    rangeMarker,
-                    remainingRecommendation,
-                    selectedIndex,
-                    detail.completionType
-                )
 
                 ApplicationManager.getApplication().messageBus.syncPublisher(
                     CodeWhispererPopupManager.CODEWHISPERER_USER_ACTION_PERFORMED,
@@ -83,7 +67,9 @@ class CodeWhispererEditorManager {
         }
 
         // Display tab accept priority once when the first accept is made
-        if (!CodeWhispererSettings.getInstance().isTabAcceptPriorityNotificationShownOnce()) {
+        if (!CodeWhispererSettings.getInstance().isTabAcceptPriorityNotificationShownOnce() &&
+            CodeWhispererFeatureConfigService.getInstance().getNewAutoTriggerUX()
+        ) {
             notifyInfo(
                 "Amazon Q",
                 message("codewhisperer.inline.settings.tab_priority.notification.text"),
@@ -125,7 +111,6 @@ class CodeWhispererEditorManager {
     fun getMatchingSymbolsFromRecommendation(
         editor: Editor,
         recommendation: String,
-        isTruncatedOnRight: Boolean,
         sessionContext: SessionContext,
     ): List<Pair<Int, Int>> {
         val result = mutableListOf<Pair<Int, Int>>()
@@ -141,8 +126,6 @@ class CodeWhispererEditorManager {
 
         result.add(0 to caretOffset)
         result.add(recommendation.length + 1 to lineEndOffset)
-
-        if (isTruncatedOnRight) return result
 
         while (current < recommendation.length &&
             totalDocLengthChecked < lineText.length &&
@@ -225,16 +208,9 @@ class CodeWhispererEditorManager {
     fun findOverLappingLines(
         editor: Editor,
         recommendationLines: List<String>,
-        isTruncatedOnRight: Boolean,
         sessionContext: SessionContext,
     ): Int {
         val caretOffset = editor.caretModel.offset
-        if (isTruncatedOnRight) {
-            // insertEndOffset value only makes sense when there are matching closing brackets, if there's right context
-            // resolution applied, set this value to the current caret offset
-            sessionContext.insertEndOffset = caretOffset
-            return 0
-        }
 
         val text = editor.document.charsSequence
         val document = editor.document

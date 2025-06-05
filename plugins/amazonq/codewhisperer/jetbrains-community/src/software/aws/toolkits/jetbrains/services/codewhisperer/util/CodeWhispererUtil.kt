@@ -3,16 +3,12 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.util
 
-import com.intellij.codeInsight.daemon.impl.HighlightInfo
 import com.intellij.codeInsight.lookup.LookupManager
 import com.intellij.ide.BrowserUtil
-import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.notification.NotificationAction
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
-import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.editor.impl.DocumentMarkupModel
 import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtil
@@ -25,11 +21,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
-import software.amazon.awssdk.services.codewhispererruntime.model.Completion
-import software.amazon.awssdk.services.codewhispererruntime.model.IdeDiagnostic
 import software.amazon.awssdk.services.codewhispererruntime.model.OptOutPreference
-import software.amazon.awssdk.services.codewhispererruntime.model.Position
-import software.amazon.awssdk.services.codewhispererruntime.model.Range
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
@@ -46,11 +38,11 @@ import software.aws.toolkits.jetbrains.core.gettingstarted.editor.ActiveConnecti
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.ActiveConnectionType
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.BearerTokenFeatureSet
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.checkBearerConnectionValidity
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionItem
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.learn.LearnCodeWhispererManager.Companion.taskTypeToFilename
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.Chunk
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererCodeCoverageTracker.Companion.levenshteinChecker
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.isTelemetryEnabled
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CrossFile.NUMBER_OF_CHUNK_TO_FETCH
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CrossFile.NUMBER_OF_LINE_IN_CHUNK
@@ -187,8 +179,8 @@ fun VirtualFile.toCodeChunk(path: String): Sequence<Chunk> = sequence {
 fun VirtualFile.isWithin(ancestor: VirtualFile): Boolean = VfsUtilCore.isAncestor(ancestor, this, false)
 
 object CodeWhispererUtil {
-    fun getCompletionType(completion: Completion): CodewhispererCompletionType {
-        val content = completion.content()
+    fun getCompletionType(completion: InlineCompletionItem): CodewhispererCompletionType {
+        val content = completion.insertText
         val nonBlankLines = content.split("\n").count { it.isNotBlank() }
 
         return when {
@@ -342,19 +334,6 @@ object CodeWhispererUtil {
         }
     }
 
-    // With edit distance, complicate usermodification can be considered as simple edit(add, delete, replace),
-    // and thus the unmodified part of recommendation length can be deducted/approximated
-    // ex. (modified > original): originalRecom: foo -> modifiedRecom: fobarbarbaro, distance = 9, delta = 12 - 9 = 3
-    // ex. (modified == original): originalRecom: helloworld -> modifiedRecom: HelloWorld, distance = 2, delta = 10 - 2 = 8
-    // ex. (modified < original): originalRecom: CodeWhisperer -> modifiedRecom: CODE, distance = 12, delta = 13 - 12 = 1
-    fun getUnmodifiedAcceptedCharsCount(originalRecommendation: String, modifiedRecommendation: String): Int {
-        val editDistance = getEditDistance(modifiedRecommendation, originalRecommendation).toInt()
-        return maxOf(originalRecommendation.length, modifiedRecommendation.length) - editDistance
-    }
-
-    private fun getEditDistance(modifiedString: String, originalString: String): Double =
-        levenshteinChecker.distance(modifiedString, originalString)
-
     fun setIntelliSensePopupAlpha(editor: Editor, alpha: Float) {
         ComponentUtil.getWindow(LookupManager.getActiveLookup(editor)?.component)?.let {
             WindowManager.getInstance().setAlphaModeRatio(it, alpha)
@@ -367,89 +346,4 @@ object CodeWhispererUtil {
 
 enum class CaretMovement {
     NO_CHANGE, MOVE_FORWARD, MOVE_BACKWARD
-}
-
-fun getDiagnosticsType(message: String): String {
-    val lowercaseMessage = message.lowercase()
-
-    val diagnosticPatterns = mapOf(
-        "TYPE_ERROR" to listOf("type", "cast"),
-        "SYNTAX_ERROR" to listOf("expected", "indent", "syntax"),
-        "REFERENCE_ERROR" to listOf("undefined", "not defined", "undeclared", "reference", "symbol"),
-        "BEST_PRACTICE" to listOf("deprecated", "unused", "uninitialized", "not initialized"),
-        "SECURITY" to listOf("security", "vulnerability")
-    )
-
-    return diagnosticPatterns
-        .entries
-        .firstOrNull { (_, keywords) ->
-            keywords.any { lowercaseMessage.contains(it) }
-        }
-        ?.key ?: "OTHER"
-}
-
-fun convertSeverity(severity: HighlightSeverity): String = when {
-    severity == HighlightSeverity.ERROR -> "ERROR"
-    severity == HighlightSeverity.WARNING ||
-        severity == HighlightSeverity.WEAK_WARNING -> "WARNING"
-    severity == HighlightSeverity.INFORMATION -> "INFORMATION"
-    severity.toString().contains("TEXT", ignoreCase = true) -> "HINT"
-    severity == HighlightSeverity.INFO -> "INFORMATION"
-    // For severities that might indicate performance issues
-    severity.toString().contains("PERFORMANCE", ignoreCase = true) -> "WARNING"
-    // For deprecation warnings
-    severity.toString().contains("DEPRECATED", ignoreCase = true) -> "WARNING"
-    // Default case
-    else -> "INFORMATION"
-}
-
-fun getDocumentDiagnostics(document: Document, project: Project): List<IdeDiagnostic> = runCatching {
-    DocumentMarkupModel.forDocument(document, project, true)
-        .allHighlighters
-        .mapNotNull { it.errorStripeTooltip as? HighlightInfo }
-        .filter { !it.description.isNullOrEmpty() }
-        .map { info ->
-            val startLine = document.getLineNumber(info.startOffset)
-            val endLine = document.getLineNumber(info.endOffset)
-
-            IdeDiagnostic.builder()
-                .ideDiagnosticType(getDiagnosticsType(info.description))
-                .severity(convertSeverity(info.severity))
-                .source(info.inspectionToolId)
-                .range(
-                    Range.builder()
-                        .start(
-                            Position.builder()
-                                .line(startLine)
-                                .character(document.getLineStartOffset(startLine))
-                                .build()
-                        )
-                        .end(
-                            Position.builder()
-                                .line(endLine)
-                                .character(document.getLineStartOffset(endLine))
-                                .build()
-                        )
-                        .build()
-                )
-                .build()
-        }
-}.getOrElse { e ->
-    getLogger<CodeWhispererUtil>().warn { "Failed to get document diagnostics ${e.message}" }
-    emptyList()
-}
-
-data class DiagnosticDifferences(
-    val added: List<IdeDiagnostic>,
-    val removed: List<IdeDiagnostic>,
-)
-
-fun serializeDiagnostics(diagnostic: IdeDiagnostic): String = "${diagnostic.source()}-${diagnostic.severity()}-${diagnostic.ideDiagnosticType()}"
-
-fun getDiagnosticDifferences(oldDiagnostic: List<IdeDiagnostic>, newDiagnostic: List<IdeDiagnostic>): DiagnosticDifferences {
-    val oldSet = oldDiagnostic.map { i -> serializeDiagnostics(i) }.toSet()
-    val newSet = newDiagnostic.map { i -> serializeDiagnostics(i) }.toSet()
-    val added = newDiagnostic.filter { i -> !oldSet.contains(serializeDiagnostics(i)) }.distinctBy { serializeDiagnostics(it) }
-    val removed = oldDiagnostic.filter { i -> !newSet.contains(serializeDiagnostics(i)) }.distinctBy { serializeDiagnostics(it) }
-    return DiagnosticDifferences(added, removed)
 }

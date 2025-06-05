@@ -15,13 +15,9 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionConte
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManagerNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererServiceNew
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryServiceNew
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.QFeatureEvent
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.broadcastQEvent
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CaretMovement
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.PAIRED_BRACKETS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.PAIRED_QUOTES
-import java.time.Instant
 import java.util.Stack
 
 @Service
@@ -31,7 +27,6 @@ class CodeWhispererEditorManagerNew {
         val selectedIndex = sessionContext.selectedIndex
         val preview = previews[selectedIndex]
         val states = CodeWhispererServiceNew.getInstance().getAllPaginationSessions()[preview.jobId] ?: return
-        val (requestContext, responseContext) = states
         val (project, editor) = sessionContext
         val document = editor.document
         val primaryCaret = editor.caretModel.primaryCaret
@@ -53,29 +48,14 @@ class CodeWhispererEditorManagerNew {
         preview.detail.isAccepted = true
 
         WriteCommandAction.runWriteCommandAction(project) {
-            broadcastQEvent(QFeatureEvent.STARTS_EDITING)
             document.replaceString(originalOffset, endOffsetToReplace, reformatted)
             PsiDocumentManager.getInstance(project).commitDocument(document)
-            primaryCaret.moveToOffset(endOffset + detail.rightOverlap.length)
-
-            broadcastQEvent(QFeatureEvent.FINISHES_EDITING)
+            primaryCaret.moveToOffset(endOffset)
         }
 
         ApplicationManager.getApplication().invokeLater {
             WriteCommandAction.runWriteCommandAction(project) {
                 val rangeMarker = document.createRangeMarker(originalOffset, endOffset, true)
-
-                CodeWhispererTelemetryServiceNew.getInstance().enqueueAcceptedSuggestionEntry(
-                    detail.requestId,
-                    requestContext,
-                    responseContext,
-                    Instant.now(),
-                    PsiDocumentManager.getInstance(project).getPsiFile(document)?.virtualFile,
-                    rangeMarker,
-                    remainingRecommendation,
-                    selectedIndex,
-                    detail.completionType
-                )
 
                 ApplicationManager.getApplication().messageBus.syncPublisher(
                     CodeWhispererPopupManager.CODEWHISPERER_USER_ACTION_PERFORMED,
@@ -106,7 +86,6 @@ class CodeWhispererEditorManagerNew {
     fun getMatchingSymbolsFromRecommendation(
         editor: Editor,
         recommendation: String,
-        isTruncatedOnRight: Boolean,
         sessionContext: SessionContextNew,
     ): List<Pair<Int, Int>> {
         val result = mutableListOf<Pair<Int, Int>>()
@@ -123,8 +102,6 @@ class CodeWhispererEditorManagerNew {
 
         result.add(0 to caretOffset)
         result.add(recommendation.length + 1 to lineEndOffset)
-
-        if (isTruncatedOnRight) return result
 
         while (current < recommendation.length &&
             totalDocLengthChecked < lineText.length &&
@@ -208,17 +185,9 @@ class CodeWhispererEditorManagerNew {
     fun findOverLappingLines(
         editor: Editor,
         recommendationLines: List<String>,
-        isTruncatedOnRight: Boolean,
         sessionContext: SessionContextNew,
     ): Int {
         val caretOffset = editor.caretModel.offset
-        if (isTruncatedOnRight) {
-            // insertEndOffset value only makes sense when there are matching closing brackets, if there's right context
-            // resolution applied, set this value to the current caret offset
-            sessionContext.insertEndOffset = caretOffset
-            return 0
-        }
-
         val text = editor.document.charsSequence
         val document = editor.document
         val textLines = mutableListOf<Pair<String, Int>>()

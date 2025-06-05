@@ -8,8 +8,6 @@ import com.intellij.openapi.editor.markup.EffectType
 import com.intellij.openapi.editor.markup.TextAttributes
 import com.intellij.ui.JBColor
 import software.amazon.awssdk.regions.Region
-import software.amazon.awssdk.services.codewhispererruntime.model.AccessDeniedException
-import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeScanResponse
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJava
 import software.aws.toolkits.telemetry.CodewhispererGettingStartedTask
@@ -21,18 +19,13 @@ object CodeWhispererConstants {
     const val CHARACTERS_LIMIT = 10240
     const val BEGINNING_OF_FILE = 0
     const val FILENAME_CHARS_LIMIT = 1024
-    const val INVOCATION_KEY_INTERVAL_THRESHOLD = 15
     val SPECIAL_CHARACTERS_LIST = listOf("{", "[", "(", ":")
     val PAIRED_BRACKETS = mapOf('{' to '}', '(' to ')', '[' to ']', '<' to '>')
     val PAIRED_QUOTES = setOf('"', '\'', '`')
-    const val INVOCATION_TIME_INTERVAL_THRESHOLD = 2
     const val LEFT_CONTEXT_ON_CURRENT_LINE = 50
     const val POPUP_INFO_TEXT_SIZE = 11f
     const val POPUP_BUTTON_TEXT_SIZE = 12f
-    const val POPUP_DELAY: Long = 250
     const val POPUP_DELAY_CHECK_INTERVAL: Long = 25
-    const val IDLE_TIME_CHECK_INTERVAL: Long = 25
-    const val SUPPLEMETAL_CONTEXT_BUFFER = 10L
 
     val AWSTemplateKeyWordsRegex = Regex("(AWSTemplateFormatVersion|Resources|AWS::|Description)")
     val AWSTemplateCaseInsensitiveKeyWordsRegex = Regex("(cloudformation|cfn|template|description)")
@@ -51,15 +44,10 @@ object CodeWhispererConstants {
         "vcpkg.json"
     )
 
-    // TODO: this is currently set to 2050 to account for the server side 0.5 TPS and and extra 50 ms buffer to
-    // avoid ThrottlingException as much as possible.
-    const val INVOCATION_INTERVAL: Long = 2050
-
     val runScanKey = DataKey.create<Boolean>("amazonq.codescan.run")
     val scanResultsKey = DataKey.create<CodeScanResponse>("amazonq.codescan.result")
     val scanScopeKey = DataKey.create<CodeAnalysisScope>("amazonq.codescan.scope")
 
-    const val Q_CUSTOM_LEARN_MORE_URI = "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/customizations.html"
     const val Q_SUPPORTED_LANG_URI = "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/q-language-ide-support.html"
     const val CODEWHISPERER_CODE_SCAN_LEARN_MORE_URI = "https://docs.aws.amazon.com/codewhisperer/latest/userguide/security-scans.html"
     const val CODEWHISPERER_ONBOARDING_DOCUMENTATION_URI = "https://docs.aws.amazon.com/codewhisperer/latest/userguide/features.html"
@@ -157,39 +145,9 @@ object CodeWhispererConstants {
         val Sigv4ClientRegion = Region.US_EAST_1
     }
 
-    object Customization {
-        private const val noAccessToCustomizationMessage = "Your account is not authorized to use CodeWhisperer Enterprise."
-        private const val invalidCustomizationMessage = "You are not authorized to access"
-
-        val noAccessToCustomizationExceptionPredicate: (e: Exception) -> Boolean = { e ->
-            if (e !is CodeWhispererRuntimeException) {
-                false
-            } else {
-                e is AccessDeniedException && (e.message?.contains(noAccessToCustomizationMessage, ignoreCase = true) ?: false)
-            }
-        }
-
-        val invalidCustomizationExceptionPredicate: (e: Exception) -> Boolean = { e ->
-            if (e !is CodeWhispererRuntimeException) {
-                false
-            } else {
-                e is AccessDeniedException && (e.message?.contains(invalidCustomizationMessage, ignoreCase = true) ?: false)
-            }
-        }
-    }
-
     object CrossFile {
-        const val CHUNK_SIZE = 60
         const val NUMBER_OF_LINE_IN_CHUNK = 50
         const val NUMBER_OF_CHUNK_TO_FETCH = 3
-        const val MAX_TOTAL_LENGTH = 20480
-        const val MAX_LENGTH_PER_CHUNK = 10240
-        const val MAX_CONTEXT_COUNT = 5
-    }
-
-    object Utg {
-        const val UTG_SEGMENT_SIZE = 10200
-        const val UTG_PREFIX = "UTG\n"
     }
 
     object TryExampleFileContent {

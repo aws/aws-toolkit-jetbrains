@@ -14,4 +14,4 @@ data class UpdateConfigurationParams(
     val settings: LSPAny,
 )
 
-typealias LSPAny = Any?
+typealias LSPAny = Any
