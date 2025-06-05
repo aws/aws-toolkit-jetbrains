@@ -43,9 +43,9 @@ import software.aws.toolkits.jetbrains.services.amazonqCodeTest.auth.isCodeTestA
 import software.aws.toolkits.jetbrains.services.amazonqDoc.auth.isDocAvailable
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.auth.isFeatureDevAvailable
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isCodeTransformAvailable
+import software.aws.toolkits.resources.message
 import java.util.concurrent.CompletableFuture
 import javax.swing.JButton
-import software.aws.toolkits.resources.message
 
 class AmazonQPanel(val project: Project, private val scope: CoroutineScope) : Disposable {
     private val browser = CompletableFuture<Browser>()
@@ -104,7 +104,7 @@ class AmazonQPanel(val project: Project, private val scope: CoroutineScope) : Di
                 webviewContainer.add(JBTextArea("JCEF not supported"))
             }
             browser.complete(null)
-        } else if (!isQSupportedInThisVersion()){
+        } else if (!isQSupportedInThisVersion()) {
             webviewContainer.add(JBTextArea("${message("q.unavailable")}\n  ${message("q.unavailable.node")}"))
             browser.complete(null)
         } else {
