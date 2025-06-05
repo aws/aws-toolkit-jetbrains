@@ -11,8 +11,6 @@ class CodeWhispererGo private constructor() : CodeWhispererProgrammingLanguage()
 
     override fun toTelemetryType(): CodewhispererLanguage = CodewhispererLanguage.Go
 
-    override fun isCodeCompletionSupported(): Boolean = true
-
     override fun isAutoFileScanSupported(): Boolean = true
 
     companion object {

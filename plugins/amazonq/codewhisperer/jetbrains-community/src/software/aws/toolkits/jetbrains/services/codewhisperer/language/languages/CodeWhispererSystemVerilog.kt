@@ -11,8 +11,6 @@ class CodeWhispererSystemVerilog private constructor() : CodeWhispererProgrammin
 
     override fun toTelemetryType(): CodewhispererLanguage = CodewhispererLanguage.SystemVerilog
 
-    override fun isCodeCompletionSupported(): Boolean = true
-
     companion object {
         // TODO: confirm with service team language id
         const val ID = "systemverilog"

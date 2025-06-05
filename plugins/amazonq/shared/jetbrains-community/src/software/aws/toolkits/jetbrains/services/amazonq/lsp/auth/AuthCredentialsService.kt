@@ -4,9 +4,10 @@
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.auth
 
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseMessage
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import java.util.concurrent.CompletableFuture
 
 interface AuthCredentialsService {
-    fun updateTokenCredentials(accessToken: String, encrypted: Boolean): CompletableFuture<ResponseMessage>
+    fun updateTokenCredentials(connection: ToolkitConnection, encrypted: Boolean): CompletableFuture<ResponseMessage>
     fun deleteTokenCredentials(): CompletableFuture<Unit>
 }

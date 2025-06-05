@@ -22,10 +22,6 @@ object CodeWhispererImportAdderListener : CodeWhispererUserActionListener {
             return
         }
         val language = states.requestContext.fileContextInfo.programmingLanguage
-        if (!language.isImportAdderSupported()) {
-            LOG.debug { "Import adder is not supported for $language" }
-            return
-        }
         val importAdder = CodeWhispererImportAdder.get(language)
         if (importAdder == null) {
             LOG.debug { "No import adder found for $language" }
@@ -40,10 +36,6 @@ object CodeWhispererImportAdderListener : CodeWhispererUserActionListener {
             return
         }
         val language = states.requestContext.fileContextInfo.programmingLanguage
-        if (!language.isImportAdderSupported()) {
-            LOG.debug { "Import adder is not supported for $language" }
-            return
-        }
         val importAdder = CodeWhispererImportAdder.get(language)
         if (importAdder == null) {
             LOG.debug { "No import adder found for $language" }

@@ -30,6 +30,8 @@ import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBe
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLanguageServer
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.ConnectionMetadata
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.SsoProfileData
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.UpdateCredentialsPayload
 import software.aws.toolkits.jetbrains.utils.isQConnected
 import software.aws.toolkits.jetbrains.utils.isQExpired
@@ -112,6 +114,7 @@ class DefaultAuthCredentialsServiceTest {
         connectionId: String = "test-connection-id",
     ): AwsBearerTokenConnection = mockk {
         every { id } returns connectionId
+        every { startUrl } returns "startUrl"
         every { getConnectionSettings() } returns createMockTokenSettings(accessToken)
     }
 
@@ -140,7 +143,7 @@ class DefaultAuthCredentialsServiceTest {
 
     @Test
     fun `activeConnectionChanged updates token when connection ID matches Q connection`() {
-        sut = DefaultAuthCredentialsService(project, mockEncryptionManager, mockk())
+        sut = DefaultAuthCredentialsService(project, mockEncryptionManager)
         val newConnection = createMockConnection("new-token", "connection-id")
         every { mockConnection.id } returns "connection-id"
 
@@ -151,7 +154,7 @@ class DefaultAuthCredentialsServiceTest {
 
     @Test
     fun `activeConnectionChanged does not update token when connection ID differs`() {
-        sut = DefaultAuthCredentialsService(project, mockEncryptionManager, mockk())
+        sut = DefaultAuthCredentialsService(project, mockEncryptionManager)
         val newConnection = createMockConnection("new-token", "different-id")
         every { mockConnection.id } returns "q-connection-id"
 
@@ -162,7 +165,7 @@ class DefaultAuthCredentialsServiceTest {
 
     @Test
     fun `onChange updates token with new connection`() {
-        sut = DefaultAuthCredentialsService(project, mockEncryptionManager, mockk())
+        sut = DefaultAuthCredentialsService(project, mockEncryptionManager)
         setupMockConnectionManager("updated-token")
 
         sut.onChange("providerId", listOf("new-scope"))
@@ -175,7 +178,7 @@ class DefaultAuthCredentialsServiceTest {
         every { isQConnected(project) } returns false
         every { isQExpired(project) } returns false
 
-        sut = DefaultAuthCredentialsService(project, mockEncryptionManager, mockk())
+        sut = DefaultAuthCredentialsService(project, mockEncryptionManager)
 
         verify(exactly = 0) { mockLanguageServer.updateTokenCredentials(any()) }
     }
@@ -185,24 +188,25 @@ class DefaultAuthCredentialsServiceTest {
         every { isQConnected(project) } returns true
         every { isQExpired(project) } returns true
 
-        sut = DefaultAuthCredentialsService(project, mockEncryptionManager, mockk())
+        sut = DefaultAuthCredentialsService(project, mockEncryptionManager)
 
         verify(exactly = 0) { mockLanguageServer.updateTokenCredentials(any()) }
     }
 
     @Test
     fun `test updateTokenCredentials unencrypted success`() {
-        sut = DefaultAuthCredentialsService(project, mockEncryptionManager, mockk())
-
-        val token = "unencryptedToken"
         val isEncrypted = false
+        sut = DefaultAuthCredentialsService(project, mockEncryptionManager)
 
-        sut.updateTokenCredentials(token, isEncrypted)
+        sut.updateTokenCredentials(mockConnection, isEncrypted)
 
         verify(exactly = 1) {
             mockLanguageServer.updateTokenCredentials(
                 UpdateCredentialsPayload(
-                    token,
+                    "test-access-token",
+                    ConnectionMetadata(
+                        SsoProfileData("startUrl")
+                    ),
                     isEncrypted
                 )
             )
@@ -211,20 +215,22 @@ class DefaultAuthCredentialsServiceTest {
 
     @Test
     fun `test updateTokenCredentials encrypted success`() {
-        sut = DefaultAuthCredentialsService(project, mockEncryptionManager, mockk())
+        sut = DefaultAuthCredentialsService(project, mockEncryptionManager)
 
         val encryptedToken = "encryptedToken"
-        val decryptedToken = "decryptedToken"
         val isEncrypted = true
 
         every { mockEncryptionManager.encrypt(any()) } returns encryptedToken
 
-        sut.updateTokenCredentials(decryptedToken, isEncrypted)
+        sut.updateTokenCredentials(mockConnection, isEncrypted)
 
         verify(atLeast = 1) {
             mockLanguageServer.updateTokenCredentials(
                 UpdateCredentialsPayload(
                     encryptedToken,
+                    ConnectionMetadata(
+                        SsoProfileData("startUrl")
+                    ),
                     isEncrypted
                 )
             )
@@ -233,7 +239,7 @@ class DefaultAuthCredentialsServiceTest {
 
     @Test
     fun `test deleteTokenCredentials success`() {
-        sut = DefaultAuthCredentialsService(project, mockEncryptionManager, mockk())
+        sut = DefaultAuthCredentialsService(project, mockEncryptionManager)
 
         every { mockLanguageServer.deleteTokenCredentials() } returns CompletableFuture.completedFuture(Unit)
 
@@ -246,7 +252,7 @@ class DefaultAuthCredentialsServiceTest {
     fun `init results in token update`() {
         every { isQConnected(any()) } returns true
         every { isQExpired(any()) } returns false
-        sut = DefaultAuthCredentialsService(project, mockEncryptionManager, mockk())
+        sut = DefaultAuthCredentialsService(project, mockEncryptionManager)
 
         verify(exactly = 1) { mockLanguageServer.updateTokenCredentials(any()) }
     }
