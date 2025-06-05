@@ -60,6 +60,6 @@ fun isQSupportedInThisVersion(): Boolean {
 
     return !(
         currentBuild.baselineVersion == 242 &&
-            BuildNumber.fromString("242.22855.74")?.let { currentBuild.compareTo(it) < 0 } == true
+            BuildNumber.fromString("242.22855.74")?.let { currentBuild < it } == true
         )
 }
