@@ -3,10 +3,11 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat
 
-import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.project.Project
 import com.intellij.util.messages.Topic
 import java.util.EventListener
 
+@Deprecated("Why are we using a message bus for this????????")
 interface AsyncChatUiListener : EventListener {
     @Deprecated("shouldn't need this version")
     fun onChange(command: String) {}
@@ -14,16 +15,17 @@ interface AsyncChatUiListener : EventListener {
     fun onChange(command: FlareUiMessage) {}
 
     companion object {
-        @Topic.AppLevel
+        @Topic.ProjectLevel
         val TOPIC = Topic.create("Partial chat message provider", AsyncChatUiListener::class.java)
 
-        fun notifyPartialMessageUpdate(command: FlareUiMessage) {
-            ApplicationManager.getApplication().messageBus.syncPublisher(TOPIC).onChange(command)
+        @Deprecated("Why are we using a message bus for this????????")
+        fun notifyPartialMessageUpdate(project: Project, command: FlareUiMessage) {
+            project.messageBus.syncPublisher(TOPIC).onChange(command)
         }
 
         @Deprecated("shouldn't need this version")
-        fun notifyPartialMessageUpdate(command: String) {
-            ApplicationManager.getApplication().messageBus.syncPublisher(TOPIC).onChange(command)
+        fun notifyPartialMessageUpdate(project: Project, command: String) {
+            project.messageBus.syncPublisher(TOPIC).onChange(command)
         }
     }
 }

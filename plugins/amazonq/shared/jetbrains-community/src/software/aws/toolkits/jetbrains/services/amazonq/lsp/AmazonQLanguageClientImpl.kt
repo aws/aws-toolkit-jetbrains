@@ -315,6 +315,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
 
     override fun sendChatUpdate(params: LSPAny): CompletableFuture<Unit> {
         AsyncChatUiListener.notifyPartialMessageUpdate(
+            project,
             FlareUiMessage(
                 command = CHAT_SEND_UPDATE,
                 params = params,
