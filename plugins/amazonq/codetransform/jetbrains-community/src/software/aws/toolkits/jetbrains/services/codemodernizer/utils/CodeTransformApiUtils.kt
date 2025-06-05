@@ -170,8 +170,12 @@ suspend fun attemptLocalBuild(plan: TransformationPlan, jobId: JobId, project: P
     if (artifactId != null) {
         val clientInstructionsPath = downloadClientInstructions(jobId, artifactId, project)
         getLogger<CodeModernizerManager>().info { "Downloaded client instructions for job ${jobId.id} and artifact $artifactId at: $clientInstructionsPath" }
-        processClientInstructions(clientInstructionsPath, jobId, artifactId, project)
-        getLogger<CodeModernizerManager>().info { "Finished processing client instructions for job ${jobId.id} and artifact $artifactId" }
+        if (clientInstructionsPath.toFile().readText().trim().isNotEmpty()) {
+            processClientInstructions(clientInstructionsPath, jobId, artifactId, project)
+            getLogger<CodeModernizerManager>().info { "Finished processing client instructions for job ${jobId.id} and artifact $artifactId" }
+        } else {
+            getLogger<CodeModernizerManager>().info { "Client instructions for job ${jobId.id} and artifact $artifactId is empty; skipping client-side build" }
+        }
     }
 }
 
