@@ -54,6 +54,12 @@ fun codeWhispererUserContext(): UserContext = ClientMetadata.getDefault().let {
         .build()
 }
 
-fun isQSupportedInThisVersion(): Boolean = ApplicationInfo.getInstance().build.asStringWithoutProductCode() !in unSupportedIdeVersionInQ
+fun isQSupportedInThisVersion(): Boolean {
+    val currentBuild = ApplicationInfo.getInstance().build
+    if (currentBuild.asStringWithoutProductCode() in unSupportedIdeVersionInQ) return false
+    
+    val version242Cutoff = com.intellij.openapi.util.BuildNumber.fromString("242.22855.74")
+    return !(currentBuild.baselineVersion == 242 && currentBuild.compareTo(version242Cutoff) < 0)
+}
 
 val unSupportedIdeVersionInQ = listOf("242.21829.142")

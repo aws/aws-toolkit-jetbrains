@@ -26,7 +26,6 @@ import software.aws.toolkits.jetbrains.core.webview.BrowserState
 import software.aws.toolkits.jetbrains.services.amazonq.QWebviewPanel
 import software.aws.toolkits.jetbrains.services.amazonq.RefreshQChatPanelButtonPressedListener
 import software.aws.toolkits.jetbrains.services.amazonq.gettingstarted.openMeetQPage
-import software.aws.toolkits.jetbrains.services.amazonq.isQSupportedInThisVersion
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileSelectedListener
@@ -150,7 +149,7 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
         )
     }
 
-    override fun shouldBeAvailable(project: Project): Boolean = isQWebviewsAvailable() && isQSupportedInThisVersion()
+    override fun shouldBeAvailable(project: Project): Boolean = isQWebviewsAvailable()
 
     companion object {
         private val LOG = getLogger<AmazonQToolWindowFactory>()
