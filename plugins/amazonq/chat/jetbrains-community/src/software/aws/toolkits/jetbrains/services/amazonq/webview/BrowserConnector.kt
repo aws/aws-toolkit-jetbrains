@@ -83,6 +83,8 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.PROMP
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.QuickChatActionRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_CHAT_COMMAND_PROMPT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.STOP_CHAT_RESPONSE
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.LIST_MCP_SERVERS_REQUEST_METHOD
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.MCP_SERVER_CLICK_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SendChatPromptRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.StopResponseMessage
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TELEMETRY_EVENT
@@ -461,6 +463,28 @@ class BrowserConnector(
             TELEMETRY_EVENT -> {
                 handleChat(AmazonQChatServer.telemetryEvent, node)
             }
+            LIST_MCP_SERVERS_REQUEST_METHOD -> {
+                handleChat(AmazonQChatServer.listMcpServers, node)
+                    .whenComplete { response, _ ->
+                        browser.postChat(
+                            FlareUiMessage(
+                                command = LIST_MCP_SERVERS_REQUEST_METHOD,
+                                params = response
+                            )
+                        )
+                    }
+            }
+            MCP_SERVER_CLICK_REQUEST_METHOD -> {
+                handleChat(AmazonQChatServer.mcpServerClick, node)
+                    .whenComplete { response, _ ->
+                        browser.postChat(
+                            FlareUiMessage(
+                                command = MCP_SERVER_CLICK_REQUEST_METHOD,
+                                params = response
+                            )
+                        )
+                    }
+            }
         }
     }
 
@@ -546,6 +570,7 @@ class BrowserConnector(
                         }
                     }
                 }
+
             } as () -> CompletableFuture<Response>
             serverAction(requestFromUi, invokeService)
         } ?: CompletableFuture.failedFuture<Response>(IllegalStateException("LSP Server not running"))

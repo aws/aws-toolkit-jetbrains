@@ -23,6 +23,7 @@ data class AwsClientCapabilities(
 
 data class DeveloperProfiles(
     val developerProfiles: Boolean,
+    val mcp: Boolean,
 )
 
 data class WindowSettings(
@@ -60,7 +61,8 @@ fun createExtendedClientMetadata(project: Project): ExtendedClientMetadata {
             ),
             awsClientCapabilities = AwsClientCapabilities(
                 q = DeveloperProfiles(
-                    developerProfiles = true
+                    developerProfiles = true,
+                    mcp = true
                 ),
                 window = WindowSettings(
                     showSaveFileDialog = true
