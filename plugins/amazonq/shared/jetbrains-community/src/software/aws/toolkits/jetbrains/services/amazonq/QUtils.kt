@@ -3,7 +3,9 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq
 
+import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.BuildNumber
 import com.intellij.openapi.util.SystemInfo
 import software.amazon.awssdk.services.codewhispererruntime.model.IdeCategory
 import software.amazon.awssdk.services.codewhispererruntime.model.OperatingSystem
@@ -51,4 +53,13 @@ fun codeWhispererUserContext(): UserContext = ClientMetadata.getDefault().let {
         .clientId(it.clientId)
         .ideVersion(it.awsVersion)
         .build()
+}
+
+fun isQSupportedInThisVersion(): Boolean {
+    val currentBuild = ApplicationInfo.getInstance().build.withoutProductCode()
+
+    return !(
+        currentBuild.baselineVersion == 242 &&
+            BuildNumber.fromString("242.22855.74")?.let { currentBuild < it } == true
+        )
 }

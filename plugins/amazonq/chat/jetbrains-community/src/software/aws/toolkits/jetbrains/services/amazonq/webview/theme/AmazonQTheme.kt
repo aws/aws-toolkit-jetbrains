@@ -16,6 +16,8 @@ data class AmazonQTheme(
     val defaultText: Color,
     val inactiveText: Color,
     val linkText: Color,
+    val lightText: Color,
+    val emptyText: Color,
 
     val background: Color,
     val border: Color,
@@ -31,6 +33,8 @@ data class AmazonQTheme(
     val buttonBackground: Color,
     val secondaryButtonForeground: Color,
     val secondaryButtonBackground: Color,
+    val inputBorderFocused: Color,
+    val inputBorderUnfocused: Color,
 
     val info: Color,
     val success: Color,

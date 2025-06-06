@@ -41,6 +41,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommun
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.FlareUiMessage
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LSPAny
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_OPEN_TAB
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_OPTIONS_UPDATE_NOTIFICATION
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_CONTEXT_COMMANDS
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_UPDATE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CopyFileParams
@@ -149,26 +150,29 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                 return CompletableFuture.completedFuture(ShowDocumentResult(false))
             }
 
-            // The filepath sent by the server contains unicode characters which need to be
-            // decoded for JB file handling APIs to be handle to handle file operations
-            val fileToOpen = URLDecoder.decode(params.uri, StandardCharsets.UTF_8.name())
             if (params.external == true) {
-                BrowserUtil.open(fileToOpen)
+                BrowserUtil.open(params.uri)
                 return CompletableFuture.completedFuture(ShowDocumentResult(true))
             }
 
-            ApplicationManager.getApplication().invokeLater {
-                try {
-                    val virtualFile = VirtualFileManager.getInstance().findFileByUrl(fileToOpen)
-                        ?: throw IllegalArgumentException("Cannot find file: $fileToOpen")
+            // The filepath sent by the server contains unicode characters which need to be
+            // decoded for JB file handling APIs to be handle to handle file operations
+            val fileToOpen = URLDecoder.decode(params.uri, StandardCharsets.UTF_8.name())
+            return CompletableFuture.supplyAsync(
+                {
+                    try {
+                        val virtualFile = VirtualFileManager.getInstance().refreshAndFindFileByUrl(fileToOpen)
+                            ?: throw IllegalArgumentException("Cannot find file: $fileToOpen")
 
-                    FileEditorManager.getInstance(project).openFile(virtualFile, true)
-                } catch (e: Exception) {
-                    LOG.warn { "Failed to show document: $fileToOpen" }
-                }
-            }
-
-            return CompletableFuture.completedFuture(ShowDocumentResult(true))
+                        FileEditorManager.getInstance(project).openFile(virtualFile, true)
+                        ShowDocumentResult(true)
+                    } catch (e: Exception) {
+                        LOG.warn { "Failed to show document: $fileToOpen" }
+                        ShowDocumentResult(false)
+                    }
+                },
+                ApplicationManager.getApplication()::invokeLater
+            )
         } catch (e: Exception) {
             LOG.warn { "Error showing document" }
             return CompletableFuture.completedFuture(ShowDocumentResult(false))
@@ -311,6 +315,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
 
     override fun sendChatUpdate(params: LSPAny): CompletableFuture<Unit> {
         AsyncChatUiListener.notifyPartialMessageUpdate(
+            project,
             FlareUiMessage(
                 command = CHAT_SEND_UPDATE,
                 params = params,
@@ -411,6 +416,16 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
     override fun copyFile(params: CopyFileParams) {
         refreshVfs(params.oldPath)
         return refreshVfs(params.newPath)
+    }
+
+    override fun sendChatOptionsUpdate(params: LSPAny) {
+        val chatManager = ChatCommunicationManager.getInstance(project)
+        chatManager.notifyUi(
+            FlareUiMessage(
+                command = CHAT_OPTIONS_UPDATE_NOTIFICATION,
+                params = params,
+            )
+        )
     }
 
     private fun refreshVfs(path: String) {

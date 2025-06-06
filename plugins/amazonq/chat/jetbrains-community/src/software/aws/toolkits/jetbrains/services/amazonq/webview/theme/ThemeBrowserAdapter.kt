@@ -40,7 +40,8 @@ class ThemeBrowserAdapter {
         append(CssVariable.TextColorStrong, theme.textFieldForeground)
         append(CssVariable.TextColorInput, theme.textFieldForeground)
         append(CssVariable.TextColorLink, theme.linkText)
-        append(CssVariable.TextColorWeak, theme.inactiveText)
+        append(CssVariable.TextColorWeak, theme.emptyText)
+        append(CssVariable.TextColorLight, theme.emptyText)
         append(CssVariable.TextColorDisabled, theme.inactiveText)
 
         append(CssVariable.Background, bg)
@@ -48,6 +49,8 @@ class ThemeBrowserAdapter {
         append(CssVariable.CardBackground, bg)
         append(CssVariable.CardBackgroundAlt, altBg)
         append(CssVariable.BorderDefault, theme.border)
+        append(CssVariable.BorderFocused, theme.inputBorderFocused)
+        append(CssVariable.BorderUnfocused, theme.inputBorderUnfocused)
         append(CssVariable.TabActive, theme.activeTab)
 
         append(CssVariable.InputBackground, inputBg)

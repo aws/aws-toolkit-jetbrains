@@ -3,6 +3,8 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts
 
+import com.intellij.ide.plugins.PluginManagerCore
+import com.intellij.openapi.extensions.PluginId
 import com.intellij.testFramework.ProjectExtension
 import com.intellij.util.text.SemVer
 import io.mockk.Runs
@@ -17,7 +19,6 @@ import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
 import org.junit.jupiter.api.io.TempDir
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts.ArtifactManager.SupportedManifestVersionRange
@@ -51,29 +52,27 @@ class ArtifactManagerTest {
     }
 
     @Test
-    fun `fetch artifact fetcher throws exception if manifest is null`() = runTest {
+    fun `fetch artifact fetcher returns bundled if manifest is null`() = runTest {
         every { manifestFetcher.fetch() }.returns(null)
 
-        val exception = assertThrows<LspException> {
-            artifactManager.fetchArtifact(projectExtension.project)
-        }
-        assertThat(exception)
-            .hasFieldOrPropertyWithValue("errorCode", LspException.ErrorCode.MANIFEST_FETCH_FAILED)
+        assertThat(artifactManager.fetchArtifact(projectExtension.project))
+            .isEqualTo(
+                PluginManagerCore.getPlugin(PluginId.getId("amazon.q"))?.pluginPath?.resolve("flare")
+            )
     }
 
     @Test
-    fun `fetch artifact does not have any valid lsp versions`() = runTest {
+    fun `fetch artifact does not have any valid lsp versions returns bundled`() = runTest {
         every { manifestFetcher.fetch() }.returns(Manifest())
 
         every { artifactManager.getLSPVersionsFromManifestWithSpecifiedRange(any()) }.returns(
             ArtifactManager.LSPVersions(deListedVersions = emptyList(), inRangeVersions = emptyList())
         )
 
-        val exception = assertThrows<LspException> {
-            artifactManager.fetchArtifact(projectExtension.project)
-        }
-        assertThat(exception)
-            .hasFieldOrPropertyWithValue("errorCode", LspException.ErrorCode.NO_COMPATIBLE_LSP_VERSION)
+        assertThat(artifactManager.fetchArtifact(projectExtension.project))
+            .isEqualTo(
+                PluginManagerCore.getPlugin(PluginId.getId("amazon.q"))?.pluginPath?.resolve("flare")
+            )
     }
 
     @Test

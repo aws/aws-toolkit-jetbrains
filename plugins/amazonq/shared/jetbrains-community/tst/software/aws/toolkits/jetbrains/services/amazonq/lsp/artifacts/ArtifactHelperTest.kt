@@ -199,7 +199,7 @@ class ArtifactHelperTest {
         val version = Version(serverVersion = "1.0.0")
 
         val spyArtifactHelper = spyk(artifactHelper)
-        every { spyArtifactHelper.downloadLspArtifacts(any(), any()) } returns false
+        every { spyArtifactHelper.downloadLspArtifacts(mockProject, any(), any()) } returns false
 
         assertThat(runBlocking { artifactHelper.tryDownloadLspArtifacts(mockProject, version, VersionTarget(contents = contents)) }).isEqualTo(null)
     }
@@ -210,7 +210,7 @@ class ArtifactHelperTest {
         val target = VersionTarget(contents = contents)
         val spyArtifactHelper = spyk(artifactHelper)
 
-        every { spyArtifactHelper.downloadLspArtifacts(any(), any()) } returns true
+        every { spyArtifactHelper.downloadLspArtifacts(mockProject, any(), any()) } returns true
         mockkStatic("software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts.LspUtilsKt")
         every { moveFilesFromSourceToDestination(any(), any()) } just Runs
         every { extractZipFile(any(), any()) } just Runs

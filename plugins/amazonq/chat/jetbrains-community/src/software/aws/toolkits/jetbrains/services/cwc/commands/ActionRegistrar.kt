@@ -29,7 +29,7 @@ class ActionRegistrar {
 
     fun reportMessageClick(command: EditorContextCommand, project: Project) {
         if (command == EditorContextCommand.GenerateUnitTests) {
-            AsyncChatUiListener.notifyPartialMessageUpdate(Gson().toJson(TestCommandMessage()))
+            AsyncChatUiListener.notifyPartialMessageUpdate(project, Gson().toJson(TestCommandMessage()))
         } else {
             // new agentic chat route
             ApplicationManager.getApplication().executeOnPooledThread {
@@ -45,7 +45,7 @@ class ActionRegistrar {
                         val params = SendToPromptParams(selection = codeSelection, triggerType = TriggerType.CONTEXT_MENU)
                         uiMessage = FlareUiMessage(command = SEND_TO_PROMPT, params = params)
                     }
-                    AsyncChatUiListener.notifyPartialMessageUpdate(uiMessage)
+                    AsyncChatUiListener.notifyPartialMessageUpdate(project, uiMessage)
                 }
             }
         }

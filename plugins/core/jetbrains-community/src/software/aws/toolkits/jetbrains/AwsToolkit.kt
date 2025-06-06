@@ -4,11 +4,9 @@
 package software.aws.toolkits.jetbrains
 
 import com.intellij.ide.plugins.PluginManagerCore
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.extensions.PluginDescriptor
 import com.intellij.openapi.extensions.PluginId
 import java.nio.file.Path
-import java.nio.file.Paths
 import java.util.EnumMap
 
 object AwsToolkit {
@@ -37,12 +35,7 @@ data class PluginInfo(val id: String, val name: String) {
     val version: String?
         get() = descriptor?.version
     val path: Path?
-        get() =
-            if (ApplicationManager.getApplication().isUnitTestMode) {
-                Paths.get(System.getProperty("plugin.path"))
-            } else {
-                descriptor?.pluginPath
-            }
+        get() = descriptor?.pluginPath
 }
 
 enum class AwsPlugin {

@@ -1,0 +1,11 @@
+{
+  "date" : "2025-06-05",
+  "version" : "3.74",
+  "entries" : [ {
+    "type" : "feature",
+    "description" : "Agentic coding experience: Amazon Q can now write code and run shell commands on your behalf"
+  }, {
+    "type" : "bugfix",
+    "description" : "Support full Unicode range in inline chat panel on Windows"
+  } ]
+}
