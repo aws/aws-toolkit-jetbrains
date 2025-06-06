@@ -19,7 +19,7 @@ import java.util.EventListener
 class QRefreshPanelAction : DumbAwareAction(AmazonQBundle.message("amazonq.refresh.panel"), null, AllIcons.Actions.Refresh) {
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
-        
+
         // Notify LSP server about all open tabs being removed
         val chatManager = ChatCommunicationManager.getInstance(project)
         chatManager.getAllTabIds().forEach { tabId ->
@@ -27,7 +27,7 @@ class QRefreshPanelAction : DumbAwareAction(AmazonQBundle.message("amazonq.refre
                 rawEndpoint.notify(CHAT_TAB_REMOVE, mapOf("tabId" to tabId))
             }
         }
-        
+
         // recreate chat browser
         AmazonQToolWindow.getInstance(project).disposeAndRecreate()
         // recreate signin browser
