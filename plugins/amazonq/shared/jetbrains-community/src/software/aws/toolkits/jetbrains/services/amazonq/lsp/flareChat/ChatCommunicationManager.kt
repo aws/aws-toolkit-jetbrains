@@ -45,6 +45,7 @@ class ChatCommunicationManager(private val project: Project, private val cs: Cor
     private val pendingTabRequests = ConcurrentHashMap<String, CompletableFuture<LSPAny>>()
     private val partialResultLocks = ConcurrentHashMap<String, Any>()
     private val finalResultProcessed = ConcurrentHashMap<String, Boolean>()
+    private val openTabs = mutableSetOf<String>()
 
     fun setUiReady() {
         uiReady.complete(true)
@@ -79,6 +80,24 @@ class ChatCommunicationManager(private val project: Project, private val cs: Cor
 
     fun removePartialChatMessage(partialResultToken: String) =
         chatPartialResultMap.remove(partialResultToken)
+
+    fun addTabId(tabId: String) {
+        synchronized(openTabs) {
+            openTabs.add(tabId)
+        }
+    }
+
+    fun removeTabId(tabId: String) {
+        synchronized(openTabs) {
+            openTabs.remove(tabId)
+        }
+    }
+
+    fun getAllTabIds(): Set<String> {
+        synchronized(openTabs) {
+            return openTabs.toSet()
+        }
+    }
 
     fun addSerializedChatRequest(requestId: String, result: CompletableFuture<GetSerializedChatResult>) {
         pendingSerializedChatRequests[requestId] = result
