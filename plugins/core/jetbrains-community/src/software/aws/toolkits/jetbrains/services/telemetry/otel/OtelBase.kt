@@ -201,6 +201,9 @@ abstract class AbstractBaseSpan<SpanType : AbstractBaseSpan<SpanType>>(internal 
 
     override fun recordException(exception: Throwable): SpanType {
         delegate.recordException(exception)
+
+        setAttribute("reason", exception::class.java.canonicalName)
+        setAttribute("reasonDesc", exception.message)
         return this as SpanType
     }
 
