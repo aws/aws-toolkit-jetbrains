@@ -37,7 +37,7 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 
 @Service(Service.Level.PROJECT)
-class ChatCommunicationManager(private val cs: CoroutineScope) {
+class ChatCommunicationManager(private val project: Project, private val cs: CoroutineScope) {
     val uiReady = CompletableDeferred<Boolean>()
     private val chatPartialResultMap = ConcurrentHashMap<String, String>()
     private val inflightRequestByTabId = ConcurrentHashMap<String, CompletableFuture<String>>()
@@ -45,6 +45,7 @@ class ChatCommunicationManager(private val cs: CoroutineScope) {
     private val pendingTabRequests = ConcurrentHashMap<String, CompletableFuture<LSPAny>>()
     private val partialResultLocks = ConcurrentHashMap<String, Any>()
     private val finalResultProcessed = ConcurrentHashMap<String, Boolean>()
+    private val openTabs = mutableSetOf<String>()
 
     fun setUiReady() {
         uiReady.complete(true)
@@ -53,7 +54,7 @@ class ChatCommunicationManager(private val cs: CoroutineScope) {
     fun notifyUi(uiMessage: FlareUiMessage) {
         cs.launch {
             uiReady.await()
-            AsyncChatUiListener.notifyPartialMessageUpdate(uiMessage)
+            AsyncChatUiListener.notifyPartialMessageUpdate(project, uiMessage)
         }
     }
 
@@ -79,6 +80,24 @@ class ChatCommunicationManager(private val cs: CoroutineScope) {
 
     fun removePartialChatMessage(partialResultToken: String) =
         chatPartialResultMap.remove(partialResultToken)
+
+    fun addTabId(tabId: String) {
+        synchronized(openTabs) {
+            openTabs.add(tabId)
+        }
+    }
+
+    fun removeTabId(tabId: String) {
+        synchronized(openTabs) {
+            openTabs.remove(tabId)
+        }
+    }
+
+    fun getAllTabIds(): Set<String> {
+        synchronized(openTabs) {
+            return openTabs.toSet()
+        }
+    }
 
     fun addSerializedChatRequest(requestId: String, result: CompletableFuture<GetSerializedChatResult>) {
         pendingSerializedChatRequests[requestId] = result
@@ -148,7 +167,7 @@ class ChatCommunicationManager(private val cs: CoroutineScope) {
                                 params = partialChatResult,
                                 isPartialResult = true
                             )
-                            AsyncChatUiListener.notifyPartialMessageUpdate(uiMessage)
+                            AsyncChatUiListener.notifyPartialMessageUpdate(project, uiMessage)
                             finalResultProcessed[token] = true
                             ChatAsyncResultManager.getInstance(project).setResult(token, partialResultMap)
                             return
@@ -169,7 +188,7 @@ class ChatCommunicationManager(private val cs: CoroutineScope) {
                     params = partialChatResult,
                     isPartialResult = true
                 )
-                AsyncChatUiListener.notifyPartialMessageUpdate(uiMessage)
+                AsyncChatUiListener.notifyPartialMessageUpdate(project, uiMessage)
             }
         }
     }

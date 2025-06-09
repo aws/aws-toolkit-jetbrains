@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.cwc.commands.codescan.actions
 
 import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataKey
@@ -18,7 +19,14 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SendT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TriggerType
 
 class ExplainCodeIssueAction : AnAction(), DumbAware {
+    override fun getActionUpdateThread() = ActionUpdateThread.BGT
+
+    override fun update(e: AnActionEvent) {
+        e.presentation.isEnabledAndVisible = e.project != null
+    }
+
     override fun actionPerformed(e: AnActionEvent) {
+        val project = e.project ?: return
         val issueDataKey = DataKey.create<MutableMap<String, String>>("amazonq.codescan.explainissue")
         val issueContext = e.getData(issueDataKey) ?: return
 
@@ -50,7 +58,7 @@ class ExplainCodeIssueAction : AnAction(), DumbAware {
                 )
 
                 val uiMessage = FlareUiMessage(SEND_TO_PROMPT, params)
-                AsyncChatUiListener.notifyPartialMessageUpdate(uiMessage)
+                AsyncChatUiListener.notifyPartialMessageUpdate(project, uiMessage)
             }
         }
     }
