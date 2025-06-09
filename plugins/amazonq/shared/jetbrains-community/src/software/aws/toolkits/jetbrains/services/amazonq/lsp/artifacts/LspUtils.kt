@@ -12,6 +12,8 @@ import software.aws.toolkits.core.utils.ZIP_PROPERTY_POSIX
 import software.aws.toolkits.core.utils.createParentDirectories
 import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.core.utils.hasPosixFilePermissions
+import software.aws.toolkits.jetbrains.AwsPlugin
+import software.aws.toolkits.jetbrains.AwsToolkit
 import java.io.FileNotFoundException
 import java.net.URI
 import java.nio.file.FileSystems
@@ -100,4 +102,18 @@ fun extractZipFile(zipFilePath: Path, destDir: Path) {
     } catch (e: Exception) {
         throw LspException("Failed to extract zip file: ${e.message}", LspException.ErrorCode.UNZIP_FAILED, cause = e)
     }
+}
+
+fun isReleaseVersion(): Boolean {
+    val info = AwsToolkit.PLUGINS_INFO.get(AwsPlugin.Q)
+    val version = info?.version ?: return true
+    return !version.contains("SNAPSHOT", ignoreCase = true)
+}
+
+fun getArtifactPath(): Path = if (isReleaseVersion()) {
+    getToolkitsCommonCacheRoot().resolve(
+        Paths.get("aws", "toolkits", "language-servers", "AmazonQ-JetBrains-temp")
+    )
+} else {
+    getToolkitsCommonCacheRoot().resolve(Paths.get("aws", "toolkits", "language-servers", "AmazonQ-JetBrains-temp-beta"))
 }

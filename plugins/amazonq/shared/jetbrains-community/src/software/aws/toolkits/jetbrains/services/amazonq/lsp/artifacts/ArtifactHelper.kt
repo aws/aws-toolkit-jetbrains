@@ -23,13 +23,12 @@ import software.aws.toolkits.telemetry.LanguageServerSetupStage
 import software.aws.toolkits.telemetry.Telemetry
 import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.Paths
 import java.util.concurrent.atomic.AtomicInteger
 
-class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH, private val maxDownloadAttempts: Int = MAX_DOWNLOAD_ATTEMPTS) {
+class ArtifactHelper(private val lspArtifactsPath: Path = getArtifactPath(), private val maxDownloadAttempts: Int = MAX_DOWNLOAD_ATTEMPTS) {
 
     companion object {
-        private val DEFAULT_ARTIFACT_PATH = getToolkitsCommonCacheRoot().resolve(Paths.get("aws", "toolkits", "language-servers", "AmazonQ-JetBrains-temp"))
+        // private val DEFAULT_ARTIFACT_PATH =
         private val logger = getLogger<ArtifactHelper>()
         private const val MAX_DOWNLOAD_ATTEMPTS = 3
     }

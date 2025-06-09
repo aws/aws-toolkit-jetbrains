@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.amazonq.lsp
 
 import org.eclipse.lsp4j.jsonrpc.json.JsonRpcMethodProvider
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LSPAny
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ButtonClickParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ButtonClickResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_BUTTON_CLICK
@@ -40,9 +41,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.Inser
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.LIST_MCP_SERVERS_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.LinkClickParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ListConversationsParams
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ListMcpServersParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.MCP_SERVER_CLICK_REQUEST_METHOD
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.McpServerClickParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.PROMPT_INPUT_OPTIONS_CHANGE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.PromptInputOptionChangeParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_CHAT_COMMAND_PROMPT
@@ -180,14 +179,14 @@ object AmazonQChatServer : JsonRpcMethodProvider {
 
     val listMcpServers = JsonRpcRequest(
         LIST_MCP_SERVERS_REQUEST_METHOD,
-        ListMcpServersParams::class.java,
-        Any::class.java
+        LSPAny::class.java,
+        LSPAny::class.java
     )
 
     val mcpServerClick = JsonRpcRequest(
         MCP_SERVER_CLICK_REQUEST_METHOD,
-        McpServerClickParams::class.java,
-        Any::class.java
+        LSPAny::class.java,
+        LSPAny::class.java
     )
 
     val conversationClick = JsonRpcRequest(

@@ -72,6 +72,8 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.Encry
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedQuickActionChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GET_SERIALIZED_CHAT_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatResponse
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.LIST_MCP_SERVERS_REQUEST_METHOD
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.MCP_SERVER_CLICK_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OPEN_SETTINGS
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OPEN_WORKSPACE_SETTINGS_KEY
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenSettingsNotification
@@ -83,8 +85,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.PROMP
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.QuickChatActionRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_CHAT_COMMAND_PROMPT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.STOP_CHAT_RESPONSE
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.LIST_MCP_SERVERS_REQUEST_METHOD
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.MCP_SERVER_CLICK_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SendChatPromptRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.StopResponseMessage
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TELEMETRY_EVENT
@@ -570,7 +570,6 @@ class BrowserConnector(
                         }
                     }
                 }
-
             } as () -> CompletableFuture<Response>
             serverAction(requestFromUi, invokeService)
         } ?: CompletableFuture.failedFuture<Response>(IllegalStateException("LSP Server not running"))

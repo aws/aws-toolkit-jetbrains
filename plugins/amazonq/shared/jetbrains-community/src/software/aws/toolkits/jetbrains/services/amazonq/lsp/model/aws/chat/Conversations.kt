@@ -17,7 +17,6 @@ data class TextBasedFilterOption(
     val description: String?,
 )
 
-
 data class FilterOption(
     val id: String,
     val placeholder: String? = null,
@@ -25,11 +24,11 @@ data class FilterOption(
     val description: String? = null,
     val icon: IconType? = null,
     val type: String,
-    val options: List<Option>? = null
+    val options: List<Option>? = null,
 ) {
     data class Option(
         val value: String,
-        val label: String
+        val label: String,
     )
 }
 
