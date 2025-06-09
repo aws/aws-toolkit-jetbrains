@@ -27,8 +27,8 @@
             :isSelected="selectedLoginOption === LoginOption.BUILDER_ID"
             :itemId="LoginOption.BUILDER_ID"
             :login-type="LoginOption.BUILDER_ID"
-            :itemTitle="'Use for free'"
-            :itemText="'No AWS account required'"
+            :itemTitle="'Personal account'"
+            :itemText="'Best for personal use. Free to start with a Builder ID'"
             class="font-amazon bottom-small-gap"
         ></SelectableItem>
         <!-- TODO: IdC description undecided -->
