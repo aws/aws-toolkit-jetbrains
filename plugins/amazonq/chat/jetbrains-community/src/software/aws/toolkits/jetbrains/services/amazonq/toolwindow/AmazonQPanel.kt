@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.amazonq.toolwindow
 
 import com.intellij.idea.AppMode
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.components.JBLoadingPanel
@@ -19,7 +20,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import software.amazon.awssdk.utils.UserHomeDirectoryUtils
 import software.aws.toolkits.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
@@ -27,6 +27,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.apps.AppConnection
 import software.aws.toolkits.jetbrains.services.amazonq.commands.MessageTypeRegistry
 import software.aws.toolkits.jetbrains.services.amazonq.isQSupportedInThisVersion
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts.ArtifactManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AsyncChatUiListener
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.FlareUiMessage
 import software.aws.toolkits.jetbrains.services.amazonq.messages.AmazonQMessage
@@ -43,7 +44,6 @@ import software.aws.toolkits.jetbrains.services.amazonqDoc.auth.isDocAvailable
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.auth.isFeatureDevAvailable
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isCodeTransformAvailable
 import software.aws.toolkits.resources.message
-import java.nio.file.Paths
 import java.util.concurrent.CompletableFuture
 import javax.swing.JButton
 
@@ -116,7 +116,7 @@ class AmazonQPanel(val project: Project, private val scope: CoroutineScope) : Di
             wrapper.setContent(loadingPanel)
 
             scope.launch {
-                val webUri = Paths.get(UserHomeDirectoryUtils.userHomeDirectory(), "amazonq-ui.js").toAbsolutePath().toUri()
+                val webUri = service<ArtifactManager>().fetchArtifact(project).resolve("amazonq-ui.js").toUri()
                 // wait for server to be running
                 AmazonQLspService.getInstance(project).instanceFlow.first()
 
