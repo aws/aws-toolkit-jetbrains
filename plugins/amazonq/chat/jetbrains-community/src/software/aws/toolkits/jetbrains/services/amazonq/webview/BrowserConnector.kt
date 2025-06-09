@@ -72,6 +72,8 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.Encry
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedQuickActionChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GET_SERIALIZED_CHAT_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatResponse
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.LIST_MCP_SERVERS_REQUEST_METHOD
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.MCP_SERVER_CLICK_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OPEN_SETTINGS
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OPEN_WORKSPACE_SETTINGS_KEY
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenSettingsNotification
@@ -460,6 +462,28 @@ class BrowserConnector(
             }
             TELEMETRY_EVENT -> {
                 handleChat(AmazonQChatServer.telemetryEvent, node)
+            }
+            LIST_MCP_SERVERS_REQUEST_METHOD -> {
+                handleChat(AmazonQChatServer.listMcpServers, node)
+                    .whenComplete { response, _ ->
+                        browser.postChat(
+                            FlareUiMessage(
+                                command = LIST_MCP_SERVERS_REQUEST_METHOD,
+                                params = response
+                            )
+                        )
+                    }
+            }
+            MCP_SERVER_CLICK_REQUEST_METHOD -> {
+                handleChat(AmazonQChatServer.mcpServerClick, node)
+                    .whenComplete { response, _ ->
+                        browser.postChat(
+                            FlareUiMessage(
+                                command = MCP_SERVER_CLICK_REQUEST_METHOD,
+                                params = response
+                            )
+                        )
+                    }
             }
         }
     }
