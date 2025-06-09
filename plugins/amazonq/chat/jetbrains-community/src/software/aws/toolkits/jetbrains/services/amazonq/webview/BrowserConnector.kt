@@ -307,14 +307,19 @@ class BrowserConnector(
             }
 
             CHAT_TAB_ADD -> {
-                handleChat(AmazonQChatServer.tabAdd, node)
+                handleChat(AmazonQChatServer.tabAdd, node) { params, invoke ->
+                    // Track the tab ID when a tab is added
+                    chatCommunicationManager.addTabId(params.tabId)
+                    invoke()
+                }
             }
 
             CHAT_TAB_REMOVE -> {
                 handleChat(AmazonQChatServer.tabRemove, node) { params, invoke ->
                     chatCommunicationManager.removePartialChatMessage(params.tabId)
                     cancelInflightRequests(params.tabId)
-
+                    // Remove the tab ID from tracking when a tab is removed
+                    chatCommunicationManager.removeTabId(params.tabId)
                     invoke()
                 }
             }
