@@ -31,6 +31,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTele
 import software.aws.toolkits.jetbrains.services.codemodernizer.EXPLAINABILITY_V1
 import software.aws.toolkits.jetbrains.services.codemodernizer.HilTelemetryMetaData
 import software.aws.toolkits.jetbrains.services.codemodernizer.InboundAppMessagesHandler
+import software.aws.toolkits.jetbrains.services.codemodernizer.SELECTIVE_TRANSFORMATION_V2
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformActionMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformCommand
@@ -119,6 +120,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.validateSct
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.QFeatureEvent
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.broadcastQEvent
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
+import software.aws.toolkits.jetbrains.utils.notifyStickyInfo
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformPreValidationError
 
@@ -415,7 +417,7 @@ class CodeTransformChatController(
             it.sessionContext.customBuildCommand = customBuildCommand
         }
         // TODO: add CLIENT_SIDE_BUILD below when releasing CSB
-        val transformCapabilities = listOf(EXPLAINABILITY_V1)
+        val transformCapabilities = listOf(EXPLAINABILITY_V1, SELECTIVE_TRANSFORMATION_V2)
         codeModernizerManager.codeTransformationSession?.let {
             it.sessionContext.transformCapabilities = transformCapabilities
             codeModernizerManager.runLocalMavenBuild(context.project, it)
@@ -476,7 +478,7 @@ dependencyManagement:
     - identifier: "com.example:library1"
       targetVersion: "2.1.0"
       versionProperty: "library1.version"  # Optional
-      originType: "FIRST_PARTY" # or "THIRD_PARTY"  # Optional
+      originType: "FIRST_PARTY" # or "THIRD_PARTY"
     - identifier: "com.example:library2"
       targetVersion: "3.0.0"
       originType: "THIRD_PARTY"
@@ -797,8 +799,12 @@ dependencyManagement:
                         is DownloadArtifactResult.Success -> {
                             if (downloadResult.artifact !is CodeModernizerArtifact) return artifactHandler.notifyUnableToApplyPatch("")
                             codeTransformChatHelper.updateLastPendingMessage(
-                                buildTransformResultChatContent(result)
+                                buildTransformResultChatContent(
+                                    result,
+                                    codeModernizerManager.codeTransformationSession?.sessionContext?.targetJavaVersion.toString()
+                                )
                             )
+                            notifyStickyInfo("jdkVersion", codeModernizerManager.codeTransformationSession?.sessionContext?.targetJavaVersion.toString())
                         }
                         is DownloadArtifactResult.DownloadFailure -> artifactHandler.notifyUnableToDownload(downloadResult.failureReason)
                         is DownloadArtifactResult.ParseZipFailure -> artifactHandler.notifyUnableToApplyPatch(downloadResult.failureReason.errorMessage)

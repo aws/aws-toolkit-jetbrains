@@ -146,7 +146,7 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
             root.children[0],
             JavaSdkVersion.JDK_1_8,
             JavaSdkVersion.JDK_11,
-            listOf(EXPLAINABILITY_V1),
+            listOf(EXPLAINABILITY_V1, SELECTIVE_TRANSFORMATION_V2),
             MAVEN_BUILD_SKIP_UNIT_TESTS
         )
         val mockFile = mock(File::class.java)
@@ -164,6 +164,8 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
                     Path("manifest.json") -> {
                         assertThat(fileContent).isNotNull()
                         assertThat(fileContent).contains(MAVEN_BUILD_SKIP_UNIT_TESTS)
+                        assertThat(fileContent).contains(SELECTIVE_TRANSFORMATION_V2)
+                        assertThat(fileContent).contains("\"noInteractiveMode\":true")
                     }
                     Path("sources/src/tmp.txt") -> assertThat(fileContent).isEqualTo(fileText)
                     Path("build-logs.txt") -> assertThat(fileContent).isNotNull()
