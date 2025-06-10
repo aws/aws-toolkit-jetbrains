@@ -120,7 +120,6 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.validateSct
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.QFeatureEvent
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.broadcastQEvent
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
-import software.aws.toolkits.jetbrains.utils.notifyStickyInfo
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformPreValidationError
 
@@ -804,7 +803,6 @@ dependencyManagement:
                                     codeModernizerManager.codeTransformationSession?.sessionContext?.targetJavaVersion.toString()
                                 )
                             )
-                            notifyStickyInfo("jdkVersion", codeModernizerManager.codeTransformationSession?.sessionContext?.targetJavaVersion.toString())
                         }
                         is DownloadArtifactResult.DownloadFailure -> artifactHandler.notifyUnableToDownload(downloadResult.failureReason)
                         is DownloadArtifactResult.ParseZipFailure -> artifactHandler.notifyUnableToApplyPatch(downloadResult.failureReason.errorMessage)
