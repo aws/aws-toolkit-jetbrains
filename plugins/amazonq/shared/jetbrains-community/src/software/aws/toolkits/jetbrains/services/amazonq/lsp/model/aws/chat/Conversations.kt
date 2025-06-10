@@ -13,6 +13,8 @@ data class TextBasedFilterOption(
     val type: String,
     val placeholder: String?,
     val icon: IconType?,
+    val title: String?,
+    val description: String?,
 )
 
 data class FilterOption(
