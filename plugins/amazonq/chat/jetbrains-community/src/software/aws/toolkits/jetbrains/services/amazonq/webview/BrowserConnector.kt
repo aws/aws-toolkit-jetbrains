@@ -72,6 +72,8 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.Encry
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedQuickActionChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GET_SERIALIZED_CHAT_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatResponse
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.LIST_MCP_SERVERS_REQUEST_METHOD
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.MCP_SERVER_CLICK_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OPEN_SETTINGS
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OPEN_WORKSPACE_SETTINGS_KEY
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenSettingsNotification
@@ -307,14 +309,19 @@ class BrowserConnector(
             }
 
             CHAT_TAB_ADD -> {
-                handleChat(AmazonQChatServer.tabAdd, node)
+                handleChat(AmazonQChatServer.tabAdd, node) { params, invoke ->
+                    // Track the tab ID when a tab is added
+                    chatCommunicationManager.addTabId(params.tabId)
+                    invoke()
+                }
             }
 
             CHAT_TAB_REMOVE -> {
                 handleChat(AmazonQChatServer.tabRemove, node) { params, invoke ->
                     chatCommunicationManager.removePartialChatMessage(params.tabId)
                     cancelInflightRequests(params.tabId)
-
+                    // Remove the tab ID from tracking when a tab is removed
+                    chatCommunicationManager.removeTabId(params.tabId)
                     invoke()
                 }
             }
@@ -455,6 +462,28 @@ class BrowserConnector(
             }
             TELEMETRY_EVENT -> {
                 handleChat(AmazonQChatServer.telemetryEvent, node)
+            }
+            LIST_MCP_SERVERS_REQUEST_METHOD -> {
+                handleChat(AmazonQChatServer.listMcpServers, node)
+                    .whenComplete { response, _ ->
+                        browser.postChat(
+                            FlareUiMessage(
+                                command = LIST_MCP_SERVERS_REQUEST_METHOD,
+                                params = response
+                            )
+                        )
+                    }
+            }
+            MCP_SERVER_CLICK_REQUEST_METHOD -> {
+                handleChat(AmazonQChatServer.mcpServerClick, node)
+                    .whenComplete { response, _ ->
+                        browser.postChat(
+                            FlareUiMessage(
+                                command = MCP_SERVER_CLICK_REQUEST_METHOD,
+                                params = response
+                            )
+                        )
+                    }
             }
         }
     }
