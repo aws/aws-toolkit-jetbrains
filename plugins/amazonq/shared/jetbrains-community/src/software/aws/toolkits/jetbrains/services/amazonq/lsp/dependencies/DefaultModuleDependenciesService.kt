@@ -11,16 +11,15 @@ import com.intellij.openapi.roots.ModuleRootListener
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.dependencies.ModuleDependencyProvider.Companion.EP_NAME
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.dependencies.DidChangeDependencyPathsParams
-import java.util.concurrent.CompletableFuture
+import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 
 class DefaultModuleDependenciesService(
     private val project: Project,
-    serverInstance: Disposable,
 ) : ModuleDependenciesService,
-    ModuleRootListener {
-
+    ModuleRootListener,
+    Disposable {
     init {
-        project.messageBus.connect(serverInstance).subscribe(
+        project.messageBus.connect(this).subscribe(
             ModuleRootListener.TOPIC,
             this
         )
@@ -34,10 +33,13 @@ class DefaultModuleDependenciesService(
         syncAllModules()
     }
 
-    override fun didChangeDependencyPaths(params: DidChangeDependencyPathsParams): CompletableFuture<Unit> =
+    override fun didChangeDependencyPaths(params: DidChangeDependencyPathsParams) {
         AmazonQLspService.executeIfRunning(project) { languageServer ->
-            languageServer.didChangeDependencyPaths(params)
-        }?.toCompletableFuture() ?: CompletableFuture.failedFuture(IllegalStateException("LSP Server not running"))
+            pluginAwareExecuteOnPooledThread {
+                languageServer.didChangeDependencyPaths(params)
+            }
+        }
+    }
 
     private fun syncAllModules() {
         ModuleManager.getInstance(project).modules.forEach { module ->
@@ -48,5 +50,8 @@ class DefaultModuleDependenciesService(
                 }
             }
         }
+    }
+
+    override fun dispose() {
     }
 }

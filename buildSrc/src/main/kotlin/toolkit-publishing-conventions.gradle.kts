@@ -16,7 +16,7 @@ val ideProfile = IdeVersions.ideProfile(project)
 val toolkitVersion: String by project
 
 // please check changelog generation logic if this format is changed
-version = "$toolkitVersion-${ideProfile.shortName}"
+version = "$toolkitVersion.${ideProfile.shortName}"
 
 // attach the current commit hash on local builds
 if (!project.isCi()) {

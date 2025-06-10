@@ -8,8 +8,6 @@
     <projectListeners>
         <listener class="software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindowListener"
                   topic="com.intellij.openapi.wm.ex.ToolWindowManagerListener"/>
-        <listener class="software.aws.toolkits.jetbrains.services.amazonq.project.ProjectContextEditorListener"
-                  topic="com.intellij.openapi.fileEditor.FileEditorManagerListener"/>
     </projectListeners>
 
     <extensions defaultExtensionNs="com.intellij">

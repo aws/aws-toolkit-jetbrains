@@ -11,8 +11,6 @@ class CodeWhispererSql private constructor() : CodeWhispererProgrammingLanguage(
 
     override fun toTelemetryType(): CodewhispererLanguage = CodewhispererLanguage.Sql
 
-    override fun isCodeCompletionSupported(): Boolean = true
-
     companion object {
         const val ID = "sql"
 

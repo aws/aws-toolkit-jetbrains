@@ -11,6 +11,7 @@ import com.intellij.openapi.options.Configurable
 import com.intellij.openapi.options.SearchableConfigurable
 import com.intellij.openapi.options.ex.Settings
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.ui.emptyText
 import com.intellij.ui.components.ActionLink
 import com.intellij.ui.components.fields.ExpandableTextField
@@ -23,6 +24,7 @@ import com.intellij.util.concurrency.EdtExecutorService
 import com.intellij.util.execution.ParametersListUtil
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererLoginType
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
@@ -74,6 +76,21 @@ class CodeWhispererConfigurable(private val project: Project) :
                     .bindText(
                         { LspSettings.getInstance().getArtifactPath().orEmpty() },
                         { LspSettings.getInstance().setArtifactPath(it) }
+                    )
+                    .applyToComponent {
+                        emptyText.text = message("executableCommon.auto_managed")
+                    }
+                    .resizableColumn()
+                    .align(Align.FILL)
+            }
+            row(message("amazonqFeatureDev.placeholder.node_runtime_path")) {
+                val fileChooserDescriptor = FileChooserDescriptorFactory.createSingleFileDescriptor()
+                fileChooserDescriptor.isForcedToUseIdeaFileChooser = true
+
+                textFieldWithBrowseButton(fileChooserDescriptor = fileChooserDescriptor)
+                    .bindText(
+                        { LspSettings.getInstance().getNodeRuntimePath().orEmpty() },
+                        { LspSettings.getInstance().setNodeRuntimePath(it) }
                     )
                     .applyToComponent {
                         emptyText.text = message("executableCommon.auto_managed")
@@ -284,6 +301,20 @@ class CodeWhispererConfigurable(private val project: Project) :
                 }
             }
         }
+    }.also {
+        val newCallbacks = it.applyCallbacks.toMutableMap()
+            .also { map ->
+                val list = map.getOrPut(null) { mutableListOf() } as MutableList<() -> Unit>
+                list.add {
+                    ProjectManager.getInstance().openProjects.forEach { project ->
+                        if (project.isDisposed) {
+                            return@forEach
+                        }
+                        AmazonQLspService.didChangeConfiguration(project)
+                    }
+                }
+            }
+        it.applyCallbacks = newCallbacks
     }
 
     companion object {

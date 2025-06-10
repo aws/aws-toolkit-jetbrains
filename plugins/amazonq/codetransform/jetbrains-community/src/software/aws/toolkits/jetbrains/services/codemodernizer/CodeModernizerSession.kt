@@ -548,7 +548,7 @@ class CodeModernizerSession(
         } catch (e: Exception) {
             return when (e) {
                 is AlreadyDisposedException, is CancellationException -> {
-                    LOG.warn { "The session was disposed while polling for job details." }
+                    LOG.error(e) { "The session was disposed while polling for job details." }
                     CodeModernizerJobCompletedResult.ManagerDisposed
                 }
 

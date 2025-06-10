@@ -7,24 +7,19 @@ import com.intellij.codeInsight.editorActions.TypedHandlerDelegate
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
-import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil.shouldSkipInvokingBasedOnRightContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutoTriggerService
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutomatedTriggerType
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 
 class CodeWhispererTypedHandler : TypedHandlerDelegate() {
     override fun charTyped(c: Char, project: Project, editor: Editor, psiFiles: PsiFile): Result {
-        if (shouldSkipInvokingBasedOnRightContext(editor)) {
-            return Result.CONTINUE
-        }
-
         // Special Char
         if (CodeWhispererConstants.SPECIAL_CHARACTERS_LIST.contains(c.toString())) {
-            CodeWhispererAutoTriggerService.getInstance().tryInvokeAutoTrigger(editor, CodeWhispererAutomatedTriggerType.SpecialChar(c))
+            CodeWhispererAutoTriggerService.getInstance().invoke(editor, CodeWhispererAutomatedTriggerType.SpecialChar(c))
             return Result.CONTINUE
         }
 
-        CodeWhispererAutoTriggerService.getInstance().tryInvokeAutoTrigger(editor, CodeWhispererAutomatedTriggerType.Classifier())
+        CodeWhispererAutoTriggerService.getInstance().invoke(editor, CodeWhispererAutomatedTriggerType.Classifier())
 
         return Result.CONTINUE
     }
