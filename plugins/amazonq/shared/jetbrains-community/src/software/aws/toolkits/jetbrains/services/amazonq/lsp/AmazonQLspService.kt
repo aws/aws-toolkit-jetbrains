@@ -59,6 +59,7 @@ import org.eclipse.lsp4j.jsonrpc.json.JsonRpcMethod
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseMessage
 import org.eclipse.lsp4j.launch.LSPLauncher
 import org.slf4j.event.Level
+import software.amazon.awssdk.utils.UserHomeDirectoryUtils
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
@@ -94,6 +95,7 @@ import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.Paths
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.seconds
@@ -391,7 +393,7 @@ private class AmazonQServerInstance(private val project: Project, private val cs
 
         val cmd = NodeExePatcher.patch(nodePath)
             .withParameters(
-                LspSettings.getInstance().getArtifactPath() ?: artifact.resolve("aws-lsp-codewhisperer.js").toString(),
+                Paths.get(UserHomeDirectoryUtils.userHomeDirectory(), "aws-lsp-codewhisperer.js").toAbsolutePath().toString(),
                 "--stdio",
                 "--set-credentials-encryption-key",
             ).withEnvironment(
