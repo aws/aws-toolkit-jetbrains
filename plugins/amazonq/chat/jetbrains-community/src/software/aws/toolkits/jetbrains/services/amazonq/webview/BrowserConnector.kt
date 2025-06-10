@@ -308,7 +308,7 @@ class BrowserConnector(
                     RunOnceUtil.runOnceForApp("AmazonQ-UI-Ready") {
                         MeetQSettings.getInstance().reinvent2024OnboardingCount += 1
                     }
-                    // Update feature flags and refresh quick actions after authentication
+                    // send feature flags to ui here in case reauth was needed
                     updateFeatureFlagsInBrowser(browser)
                     invoke()
                 }
@@ -542,14 +542,12 @@ class BrowserConnector(
     }
 
     private fun updateFeatureFlagsInBrowser(browser: Browser) {
-        // Get the current feature flag values
         val isFeatureDevAvailable = isFeatureDevAvailable(project)
         val isCodeTransformAvailable = isCodeTransformAvailable(project)
         val isDocAvailable = isDocAvailable(project)
         val isCodeScanAvailable = isCodeScanAvailable(project)
         val isCodeTestAvailable = isCodeTestAvailable(project)
 
-        // Create a new connector with updated flags and get the commands
         val script = """
             try {
                 // Create a temporary connector with updated flags
