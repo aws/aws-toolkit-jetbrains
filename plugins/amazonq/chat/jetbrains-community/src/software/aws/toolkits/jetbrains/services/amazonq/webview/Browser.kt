@@ -139,7 +139,7 @@ class Browser(parent: Disposable, private val webUri: URI, val project: Project)
                         },
                     
                      "${activeProfile?.profileName.orEmpty()}")
-                    const commands = [hybridChatConnector.initialQuickActions[0], hybridChatConnector.initialQuickActions[1]]
+                    const commands = hybridChatConnector.initialQuickActions
                     amazonQChat.createChat(
                         {
                             postMessage: message => {
