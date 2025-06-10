@@ -18,19 +18,11 @@ data class TextBasedFilterOption(
 )
 
 data class FilterOption(
-    val id: String? = null,
-    val placeholder: String? = null,
-    val title: String? = null,
-    val description: String? = null,
-    val icon: IconType? = null,
+    val id: String,
     val type: String? = null,
-    val options: List<Option>? = null,
-) {
-    data class Option(
-        val value: String? = null,
-        val label: String? = null,
-    )
-}
+    val placeholder: String?,
+    val icon: IconType?,
+)
 
 data class Action(
     val id: String,
