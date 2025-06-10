@@ -1,11 +1,13 @@
 // Copyright 2025 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 @file:Suppress("BannedImports")
+
 package software.aws.toolkits.jetbrains.services.amazonq.lsp
 
 import com.intellij.diff.DiffContentFactory
 import com.intellij.diff.requests.SimpleDiffRequest
 import com.intellij.ide.BrowserUtil
+import com.intellij.notification.NotificationAction
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileChooser.FileChooserFactory
@@ -112,19 +114,28 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
     }
 
     override fun showMessage(messageParams: MessageParams) {
-        val type = when (messageParams.type) {
-            MessageType.Error -> NotificationType.ERROR
-            MessageType.Warning -> NotificationType.WARNING
-            MessageType.Info, MessageType.Log -> NotificationType.INFORMATION
-        }
-
-        notify(type, message("q.window.title"), getCleanedContent(messageParams.message, true), project, emptyList())
+        notify(messageParams.type.toNotificationType(), message("q.window.title"), getCleanedContent(messageParams.message, true), project, emptyList())
     }
 
-    override fun showMessageRequest(requestParams: ShowMessageRequestParams): CompletableFuture<MessageActionItem?>? {
-        println(requestParams)
+    override fun showMessageRequest(requestParams: ShowMessageRequestParams): CompletableFuture<MessageActionItem?> {
+        val future = CompletableFuture<MessageActionItem?>()
+        if (requestParams.actions.isNullOrEmpty()) {
+            future.complete(null)
+        }
 
-        return CompletableFuture.completedFuture(null)
+        notify(
+            requestParams.type.toNotificationType(),
+            message("q.window.title"),
+            getCleanedContent(requestParams.message, true),
+            project,
+            requestParams.actions.map { item ->
+                NotificationAction.create(item.title) {
+                    future.complete(item)
+                }
+            }
+        )
+
+        return future
     }
 
     override fun logMessage(message: MessageParams) {
@@ -280,6 +291,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                                 )
                             )
                         }
+
                         AmazonQLspConstants.LSP_Q_CONFIGURATION_KEY -> {
                             add(
                                 AmazonQLspConfiguration(
@@ -327,6 +339,12 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
 
     private fun File.toVirtualFile() = LocalFileSystem.getInstance().findFileByIoFile(this)
 
+    private fun MessageType.toNotificationType() = when (this) {
+        MessageType.Error -> NotificationType.ERROR
+        MessageType.Warning -> NotificationType.WARNING
+        MessageType.Info, MessageType.Log -> NotificationType.INFORMATION
+    }
+
     override fun openFileDiff(params: OpenFileDiffParams): CompletableFuture<Unit> =
         CompletableFuture.supplyAsync(
             {
@@ -352,6 +370,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                             contentFactory.create(project, originalContent, virtualFile) to
                                 contentFactory.createEmpty()
                         }
+
                         else -> {
                             val newContent = params.fileContent.orEmpty()
                             isNewFile = newContent == originalContent
@@ -360,6 +379,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                                     contentFactory.createEmpty() to
                                         contentFactory.create(project, newContent, virtualFile)
                                 }
+
                                 else -> {
                                     contentFactory.create(project, originalContent, virtualFile) to
                                         contentFactory.create(project, newContent, virtualFile)
