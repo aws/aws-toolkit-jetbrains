@@ -94,6 +94,11 @@ import software.aws.toolkits.jetbrains.services.amazonq.util.command
 import software.aws.toolkits.jetbrains.services.amazonq.util.tabType
 import software.aws.toolkits.jetbrains.services.amazonq.webview.theme.AmazonQTheme
 import software.aws.toolkits.jetbrains.services.amazonq.webview.theme.ThemeBrowserAdapter
+import software.aws.toolkits.jetbrains.services.amazonqCodeScan.auth.isCodeScanAvailable
+import software.aws.toolkits.jetbrains.services.amazonqCodeTest.auth.isCodeTestAvailable
+import software.aws.toolkits.jetbrains.services.amazonqDoc.auth.isDocAvailable
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.auth.isFeatureDevAvailable
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isCodeTransformAvailable
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererConfigurable
 import software.aws.toolkits.jetbrains.settings.MeetQSettings
 import software.aws.toolkits.telemetry.MetricResult
@@ -303,7 +308,8 @@ class BrowserConnector(
                     RunOnceUtil.runOnceForApp("AmazonQ-UI-Ready") {
                         MeetQSettings.getInstance().reinvent2024OnboardingCount += 1
                     }
-
+                    // Update feature flags and refresh quick actions after authentication
+                    updateFeatureFlagsInBrowser(browser)
                     invoke()
                 }
             }
@@ -533,6 +539,52 @@ class BrowserConnector(
         // Send a message to hide the stop button without showing an error
         val cancelMessage = chatCommunicationManager.getCancellationUiMessage(tabId)
         browser.postChat(cancelMessage)
+    }
+
+    private fun updateFeatureFlagsInBrowser(browser: Browser) {
+        // Get the current feature flag values
+        val isFeatureDevAvailable = isFeatureDevAvailable(project)
+        val isCodeTransformAvailable = isCodeTransformAvailable(project)
+        val isDocAvailable = isDocAvailable(project)
+        val isCodeScanAvailable = isCodeScanAvailable(project)
+        val isCodeTestAvailable = isCodeTestAvailable(project)
+
+        // Create a new connector with updated flags and get the commands
+        val script = """
+            try {
+                // Create a temporary connector with updated flags
+                const tempConnector = connectorAdapter.initiateAdapter(
+                    false, // showWelcomePage
+                    true,  // disclaimerAcknowledged
+                    $isFeatureDevAvailable,
+                    $isCodeTransformAvailable,
+                    $isDocAvailable,
+                    $isCodeScanAvailable,
+                    $isCodeTestAvailable,
+                    { postMessage: () => {} }
+                );
+                
+                // Get the first two groups from the temp connector
+                const newGroups = tempConnector.initialQuickActions?.slice(0, 2) || [];
+                
+                // Send update with a special flag to handle deduplication
+                window.postMessage({
+                    command: "chatOptions",
+                    params: {
+                        quickActions: {
+                            quickActionsCommandGroups: newGroups
+                        },
+                        history: true,
+                        export: true,
+                        mcpServers: false
+                    }
+                });
+            } catch (e) {
+                console.error("Error updating quick actions:", e);
+            }
+        """.trimIndent()
+
+        browser.jcefBrowser.cefBrowser.executeJavaScript(script, browser.jcefBrowser.cefBrowser.url, 0)
     }
 
     private fun cancelInflightRequests(tabId: String) {
