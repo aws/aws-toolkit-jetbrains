@@ -62,7 +62,7 @@ fun createExtendedClientMetadata(project: Project): ExtendedClientMetadata {
             awsClientCapabilities = AwsClientCapabilities(
                 q = DeveloperProfiles(
                     developerProfiles = true,
-                    mcp = true
+                    mcp = false
                 ),
                 window = WindowSettings(
                     showSaveFileDialog = true
