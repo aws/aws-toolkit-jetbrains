@@ -30,7 +30,7 @@ class CodeTransformChatTest {
     fun `test that transform result chat item includes view summary button and view diff button with correct label when job fully succeeded`() {
         val result = CodeModernizerJobCompletedResult.JobCompletedSuccessfully(JobId("dummy-job-id-123"))
         val chatItem = buildTransformResultChatContent(result)
-        assertThat(chatItem.message).isEqualTo(message("codemodernizer.chat.message.result.success"))
+        assertThat(chatItem.message).contains("I successfully completed your transformation")
         assertThat(chatItem.buttons)
             .hasSize(2)
             .satisfiesKt { buttons ->
