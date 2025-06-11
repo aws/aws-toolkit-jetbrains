@@ -1,3 +1,10 @@
+# _3.75_ (2025-06-11)
+- **(Feature)** Support for Amazon Q Builder ID paid tier
+
+# _3.74_ (2025-06-05)
+- **(Feature)** Agentic coding experience: Amazon Q can now write code and run shell commands on your behalf
+- **(Bug Fix)** Support full Unicode range in inline chat panel on Windows
+
 # _3.73_ (2025-05-29)
 - **(Bug Fix)** /transform: handle InvalidGrantException properly when polling job status
 

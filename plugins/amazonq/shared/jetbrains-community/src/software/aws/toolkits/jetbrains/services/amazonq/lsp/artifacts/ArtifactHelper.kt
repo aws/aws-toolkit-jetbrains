@@ -17,7 +17,10 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.saveFileFromUrl
+import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
 import software.aws.toolkits.resources.AwsCoreBundle
+import software.aws.toolkits.telemetry.LanguageServerSetupStage
+import software.aws.toolkits.telemetry.Telemetry
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -26,7 +29,9 @@ import java.util.concurrent.atomic.AtomicInteger
 class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH, private val maxDownloadAttempts: Int = MAX_DOWNLOAD_ATTEMPTS) {
 
     companion object {
-        private val DEFAULT_ARTIFACT_PATH = getToolkitsCommonCacheRoot().resolve(Paths.get("aws", "toolkits", "language-servers", "AmazonQ-JetBrains-temp"))
+        private val DEFAULT_ARTIFACT_PATH = getToolkitsCommonCacheRoot().resolve(
+            Paths.get("aws", "toolkits", "language-servers", "AmazonQ-JetBrains-temp")
+        )
         private val logger = getLogger<ArtifactHelper>()
         private const val MAX_DOWNLOAD_ATTEMPTS = 3
     }
@@ -106,12 +111,12 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH,
     }
 
     suspend fun tryDownloadLspArtifacts(project: Project, targetVersion: Version, target: VersionTarget): Path? {
-        val temporaryDownloadPath = Files.createTempDirectory("lsp-dl")
-        val downloadPath = lspArtifactsPath.resolve(targetVersion.serverVersion.toString())
+        val destinationPath = lspArtifactsPath.resolve(targetVersion.serverVersion.toString())
 
         while (currentAttempt.get() < maxDownloadAttempts) {
             currentAttempt.incrementAndGet()
             logger.info { "Attempt ${currentAttempt.get()} of $maxDownloadAttempts to download LSP artifacts" }
+            val temporaryDownloadPath = Files.createTempDirectory("lsp-dl")
 
             try {
                 return withBackgroundProgress(
@@ -119,20 +124,20 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH,
                     AwsCoreBundle.message("amazonqFeatureDev.placeholder.downloading_and_extracting_lsp_artifacts"),
                     cancellable = true
                 ) {
-                    if (downloadLspArtifacts(temporaryDownloadPath, target) && !target.contents.isNullOrEmpty()) {
-                        moveFilesFromSourceToDestination(temporaryDownloadPath, downloadPath)
+                    if (downloadLspArtifacts(project, temporaryDownloadPath, target) && !target.contents.isNullOrEmpty()) {
+                        moveFilesFromSourceToDestination(temporaryDownloadPath, destinationPath)
                         target.contents
                             .mapNotNull { it.filename }
-                            .forEach { filename -> extractZipFile(downloadPath.resolve(filename), downloadPath) }
-                        logger.info { "Successfully downloaded and moved LSP artifacts to $downloadPath" }
+                            .forEach { filename -> extractZipFile(destinationPath.resolve(filename), destinationPath) }
+                        logger.info { "Successfully downloaded and moved LSP artifacts to $destinationPath" }
 
                         val thirdPartyLicenses = targetVersion.thirdPartyLicenses
                         logger.info {
-                            "Installing Amazon Q Language Server v${targetVersion.serverVersion} to: $downloadPath. " +
+                            "Installing Amazon Q Language Server v${targetVersion.serverVersion} to: $destinationPath. " +
                                 if (thirdPartyLicenses == null) "" else "Attribution notice can be found at $thirdPartyLicenses"
                         }
 
-                        return@withBackgroundProgress downloadPath
+                        return@withBackgroundProgress destinationPath
                     }
 
                     return@withBackgroundProgress null
@@ -146,7 +151,7 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH,
                     else -> { logger.error(e) { "Failed to download/move LSP artifacts on attempt ${currentAttempt.get()}" } }
                 }
                 temporaryDownloadPath.toFile().deleteRecursively()
-                downloadPath.toFile().deleteRecursively()
+                destinationPath.toFile().deleteRecursively()
             }
         }
         logger.error { "Failed to download LSP artifacts after $maxDownloadAttempts attempts" }
@@ -154,7 +159,7 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH,
     }
 
     @VisibleForTesting
-    internal fun downloadLspArtifacts(downloadPath: Path, target: VersionTarget?): Boolean {
+    internal fun downloadLspArtifacts(project: Project, downloadPath: Path, target: VersionTarget?): Boolean {
         if (target == null || target.contents.isNullOrEmpty()) {
             logger.warn { "No target contents available for download" }
             return false
@@ -171,7 +176,7 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH,
                     logger.warn { "No hash available for ${content.filename}" }
                     return@forEach
                 }
-                downloadAndValidateFile(content.url, filePath, contentHash)
+                downloadAndValidateFile(project, content.url, filePath, contentHash)
             }
             validateDownloadedFiles(downloadPath, target.contents)
         } catch (e: Exception) {
@@ -182,18 +187,46 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH,
         return true
     }
 
-    private fun downloadAndValidateFile(url: String, filePath: Path, expectedHash: String) {
+    private fun downloadAndValidateFile(project: Project, url: String, filePath: Path, expectedHash: String) {
+        val recordDownload = { runnable: () -> Unit ->
+            Telemetry.languageserver.setup.use { telemetry ->
+                telemetry.id("q")
+                telemetry.languageServerSetupStage(LanguageServerSetupStage.GetServer)
+                telemetry.metadata("credentialStartUrl", getStartUrl(project))
+                telemetry.success(true)
+
+                try {
+                    runnable()
+                } catch (t: Throwable) {
+                    telemetry.success(false)
+                    telemetry.recordException(t)
+                }
+            }
+        }
+
         try {
             if (!filePath.exists()) {
                 logger.info { "Downloading file: ${filePath.fileName}" }
-                saveFileFromUrl(url, filePath, ProgressManager.getInstance().progressIndicator)
+                recordDownload { saveFileFromUrl(url, filePath, ProgressManager.getInstance().progressIndicator) }
             }
             if (!validateFileHash(filePath, expectedHash)) {
                 logger.warn { "Hash mismatch for ${filePath.fileName}, re-downloading" }
                 filePath.deleteIfExists()
-                saveFileFromUrl(url, filePath)
-                if (!validateFileHash(filePath, expectedHash)) {
-                    throw LspException("Hash mismatch after re-download for ${filePath.fileName}", LspException.ErrorCode.HASH_MISMATCH)
+                recordDownload { saveFileFromUrl(url, filePath) }
+
+                Telemetry.languageserver.setup.use {
+                    it.id("q")
+                    it.languageServerSetupStage(LanguageServerSetupStage.Validate)
+                    it.metadata("credentialStartUrl", getStartUrl(project))
+                    it.success(true)
+
+                    if (!validateFileHash(filePath, expectedHash)) {
+                        it.success(false)
+
+                        val exception = LspException("Hash mismatch after re-download for ${filePath.fileName}", LspException.ErrorCode.HASH_MISMATCH)
+                        it.recordException(exception)
+                        throw exception
+                    }
                 }
             }
         } catch (e: Exception) {
