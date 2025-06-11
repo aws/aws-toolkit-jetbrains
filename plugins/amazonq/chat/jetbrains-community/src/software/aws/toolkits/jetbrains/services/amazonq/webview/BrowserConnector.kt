@@ -550,10 +550,9 @@ class BrowserConnector(
 
         val script = """
             try {
-                // Create a temporary connector with updated flags
                 const tempConnector = connectorAdapter.initiateAdapter(
-                    false, // showWelcomePage
-                    true,  // disclaimerAcknowledged
+                    false,
+                    true,
                     $isFeatureDevAvailable,
                     $isCodeTransformAvailable,
                     $isDocAvailable,
@@ -562,10 +561,8 @@ class BrowserConnector(
                     { postMessage: () => {} }
                 );
                 
-                // Get the first two groups from the temp connector
                 const newGroups = tempConnector.initialQuickActions?.slice(0, 2) || [];
                 
-                // Send update with a special flag to handle deduplication
                 window.postMessage({
                     command: "chatOptions",
                     params: {
