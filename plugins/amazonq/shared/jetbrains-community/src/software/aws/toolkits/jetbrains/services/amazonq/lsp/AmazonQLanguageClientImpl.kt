@@ -129,7 +129,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
             getCleanedContent(requestParams.message, true),
             project,
             requestParams.actions.map { item ->
-                NotificationAction.create(item.title) {
+                NotificationAction.createSimple(item.title) {
                     future.complete(item)
                 }
             }
