@@ -27,8 +27,8 @@ data class FilterOption(
     val options: List<Option>? = null,
 ) {
     data class Option(
-        val value: String? = null,
-        val label: String? = null,
+        val value: String,
+        val label: String,
     )
 }
 
