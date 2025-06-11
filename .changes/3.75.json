@@ -1,0 +1,8 @@
+{
+  "date" : "2025-06-11",
+  "version" : "3.75",
+  "entries" : [ {
+    "type" : "feature",
+    "description" : "Support for Amazon Q Builder ID paid tier"
+  } ]
+}
