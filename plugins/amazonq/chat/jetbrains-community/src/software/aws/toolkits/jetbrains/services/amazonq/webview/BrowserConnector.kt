@@ -571,10 +571,7 @@ class BrowserConnector(
                     params: {
                         quickActions: {
                             quickActionsCommandGroups: newGroups
-                        },
-                        history: true,
-                        export: true,
-                        mcpServers: false
+                        }
                     }
                 });
             } catch (e) {
