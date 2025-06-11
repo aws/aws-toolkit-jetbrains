@@ -22,9 +22,12 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.SystemInfo
+import com.intellij.util.EnvironmentUtil
+import com.intellij.util.io.DigestUtil
 import com.intellij.util.io.await
 import com.intellij.util.net.HttpConfigurable
 import com.intellij.util.net.JdkProxyProvider
+import com.intellij.util.net.ssl.CertificateManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
@@ -77,6 +80,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.textdocument.TextDoc
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.WorkspaceFolderUtil.createWorkspaceFolders
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.workspace.WorkspaceServiceHandler
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QDefaultServiceConfig
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QEndpoints
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
 import software.aws.toolkits.jetbrains.services.telemetry.ClientMetadata
 import software.aws.toolkits.jetbrains.settings.LspSettings
@@ -369,21 +373,50 @@ private class AmazonQServerInstance(private val project: Project, private val cs
         // will cause slow service init, but maybe fine for now. will not block UI since fetch/extract will be under background progress
         val artifact = runBlocking { service<ArtifactManager>().fetchArtifact(project) }.toAbsolutePath()
 
-        // more network calls
-        // make assumption that all requests will resolve to the same CA
-        // also terrible assumption that default endpoint is reachable
-        val qUri = URI(QDefaultServiceConfig.ENDPOINT)
-        val extraCaCerts = try {
-            val rtsTrustChain = TrustChainUtil.getTrustChain(qUri)
+        // make some network calls for troubleshooting
+        listOf(*QEndpoints.listRegionEndpoints().map { it.endpoint }.toTypedArray(), QDefaultServiceConfig.ENDPOINT).forEach {
+            try {
+                val qUri = URI(it)
+                val rtsTrustChain = TrustChainUtil.getTrustChain(qUri)
+                val trustRoot = rtsTrustChain.last()
+                // ATS is cross-signed against starfield certs: https://www.amazontrust.com/repository/
+                if (listOf("Amazon Root CA", "Starfield Technologies").any { trustRoot.subjectX500Principal.name.contains(it) }) {
+                    LOG.info { "Trust chain for $it ends with public-like CA with sha256 fingerprint: ${DigestUtil.sha256Hex(trustRoot.encoded)}"}
+                } else {
+                    LOG.info {
+                        """
+                            |Trust chain for $it transits private CA:
+                            |${buildString {
+                                rtsTrustChain.forEach { cert ->
+                                    append("Issuer: ${cert.issuerX500Principal}, ")
+                                    append("Subject: ${cert.subjectX500Principal}, ")
+                                    append("Fingerprint: ${DigestUtil.sha256Hex(cert.encoded)}\n\t")
+                                }
+                            }}
+                        """.trimMargin("|")
+                    }
+                    LOG.debug { "Full trust chain info for $it: $rtsTrustChain" }
+                }
+            } catch (e: Exception) {
+                LOG.info { "${e.message}: Could not resolve trust chain for $it" }
+            }
+        }
 
+        val userEnvNodeCaCerts = EnvironmentUtil.getValue("NODE_EXTRA_CA_CERTS")
+        // if user has NODE_EXTRA_CA_CERTS in their environment, assume they know what they're doing
+        val extraCaCerts = if (!userEnvNodeCaCerts.isNullOrEmpty()) {
+            LOG.info { "Skipping injection of IDE trust store, user already defines NODE_EXTRA_CA_CERTS: $userEnvNodeCaCerts"}
+            null
+        } else {
+            // otherwise include everything the IDE knows about
+            val allAcceptedIssuers = CertificateManager.getInstance().trustManager.acceptedIssuers
+            val customIssuers = CertificateManager.getInstance().customTrustManager.acceptedIssuers
+            LOG.info { "Injecting ${allAcceptedIssuers.size} trusted certificates (${customIssuers.size} from IDE custom manager) into NODE_EXTRA_CA_CERTS" }
             Files.createTempFile("q-extra-ca", ".pem").apply {
                 writeText(
-                    TrustChainUtil.certsToPem(rtsTrustChain)
+                    TrustChainUtil.certsToPem(CertificateManager.getInstance().trustManager.acceptedIssuers.toList())
                 )
-            }
-        } catch (e: Exception) {
-            LOG.info(e) { "Could not resolve trust chain for $qUri, skipping NODE_EXTRA_CA_CERTS" }
-            null
+            }.toAbsolutePath().toString()
         }
 
         val node = if (SystemInfo.isWindows) "node.exe" else "node"
@@ -396,8 +429,13 @@ private class AmazonQServerInstance(private val project: Project, private val cs
                 "--set-credentials-encryption-key",
             ).withEnvironment(
                 buildMap {
-                    extraCaCerts?.let { put("NODE_EXTRA_CA_CERTS", it.toAbsolutePath().toString()) }
+                    extraCaCerts?.let {
+                        LOG.info { "Starting Flare with NODE_EXTRA_CA_CERTS: $it"}
+                        put("NODE_EXTRA_CA_CERTS", it)
+                    }
 
+                    // assume default endpoint will pick correct proxy if needed
+                    val qUri = URI(QDefaultServiceConfig.ENDPOINT)
                     val proxy = JdkProxyProvider.getInstance().proxySelector.select(qUri)
                         // log if only socks proxy available
                         .firstOrNull { it.type() == Proxy.Type.HTTP }
