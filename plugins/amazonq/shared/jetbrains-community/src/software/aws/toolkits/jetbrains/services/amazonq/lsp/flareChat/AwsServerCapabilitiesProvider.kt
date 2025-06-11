@@ -34,7 +34,7 @@ class AwsServerCapabilitiesProvider {
             ),
             history = true,
             export = true,
-            mcpServers = false
+            mcpServers = true
         )
     }
 }
