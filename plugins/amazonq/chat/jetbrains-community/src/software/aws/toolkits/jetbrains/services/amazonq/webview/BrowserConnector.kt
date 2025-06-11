@@ -178,12 +178,7 @@ class BrowserConnector(
         uiReady.await()
 
         // Chat options including history and quick actions need to be sent in once UI is ready
-        val showChatOptions = """{
-            "command": "chatOptions",
-            "params": ${Gson().toJson(AwsServerCapabilitiesProvider.getInstance(project).getChatOptions())}
-            }
-        """.trimIndent()
-        browser.postChat(showChatOptions)
+        updateQuickActionsInBrowser(browser)
 
         // Send inbound messages to the browser
         val inboundMessages = connections.map { it.messagesFromAppToUi.flow }.merge()
@@ -308,8 +303,7 @@ class BrowserConnector(
                     RunOnceUtil.runOnceForApp("AmazonQ-UI-Ready") {
                         MeetQSettings.getInstance().reinvent2024OnboardingCount += 1
                     }
-                    // send feature flags to ui here in case reauth was needed
-                    updateFeatureFlagsInBrowser(browser)
+
                     invoke()
                 }
             }
@@ -541,7 +535,7 @@ class BrowserConnector(
         browser.postChat(cancelMessage)
     }
 
-    private fun updateFeatureFlagsInBrowser(browser: Browser) {
+    private fun updateQuickActionsInBrowser(browser: Browser) {
         val isFeatureDevAvailable = isFeatureDevAvailable(project)
         val isCodeTransformAvailable = isCodeTransformAvailable(project)
         val isDocAvailable = isDocAvailable(project)
@@ -551,8 +545,8 @@ class BrowserConnector(
         val script = """
             try {
                 const tempConnector = connectorAdapter.initiateAdapter(
-                    false,
-                    true,
+                    false, 
+                    true, // the two values are not used here, needed for constructor
                     $isFeatureDevAvailable,
                     $isCodeTransformAvailable,
                     $isDocAvailable,
@@ -561,15 +555,16 @@ class BrowserConnector(
                     { postMessage: () => {} }
                 );
                 
-                const newGroups = tempConnector.initialQuickActions?.slice(0, 2) || [];
+                const commands = tempConnector.initialQuickActions?.slice(0, 2) || [];
+                const options = ${Gson().toJson(AwsServerCapabilitiesProvider.getInstance(project).getChatOptions())};
+                options.quickActions.quickActionsCommandGroups = [
+                    ...commands,
+                    ...options.quickActions.quickActionsCommandGroups
+                ];
                 
                 window.postMessage({
                     command: "chatOptions",
-                    params: {
-                        quickActions: {
-                            quickActionsCommandGroups: newGroups
-                        }
-                    }
+                    params: options
                 });
             } catch (e) {
                 console.error("Error updating quick actions:", e);
