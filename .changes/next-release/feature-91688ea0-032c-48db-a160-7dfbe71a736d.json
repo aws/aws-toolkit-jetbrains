@@ -1,4 +1,4 @@
 {
   "type" : "feature",
-  "description" : "feat(amazonq): Add Mcp module for agentic chat"
+  "description" : "Add MCP support for Amazon Q chat"
 }
