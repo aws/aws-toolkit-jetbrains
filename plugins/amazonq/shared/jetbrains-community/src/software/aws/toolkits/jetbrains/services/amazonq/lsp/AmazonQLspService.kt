@@ -406,17 +406,25 @@ private class AmazonQServerInstance(private val project: Project, private val cs
         // if user has NODE_EXTRA_CA_CERTS in their environment, assume they know what they're doing
         val extraCaCerts = if (!userEnvNodeCaCerts.isNullOrEmpty()) {
             LOG.info { "Skipping injection of IDE trust store, user already defines NODE_EXTRA_CA_CERTS: $userEnvNodeCaCerts"}
+
             null
         } else {
-            // otherwise include everything the IDE knows about
-            val allAcceptedIssuers = CertificateManager.getInstance().trustManager.acceptedIssuers
-            val customIssuers = CertificateManager.getInstance().customTrustManager.acceptedIssuers
-            LOG.info { "Injecting ${allAcceptedIssuers.size} trusted certificates (${customIssuers.size} from IDE custom manager) into NODE_EXTRA_CA_CERTS" }
-            Files.createTempFile("q-extra-ca", ".pem").apply {
-                writeText(
-                    TrustChainUtil.certsToPem(CertificateManager.getInstance().trustManager.acceptedIssuers.toList())
-                )
-            }.toAbsolutePath().toString()
+            try {
+                // otherwise include everything the IDE knows about
+                val allAcceptedIssuers = CertificateManager.getInstance().trustManager.acceptedIssuers
+                val customIssuers = CertificateManager.getInstance().customTrustManager.acceptedIssuers
+                LOG.info { "Injecting ${allAcceptedIssuers.size} IDE trusted certificates (${customIssuers.size} from IDE custom manager) into NODE_EXTRA_CA_CERTS" }
+
+                Files.createTempFile("q-extra-ca", ".pem").apply {
+                    writeText(
+                        TrustChainUtil.certsToPem(CertificateManager.getInstance().trustManager.acceptedIssuers.toList())
+                    )
+                }.toAbsolutePath().toString()
+            } catch (e: Exception) {
+                LOG.warn(e) { "Could not inject IDE trust store into NODE_EXTRA_CA_CERTS" }
+
+                null
+            }
         }
 
         val node = if (SystemInfo.isWindows) "node.exe" else "node"
