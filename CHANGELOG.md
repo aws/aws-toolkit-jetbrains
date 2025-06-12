@@ -1,3 +1,6 @@
+# _3.76_ (2025-06-12)
+- **(Feature)** Add MCP support for Amazon Q chat
+
 # _3.75_ (2025-06-11)
 - **(Feature)** Support for Amazon Q Builder ID paid tier
 
