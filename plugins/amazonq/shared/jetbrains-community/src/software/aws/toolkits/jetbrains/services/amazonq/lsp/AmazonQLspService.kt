@@ -417,7 +417,7 @@ private class AmazonQServerInstance(private val project: Project, private val cs
 
                 Files.createTempFile("q-extra-ca", ".pem").apply {
                     writeText(
-                        TrustChainUtil.certsToPem(CertificateManager.getInstance().trustManager.acceptedIssuers.toList())
+                        TrustChainUtil.certsToPem(allAcceptedIssuers.toList())
                     )
                 }.toAbsolutePath().toString()
             } catch (e: Exception) {
