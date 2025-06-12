@@ -374,18 +374,18 @@ private class AmazonQServerInstance(private val project: Project, private val cs
         val artifact = runBlocking { service<ArtifactManager>().fetchArtifact(project) }.toAbsolutePath()
 
         // make some network calls for troubleshooting
-        listOf(*QEndpoints.listRegionEndpoints().map { it.endpoint }.toTypedArray(), QDefaultServiceConfig.ENDPOINT).forEach {
+        listOf(*QEndpoints.listRegionEndpoints().map { it.endpoint }.toTypedArray(), QDefaultServiceConfig.ENDPOINT).forEach { endpoint ->
             try {
-                val qUri = URI(it)
+                val qUri = URI(endpoint)
                 val rtsTrustChain = TrustChainUtil.getTrustChain(qUri)
                 val trustRoot = rtsTrustChain.last()
                 // ATS is cross-signed against starfield certs: https://www.amazontrust.com/repository/
                 if (listOf("Amazon Root CA", "Starfield Technologies").any { trustRoot.subjectX500Principal.name.contains(it) }) {
-                    LOG.info { "Trust chain for $it ends with public-like CA with sha256 fingerprint: ${DigestUtil.sha256Hex(trustRoot.encoded)}"}
+                    LOG.info { "Trust chain for $endpoint ends with public-like CA with sha256 fingerprint: ${DigestUtil.sha256Hex(trustRoot.encoded)}"}
                 } else {
                     LOG.info {
                         """
-                            |Trust chain for $it transits private CA:
+                            |Trust chain for $endpoint transits private CA:
                             |${buildString {
                                 rtsTrustChain.forEach { cert ->
                                     append("Issuer: ${cert.issuerX500Principal}, ")
@@ -395,10 +395,10 @@ private class AmazonQServerInstance(private val project: Project, private val cs
                             }}
                         """.trimMargin("|")
                     }
-                    LOG.debug { "Full trust chain info for $it: $rtsTrustChain" }
+                    LOG.debug { "Full trust chain info for $endpoint: $rtsTrustChain" }
                 }
             } catch (e: Exception) {
-                LOG.info { "${e.message}: Could not resolve trust chain for $it" }
+                LOG.info { "${e.message}: Could not resolve trust chain for $endpoint" }
             }
         }
 
