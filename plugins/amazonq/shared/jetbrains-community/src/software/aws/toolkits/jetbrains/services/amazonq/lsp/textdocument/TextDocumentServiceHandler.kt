@@ -71,9 +71,9 @@ class TextDocumentServiceHandler(
                     realTimeEdit(event)
                 }
             }
-            file.putUserData(KEY_REAL_TIME_EDIT_LISTENER, listener)
             ApplicationManager.getApplication().runReadAction {
-                FileDocumentManager.getInstance().getDocument(file)?.addDocumentListener(listener, this)
+                FileDocumentManager.getInstance().getDocument(file)?.addDocumentListener(listener)
+                file.putUserData(KEY_REAL_TIME_EDIT_LISTENER, listener)
             }
         }
         AmazonQLspService.executeIfRunning(project) { languageServer ->
