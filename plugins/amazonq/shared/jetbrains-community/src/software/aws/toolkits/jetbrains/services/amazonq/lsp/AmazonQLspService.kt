@@ -381,18 +381,18 @@ private class AmazonQServerInstance(private val project: Project, private val cs
                 val trustRoot = rtsTrustChain.last()
                 // ATS is cross-signed against starfield certs: https://www.amazontrust.com/repository/
                 if (listOf("Amazon Root CA", "Starfield Technologies").any { trustRoot.subjectX500Principal.name.contains(it) }) {
-                    LOG.info { "Trust chain for $endpoint ends with public-like CA with sha256 fingerprint: ${DigestUtil.sha256Hex(trustRoot.encoded)}"}
+                    LOG.info { "Trust chain for $endpoint ends with public-like CA with sha256 fingerprint: ${DigestUtil.sha256Hex(trustRoot.encoded)}" }
                 } else {
                     LOG.info {
                         """
                             |Trust chain for $endpoint transits private CA:
                             |${buildString {
-                                rtsTrustChain.forEach { cert ->
-                                    append("Issuer: ${cert.issuerX500Principal}, ")
-                                    append("Subject: ${cert.subjectX500Principal}, ")
-                                    append("Fingerprint: ${DigestUtil.sha256Hex(cert.encoded)}\n\t")
-                                }
-                            }}
+                            rtsTrustChain.forEach { cert ->
+                                append("Issuer: ${cert.issuerX500Principal}, ")
+                                append("Subject: ${cert.subjectX500Principal}, ")
+                                append("Fingerprint: ${DigestUtil.sha256Hex(cert.encoded)}\n\t")
+                            }
+                        }}
                         """.trimMargin("|")
                     }
                     LOG.debug { "Full trust chain info for $endpoint: $rtsTrustChain" }
@@ -405,7 +405,7 @@ private class AmazonQServerInstance(private val project: Project, private val cs
         val userEnvNodeCaCerts = EnvironmentUtil.getValue("NODE_EXTRA_CA_CERTS")
         // if user has NODE_EXTRA_CA_CERTS in their environment, assume they know what they're doing
         val extraCaCerts = if (!userEnvNodeCaCerts.isNullOrEmpty()) {
-            LOG.info { "Skipping injection of IDE trust store, user already defines NODE_EXTRA_CA_CERTS: $userEnvNodeCaCerts"}
+            LOG.info { "Skipping injection of IDE trust store, user already defines NODE_EXTRA_CA_CERTS: $userEnvNodeCaCerts" }
 
             null
         } else {
@@ -413,7 +413,9 @@ private class AmazonQServerInstance(private val project: Project, private val cs
                 // otherwise include everything the IDE knows about
                 val allAcceptedIssuers = CertificateManager.getInstance().trustManager.acceptedIssuers
                 val customIssuers = CertificateManager.getInstance().customTrustManager.acceptedIssuers
-                LOG.info { "Injecting ${allAcceptedIssuers.size} IDE trusted certificates (${customIssuers.size} from IDE custom manager) into NODE_EXTRA_CA_CERTS" }
+                LOG.info {
+                    "Injecting ${allAcceptedIssuers.size} IDE trusted certificates (${customIssuers.size} from IDE custom manager) into NODE_EXTRA_CA_CERTS"
+                }
 
                 Files.createTempFile("q-extra-ca", ".pem").apply {
                     writeText(
@@ -438,7 +440,7 @@ private class AmazonQServerInstance(private val project: Project, private val cs
             ).withEnvironment(
                 buildMap {
                     extraCaCerts?.let {
-                        LOG.info { "Starting Flare with NODE_EXTRA_CA_CERTS: $it"}
+                        LOG.info { "Starting Flare with NODE_EXTRA_CA_CERTS: $it" }
                         put("NODE_EXTRA_CA_CERTS", it)
                     }
 
