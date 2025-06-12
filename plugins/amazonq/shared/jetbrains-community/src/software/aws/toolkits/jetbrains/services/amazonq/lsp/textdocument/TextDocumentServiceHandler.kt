@@ -13,6 +13,7 @@ import com.intellij.openapi.fileEditor.FileDocumentManagerListener
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Key
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.openapi.vfs.newvfs.BulkFileListener
@@ -22,8 +23,6 @@ import org.eclipse.lsp4j.DidChangeTextDocumentParams
 import org.eclipse.lsp4j.DidCloseTextDocumentParams
 import org.eclipse.lsp4j.DidOpenTextDocumentParams
 import org.eclipse.lsp4j.DidSaveTextDocumentParams
-import org.eclipse.lsp4j.Position
-import org.eclipse.lsp4j.Range
 import org.eclipse.lsp4j.TextDocumentContentChangeEvent
 import org.eclipse.lsp4j.TextDocumentIdentifier
 import org.eclipse.lsp4j.TextDocumentItem
@@ -66,15 +65,16 @@ class TextDocumentServiceHandler(
     }
 
     private fun handleFileOpened(file: VirtualFile) {
-        ApplicationManager.getApplication().runReadAction {
-            FileDocumentManager.getInstance().getDocument(file)?.addDocumentListener(
-                object : DocumentListener {
-                    override fun documentChanged(event: DocumentEvent) {
-                        realTimeEdit(event)
-                    }
-                },
-                this
-            )
+        if (file.getUserData(KEY_REAL_TIME_EDIT_LISTENER) == null) {
+            val listener = object : DocumentListener {
+                override fun documentChanged(event: DocumentEvent) {
+                    realTimeEdit(event)
+                }
+            }
+            ApplicationManager.getApplication().runReadAction {
+                FileDocumentManager.getInstance().getDocument(file)?.addDocumentListener(listener)
+                file.putUserData(KEY_REAL_TIME_EDIT_LISTENER, listener)
+            }
         }
         AmazonQLspService.executeIfRunning(project) { languageServer ->
             toUriString(file)?.let { uri ->
@@ -148,6 +148,11 @@ class TextDocumentServiceHandler(
         source: FileEditorManager,
         file: VirtualFile,
     ) {
+        val listener = file.getUserData(KEY_REAL_TIME_EDIT_LISTENER)
+        if (listener != null) {
+            FileDocumentManager.getInstance().getDocument(file)?.removeDocumentListener(listener)
+            file.putUserData(KEY_REAL_TIME_EDIT_LISTENER, null)
+        }
         AmazonQLspService.executeIfRunning(project) { languageServer ->
             toUriString(file)?.let { uri ->
                 languageServer.textDocumentService.didClose(
@@ -166,9 +171,6 @@ class TextDocumentServiceHandler(
             pluginAwareExecuteOnPooledThread {
                 val vFile = FileDocumentManager.getInstance().getFile(event.document) ?: return@pluginAwareExecuteOnPooledThread
                 toUriString(vFile)?.let { uri ->
-                    val editor = FileEditorManager.getInstance(project).selectedTextEditor ?: return@pluginAwareExecuteOnPooledThread
-                    val logicalPosition = editor.offsetToLogicalPosition(event.offset)
-                    val newLogicalPosition = editor.offsetToLogicalPosition(event.offset + event.newLength)
                     languageServer.textDocumentService.didChange(
                         DidChangeTextDocumentParams().apply {
                             textDocument = VersionedTextDocumentIdentifier().apply {
@@ -177,11 +179,7 @@ class TextDocumentServiceHandler(
                             }
                             contentChanges = listOf(
                                 TextDocumentContentChangeEvent().apply {
-                                    text = event.newFragment.toString()
-                                    range = Range(
-                                        Position(logicalPosition.line, logicalPosition.column),
-                                        Position(newLogicalPosition.line, newLogicalPosition.column)
-                                    )
+                                    text = event.document.text
                                 }
                             )
                         }
@@ -193,5 +191,9 @@ class TextDocumentServiceHandler(
     }
 
     override fun dispose() {
+    }
+
+    companion object {
+        private val KEY_REAL_TIME_EDIT_LISTENER = Key.create<DocumentListener>("amazonq.textdocument.realtimeedit.listener")
     }
 }
