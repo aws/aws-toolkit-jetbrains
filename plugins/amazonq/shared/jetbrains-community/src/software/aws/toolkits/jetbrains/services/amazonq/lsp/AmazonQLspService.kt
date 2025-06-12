@@ -282,9 +282,30 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
         return runnable(lsp)
     }
 
+    suspend fun<T> executeIfRunning(runnable: suspend AmazonQLspService.(AmazonQLanguageServer) -> T): T? {
+        val lsp = try {
+            withTimeout(1.seconds) {
+                val holder = mutex.withLock { instance }.await()
+                holder.initializeResult.join()
+
+                holder.languageServer
+            }
+        } catch (_: Exception) {
+            LOG.debug { "LSP not running" }
+            null
+        }
+
+        return lsp?.let { runnable(it) }
+    }
+
     fun<T> executeSync(runnable: suspend AmazonQLspService.(AmazonQLanguageServer) -> T): T =
         runBlocking(cs.coroutineContext) {
             execute(runnable)
+        }
+
+    fun<T> syncExecuteIfRunning(runnable: suspend AmazonQLspService.(AmazonQLanguageServer) -> T): T? =
+        runBlocking(cs.coroutineContext) {
+            executeIfRunning(runnable)
         }
 
     companion object {
@@ -295,10 +316,10 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
 
         @Deprecated("Easy to accidentally freeze EDT")
         fun <T> executeIfRunning(project: Project, runnable: AmazonQLspService.(AmazonQLanguageServer) -> T): T? =
-            project.serviceIfCreated<AmazonQLspService>()?.executeSync(runnable)
+            project.serviceIfCreated<AmazonQLspService>()?.syncExecuteIfRunning(runnable)
 
-        suspend fun <T> asyncExecuteIfRunning(project: Project, runnable: suspend AmazonQLspService.(AmazonQLanguageServer) -> T): T? =
-            project.serviceIfCreated<AmazonQLspService>()?.execute(runnable)
+        suspend fun <T> executeAsyncIfRunning(project: Project, runnable: suspend AmazonQLspService.(AmazonQLanguageServer) -> T): T? =
+            project.serviceIfCreated<AmazonQLspService>()?.executeIfRunning(runnable)
 
         fun didChangeConfiguration(project: Project) {
             executeIfRunning(project) {
@@ -496,13 +517,13 @@ private class AmazonQServerInstance(private val project: Project, private val cs
                 DefaultAuthCredentialsService(project, encryptionManager).also {
                     Disposer.register(this, it)
                 }
-                TextDocumentServiceHandler(project).also {
+                TextDocumentServiceHandler(project, cs).also {
                     Disposer.register(this, it)
                 }
-                WorkspaceServiceHandler(project, lspInitResult).also {
+                WorkspaceServiceHandler(project, cs, lspInitResult).also {
                     Disposer.register(this, it)
                 }
-                DefaultModuleDependenciesService(project).also {
+                DefaultModuleDependenciesService(project, cs).also {
                     Disposer.register(this, it)
                 }
             }

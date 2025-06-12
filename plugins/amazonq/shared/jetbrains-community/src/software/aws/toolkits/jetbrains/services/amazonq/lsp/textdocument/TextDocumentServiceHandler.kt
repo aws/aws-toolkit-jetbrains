@@ -19,6 +19,8 @@ import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.openapi.vfs.newvfs.BulkFileListener
 import com.intellij.openapi.vfs.newvfs.events.VFileContentChangeEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import org.eclipse.lsp4j.DidChangeTextDocumentParams
 import org.eclipse.lsp4j.DidCloseTextDocumentParams
 import org.eclipse.lsp4j.DidOpenTextDocumentParams
@@ -29,10 +31,10 @@ import org.eclipse.lsp4j.TextDocumentItem
 import org.eclipse.lsp4j.VersionedTextDocumentIdentifier
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.LspEditorUtil.toUriString
-import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 
 class TextDocumentServiceHandler(
     private val project: Project,
+    private val cs: CoroutineScope,
 ) : FileDocumentManagerListener,
     FileEditorManagerListener,
     BulkFileListener,
@@ -78,7 +80,7 @@ class TextDocumentServiceHandler(
         }
         AmazonQLspService.executeIfRunning(project) { languageServer ->
             toUriString(file)?.let { uri ->
-                pluginAwareExecuteOnPooledThread {
+                cs.launch {
                     languageServer.textDocumentService.didOpen(
                         DidOpenTextDocumentParams().apply {
                             textDocument = TextDocumentItem().apply {
@@ -98,7 +100,7 @@ class TextDocumentServiceHandler(
         AmazonQLspService.executeIfRunning(project) { languageServer ->
             val file = FileDocumentManager.getInstance().getFile(document) ?: return@executeIfRunning
             toUriString(file)?.let { uri ->
-                pluginAwareExecuteOnPooledThread {
+                cs.launch {
                     languageServer.textDocumentService.didSave(
                         DidSaveTextDocumentParams().apply {
                             textDocument = TextDocumentIdentifier().apply {
@@ -114,7 +116,7 @@ class TextDocumentServiceHandler(
 
     override fun after(events: MutableList<out VFileEvent>) {
         AmazonQLspService.executeIfRunning(project) { languageServer ->
-            pluginAwareExecuteOnPooledThread {
+            cs.launch {
                 events.filterIsInstance<VFileContentChangeEvent>().forEach { event ->
                     val document = FileDocumentManager.getInstance().getCachedDocument(event.file) ?: return@forEach
                     toUriString(event.file)?.let { uri ->
@@ -168,8 +170,8 @@ class TextDocumentServiceHandler(
 
     private fun realTimeEdit(event: DocumentEvent) {
         AmazonQLspService.executeIfRunning(project) { languageServer ->
-            pluginAwareExecuteOnPooledThread {
-                val vFile = FileDocumentManager.getInstance().getFile(event.document) ?: return@pluginAwareExecuteOnPooledThread
+            cs.launch {
+                val vFile = FileDocumentManager.getInstance().getFile(event.document) ?: return@launch
                 toUriString(vFile)?.let { uri ->
                     languageServer.textDocumentService.didChange(
                         DidChangeTextDocumentParams().apply {
