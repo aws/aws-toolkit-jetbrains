@@ -147,7 +147,6 @@ class Browser(parent: Disposable, private val mynahAsset: Path, val project: Pro
                         },
                     
                      "${activeProfile?.profileName.orEmpty()}")
-                    const commands = [hybridChatConnector.initialQuickActions[0], hybridChatConnector.initialQuickActions[1]]
                     amazonQChat.createChat(
                         {
                             postMessage: message => {
@@ -156,7 +155,7 @@ class Browser(parent: Disposable, private val mynahAsset: Path, val project: Pro
                         }, 
                         {
                         agenticMode: true,
-                        quickActionCommands: commands,
+                        quickActionCommands: [],
                         disclaimerAcknowledged: ${MeetQSettings.getInstance().disclaimerAcknowledged},
                         pairProgrammingAcknowledged: ${MeetQSettings.getInstance().pairProgrammingAcknowledged}
                         },
