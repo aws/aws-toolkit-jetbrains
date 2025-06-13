@@ -16,6 +16,8 @@ import com.intellij.openapi.vfs.newvfs.events.VFileDeleteEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileMoveEvent
 import com.intellij.openapi.vfs.newvfs.events.VFilePropertyChangeEvent
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import org.eclipse.lsp4j.CreateFilesParams
 import org.eclipse.lsp4j.DeleteFilesParams
 import org.eclipse.lsp4j.DidChangeWatchedFilesParams
@@ -37,13 +39,13 @@ import org.eclipse.lsp4j.WorkspaceFoldersChangeEvent
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.LspEditorUtil.toUriString
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.WorkspaceFolderUtil.createWorkspaceFolders
-import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import java.nio.file.FileSystems
 import java.nio.file.PathMatcher
 import java.nio.file.Paths
 
 class WorkspaceServiceHandler(
     private val project: Project,
+    private val cs: CoroutineScope,
     initializeResult: InitializeResult,
 ) : BulkFileListener,
     ModuleRootListener,
@@ -281,7 +283,7 @@ class WorkspaceServiceHandler(
 
     override fun after(events: List<VFileEvent>) {
         // since we are using synchronous FileListener
-        pluginAwareExecuteOnPooledThread {
+        cs.launch {
             didCreateFiles(events.filter { it is VFileCreateEvent || it is VFileMoveEvent || it is VFileCopyEvent })
             didDeleteFiles(events.filter { it is VFileMoveEvent || it is VFileDeleteEvent })
             didRenameFiles(events.filterIsInstance<VFilePropertyChangeEvent>())
