@@ -554,7 +554,7 @@ fun buildTransformResumingChatContent() = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.PendingAnswer,
 )
 
-fun buildTransformResultChatContent(result: CodeModernizerJobCompletedResult): CodeTransformChatMessageContent {
+fun buildTransformResultChatContent(result: CodeModernizerJobCompletedResult, targetJdkVersion: String = ""): CodeTransformChatMessageContent {
     val resultMessage = when (result) {
         is CodeModernizerJobCompletedResult.JobAbortedZipTooLarge -> {
             "${message(
@@ -568,7 +568,7 @@ fun buildTransformResultChatContent(result: CodeModernizerJobCompletedResult): C
             buildZipUploadFailedChatMessage(result.failureReason)
         }
         is CodeModernizerJobCompletedResult.JobCompletedSuccessfully -> {
-            message("codemodernizer.chat.message.result.success")
+            message("codemodernizer.chat.message.result.success", targetJdkVersion)
         }
         is CodeModernizerJobCompletedResult.JobPartiallySucceeded -> {
             message("codemodernizer.chat.message.result.partially_success")

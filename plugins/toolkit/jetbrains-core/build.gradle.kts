@@ -56,7 +56,7 @@ PatchPluginXmlTask.register(project)
 val patchPluginXml = tasks.named<PatchPluginXmlTask>("patchPluginXml")
 patchPluginXml.configure {
     val buildSuffix = if (!project.isCi()) "+${buildMetadata()}" else ""
-    pluginVersion.set("$toolkitVersion-${ideProfile.shortName}$buildSuffix")
+    pluginVersion.set("$toolkitVersion.${ideProfile.shortName}$buildSuffix")
 }
 
 tasks.jar {
