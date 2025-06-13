@@ -71,7 +71,7 @@ async function testNavigation() {
                 const button = document.querySelector('button[action-id="codetransform-input-confirm-skip-tests"]')
                 button.click()
             })
-/*
+
             const selectCustomVersionsForm = await page.waitForSelector('button[action-id="codetransform-input-confirm-custom-dependency-versions"]', {
                 timeout: 5000
             })
@@ -86,11 +86,6 @@ async function testNavigation() {
             await page.keyboard.press('Enter')
 
             const errorMessage = await page.waitForSelector('text/I could not find "dummy-target-jdk-name-here" in File > Project Structure > Platform Settings > SDKs.', {
-                timeout: 5000
-            })
-*/
-            // TODO: delete errorMessage below, and uncomment the above when releasing CSB
-            const errorMessage = await page.waitForSelector('text/Sorry, I couldn\'t run the Maven clean install command', {
                 timeout: 5000
             })
             console.log('Error message:', await errorMessage.evaluate(el => el.textContent))
@@ -155,10 +150,8 @@ class TransformChatTest {
                     "Choose a module to transform",
                     "Choose the target code version",
                     "Skip tests form appeared: true",
-                    "couldn't run the Maven clean install command"
-                    // TODO: delete line above, and uncomment lines below when releasing CSB
-                    // "I could not find \"dummy-target-jdk-name-here\"",
-                    // "Custom dependency versions file form appeared: true",
+                    "Custom dependency versions file form appeared: true",
+                    "I could not find \"dummy-target-jdk-name-here\""
                 )
             }
     }
