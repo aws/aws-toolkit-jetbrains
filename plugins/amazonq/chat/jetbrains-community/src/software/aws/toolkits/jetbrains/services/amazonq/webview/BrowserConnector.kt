@@ -94,6 +94,11 @@ import software.aws.toolkits.jetbrains.services.amazonq.util.command
 import software.aws.toolkits.jetbrains.services.amazonq.util.tabType
 import software.aws.toolkits.jetbrains.services.amazonq.webview.theme.AmazonQTheme
 import software.aws.toolkits.jetbrains.services.amazonq.webview.theme.ThemeBrowserAdapter
+import software.aws.toolkits.jetbrains.services.amazonqCodeScan.auth.isCodeScanAvailable
+import software.aws.toolkits.jetbrains.services.amazonqCodeTest.auth.isCodeTestAvailable
+import software.aws.toolkits.jetbrains.services.amazonqDoc.auth.isDocAvailable
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.auth.isFeatureDevAvailable
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isCodeTransformAvailable
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererConfigurable
 import software.aws.toolkits.jetbrains.settings.MeetQSettings
 import software.aws.toolkits.telemetry.MetricResult
@@ -173,12 +178,7 @@ class BrowserConnector(
         uiReady.await()
 
         // Chat options including history and quick actions need to be sent in once UI is ready
-        val showChatOptions = """{
-            "command": "chatOptions",
-            "params": ${Gson().toJson(AwsServerCapabilitiesProvider.getInstance(project).getChatOptions())}
-            }
-        """.trimIndent()
-        browser.postChat(showChatOptions)
+        updateQuickActionsInBrowser(browser)
 
         // Send inbound messages to the browser
         val inboundMessages = connections.map { it.messagesFromAppToUi.flow }.merge()
@@ -533,6 +533,45 @@ class BrowserConnector(
         // Send a message to hide the stop button without showing an error
         val cancelMessage = chatCommunicationManager.getCancellationUiMessage(tabId)
         browser.postChat(cancelMessage)
+    }
+
+    private fun updateQuickActionsInBrowser(browser: Browser) {
+        val isFeatureDevAvailable = isFeatureDevAvailable(project)
+        val isCodeTransformAvailable = isCodeTransformAvailable(project)
+        val isDocAvailable = isDocAvailable(project)
+        val isCodeScanAvailable = isCodeScanAvailable(project)
+        val isCodeTestAvailable = isCodeTestAvailable(project)
+
+        val script = """
+            try {
+                const tempConnector = connectorAdapter.initiateAdapter(
+                    false, 
+                    true, // the two values are not used here, needed for constructor
+                    $isFeatureDevAvailable,
+                    $isCodeTransformAvailable,
+                    $isDocAvailable,
+                    $isCodeScanAvailable,
+                    $isCodeTestAvailable,
+                    { postMessage: () => {} }
+                );
+                
+                const commands = tempConnector.initialQuickActions?.slice(0, 2) || [];
+                const options = ${Gson().toJson(AwsServerCapabilitiesProvider.getInstance(project).getChatOptions())};
+                options.quickActions.quickActionsCommandGroups = [
+                    ...commands,
+                    ...options.quickActions.quickActionsCommandGroups
+                ];
+                
+                window.postMessage({
+                    command: "chatOptions",
+                    params: options
+                });
+            } catch (e) {
+                console.error("Error updating quick actions:", e);
+            }
+        """.trimIndent()
+
+        browser.jcefBrowser.cefBrowser.executeJavaScript(script, browser.jcefBrowser.cefBrowser.url, 0)
     }
 
     private fun cancelInflightRequests(tabId: String) {
