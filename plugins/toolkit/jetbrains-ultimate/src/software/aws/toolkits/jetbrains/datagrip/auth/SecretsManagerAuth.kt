@@ -7,12 +7,10 @@ import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.credentialStore.Credentials
-import com.intellij.database.access.DatabaseCredentials
 import com.intellij.database.dataSource.DatabaseAuthProvider.AuthWidget
 import com.intellij.database.dataSource.DatabaseConnectionInterceptor.ProtoConnection
 import com.intellij.database.dataSource.DatabaseCredentialsAuthProvider
 import com.intellij.database.dataSource.LocalDataSource
-import com.intellij.openapi.project.Project
 import kotlinx.coroutines.future.future
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient
 import software.aws.toolkits.core.ConnectionSettings
@@ -45,8 +43,7 @@ class SecretsManagerAuth : DatabaseAuthProviderCompatabilityAdapter {
 
     override fun getDisplayName(): String = message("datagrip.auth.secrets_manager")
 
-    override fun createWidget(project: Project?, creds: DatabaseCredentials, source: LocalDataSource): AuthWidget? =
-        SecretsManagerAuthWidget()
+    override fun createWidget(): AuthWidget? = SecretsManagerAuthWidget()
 
     override fun intercept(
         connection: ProtoConnection,
