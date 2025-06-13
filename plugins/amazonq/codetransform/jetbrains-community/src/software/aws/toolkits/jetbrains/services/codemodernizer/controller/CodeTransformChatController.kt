@@ -156,7 +156,6 @@ class CodeTransformChatController(
         if (objective == "language upgrade" || objective == "sql conversion") {
             telemetry.submitSelection(objective)
         }
-        broadcastQEvent(QFeatureEvent.INVOCATION)
         when (objective) {
             "language upgrade" -> this.handleLanguageUpgrade()
             "sql conversion" -> this.handleSQLConversion()
