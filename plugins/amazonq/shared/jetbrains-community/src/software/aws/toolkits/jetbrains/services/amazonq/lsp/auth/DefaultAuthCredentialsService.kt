@@ -111,9 +111,14 @@ class DefaultAuthCredentialsService(
             return CompletableFuture.failedFuture(e)
         }
 
-        return AmazonQLspService.executeIfRunning(project) { server ->
+        val future = AmazonQLspService.executeIfRunning(project) { server ->
             server.updateTokenCredentials(payload)
-        } ?: (CompletableFuture.failedFuture(IllegalStateException("LSP Server not running")))
+        } ?: CompletableFuture.failedFuture(IllegalStateException("LSP Server not running"))
+
+        return future.thenApply { response ->
+            updateConfiguration()
+            response
+        }
     }
 
     override fun deleteTokenCredentials(): CompletableFuture<Unit> =
