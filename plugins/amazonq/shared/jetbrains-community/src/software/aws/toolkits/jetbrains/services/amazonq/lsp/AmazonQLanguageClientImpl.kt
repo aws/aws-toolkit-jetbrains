@@ -295,7 +295,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                         AmazonQLspConstants.LSP_Q_CONFIGURATION_KEY -> {
                             add(
                                 AmazonQLspConfiguration(
-                                    optOutTelemetry = AwsSettings.getInstance().isTelemetryEnabled,
+                                    optOutTelemetry = !AwsSettings.getInstance().isTelemetryEnabled,
                                     customization = CodeWhispererModelConfigurator.getInstance().activeCustomization(project)?.arn,
                                     // local context
                                     projectContext = ProjectContextConfiguration(

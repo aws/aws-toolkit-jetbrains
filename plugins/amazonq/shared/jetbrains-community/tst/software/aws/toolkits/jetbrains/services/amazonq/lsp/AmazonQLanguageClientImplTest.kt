@@ -475,7 +475,7 @@ class AmazonQLanguageClientImplTest {
             .singleElement()
             .isEqualTo(
                 AmazonQLspConfiguration(
-                    optOutTelemetry = telemetryEnabled,
+                    optOutTelemetry = !telemetryEnabled,
                     customization = customizationArn,
                     projectContext = ProjectContextConfiguration(
                         enableLocalIndexing = enableIndexing,
