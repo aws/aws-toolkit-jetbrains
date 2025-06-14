@@ -149,7 +149,7 @@ class Browser(parent: Disposable, private val webUri: URI, val project: Project)
                         {
                         agenticMode: true,
                         quickActionCommands: commands,
-                        modelSelectionEnabled: true,
+                        modelSelectionEnabled: ${isModelSelectionEnabled()},
                         disclaimerAcknowledged: ${MeetQSettings.getInstance().disclaimerAcknowledged},
                         pairProgrammingAcknowledged: ${MeetQSettings.getInstance().pairProgrammingAcknowledged}
                         },
@@ -262,6 +262,8 @@ class Browser(parent: Disposable, private val webUri: URI, val project: Project)
     private fun generateQuickActionConfig() = AwsServerCapabilitiesProvider.getInstance(project).getChatOptions().quickActions.quickActionsCommandGroups
         .let { OBJECT_MAPPER.writeValueAsString(it) }
         ?: "[]"
+
+    private fun isModelSelectionEnabled() = AwsServerCapabilitiesProvider.getInstance(project).getChatOptions().modelSelection == true
 
     companion object {
         private const val MAX_ONBOARDING_PAGE_COUNT = 3

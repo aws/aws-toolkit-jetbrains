@@ -425,17 +425,6 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
         return CompletableFuture.completedFuture(Unit)
     }
 
-    override fun sendChatOptionsUpdate(params: LSPAny): CompletableFuture<Unit> {
-        val chatManager = ChatCommunicationManager.getInstance(project)
-        chatManager.notifyUi(
-            FlareUiMessage(
-                command = CHAT_OPTIONS_UPDATE_NOTIFICATION,
-                params = params,
-            )
-        )
-        return CompletableFuture.completedFuture(Unit)
-    }
-
     override fun appendFile(params: FileParams) = refreshVfs(params.path)
 
     override fun createDirectory(params: FileParams) = refreshVfs(params.path)
