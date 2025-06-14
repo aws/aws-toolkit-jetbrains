@@ -490,7 +490,7 @@ class CodeModernizerPlanEditor(val project: Project, private val virtualFile: Vi
                 JPanel().apply {
                     layout = BoxLayout(this, BoxLayout.Y_AXIS)
                     jobStatistics.forEach { stat ->
-                        if (!stat.name.isNullOrEmpty() && !stat.value.isNullOrEmpty()) {
+                        if (!stat.name.isNullOrEmpty() && !stat.value.isNullOrEmpty() && stat.name == "linesOfCode") {
                             val formattedStatName = getFormattedString(stat.name)
                             add(
                                 JLabel(
