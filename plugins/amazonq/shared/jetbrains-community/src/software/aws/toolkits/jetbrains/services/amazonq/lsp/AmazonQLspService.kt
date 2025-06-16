@@ -87,8 +87,6 @@ import java.io.IOException
 import java.io.OutputStreamWriter
 import java.io.PipedInputStream
 import java.io.PipedOutputStream
-import java.io.PrintWriter
-import java.io.StringWriter
 import java.net.Proxy
 import java.net.URI
 import java.nio.charset.StandardCharsets
@@ -452,10 +450,17 @@ private class AmazonQServerInstance(private val project: Project, private val cs
         }
             .wrapMessages { consumer ->
                 MessageConsumer { message ->
+                    // logging
+                    val traceLogger = LOG.atLevel(if (isDeveloperMode()) Level.INFO else Level.DEBUG)
+                    val direction = if (consumer is RemoteEndpoint) "Sent" else "Received"
+                    traceLogger.log { "$direction: $message" }
+
                     if (message is ResponseMessage && message.result is AwsExtendedInitializeResult) {
                         val result = message.result as AwsExtendedInitializeResult
                         AwsServerCapabilitiesProvider.getInstance(project).setAwsServerCapabilities(result.getAwsServerCapabilities())
                     }
+
+                    // required
                     consumer?.consume(message)
                 }
             }
@@ -468,18 +473,7 @@ private class AmazonQServerInstance(private val project: Project, private val cs
                 // otherwise Gson treats all numbers as double which causes deser issues
                 it.setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
                 it.registerTypeAdapterFactory(AmazonQLspTypeAdapterFactory())
-            }.traceMessages(
-                PrintWriter(
-                    object : StringWriter() {
-                        private val traceLogger = LOG.atLevel(if (isDeveloperMode()) Level.INFO else Level.DEBUG)
-
-                        override fun flush() {
-                            traceLogger.log { buffer.toString() }
-                            buffer.setLength(0)
-                        }
-                    }
-                )
-            )
+            }
             .setInput(inputWrapper.inputStream)
             .setOutput(launcherHandler.process.outputStream)
             .create()
