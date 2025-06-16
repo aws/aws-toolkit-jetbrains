@@ -9,9 +9,10 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.jcef.JBCefJSQuery
+import kotlinx.coroutines.flow.first
 import org.cef.CefApp
 import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AwsServerCapabilitiesProvider
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.FlareUiMessage
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
 import software.aws.toolkits.jetbrains.services.amazonq.util.HighlightCommand
@@ -114,7 +115,7 @@ class Browser(parent: Disposable, private val webUri: URI, val project: Project)
     ): String {
         val postMessageToJavaJsCode = receiveMessageQuery.inject("JSON.stringify(message)")
         val connectorAdapterPath = "http://mynah/js/connectorAdapter.js"
-        generateQuickActionConfig()
+
         // https://github.com/highlightjs/highlight.js/issues/1387
         // language=HTML
         val jsScripts = """
@@ -256,10 +257,6 @@ class Browser(parent: Disposable, private val webUri: URI, val project: Project)
         highlightCommand
         activeProfile
     }
-
-    private fun generateQuickActionConfig() = AwsServerCapabilitiesProvider.getInstance(project).getChatOptions().quickActions.quickActionsCommandGroups
-        .let { OBJECT_MAPPER.writeValueAsString(it) }
-        ?: "[]"
 
     companion object {
         private const val MAX_ONBOARDING_PAGE_COUNT = 3

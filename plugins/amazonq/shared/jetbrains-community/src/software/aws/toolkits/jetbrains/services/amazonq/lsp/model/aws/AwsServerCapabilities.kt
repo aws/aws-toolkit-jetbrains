@@ -1,43 +1,9 @@
 // Copyright 2025 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat
+package software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws
 
-import com.intellij.openapi.components.Service
-import com.intellij.openapi.components.service
-import com.intellij.openapi.project.Project
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.IconType
-
-@Service(Service.Level.PROJECT)
-class AwsServerCapabilitiesProvider {
-    private var serverCapabilities: AwsServerCapabilities? = null
-
-    fun setAwsServerCapabilities(serverCapabilities: AwsServerCapabilities?) {
-        this.serverCapabilities = serverCapabilities
-    }
-
-    fun getChatOptions() = serverCapabilities?.chatOptions ?: DEFAULT_CHAT_OPTIONS
-
-    companion object {
-        fun getInstance(project: Project) = project.service<AwsServerCapabilitiesProvider>()
-
-        private val DEFAULT_CHAT_OPTIONS: ChatOptions = ChatOptions(
-            QuickActions(
-                listOf(
-                    QuickActionsCommandGroups(
-                        listOf(
-                            QuickActionCommand("/help", "Learn more about Amazon Q then"),
-                            QuickActionCommand("/clear", "Clear this session")
-                        )
-                    )
-                )
-            ),
-            history = true,
-            export = true,
-            mcpServers = true
-        )
-    }
-}
 
 data class AwsServerCapabilities(
     val chatOptions: ChatOptions,
@@ -48,6 +14,7 @@ data class ChatOptions(
     val history: Boolean,
     val export: Boolean,
     val mcpServers: Boolean,
+    val modelSelection: Boolean,
 )
 
 data class QuickActions(
