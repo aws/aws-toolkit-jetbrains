@@ -71,5 +71,4 @@ interface AmazonQLanguageClient : LanguageClient {
 
     @JsonNotification(CHAT_OPTIONS_UPDATE_NOTIFICATION)
     fun sendChatOptionsUpdate(params: LSPAny)
-
 }
