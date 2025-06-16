@@ -1,3 +1,5 @@
+# _3.77_ (2025-06-16)
+
 # _3.76_ (2025-06-12)
 - **(Feature)** Add MCP support for Amazon Q chat
 
