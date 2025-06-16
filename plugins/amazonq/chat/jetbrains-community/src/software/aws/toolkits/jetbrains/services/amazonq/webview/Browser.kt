@@ -262,7 +262,7 @@ class Browser(parent: Disposable, private val webUri: URI, val project: Project)
         .let { OBJECT_MAPPER.writeValueAsString(it) }
         ?: "[]"
 
-    private fun isModelSelectionEnabled() = AwsServerCapabilitiesProvider.getInstance(project).getChatOptions().modelSelection == true
+    private fun isModelSelectionEnabled() = AwsServerCapabilitiesProvider.getInstance(project).getChatOptions().modelSelection
 
     companion object {
         private const val MAX_ONBOARDING_PAGE_COUNT = 3
