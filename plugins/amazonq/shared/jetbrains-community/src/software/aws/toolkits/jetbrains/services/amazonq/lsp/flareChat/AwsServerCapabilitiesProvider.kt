@@ -34,8 +34,7 @@ class AwsServerCapabilitiesProvider {
             ),
             history = true,
             export = true,
-            mcpServers = true,
-            modelSelection = true
+            mcpServers = true
         )
     }
 }
@@ -49,7 +48,6 @@ data class ChatOptions(
     val history: Boolean,
     val export: Boolean,
     val mcpServers: Boolean,
-    val modelSelection: Boolean,
 )
 
 data class QuickActions(
