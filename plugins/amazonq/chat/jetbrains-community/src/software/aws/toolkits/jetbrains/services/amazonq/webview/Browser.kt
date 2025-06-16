@@ -156,6 +156,7 @@ class Browser(parent: Disposable, private val mynahAsset: Path, val project: Pro
                         {
                         agenticMode: true,
                         quickActionCommands: [],
+                        modelSelectionEnabled: true,
                         disclaimerAcknowledged: ${MeetQSettings.getInstance().disclaimerAcknowledged},
                         pairProgrammingAcknowledged: ${MeetQSettings.getInstance().pairProgrammingAcknowledged}
                         },
