@@ -1,0 +1,8 @@
+{
+  "date" : "2025-06-12",
+  "version" : "3.76",
+  "entries" : [ {
+    "type" : "feature",
+    "description" : "Add MCP support for Amazon Q chat"
+  } ]
+}
