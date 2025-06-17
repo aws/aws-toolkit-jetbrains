@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp
 
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.util.system.CpuArch
+import com.intellij.util.text.nullize
 import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
@@ -26,7 +27,7 @@ object NodeExePatcher {
     fun patch(node: Path): GeneralCommandLine {
         val nodePath = node.toAbsolutePath().toString()
 
-        return if (Paths.get(linker).exists() && Paths.get(glibc).exists()) {
+        return if (!linker.isNullOrEmpty() && glibc.isNotEmpty() && Paths.get(linker).exists() && Paths.get(glibc).exists()) {
             GeneralCommandLine(linker)
                 .withParameters("--library-path", glibc, nodePath)
                 .also {
@@ -38,14 +39,16 @@ object NodeExePatcher {
     }
 
     private val linker
-        get() = System.getenv(GLIBC_LINKER_VAR) ?: let {
+        get() = System.getenv(GLIBC_LINKER_VAR).nullize(true) ?: let {
             if (CpuArch.isArm64()) {
                 INTERNAL_AARCH64_LINKER
-            } else {
+            } else if (CpuArch.isIntel64()) {
                 INTERNAL_X86_64_LINKER
+            } else {
+                null
             }
         }
 
     private val glibc
-        get() = System.getenv(GLIBC_PATH_VAR) ?: INTERNAL_GLIBC_PATH
+        get() = System.getenv(GLIBC_PATH_VAR).nullize(true) ?: INTERNAL_GLIBC_PATH
 }

@@ -4,10 +4,9 @@
 package software.aws.toolkits.jetbrains.services.amazonq.lsp
 
 import com.intellij.execution.configurations.GeneralCommandLine
-import com.intellij.openapi.util.SystemInfo
 import com.intellij.testFramework.rules.TempDirectory
-import com.intellij.testFramework.utils.io.createDirectory
 import com.intellij.testFramework.utils.io.createFile
+import com.intellij.util.system.CpuArch
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Assume.assumeTrue
 import org.junit.Rule
@@ -40,27 +39,15 @@ class NodeExePatcherTest {
 
     @Test
     fun `patches if hardcoded paths exists`() {
-        // explicitly linux because can't run on mac
-        assumeTrue(SystemInfo.isLinux)
-
         val path = Paths.get(NodeExePatcher.INTERNAL_GLIBC_PATH)
-        val linker = Paths.get(NodeExePatcher.INTERNAL_X86_64_LINKER)
-        val needsCreate = !path.exists() && !linker.exists()
-        if (needsCreate) {
-            path.createDirectory()
-            linker.createFile()
-        }
+        // too many permission issues otherwise
+        assumeTrue(path.exists())
 
-        try {
-            assertThat(NodeExePatcher.patch(Paths.get("/path/to/node")))
-                .usingComparator(Comparator.comparing { it.commandLineString })
-                .isEqualTo(GeneralCommandLine(linker.toString(), "--library-path", path.toString(), pathToNode))
-        } finally {
-            if (needsCreate) {
-                linker.toFile().delete()
-                path.toFile().deleteRecursively()
-            }
-        }
+        val linker = Paths.get(if (CpuArch.isArm64()) NodeExePatcher.INTERNAL_AARCH64_LINKER else NodeExePatcher.INTERNAL_X86_64_LINKER)
+
+        assertThat(NodeExePatcher.patch(Paths.get("/path/to/node")))
+            .usingComparator(Comparator.comparing { it.commandLineString })
+            .isEqualTo(GeneralCommandLine(linker.toString(), "--library-path", path.toString(), pathToNode))
     }
 
     @Test
