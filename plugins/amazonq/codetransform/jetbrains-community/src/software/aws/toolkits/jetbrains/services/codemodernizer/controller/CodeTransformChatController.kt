@@ -795,10 +795,7 @@ dependencyManagement:
                         is DownloadArtifactResult.Success -> {
                             if (downloadResult.artifact !is CodeModernizerArtifact) return artifactHandler.notifyUnableToApplyPatch("")
                             codeTransformChatHelper.updateLastPendingMessage(
-                                buildTransformResultChatContent(
-                                    result,
-                                    codeModernizerManager.codeTransformationSession?.sessionContext?.targetJavaVersion.toString()
-                                )
+                                buildTransformResultChatContent(result)
                             )
                         }
                         is DownloadArtifactResult.DownloadFailure -> artifactHandler.notifyUnableToDownload(downloadResult.failureReason)
