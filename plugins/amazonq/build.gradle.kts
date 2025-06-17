@@ -27,7 +27,7 @@ val changelog = tasks.register<GeneratePluginChangeLog>("pluginChangeLog") {
 }
 
 tasks.prepareSandbox {
-    from("contrib/QCT-Maven.jar") {
+    from("contrib/QCT-Maven-6-16.jar") {
         into("/plugin-amazonq/lib")
     }
 }
