@@ -170,12 +170,8 @@ suspend fun attemptLocalBuild(plan: TransformationPlan, jobId: JobId, project: P
     if (artifactId != null) {
         val clientInstructionsPath = downloadClientInstructions(jobId, artifactId, project)
         getLogger<CodeModernizerManager>().info { "Downloaded client instructions for job ${jobId.id} and artifact $artifactId at: $clientInstructionsPath" }
-        if (clientInstructionsPath.toFile().readText().trim().isNotEmpty()) {
-            processClientInstructions(clientInstructionsPath, jobId, artifactId, project)
-            getLogger<CodeModernizerManager>().info { "Finished processing client instructions for job ${jobId.id} and artifact $artifactId" }
-        } else {
-            getLogger<CodeModernizerManager>().info { "Client instructions for job ${jobId.id} and artifact $artifactId is empty; skipping client-side build" }
-        }
+        processClientInstructions(clientInstructionsPath, jobId, artifactId, project)
+        getLogger<CodeModernizerManager>().info { "Finished processing client instructions for job ${jobId.id} and artifact $artifactId" }
     }
 }
 
@@ -190,45 +186,47 @@ suspend fun processClientInstructions(clientInstructionsPath: Path, jobId: JobId
     val targetDir = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(copyOfProjectSources.toFile())
         ?: throw RuntimeException("Cannot find copy of project sources directory")
 
-    withContext(EDT) {
-        runWriteAction {
-            // create temp module with project copy so that we can apply diff.patch
-            val modifiableModel = ModuleManager.getInstance(project).getModifiableModel()
-            val tempModule = modifiableModel.newModule(
-                Paths.get(targetDir.path).resolve("temp.iml").toString(),
-                JavaModuleType.getModuleType().id
-            )
+    if (clientInstructionsPath.toFile().readText().trim().isNotEmpty()) {
+        withContext(EDT) {
+            runWriteAction {
+                // create temp module with project copy so that we can apply diff.patch
+                val modifiableModel = ModuleManager.getInstance(project).getModifiableModel()
+                val tempModule = modifiableModel.newModule(
+                    Paths.get(targetDir.path).resolve("temp.iml").toString(),
+                    JavaModuleType.getModuleType().id
+                )
 
-            try {
-                val moduleModel = ModuleRootManager.getInstance(tempModule).modifiableModel
-                moduleModel.addContentEntry(targetDir.url)
-                moduleModel.commit()
-                modifiableModel.commit()
+                try {
+                    val moduleModel = ModuleRootManager.getInstance(tempModule).modifiableModel
+                    moduleModel.addContentEntry(targetDir.url)
+                    moduleModel.commit()
+                    modifiableModel.commit()
 
-                // apply diff.patch
-                val patchReader = PatchReader(clientInstructionsPath)
-                patchReader.parseAllPatches()
-                PatchApplier(
-                    project,
-                    targetDir,
-                    patchReader.allPatches,
-                    null,
-                    null
-                ).execute()
-                getLogger<CodeModernizerManager>().info { "Successfully applied patch file at $clientInstructionsPath" }
+                    // apply diff.patch
+                    val patchReader = PatchReader(clientInstructionsPath)
+                    patchReader.parseAllPatches()
+                    PatchApplier(
+                        project,
+                        targetDir,
+                        patchReader.allPatches,
+                        null,
+                        null
+                    ).execute()
+                    getLogger<CodeModernizerManager>().info { "Successfully applied patch file at $clientInstructionsPath" }
 
-                val virtualFile = LocalFileSystem.getInstance().findFileByIoFile(clientInstructionsPath.toFile())
-                    ?: throw RuntimeException("Cannot find patch file at $clientInstructionsPath")
-                FileEditorManager.getInstance(project).openFile(virtualFile, true)
-            } catch (e: Exception) {
-                getLogger<CodeModernizerManager>().error {
-                    "Error applying intermediate diff.patch for job ${jobId.id} and artifact $artifactId located at " +
-                        "$clientInstructionsPath: $e"
-                }
-                throw e
-            } finally {
-                runWriteAction {
-                    ModuleManager.getInstance(project).disposeModule(tempModule)
+                    val virtualFile = LocalFileSystem.getInstance().findFileByIoFile(clientInstructionsPath.toFile())
+                        ?: throw RuntimeException("Cannot find patch file at $clientInstructionsPath")
+                    FileEditorManager.getInstance(project).openFile(virtualFile, true)
+                } catch (e: Exception) {
+                    getLogger<CodeModernizerManager>().error {
+                        "Error applying intermediate diff.patch for job ${jobId.id} and artifact $artifactId located at " +
+                            "$clientInstructionsPath: $e"
+                    }
+                    throw e
+                } finally {
+                    runWriteAction {
+                        ModuleManager.getInstance(project).disposeModule(tempModule)
+                    }
                 }
             }
         }

@@ -234,7 +234,6 @@ data class CodeModernizerSessionContext(
                 }
 
                 val zipSources = File(ZIP_SOURCES_PATH)
-                val depSources = File(ZIP_DEPENDENCIES_PATH)
                 val outputFile = createTemporaryZipFile { zip ->
                     // 1) Manifest file
                     var manifest = ZipManifest(transformCapabilities = transformCapabilities, customBuildCommand = customBuildCommand)
