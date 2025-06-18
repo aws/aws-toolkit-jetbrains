@@ -61,6 +61,7 @@ import org.eclipse.lsp4j.jsonrpc.RemoteEndpoint
 import org.eclipse.lsp4j.jsonrpc.json.JsonRpcMethod
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseMessage
 import org.eclipse.lsp4j.launch.LSPLauncher
+import org.jetbrains.annotations.VisibleForTesting
 import org.slf4j.event.Level
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
@@ -134,11 +135,11 @@ internal class LSPProcessListener : ProcessListener {
 }
 
 @Service(Service.Level.PROJECT)
-class AmazonQLspService(private val project: Project, private val cs: CoroutineScope) : Disposable {
+open class AmazonQLspService(private val project: Project, private val cs: CoroutineScope) : Disposable {
     private val _flowInstance = MutableSharedFlow<AmazonQServerInstance>(replay = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
     val instanceFlow = _flowInstance.asSharedFlow().map { it.languageServer }
 
-    private var instance: Deferred<AmazonQServerInstance>
+    private var instance: Deferred<AmazonQServerInstanceFacade>
     val capabilities
         get() = instance.getCompleted().initializeResult.getCompleted().capabilities
 
@@ -154,7 +155,8 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
     // dont allow lsp commands if server is restarting
     private val mutex = Mutex(false)
 
-    private fun start() = cs.async {
+    @VisibleForTesting
+    protected open fun start(): Deferred<AmazonQServerInstanceFacade> = cs.async {
         // manage lifecycle RAII-like so we can restart at arbitrary time
         // and suppress IDE error if server fails to start
         var attempts = 0
@@ -331,21 +333,27 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
     }
 }
 
-private class AmazonQServerInstance(private val project: Project, private val cs: CoroutineScope) : Disposable {
-    val encryptionManager = JwtEncryptionManager()
-
-    private val launcher: Launcher<AmazonQLanguageServer>
+interface AmazonQServerInstanceFacade : Disposable {
+    val launcher: Launcher<AmazonQLanguageServer>
+    val launcherFuture: Future<Void>
+    val initializeResult: Deferred<AwsExtendedInitializeResult>
+    val encryptionManager: JwtEncryptionManager
 
     val languageServer: AmazonQLanguageServer
         get() = launcher.remoteProxy
 
     val rawEndpoint: RemoteEndpoint
         get() = launcher.remoteEndpoint
+}
+
+private class AmazonQServerInstance(private val project: Project, private val cs: CoroutineScope) : Disposable, AmazonQServerInstanceFacade {
+    override val encryptionManager = JwtEncryptionManager()
+    override val launcher: Launcher<AmazonQLanguageServer>
 
     @Suppress("ForbiddenVoid")
-    val launcherFuture: Future<Void>
+    override val launcherFuture: Future<Void>
     private val launcherHandler: KillableProcessHandler
-    val initializeResult: Deferred<InitializeResult>
+    override val initializeResult: Deferred<AwsExtendedInitializeResult>
 
     private fun createClientCapabilities(): ClientCapabilities =
         ClientCapabilities().apply {
@@ -546,7 +554,7 @@ private class AmazonQServerInstance(private val project: Project, private val cs
             }
             languageServer.initialized(InitializedParams())
 
-            initializeResult
+            initializeResult as AwsExtendedInitializeResult
         }
 
         // invokeOnCompletion results in weird lock/timeout error
