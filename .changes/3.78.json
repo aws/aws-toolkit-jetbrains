@@ -1,0 +1,8 @@
+{
+  "date" : "2025-06-18",
+  "version" : "3.78",
+  "entries" : [ {
+    "type" : "feature",
+    "description" : "Add model selection feature"
+  } ]
+}
