@@ -49,13 +49,17 @@ import software.amazon.awssdk.services.codewhispererruntime.model.Transformation
 import software.amazon.awssdk.services.codewhispererruntime.model.UploadContext
 import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CLIENT_SIDE_BUILD
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerJobCompletedResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerSessionContext
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerStartJobResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformHilDownloadArtifact
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformType
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.EXPLAINABILITY_V1
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.IDE
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MAVEN_BUILD_SKIP_UNIT_TESTS
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenCopyCommandsResult
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.SELECTIVE_TRANSFORMATION_V2
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.UploadFailureReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.ZipCreationResult
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
@@ -146,7 +150,7 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
             root.children[0],
             JavaSdkVersion.JDK_1_8,
             JavaSdkVersion.JDK_11,
-            listOf(EXPLAINABILITY_V1, SELECTIVE_TRANSFORMATION_V2),
+            listOf(EXPLAINABILITY_V1, SELECTIVE_TRANSFORMATION_V2, CLIENT_SIDE_BUILD, IDE),
             MAVEN_BUILD_SKIP_UNIT_TESTS
         )
         val mockFile = mock(File::class.java)
@@ -164,7 +168,10 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
                     Path("manifest.json") -> {
                         assertThat(fileContent).isNotNull()
                         assertThat(fileContent).contains(MAVEN_BUILD_SKIP_UNIT_TESTS)
+                        assertThat(fileContent).contains(EXPLAINABILITY_V1)
                         assertThat(fileContent).contains(SELECTIVE_TRANSFORMATION_V2)
+                        assertThat(fileContent).contains(CLIENT_SIDE_BUILD)
+                        assertThat(fileContent).contains(IDE)
                         assertThat(fileContent).contains("\"noInteractiveMode\":true")
                     }
                     Path("sources/src/tmp.txt") -> assertThat(fileContent).isEqualTo(fileText)

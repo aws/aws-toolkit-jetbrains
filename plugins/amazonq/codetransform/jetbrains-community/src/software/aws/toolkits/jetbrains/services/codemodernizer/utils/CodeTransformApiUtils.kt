@@ -86,6 +86,7 @@ suspend fun JobId.pollTransformationStatusAndPlan(
     var transformationResponse: GetTransformationResponse? = null
     var transformationPlan: TransformationPlan? = null
     var didSleepOnce = false
+    var hasSeenTransforming = false
     val maxRefreshes = 10
     var numRefreshes = 0
 
@@ -114,12 +115,15 @@ suspend fun JobId.pollTransformationStatusAndPlan(
                 if (isDisposed.get()) throw AlreadyDisposedException("The invoker is disposed.")
                 transformationResponse = clientAdaptor.getCodeModernizationJob(this.id)
                 val newStatus = transformationResponse?.transformationJob()?.status() ?: throw RuntimeException("Unable to get job status")
+                if (newStatus == TransformationStatus.TRANSFORMING) {
+                    hasSeenTransforming = true
+                }
                 var newPlan: TransformationPlan? = null
                 if (newStatus in STATES_WHERE_PLAN_EXIST && transformType != CodeTransformType.SQL_CONVERSION) { // no plan for SQL conversions
                     delay(sleepDurationMillis)
                     newPlan = clientAdaptor.getCodeModernizationPlan(this).transformationPlan()
                 }
-                if (newStatus == TransformationStatus.TRANSFORMING && newPlan != null) {
+                if (hasSeenTransforming && newPlan != null) {
                     attemptLocalBuild(newPlan, this, project)
                 }
                 if (newStatus != state) {

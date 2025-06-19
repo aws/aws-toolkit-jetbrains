@@ -32,10 +32,8 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.ArtifactHandler
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeModernizerManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeModernizerManager.Companion.LOG
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTelemetryManager
-import software.aws.toolkits.jetbrains.services.codemodernizer.EXPLAINABILITY_V1
 import software.aws.toolkits.jetbrains.services.codemodernizer.HilTelemetryMetaData
 import software.aws.toolkits.jetbrains.services.codemodernizer.InboundAppMessagesHandler
-import software.aws.toolkits.jetbrains.services.codemodernizer.SELECTIVE_TRANSFORMATION_V2
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformActionMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformCommand
@@ -103,6 +101,9 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransfo
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CustomerSelection
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.DownloadArtifactResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.DownloadFailureReason
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.EXPLAINABILITY_V1
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.IDE
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.SELECTIVE_TRANSFORMATION_V2
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.InvalidTelemetryReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MAVEN_BUILD_RUN_UNIT_TESTS
@@ -418,7 +419,7 @@ class CodeTransformChatController(
         codeModernizerManager.codeTransformationSession?.let {
             it.sessionContext.customBuildCommand = customBuildCommand
         }
-        val transformCapabilities = listOf(EXPLAINABILITY_V1, CLIENT_SIDE_BUILD, SELECTIVE_TRANSFORMATION_V2)
+        val transformCapabilities = listOf(EXPLAINABILITY_V1, CLIENT_SIDE_BUILD, SELECTIVE_TRANSFORMATION_V2, IDE)
         codeModernizerManager.codeTransformationSession?.let {
             it.sessionContext.transformCapabilities = transformCapabilities
         }
