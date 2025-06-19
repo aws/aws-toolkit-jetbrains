@@ -224,6 +224,9 @@ export class Connector {
             case 'codescan':
                 this.codeScanChatConnector.help(tabID)
                 break
+            case 'welcome':
+                this.cwChatConnector.help(tabID)
+                break
         }
     }
 
