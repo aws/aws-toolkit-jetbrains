@@ -12,7 +12,7 @@
         "lintfix": "eslint -c .eslintrc.js --fix --ext .ts ."
     },
     "dependencies": {
-        "@aws/mynah-ui-chat": "npm:@aws/mynah-ui@4.30.3",
+        "@aws/mynah-ui-chat": "npm:@aws/mynah-ui@4.35.5",
         "@types/node": "^14.18.5",
         "fs-extra": "^10.0.1",
         "sanitize-html": "^2.12.1",

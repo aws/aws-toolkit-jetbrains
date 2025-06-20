@@ -553,6 +553,20 @@ private class AmazonQServerInstance(private val project: Project, private val cs
                 DefaultModuleDependenciesService(project).also {
                     Disposer.register(this, it)
                 }
+
+                // Register active editor change listener
+                val executor = java.util.concurrent.Executors.newSingleThreadScheduledExecutor { r ->
+                    val thread = Thread(r, "AmazonQ-EditorChangeListener")
+                    thread.isDaemon = true
+                    thread
+                }
+
+                // Register active editor change listener
+                software.aws.toolkits.jetbrains.services.amazonq.lsp.editor.ActiveEditorChangeListener.register(
+                    project,
+                    executor
+                )
+                LOG.info { "Registered active editor change listener" }
             }
         }
     }
