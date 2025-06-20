@@ -12,6 +12,8 @@ import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileChooser.FileChooserFactory
 import com.intellij.openapi.fileChooser.FileSaverDescriptor
+import com.intellij.openapi.fileChooser.FileChooser
+import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
@@ -244,6 +246,23 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                 chosenFile?.let {
                     ShowSaveFileDialogResult(chosenFile.file.path)
                 } ?: throw ResponseErrorException(ResponseError(ResponseErrorCode.RequestCancelled, "Export cancelled by user", null))
+            },
+            ApplicationManager.getApplication()::invokeLater
+        )
+    }
+
+    override fun showOpenFileDialog(params: LSPAny): CompletableFuture<LSPAny> {
+        return CompletableFuture.supplyAsync(
+            {
+                val descriptor = FileChooserDescriptorFactory.createMultipleFilesNoJarsDescriptor().apply {
+                    title = "Select Files"
+                    description = "Choose files to open"
+                }
+
+                val chosenFiles = FileChooser.chooseFiles(descriptor, project, null)
+                val uris = chosenFiles.map { it.url }
+                
+                mapOf("uris" to uris) as LSPAny
             },
             ApplicationManager.getApplication()::invokeLater
         )
