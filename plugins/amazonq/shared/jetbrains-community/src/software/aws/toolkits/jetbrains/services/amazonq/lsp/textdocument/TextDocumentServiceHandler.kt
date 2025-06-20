@@ -11,6 +11,7 @@ import com.intellij.openapi.editor.event.DocumentListener
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileDocumentManagerListener
 import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.fileEditor.FileEditorManagerEvent
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
@@ -28,6 +29,8 @@ import org.eclipse.lsp4j.TextDocumentIdentifier
 import org.eclipse.lsp4j.TextDocumentItem
 import org.eclipse.lsp4j.VersionedTextDocumentIdentifier
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ACTIVE_EDITOR_CHANGED_NOTIFICATION
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.LspEditorUtil
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.LspEditorUtil.toUriString
 import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 
@@ -163,6 +166,26 @@ class TextDocumentServiceHandler(
                     }
                 )
             }
+        }
+    }
+
+    override fun selectionChanged(event: FileEditorManagerEvent) {
+        handleActiveEditorChange(event.newFile, event.newEditor?.let { FileEditorManager.getInstance(project).selectedTextEditor })
+    }
+
+    private fun handleActiveEditorChange(file: VirtualFile?, editor: com.intellij.openapi.editor.Editor?) {
+        val editor = FileEditorManager.getInstance(project).selectedTextEditor
+        val textDocumentIdentifier = editor?.let { TextDocumentIdentifier(toUriString(it.virtualFile)) }
+        val cursorState = editor?.let { LspEditorUtil.getCursorState(it) }
+
+        val params = mapOf(
+            "textDocument" to textDocumentIdentifier,
+            "cursorState" to cursorState
+        )
+
+        // Send notification to the language server
+        AmazonQLspService.executeIfRunning(project) { _ ->
+            rawEndpoint.notify(ACTIVE_EDITOR_CHANGED_NOTIFICATION, params)
         }
     }
 

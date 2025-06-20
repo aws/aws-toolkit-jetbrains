@@ -16,6 +16,7 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VfsUtil
+import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFileManager
 import migration.software.aws.toolkits.jetbrains.settings.AwsSettings
 import org.eclipse.lsp4j.ConfigurationParams
@@ -27,6 +28,7 @@ import org.eclipse.lsp4j.PublishDiagnosticsParams
 import org.eclipse.lsp4j.ShowDocumentParams
 import org.eclipse.lsp4j.ShowDocumentResult
 import org.eclipse.lsp4j.ShowMessageRequestParams
+import org.eclipse.lsp4j.TextDocumentIdentifier
 import org.eclipse.lsp4j.jsonrpc.ResponseErrorException
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseError
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseErrorCode
@@ -44,7 +46,10 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.FlareUiMes
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LSPAny
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_OPEN_TAB
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_OPTIONS_UPDATE_NOTIFICATION
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_PINNED_CONTEXT_ADD
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_PINNED_CONTEXT_REMOVE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_CONTEXT_COMMANDS
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_PINNED_CONTEXT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_UPDATE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CopyFileParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FileParams
@@ -419,6 +424,62 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
         chatManager.notifyUi(
             FlareUiMessage(
                 command = CHAT_SEND_CONTEXT_COMMANDS,
+                params = params,
+            )
+        )
+        return CompletableFuture.completedFuture(Unit)
+    }
+
+    override fun sendPinnedContext(params: LSPAny): CompletableFuture<Unit> {
+        val chatManager = ChatCommunicationManager.getInstance(project)
+
+        // Send the active text file path with pinned context
+        val editor = FileEditorManager.getInstance(project).selectedTextEditor
+        val textDocument = editor?.let {
+            val relativePath = VfsUtilCore.getRelativePath(it.virtualFile, project.baseDir)
+                ?: it.virtualFile.path // Use absolute path if not in project
+            TextDocumentIdentifier(relativePath)
+        }
+
+        // Create updated params with text document information
+        // Since params is LSPAny, we need to handle it as a generic object
+        val updatedParams = when (params) {
+            is Map<*, *> -> {
+                val mutableParams = params.toMutableMap()
+                mutableParams["textDocument"] = textDocument
+                mutableParams
+            }
+            else -> mapOf(
+                "params" to params,
+                "textDocument" to textDocument
+            )
+        }
+
+        chatManager.notifyUi(
+            FlareUiMessage(
+                command = CHAT_SEND_PINNED_CONTEXT,
+                params = updatedParams,
+            )
+        )
+        return CompletableFuture.completedFuture(Unit)
+    }
+
+    override fun pinnedContextAdd(params: LSPAny): CompletableFuture<Unit> {
+        val chatManager = ChatCommunicationManager.getInstance(project)
+        chatManager.notifyUi(
+            FlareUiMessage(
+                command = CHAT_PINNED_CONTEXT_ADD,
+                params = params,
+            )
+        )
+        return CompletableFuture.completedFuture(Unit)
+    }
+
+    override fun pinnedContextRemove(params: LSPAny): CompletableFuture<Unit> {
+        val chatManager = ChatCommunicationManager.getInstance(project)
+        chatManager.notifyUi(
+            FlareUiMessage(
+                command = CHAT_PINNED_CONTEXT_REMOVE,
                 params = params,
             )
         )

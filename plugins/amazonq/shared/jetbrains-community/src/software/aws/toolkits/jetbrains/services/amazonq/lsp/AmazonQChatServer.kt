@@ -18,6 +18,8 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_INSERT_TO_CURSOR_NOTIFICATION
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_LINK_CLICK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_LIST_CONVERSATIONS
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_PINNED_CONTEXT_ADD
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_PINNED_CONTEXT_REMOVE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_QUICK_ACTION
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_READY
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SOURCE_LINK_CLICK
@@ -39,11 +41,13 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSe
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.InfoLinkClickParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.InsertToCursorPositionParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.LIST_MCP_SERVERS_REQUEST_METHOD
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.LIST_RULES_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.LinkClickParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ListConversationsParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.MCP_SERVER_CLICK_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.PROMPT_INPUT_OPTIONS_CHANGE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.PromptInputOptionChangeParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.RULE_CLICK_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_CHAT_COMMAND_PROMPT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SourceLinkClickParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TELEMETRY_EVENT
@@ -189,6 +193,18 @@ object AmazonQChatServer : JsonRpcMethodProvider {
         LSPAny::class.java
     )
 
+    val listRules = JsonRpcRequest(
+        LIST_RULES_REQUEST_METHOD,
+        LSPAny::class.java,
+        LSPAny::class.java
+    )
+
+    val ruleClick = JsonRpcRequest(
+        RULE_CLICK_REQUEST_METHOD,
+        LSPAny::class.java,
+        LSPAny::class.java
+    )
+
     val conversationClick = JsonRpcRequest(
         CHAT_CONVERSATION_CLICK,
         ConversationClickParams::class.java,
@@ -216,6 +232,16 @@ object AmazonQChatServer : JsonRpcMethodProvider {
     val createPrompt = JsonRpcNotification(
         CHAT_CREATE_PROMPT,
         CreatePromptParams::class.java
+    )
+
+    val pinnedContextAdd = JsonRpcNotification(
+        CHAT_PINNED_CONTEXT_ADD,
+        LSPAny::class.java
+    )
+
+    val pinnedContextRemove = JsonRpcNotification(
+        CHAT_PINNED_CONTEXT_REMOVE,
+        LSPAny::class.java
     )
 
     val telemetryEvent = JsonRpcNotification(
