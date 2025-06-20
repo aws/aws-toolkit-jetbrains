@@ -261,6 +261,10 @@ data class CodeModernizerSessionContext(
                         dependencyFiles.forEach { depFile ->
                             val relativePath = File(depFile.path).relativeTo(depDirectory)
                             var relativePathString = relativePath.toPath().toString()
+                            if (copyResult == null) {
+                                // null copyResult means doing a SQL conversion; put metadata under dependencies folder
+                                relativePathString = File(ZIP_DEPENDENCIES_PATH).resolve(relativePath).toPath().toString()
+                            }
                             // Convert Windows file path to work on Linux
                             if (File.separatorChar != '/') {
                                 relativePathString = relativePathString.replace('\\', '/')
