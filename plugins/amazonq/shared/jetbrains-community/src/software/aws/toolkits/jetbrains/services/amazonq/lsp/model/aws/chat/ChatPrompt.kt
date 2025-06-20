@@ -4,7 +4,7 @@
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat
 
 import com.fasterxml.jackson.annotation.JsonProperty
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ContextCommand
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.ContextCommand
 
 data class ChatPrompt(
     val prompt: String,
