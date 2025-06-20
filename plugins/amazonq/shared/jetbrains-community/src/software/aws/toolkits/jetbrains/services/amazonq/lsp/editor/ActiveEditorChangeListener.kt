@@ -28,7 +28,7 @@ class ActiveEditorChangeListener(
     private val executor: ScheduledExecutorService,
 ) : Disposable {
     private var debounceTask: ScheduledFuture<*>? = null
-    private val DEBOUNCE_DELAY_MS = 100L
+    private val debounceDelayMs = 100L
 
     init {
         val connection = project.messageBus.connect(this)
@@ -63,7 +63,7 @@ class ActiveEditorChangeListener(
             } catch (e: Exception) {
                 LOG.warn(e) { "Failed to send active editor changed notification" }
             }
-        }, DEBOUNCE_DELAY_MS, TimeUnit.MILLISECONDS)
+        }, debounceDelayMs, TimeUnit.MILLISECONDS)
     }
 
     override fun dispose() {
@@ -75,7 +75,6 @@ class ActiveEditorChangeListener(
 
         fun register(project: Project, executor: ScheduledExecutorService): ActiveEditorChangeListener {
             val listener = ActiveEditorChangeListener(project, executor)
-            Disposer.register(project, listener)
             return listener
         }
     }
