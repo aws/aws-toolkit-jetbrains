@@ -252,7 +252,12 @@ suspend fun processClientInstructions(clientInstructionsPath: Path, jobId: JobId
         getLogger<CodeModernizerManager>().info { "ResumeTransformation succeeded for job ${jobId.id}" }
     } catch (e: Exception) {
         getLogger<CodeModernizerManager>().error { "Upload / resume job failed for job ${jobId.id} and artifact $artifactId: $e" }
-        throw e
+        if (e.message?.contains("find a step in desired state:AWAITING_CLIENT_ACTION") == true) {
+            getLogger<CodeModernizerManager>().info { "Resuming job after server-side timeout" }
+            CodeModernizerManager.getInstance(project).codeTransformationSession?.resumeTransformation()
+        } else {
+            throw e
+        }
     } finally {
         uploadZip.deleteRecursively()
         copyOfProjectSources.toFile().deleteRecursively()
