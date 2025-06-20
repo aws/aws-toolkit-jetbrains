@@ -119,7 +119,7 @@ suspend fun JobId.pollTransformationStatusAndPlan(
                     hasSeenTransforming = true
                 }
                 var newPlan: TransformationPlan? = null
-                if (newStatus in STATES_WHERE_PLAN_EXIST && transformType != CodeTransformType.SQL_CONVERSION) { // no plan for SQL conversions
+                if (hasSeenTransforming && transformType != CodeTransformType.SQL_CONVERSION) { // no plan for SQL conversions
                     delay(sleepDurationMillis)
                     newPlan = clientAdaptor.getCodeModernizationPlan(this).transformationPlan()
                 }
