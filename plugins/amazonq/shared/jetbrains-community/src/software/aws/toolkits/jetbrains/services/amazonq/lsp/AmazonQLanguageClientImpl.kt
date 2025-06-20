@@ -16,6 +16,7 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VfsUtil
+import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFileManager
 import migration.software.aws.toolkits.jetbrains.settings.AwsSettings
 import org.eclipse.lsp4j.ConfigurationParams
@@ -432,10 +433,12 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
     override fun sendPinnedContext(params: LSPAny): CompletableFuture<Unit> {
         val chatManager = ChatCommunicationManager.getInstance(project)
 
-        // Get the active text editor and create text document identifier
+        // Send the active text file path with pinned context
         val editor = FileEditorManager.getInstance(project).selectedTextEditor
         val textDocument = editor?.let {
-            TextDocumentIdentifier(it.virtualFile.path)
+            val relativePath = VfsUtilCore.getRelativePath(it.virtualFile, project.baseDir)
+                ?: it.virtualFile.path // Use absolute path if not in project
+            TextDocumentIdentifier(relativePath)
         }
 
         // Create updated params with text document information
