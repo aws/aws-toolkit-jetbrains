@@ -50,7 +50,6 @@ import org.eclipse.lsp4j.ClientInfo
 import org.eclipse.lsp4j.DidChangeConfigurationParams
 import org.eclipse.lsp4j.FileOperationsWorkspaceCapabilities
 import org.eclipse.lsp4j.InitializeParams
-import org.eclipse.lsp4j.InitializeResult
 import org.eclipse.lsp4j.InitializedParams
 import org.eclipse.lsp4j.SynchronizationCapabilities
 import org.eclipse.lsp4j.TextDocumentClientCapabilities
@@ -303,12 +302,12 @@ open class AmazonQLspService(private val project: Project, private val cs: Corou
     }
 
     fun<T> executeSync(runnable: suspend AmazonQLspService.(AmazonQLanguageServer) -> T): T =
-        runBlocking(cs.coroutineContext) {
+        runBlocking {
             execute(runnable)
         }
 
     fun<T> syncExecuteIfRunning(runnable: suspend AmazonQLspService.(AmazonQLanguageServer) -> T): T? =
-        runBlocking(cs.coroutineContext) {
+        runBlocking {
             executeIfRunning(runnable)
         }
 

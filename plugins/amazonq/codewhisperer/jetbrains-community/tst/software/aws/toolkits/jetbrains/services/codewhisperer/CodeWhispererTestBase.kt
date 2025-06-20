@@ -17,7 +17,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.yield
 import org.assertj.core.api.Assertions.assertThat
@@ -25,7 +25,6 @@ import org.eclipse.lsp4j.jsonrpc.Launcher
 import org.eclipse.lsp4j.jsonrpc.RemoteEndpoint
 import org.junit.After
 import org.junit.Before
-import org.junit.BeforeClass
 import org.junit.Rule
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
@@ -35,6 +34,7 @@ import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.timeout
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import software.amazon.awssdk.services.ssooidc.SsoOidcClient
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.ManagedSsoProfile
@@ -111,16 +111,16 @@ open class CodeWhispererTestBase {
     @Before
     open fun setUp() {
         mockLanguageServer = mockk()
-        mockLspService = spy(object : AmazonQLspService(projectRule.project, mockk()) {
+        mockLspService = spy(object : AmazonQLspService(projectRule.project, TestScope()) {
             override fun start() = CompletableDeferred(object : AmazonQServerInstanceFacade {
                 override val launcher: Launcher<AmazonQLanguageServer>
                     get() = TODO("Not yet implemented")
 
                 override val launcherFuture: Future<Void>
-                    get() = TODO("Not yet implemented")
+                    get() = CompletableFuture()
 
                 override val initializeResult: Deferred<AwsExtendedInitializeResult>
-                    get() = TODO("Not yet implemented")
+                    get() = CompletableDeferred(AwsExtendedInitializeResult())
 
                 override val encryptionManager: JwtEncryptionManager
                     get() = TODO("Not yet implemented")
@@ -144,7 +144,7 @@ open class CodeWhispererTestBase {
 
         popupManagerSpy = spy(CodeWhispererPopupManager.getInstance())
         popupManagerSpy.reset()
-        doNothing().`when`(popupManagerSpy).showPopup(any(), any(), any(), any())
+        doNothing().whenever(popupManagerSpy).showPopup(any(), any(), any(), any())
         popupManagerSpy.stub {
             onGeneric {
                 showPopup(any(), any(), any(), any())
@@ -323,12 +323,6 @@ open class CodeWhispererTestBase {
     }
 
     fun mockLspInlineCompletionResponse(response: InlineCompletionListWithReferences) {
-        mockLspService.stub {
-            onGeneric {
-                executeSync<CompletableFuture<InlineCompletionListWithReferences>>(any())
-            } doAnswer {
-                CompletableFuture.completedFuture(response)
-            }
-        }
+        every { mockLanguageServer.inlineCompletionWithReferences(any()) } returns CompletableFuture.completedFuture(response)
     }
 }
