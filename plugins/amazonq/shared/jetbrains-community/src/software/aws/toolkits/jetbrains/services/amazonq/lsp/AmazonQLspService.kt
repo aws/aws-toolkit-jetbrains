@@ -71,6 +71,7 @@ import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts.ArtifactManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.auth.DefaultAuthCredentialsService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.dependencies.DefaultModuleDependenciesService
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.editor.ActiveEditorChangeListener
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AmazonQLspTypeAdapterFactory
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AwsExtendedInitializeResult
@@ -561,11 +562,12 @@ private class AmazonQServerInstance(private val project: Project, private val cs
                     thread
                 }
 
-                // Register active editor change listener
-                software.aws.toolkits.jetbrains.services.amazonq.lsp.editor.ActiveEditorChangeListener.register(
+                ActiveEditorChangeListener.register(
                     project,
                     executor
-                )
+                ).also {
+                    Disposer.register(this, it)
+                }
                 LOG.info { "Registered active editor change listener" }
             }
         }

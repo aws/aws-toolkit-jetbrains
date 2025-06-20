@@ -235,11 +235,6 @@ object AmazonQChatServer : JsonRpcMethodProvider {
         CreatePromptParams::class.java
     )
 
-    val sendPinnedContext = JsonRpcNotification(
-        CHAT_SEND_PINNED_CONTEXT,
-        LSPAny::class.java
-    )
-
     val pinnedContextAdd = JsonRpcNotification(
         CHAT_PINNED_CONTEXT_ADD,
         LSPAny::class.java
