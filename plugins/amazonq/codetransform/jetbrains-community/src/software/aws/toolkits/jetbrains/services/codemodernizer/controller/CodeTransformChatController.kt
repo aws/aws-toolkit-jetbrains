@@ -103,13 +103,13 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.DownloadArt
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.DownloadFailureReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.EXPLAINABILITY_V1
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.IDE
-import software.aws.toolkits.jetbrains.services.codemodernizer.model.SELECTIVE_TRANSFORMATION_V2
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.InvalidTelemetryReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MAVEN_BUILD_RUN_UNIT_TESTS
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MAVEN_BUILD_SKIP_UNIT_TESTS
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenCopyCommandsResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenDependencyReportCommandsResult
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.SELECTIVE_TRANSFORMATION_V2
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.UploadFailureReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.ValidationResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.panels.managers.CodeModernizerBottomWindowPanelManager

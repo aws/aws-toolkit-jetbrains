@@ -12,9 +12,8 @@ data class ZipManifest(
     val customBuildCommand: String = MAVEN_BUILD_RUN_UNIT_TESTS,
     val requestedConversions: RequestedConversions? = null, // only used for SQL conversions for now
     var dependencyUpgradeConfigFile: String? = null,
-    // TODO: make sure the below 2 keys don't mess up SQL conversions when present
     val noInteractiveMode: Boolean = true,
-    val compilationsJsonFile: String = COMPILATIONS_JSON_FILE
+    val compilationsJsonFile: String = COMPILATIONS_JSON_FILE,
 )
 
 data class RequestedConversions(

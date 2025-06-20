@@ -348,7 +348,7 @@ fun buildUserInputSQLConversionMetadataChatContent() = CodeTransformChatMessageC
 )
 
 fun buildUserInputCustomDependencyVersionsChatContent() = CodeTransformChatMessageContent(
-    message =  message("codemodernizer.chat.message.custom_dependency_upgrades_prompt"),
+    message = message("codemodernizer.chat.message.custom_dependency_upgrades_prompt"),
     buttons = listOf(
         confirmCustomDependencyVersionsButton,
         continueTransformationButton,

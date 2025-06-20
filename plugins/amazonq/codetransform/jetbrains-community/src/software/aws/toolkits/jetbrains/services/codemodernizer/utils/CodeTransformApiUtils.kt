@@ -123,6 +123,7 @@ suspend fun JobId.pollTransformationStatusAndPlan(
                     delay(sleepDurationMillis)
                     newPlan = clientAdaptor.getCodeModernizationPlan(this).transformationPlan()
                 }
+                // TODO: handle case where PlannerAgent may request mvn dependency:tree; not needed for now
                 if (hasSeenTransforming && newPlan != null) {
                     attemptLocalBuild(newPlan, this, project)
                 }
