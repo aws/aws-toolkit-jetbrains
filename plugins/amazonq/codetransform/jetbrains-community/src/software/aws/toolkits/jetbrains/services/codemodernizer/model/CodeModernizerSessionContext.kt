@@ -260,12 +260,10 @@ data class CodeModernizerSessionContext(
                     if (depDirectory != null) {
                         dependencyFiles.forEach { depFile ->
                             val relativePath = File(depFile.path).relativeTo(depDirectory)
-                            if (depFile.path.contains("compilations.json")) {
-                                if (File.separatorChar != '/') {
-                                    var content = depFile.readText()
-                                    content = content.replace("\\\\", "/")
-                                    depFile.writeText(content)
-                                }
+                            if (depFile.path.contains("compilations.json") && File.separatorChar != '/') {
+                                var content = depFile.readText()
+                                content = content.replace("\\\\", "/")
+                                depFile.writeText(content)
                             }
                             var relativePathString = relativePath.toPath().toString()
                             if (copyResult == null) {
