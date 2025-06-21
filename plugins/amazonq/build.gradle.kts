@@ -26,6 +26,12 @@ val changelog = tasks.register<GeneratePluginChangeLog>("pluginChangeLog") {
     changeLogFile.value(layout.buildDirectory.file("changelog/change-notes.xml"))
 }
 
+tasks.prepareSandbox {
+    from("contrib/QCT-Maven-6-16.jar") {
+        into("/plugin-amazonq/lib")
+    }
+}
+
 tasks.jar {
     dependsOn(changelog)
     from(changelog) {
