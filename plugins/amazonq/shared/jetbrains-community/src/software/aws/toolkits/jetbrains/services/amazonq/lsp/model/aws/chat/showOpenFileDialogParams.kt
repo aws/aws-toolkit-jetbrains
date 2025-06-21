@@ -9,5 +9,5 @@ data class ShowOpenFileDialogParams(
     val canSelectMany: Boolean = false,
     val filters: Map<String, List<String>> = emptyMap(),
     val defaultUri: String? = null,
-    val title: String? = null
+    val title: String? = null,
 )

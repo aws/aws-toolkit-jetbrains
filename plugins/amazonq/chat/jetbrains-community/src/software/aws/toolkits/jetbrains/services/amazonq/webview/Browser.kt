@@ -8,12 +8,7 @@ import com.google.gson.Gson
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
-import com.intellij.ui.jcef.JBCefClient
-import com.intellij.ui.jcef.JBCefJSQuery
 import org.cef.CefApp
-import org.cef.browser.CefBrowser
-import org.cef.callback.CefDragData
-import org.cef.handler.CefDragHandler
 import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AwsServerCapabilitiesProvider
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.FlareUiMessage
