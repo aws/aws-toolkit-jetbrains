@@ -24,6 +24,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OPEN_
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenFileDiffParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SHOW_OPEN_FILE_DIALOG_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SHOW_SAVE_FILE_DIALOG_REQUEST_METHOD
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowOpenFileDialogParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowSaveFileDialogParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowSaveFileDialogResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.ConnectionMetadata
@@ -44,7 +45,7 @@ interface AmazonQLanguageClient : LanguageClient {
     fun showSaveFileDialog(params: ShowSaveFileDialogParams): CompletableFuture<ShowSaveFileDialogResult>
 
     @JsonRequest(SHOW_OPEN_FILE_DIALOG_REQUEST_METHOD)
-    fun showOpenFileDialog(params: LSPAny): CompletableFuture<LSPAny>
+    fun showOpenFileDialog(params: ShowOpenFileDialogParams): CompletableFuture<LSPAny>
 
     @JsonRequest(GET_SERIALIZED_CHAT_REQUEST_METHOD)
     fun getSerializedChat(params: LSPAny): CompletableFuture<GetSerializedChatResult>

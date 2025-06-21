@@ -10,10 +10,10 @@ import com.intellij.ide.BrowserUtil
 import com.intellij.notification.NotificationAction
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.fileChooser.FileChooserFactory
-import com.intellij.openapi.fileChooser.FileSaverDescriptor
 import com.intellij.openapi.fileChooser.FileChooser
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
+import com.intellij.openapi.fileChooser.FileChooserFactory
+import com.intellij.openapi.fileChooser.FileSaverDescriptor
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
@@ -53,6 +53,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FileP
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GET_SERIALIZED_CHAT_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenFileDiffParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowOpenFileDialogParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowSaveFileDialogParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowSaveFileDialogResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.ConnectionMetadata
@@ -251,17 +252,21 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
         )
     }
 
-    override fun showOpenFileDialog(params: LSPAny): CompletableFuture<LSPAny> {
+    override fun showOpenFileDialog(params: ShowOpenFileDialogParams): CompletableFuture<LSPAny> {
         return CompletableFuture.supplyAsync(
             {
-                val descriptor = FileChooserDescriptorFactory.createMultipleFilesNoJarsDescriptor().apply {
-                    title = "Select Files"
-                    description = "Choose files to open"
+                val descriptor = if (params.canSelectMany) {
+                    FileChooserDescriptorFactory.createMultipleFilesNoJarsDescriptor().apply {
+                        title = "Select Files"
+                        description = "Choose files to open"
+                    }
+                } else {
+                    FileChooserDescriptorFactory.createSingleFileNoJarsDescriptor()
                 }
 
                 val chosenFiles = FileChooser.chooseFiles(descriptor, project, null)
                 val uris = chosenFiles.map { it.url }
-                
+
                 mapOf("uris" to uris) as LSPAny
             },
             ApplicationManager.getApplication()::invokeLater
