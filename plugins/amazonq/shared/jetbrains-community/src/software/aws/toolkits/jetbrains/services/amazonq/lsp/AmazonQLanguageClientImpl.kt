@@ -10,6 +10,8 @@ import com.intellij.ide.BrowserUtil
 import com.intellij.notification.NotificationAction
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.fileChooser.FileChooser
+import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.fileChooser.FileChooserFactory
 import com.intellij.openapi.fileChooser.FileSaverDescriptor
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -51,6 +53,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FileP
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GET_SERIALIZED_CHAT_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenFileDiffParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowOpenFileDialogParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowSaveFileDialogParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowSaveFileDialogResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.ConnectionMetadata
@@ -244,6 +247,27 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                 chosenFile?.let {
                     ShowSaveFileDialogResult(chosenFile.file.path)
                 } ?: throw ResponseErrorException(ResponseError(ResponseErrorCode.RequestCancelled, "Export cancelled by user", null))
+            },
+            ApplicationManager.getApplication()::invokeLater
+        )
+    }
+
+    override fun showOpenFileDialog(params: ShowOpenFileDialogParams): CompletableFuture<LSPAny> {
+        return CompletableFuture.supplyAsync(
+            {
+                val descriptor = if (params.canSelectMany) {
+                    FileChooserDescriptorFactory.createMultipleFilesNoJarsDescriptor().apply {
+                        title = "Select Files"
+                        description = "Choose files to open"
+                    }
+                } else {
+                    FileChooserDescriptorFactory.createSingleFileNoJarsDescriptor()
+                }
+
+                val chosenFiles = FileChooser.chooseFiles(descriptor, project, null)
+                val uris = chosenFiles.map { it.url }
+
+                mapOf("uris" to uris) as LSPAny
             },
             ApplicationManager.getApplication()::invokeLater
         )

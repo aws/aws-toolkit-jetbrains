@@ -8,7 +8,6 @@ import com.google.gson.Gson
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
-import com.intellij.ui.jcef.JBCefJSQuery
 import org.cef.CefApp
 import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AwsServerCapabilitiesProvider
@@ -85,6 +84,9 @@ class Browser(parent: Disposable, private val webUri: URI, val project: Project)
         // setup empty state. The message request handlers use this for storing state
         // that's persistent between page loads.
         jcefBrowser.setProperty("state", "")
+        jcefBrowser.jbCefClient.addDragHandler({ browser, dragData, mask ->
+            true // Allow drag operations
+        }, jcefBrowser.cefBrowser)
         // load the web app
         jcefBrowser.loadHTML(
             getWebviewHTML(
