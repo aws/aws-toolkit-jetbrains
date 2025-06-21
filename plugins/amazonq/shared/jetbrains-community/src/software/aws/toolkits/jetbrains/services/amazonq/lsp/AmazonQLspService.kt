@@ -50,7 +50,6 @@ import org.eclipse.lsp4j.ClientInfo
 import org.eclipse.lsp4j.DidChangeConfigurationParams
 import org.eclipse.lsp4j.FileOperationsWorkspaceCapabilities
 import org.eclipse.lsp4j.InitializeParams
-import org.eclipse.lsp4j.InitializeResult
 import org.eclipse.lsp4j.InitializedParams
 import org.eclipse.lsp4j.SynchronizationCapabilities
 import org.eclipse.lsp4j.TextDocumentClientCapabilities
@@ -61,6 +60,7 @@ import org.eclipse.lsp4j.jsonrpc.RemoteEndpoint
 import org.eclipse.lsp4j.jsonrpc.json.JsonRpcMethod
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseMessage
 import org.eclipse.lsp4j.launch.LSPLauncher
+import org.jetbrains.annotations.VisibleForTesting
 import org.slf4j.event.Level
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
@@ -91,8 +91,6 @@ import java.io.IOException
 import java.io.OutputStreamWriter
 import java.io.PipedInputStream
 import java.io.PipedOutputStream
-import java.io.PrintWriter
-import java.io.StringWriter
 import java.net.Proxy
 import java.net.URI
 import java.nio.charset.StandardCharsets
@@ -135,12 +133,26 @@ internal class LSPProcessListener : ProcessListener {
     }
 }
 
+interface AmazonQServerInstanceStarter {
+    fun start(project: Project, cs: CoroutineScope): AmazonQServerInstanceFacade
+}
+
+private object DefaultAmazonQServerInstanceStarter : AmazonQServerInstanceStarter {
+    override fun start(project: Project, cs: CoroutineScope): AmazonQServerInstanceFacade = AmazonQServerInstance(project, cs)
+}
+
 @Service(Service.Level.PROJECT)
-class AmazonQLspService(private val project: Project, private val cs: CoroutineScope) : Disposable {
-    private val _flowInstance = MutableSharedFlow<AmazonQServerInstance>(replay = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+class AmazonQLspService @VisibleForTesting constructor(
+    private val starter: AmazonQServerInstanceStarter,
+    private val project: Project,
+    private val cs: CoroutineScope,
+) : Disposable {
+    constructor(project: Project, cs: CoroutineScope) : this(DefaultAmazonQServerInstanceStarter, project, cs)
+
+    private val _flowInstance = MutableSharedFlow<AmazonQServerInstanceFacade>(replay = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
     val instanceFlow = _flowInstance.asSharedFlow().map { it.languageServer }
 
-    private var instance: Deferred<AmazonQServerInstance>
+    private var instance: Deferred<AmazonQServerInstanceFacade>
     val capabilities
         get() = instance.getCompleted().initializeResult.getCompleted().capabilities
 
@@ -156,14 +168,14 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
     // dont allow lsp commands if server is restarting
     private val mutex = Mutex(false)
 
-    private fun start() = cs.async {
+    private fun start(): Deferred<AmazonQServerInstanceFacade> = cs.async {
         // manage lifecycle RAII-like so we can restart at arbitrary time
         // and suppress IDE error if server fails to start
         var attempts = 0
         while (attempts < 3) {
             try {
                 val result = withTimeout(30.seconds) {
-                    val instance = AmazonQServerInstance(project, cs).also {
+                    val instance = starter.start(project, cs).also {
                         Disposer.register(this@AmazonQLspService, it)
                     }
                     // wait for handshake to complete
@@ -286,9 +298,30 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
         return runnable(lsp)
     }
 
+    suspend fun<T> executeIfRunning(runnable: suspend AmazonQLspService.(AmazonQLanguageServer) -> T): T? {
+        val lsp = try {
+            withTimeout(1.seconds) {
+                val holder = mutex.withLock { instance }.await()
+                holder.initializeResult.join()
+
+                holder.languageServer
+            }
+        } catch (_: Exception) {
+            LOG.debug { "LSP not running" }
+            null
+        }
+
+        return lsp?.let { runnable(it) }
+    }
+
     fun<T> executeSync(runnable: suspend AmazonQLspService.(AmazonQLanguageServer) -> T): T =
-        runBlocking(cs.coroutineContext) {
+        runBlocking {
             execute(runnable)
+        }
+
+    fun<T> syncExecuteIfRunning(runnable: suspend AmazonQLspService.(AmazonQLanguageServer) -> T): T? =
+        runBlocking {
+            executeIfRunning(runnable)
         }
 
     companion object {
@@ -299,10 +332,10 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
 
         @Deprecated("Easy to accidentally freeze EDT")
         fun <T> executeIfRunning(project: Project, runnable: AmazonQLspService.(AmazonQLanguageServer) -> T): T? =
-            project.serviceIfCreated<AmazonQLspService>()?.executeSync(runnable)
+            project.serviceIfCreated<AmazonQLspService>()?.syncExecuteIfRunning(runnable)
 
-        suspend fun <T> asyncExecuteIfRunning(project: Project, runnable: suspend AmazonQLspService.(AmazonQLanguageServer) -> T): T? =
-            project.serviceIfCreated<AmazonQLspService>()?.execute(runnable)
+        suspend fun <T> executeAsyncIfRunning(project: Project, runnable: suspend AmazonQLspService.(AmazonQLanguageServer) -> T): T? =
+            project.serviceIfCreated<AmazonQLspService>()?.executeIfRunning(runnable)
 
         fun didChangeConfiguration(project: Project) {
             executeIfRunning(project) {
@@ -312,21 +345,27 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
     }
 }
 
-private class AmazonQServerInstance(private val project: Project, private val cs: CoroutineScope) : Disposable {
-    val encryptionManager = JwtEncryptionManager()
-
-    private val launcher: Launcher<AmazonQLanguageServer>
+interface AmazonQServerInstanceFacade : Disposable {
+    val launcher: Launcher<AmazonQLanguageServer>
+    val launcherFuture: Future<Void>
+    val initializeResult: Deferred<AwsExtendedInitializeResult>
+    val encryptionManager: JwtEncryptionManager
 
     val languageServer: AmazonQLanguageServer
         get() = launcher.remoteProxy
 
     val rawEndpoint: RemoteEndpoint
         get() = launcher.remoteEndpoint
+}
+
+private class AmazonQServerInstance(private val project: Project, private val cs: CoroutineScope) : Disposable, AmazonQServerInstanceFacade {
+    override val encryptionManager = JwtEncryptionManager()
+    override val launcher: Launcher<AmazonQLanguageServer>
 
     @Suppress("ForbiddenVoid")
-    val launcherFuture: Future<Void>
+    override val launcherFuture: Future<Void>
     private val launcherHandler: KillableProcessHandler
-    val initializeResult: Deferred<InitializeResult>
+    override val initializeResult: Deferred<AwsExtendedInitializeResult>
 
     private fun createClientCapabilities(): ClientCapabilities =
         ClientCapabilities().apply {
@@ -479,10 +518,17 @@ private class AmazonQServerInstance(private val project: Project, private val cs
         }
             .wrapMessages { consumer ->
                 MessageConsumer { message ->
+                    // logging
+                    val traceLogger = LOG.atLevel(if (isDeveloperMode()) Level.INFO else Level.DEBUG)
+                    val direction = if (consumer is RemoteEndpoint) "Sent" else "Received"
+                    traceLogger.log { "$direction: $message" }
+
                     if (message is ResponseMessage && message.result is AwsExtendedInitializeResult) {
                         val result = message.result as AwsExtendedInitializeResult
                         AwsServerCapabilitiesProvider.getInstance(project).setAwsServerCapabilities(result.getAwsServerCapabilities())
                     }
+
+                    // required
                     consumer?.consume(message)
                 }
             }
@@ -495,18 +541,7 @@ private class AmazonQServerInstance(private val project: Project, private val cs
                 // otherwise Gson treats all numbers as double which causes deser issues
                 it.setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
                 it.registerTypeAdapterFactory(AmazonQLspTypeAdapterFactory())
-            }.traceMessages(
-                PrintWriter(
-                    object : StringWriter() {
-                        private val traceLogger = LOG.atLevel(if (isDeveloperMode()) Level.INFO else Level.DEBUG)
-
-                        override fun flush() {
-                            traceLogger.log { buffer.toString() }
-                            buffer.setLength(0)
-                        }
-                    }
-                )
-            )
+            }
             .setInput(inputWrapper.inputStream)
             .setOutput(launcherHandler.process.outputStream)
             .create()
@@ -531,7 +566,7 @@ private class AmazonQServerInstance(private val project: Project, private val cs
             }
             languageServer.initialized(InitializedParams())
 
-            initializeResult
+            initializeResult as AwsExtendedInitializeResult
         }
 
         // invokeOnCompletion results in weird lock/timeout error
@@ -544,13 +579,13 @@ private class AmazonQServerInstance(private val project: Project, private val cs
                 DefaultAuthCredentialsService(project, encryptionManager).also {
                     Disposer.register(this, it)
                 }
-                TextDocumentServiceHandler(project).also {
+                TextDocumentServiceHandler(project, cs).also {
                     Disposer.register(this, it)
                 }
-                WorkspaceServiceHandler(project, lspInitResult).also {
+                WorkspaceServiceHandler(project, cs, lspInitResult).also {
                     Disposer.register(this, it)
                 }
-                DefaultModuleDependenciesService(project).also {
+                DefaultModuleDependenciesService(project, cs).also {
                     Disposer.register(this, it)
                 }
             }

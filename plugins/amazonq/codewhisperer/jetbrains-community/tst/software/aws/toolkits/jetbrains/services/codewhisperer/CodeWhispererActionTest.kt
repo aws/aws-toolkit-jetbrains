@@ -23,6 +23,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doNothing
 import org.mockito.kotlin.eq
+import org.mockito.kotlin.whenever
 import software.aws.toolkits.jetbrains.services.amazonq.QConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererLearnMoreAction
 import software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererShowSettingsAction
@@ -78,7 +79,7 @@ class CodeWhispererActionTest : CodeWhispererTestBase() {
     @Test
     fun `CodeWhispererShowSettingsAction actionPerformed should show settings dialog`() {
         val settingsSpy = spy(ShowSettingsUtil.getInstance())
-        doNothing().`when`(settingsSpy).showSettingsDialog(any(), any<Class<out Configurable>>())
+        doNothing().whenever(settingsSpy).showSettingsDialog(any(), any<Class<out Configurable>>())
         ApplicationManager.getApplication().replaceService(ShowSettingsUtil::class.java, settingsSpy, disposableRule.disposable)
         val action = CodeWhispererShowSettingsAction()
         runInEdtAndWait {

@@ -112,7 +112,7 @@ class BrowserConnector(
     private val themeBrowserAdapter: ThemeBrowserAdapter = ThemeBrowserAdapter(),
     private val project: Project,
 ) {
-    var uiReady = CompletableDeferred<Boolean>()
+    val uiReady = CompletableDeferred<Boolean>()
     private val chatCommunicationManager = ChatCommunicationManager.getInstance(project)
     private val chatAsyncResultManager = ChatAsyncResultManager.getInstance(project)
 

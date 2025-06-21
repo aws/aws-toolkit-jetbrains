@@ -13,11 +13,17 @@ import com.intellij.testFramework.replaceService
 import com.intellij.testFramework.runInEdtAndWait
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.yield
 import org.assertj.core.api.Assertions.assertThat
+import org.eclipse.lsp4j.jsonrpc.Launcher
+import org.eclipse.lsp4j.jsonrpc.RemoteEndpoint
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -29,6 +35,7 @@ import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.timeout
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import software.amazon.awssdk.services.ssooidc.SsoOidcClient
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.ManagedSsoProfile
@@ -38,6 +45,10 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLanguageServer
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQServerInstanceFacade
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQServerInstanceStarter
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AwsExtendedInitializeResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LspServerConfigurations
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.WorkspaceInfo
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionListWithReferences
@@ -69,6 +80,7 @@ import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
 import software.aws.toolkits.resources.message
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.Future
 import java.util.concurrent.atomic.AtomicReference
 
 // TODO: restructure testbase, too bulky and hard to debug
@@ -100,8 +112,35 @@ open class CodeWhispererTestBase {
 
     @Before
     open fun setUp() {
-        mockLspService = spy(AmazonQLspService.getInstance(projectRule.project))
         mockLanguageServer = mockk()
+        val starter = object : AmazonQServerInstanceStarter {
+            override fun start(
+                project: Project,
+                cs: CoroutineScope,
+            ): AmazonQServerInstanceFacade = object : AmazonQServerInstanceFacade {
+                override val launcher: Launcher<AmazonQLanguageServer>
+                    get() = TODO("Not yet implemented")
+
+                override val launcherFuture: Future<Void>
+                    get() = CompletableFuture()
+
+                override val initializeResult: Deferred<AwsExtendedInitializeResult>
+                    get() = CompletableDeferred(AwsExtendedInitializeResult())
+
+                override val encryptionManager: JwtEncryptionManager
+                    get() = TODO("Not yet implemented")
+
+                override val languageServer: AmazonQLanguageServer
+                    get() = mockLanguageServer
+
+                override val rawEndpoint: RemoteEndpoint
+                    get() = TODO("Not yet implemented")
+
+                override fun dispose() {}
+            }
+        }
+
+        mockLspService = spy(AmazonQLspService(starter, projectRule.project, TestScope()))
 
         // Mock the service methods on Project
         projectRule.project.replaceService(AmazonQLspService::class.java, mockLspService, disposableRule.disposable)
@@ -112,7 +151,7 @@ open class CodeWhispererTestBase {
 
         popupManagerSpy = spy(CodeWhispererPopupManager.getInstance())
         popupManagerSpy.reset()
-        doNothing().`when`(popupManagerSpy).showPopup(any(), any(), any(), any())
+        doNothing().whenever(popupManagerSpy).showPopup(any(), any(), any(), any())
         popupManagerSpy.stub {
             onGeneric {
                 showPopup(any(), any(), any(), any())
@@ -291,12 +330,6 @@ open class CodeWhispererTestBase {
     }
 
     fun mockLspInlineCompletionResponse(response: InlineCompletionListWithReferences) {
-        mockLspService.stub {
-            onGeneric {
-                executeSync<CompletableFuture<InlineCompletionListWithReferences>>(any())
-            } doAnswer {
-                CompletableFuture.completedFuture(response)
-            }
-        }
+        every { mockLanguageServer.inlineCompletionWithReferences(any()) } returns CompletableFuture.completedFuture(response)
     }
 }
