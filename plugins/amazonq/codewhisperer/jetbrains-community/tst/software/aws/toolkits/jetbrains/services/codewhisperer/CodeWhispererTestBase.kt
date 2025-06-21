@@ -14,6 +14,7 @@ import com.intellij.testFramework.runInEdtAndWait
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -45,6 +46,7 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLanguageServer
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQServerInstanceFacade
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQServerInstanceStarter
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AwsExtendedInitializeResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LspServerConfigurations
@@ -111,8 +113,11 @@ open class CodeWhispererTestBase {
     @Before
     open fun setUp() {
         mockLanguageServer = mockk()
-        mockLspService = spy(object : AmazonQLspService(projectRule.project, TestScope()) {
-            override fun start() = CompletableDeferred(object : AmazonQServerInstanceFacade {
+        val starter = object : AmazonQServerInstanceStarter {
+            override fun start(
+                project: Project,
+                cs: CoroutineScope,
+            ): AmazonQServerInstanceFacade = object : AmazonQServerInstanceFacade {
                 override val launcher: Launcher<AmazonQLanguageServer>
                     get() = TODO("Not yet implemented")
 
@@ -132,8 +137,10 @@ open class CodeWhispererTestBase {
                     get() = TODO("Not yet implemented")
 
                 override fun dispose() {}
-            })
-        })
+            }
+        }
+
+        mockLspService = spy(AmazonQLspService(starter, projectRule.project, TestScope()))
 
         // Mock the service methods on Project
         projectRule.project.replaceService(AmazonQLspService::class.java, mockLspService, disposableRule.disposable)

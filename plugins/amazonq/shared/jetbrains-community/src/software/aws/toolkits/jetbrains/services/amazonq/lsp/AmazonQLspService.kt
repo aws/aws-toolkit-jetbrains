@@ -133,9 +133,23 @@ internal class LSPProcessListener : ProcessListener {
     }
 }
 
+interface AmazonQServerInstanceStarter {
+    fun start(project: Project, cs: CoroutineScope): AmazonQServerInstanceFacade
+}
+
+private object DefaultAmazonQServerInstanceStarter : AmazonQServerInstanceStarter {
+    override fun start(project: Project, cs: CoroutineScope): AmazonQServerInstanceFacade = AmazonQServerInstance(project, cs)
+}
+
 @Service(Service.Level.PROJECT)
-open class AmazonQLspService(private val project: Project, private val cs: CoroutineScope) : Disposable {
-    private val _flowInstance = MutableSharedFlow<AmazonQServerInstance>(replay = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+class AmazonQLspService @VisibleForTesting constructor(
+    private val starter: AmazonQServerInstanceStarter,
+    private val project: Project,
+    private val cs: CoroutineScope,
+) : Disposable {
+    constructor(project: Project, cs: CoroutineScope) : this(DefaultAmazonQServerInstanceStarter, project, cs)
+
+    private val _flowInstance = MutableSharedFlow<AmazonQServerInstanceFacade>(replay = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
     val instanceFlow = _flowInstance.asSharedFlow().map { it.languageServer }
 
     private var instance: Deferred<AmazonQServerInstanceFacade>
@@ -154,15 +168,14 @@ open class AmazonQLspService(private val project: Project, private val cs: Corou
     // dont allow lsp commands if server is restarting
     private val mutex = Mutex(false)
 
-    @VisibleForTesting
-    protected open fun start(): Deferred<AmazonQServerInstanceFacade> = cs.async {
+    private fun start(): Deferred<AmazonQServerInstanceFacade> = cs.async {
         // manage lifecycle RAII-like so we can restart at arbitrary time
         // and suppress IDE error if server fails to start
         var attempts = 0
         while (attempts < 3) {
             try {
                 val result = withTimeout(30.seconds) {
-                    val instance = AmazonQServerInstance(project, cs).also {
+                    val instance = starter.start(project, cs).also {
                         Disposer.register(this@AmazonQLspService, it)
                     }
                     // wait for handshake to complete
