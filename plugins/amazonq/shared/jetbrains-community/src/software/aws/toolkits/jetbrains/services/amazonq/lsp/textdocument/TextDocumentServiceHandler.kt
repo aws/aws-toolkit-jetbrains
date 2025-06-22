@@ -30,7 +30,7 @@ import org.eclipse.lsp4j.TextDocumentItem
 import org.eclipse.lsp4j.VersionedTextDocumentIdentifier
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ACTIVE_EDITOR_CHANGED_NOTIFICATION
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.LspEditorUtil
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.LspEditorUtil.getCursorState
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.LspEditorUtil.toUriString
 import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 
@@ -170,13 +170,13 @@ class TextDocumentServiceHandler(
     }
 
     override fun selectionChanged(event: FileEditorManagerEvent) {
-        handleActiveEditorChange(event.newFile, event.newEditor?.let { FileEditorManager.getInstance(project).selectedTextEditor })
+        handleActiveEditorChange(event.newEditor?.let { FileEditorManager.getInstance(project).selectedTextEditor })
     }
 
-    private fun handleActiveEditorChange(file: VirtualFile?, editor: com.intellij.openapi.editor.Editor?) {
+    private fun handleActiveEditorChange(editor: com.intellij.openapi.editor.Editor?) {
         val editor = FileEditorManager.getInstance(project).selectedTextEditor
         val textDocumentIdentifier = editor?.let { TextDocumentIdentifier(toUriString(it.virtualFile)) }
-        val cursorState = editor?.let { LspEditorUtil.getCursorState(it) }
+        val cursorState = editor?.let { getCursorState(it) }
 
         val params = mapOf(
             "textDocument" to textDocumentIdentifier,
