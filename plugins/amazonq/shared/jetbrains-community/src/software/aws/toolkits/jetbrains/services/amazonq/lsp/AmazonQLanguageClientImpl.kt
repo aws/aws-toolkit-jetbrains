@@ -79,6 +79,7 @@ import java.util.concurrent.TimeUnit
  * Concrete implementation of [AmazonQLanguageClient] to handle messages sent from server
  */
 class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageClient {
+    private val chatManager = ChatCommunicationManager.getInstance(project)
 
     private fun handleTelemetryMap(telemetryMap: Map<*, *>) {
         try {
@@ -206,7 +207,6 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
     override fun openTab(params: LSPAny): CompletableFuture<LSPAny> {
         val requestId = UUID.randomUUID().toString()
         val result = CompletableFuture<LSPAny>()
-        val chatManager = ChatCommunicationManager.getInstance(project)
         chatManager.addTabOpenRequest(requestId, result)
 
         chatManager.notifyUi(
@@ -257,7 +257,6 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
     override fun getSerializedChat(params: LSPAny): CompletableFuture<GetSerializedChatResult> {
         val requestId = UUID.randomUUID().toString()
         val result = CompletableFuture<GetSerializedChatResult>()
-        val chatManager = ChatCommunicationManager.getInstance(project)
         chatManager.addSerializedChatRequest(requestId, result)
 
         chatManager.notifyUi(
@@ -322,9 +321,8 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
 
     override fun notifyProgress(params: ProgressParams?) {
         if (params == null) return
-        val chatCommunicationManager = ChatCommunicationManager.getInstance(project)
         try {
-            chatCommunicationManager.handlePartialResultProgressNotification(project, params)
+            chatManager.handlePartialResultProgressNotification(project, params)
         } catch (e: Exception) {
             LOG.error(e) { "Cannot handle partial chat" }
         }
@@ -420,7 +418,6 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
         )
 
     override fun sendContextCommands(params: LSPAny): CompletableFuture<Unit> {
-        val chatManager = ChatCommunicationManager.getInstance(project)
         chatManager.notifyUi(
             FlareUiMessage(
                 command = CHAT_SEND_CONTEXT_COMMANDS,
@@ -431,8 +428,6 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
     }
 
     override fun sendPinnedContext(params: LSPAny): CompletableFuture<Unit> {
-        val chatManager = ChatCommunicationManager.getInstance(project)
-
         // Send the active text file path with pinned context
         val editor = FileEditorManager.getInstance(project).selectedTextEditor
         val textDocument = editor?.let {
@@ -465,7 +460,6 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
     }
 
     override fun pinnedContextAdd(params: LSPAny): CompletableFuture<Unit> {
-        val chatManager = ChatCommunicationManager.getInstance(project)
         chatManager.notifyUi(
             FlareUiMessage(
                 command = CHAT_PINNED_CONTEXT_ADD,
@@ -476,7 +470,6 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
     }
 
     override fun pinnedContextRemove(params: LSPAny): CompletableFuture<Unit> {
-        val chatManager = ChatCommunicationManager.getInstance(project)
         chatManager.notifyUi(
             FlareUiMessage(
                 command = CHAT_PINNED_CONTEXT_REMOVE,
@@ -500,7 +493,6 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
     }
 
     override fun sendChatOptionsUpdate(params: LSPAny) {
-        val chatManager = ChatCommunicationManager.getInstance(project)
         chatManager.notifyUi(
             FlareUiMessage(
                 command = CHAT_OPTIONS_UPDATE_NOTIFICATION,
