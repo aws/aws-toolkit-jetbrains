@@ -10,9 +10,11 @@ import com.intellij.openapi.editor.event.DocumentEvent
 import com.intellij.openapi.editor.event.DocumentListener
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileDocumentManagerListener
+import com.intellij.openapi.fileEditor.FileEditor
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
+import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
 import com.intellij.openapi.vfs.VirtualFile
@@ -170,11 +172,12 @@ class TextDocumentServiceHandler(
     }
 
     override fun selectionChanged(event: FileEditorManagerEvent) {
-        handleActiveEditorChange(event.newEditor?.let { FileEditorManager.getInstance(project).selectedTextEditor })
+        handleActiveEditorChange(event.newEditor)
     }
 
-    private fun handleActiveEditorChange(editor: com.intellij.openapi.editor.Editor?) {
-        val editor = FileEditorManager.getInstance(project).selectedTextEditor
+    private fun handleActiveEditorChange(fileEditor: FileEditor?) {
+        // Extract text editor if it's a TextEditor, otherwise null
+        val editor = (fileEditor as? TextEditor)?.editor
         val textDocumentIdentifier = editor?.let { TextDocumentIdentifier(toUriString(it.virtualFile)) }
         val cursorState = editor?.let { getCursorState(it) }
 

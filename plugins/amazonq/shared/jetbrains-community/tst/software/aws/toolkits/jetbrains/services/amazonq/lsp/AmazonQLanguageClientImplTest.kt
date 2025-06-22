@@ -33,6 +33,7 @@ import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommunicationManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.ConnectionMetadata
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.SsoProfileData
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
@@ -47,7 +48,14 @@ import kotlin.random.nextInt
 @ExtendWith(ApplicationExtension::class)
 class AmazonQLanguageClientImplTest {
     private val project: Project = mockk(relaxed = true)
-    private val sut = AmazonQLanguageClientImpl(project)
+    private val mockChatManager = mockk<ChatCommunicationManager>(relaxed = true)
+    private val sut: AmazonQLanguageClientImpl
+
+    init {
+        // Mock the ChatCommunicationManager service
+        every { project.service<ChatCommunicationManager>() } returns mockChatManager
+        sut = AmazonQLanguageClientImpl(project)
+    }
 
     @Test
     fun `telemetryEvent handles basic event with name and data`() {
