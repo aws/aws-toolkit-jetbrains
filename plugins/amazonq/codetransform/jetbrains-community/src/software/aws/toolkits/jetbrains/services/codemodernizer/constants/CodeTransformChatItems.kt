@@ -348,7 +348,7 @@ fun buildUserInputSQLConversionMetadataChatContent() = CodeTransformChatMessageC
 )
 
 fun buildUserInputCustomDependencyVersionsChatContent() = CodeTransformChatMessageContent(
-    message = "Optionally, provide a .YAML file which specifies custom dependency versions you want Q to upgrade to.",
+    message = message("codemodernizer.chat.message.custom_dependency_upgrades_prompt"),
     buttons = listOf(
         confirmCustomDependencyVersionsButton,
         continueTransformationButton,
@@ -368,7 +368,7 @@ fun buildInvalidTargetJdkNameChatContent(jdkName: String) = CodeTransformChatMes
 )
 
 fun buildCustomDependencyVersionsFileValidChatContent() = CodeTransformChatMessageContent(
-    message = "I received your .yaml file and will upload it to Q.",
+    message = message("codemodernizer.chat.message.custom_dependency_upgrades_valid"),
     type = CodeTransformChatMessageType.FinalizedAnswer,
 )
 
@@ -415,7 +415,7 @@ fun buildSQLMetadataValidationErrorChatContent(errorReason: String) = CodeTransf
 
 fun buildCustomDependencyVersionsFileInvalidChatContent() = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.FinalizedAnswer,
-    message = "The file you uploaded does not follow the format of the sample YAML file provided.",
+    message = message("codemodernizer.chat.message.custom_dependency_upgrades_invalid"),
 )
 
 fun buildUserCancelledChatContent() = CodeTransformChatMessageContent(
@@ -455,7 +455,7 @@ fun buildUserLanguageUpgradeSelectionSummaryChatContent(moduleName: String, targ
 
 fun buildContinueTransformationChatContent() = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.FinalizedAnswer,
-    message = "Ok, I will continue without this information.",
+    message = message("codemodernizer.chat.message.custom_dependency_upgrades_continue"),
 )
 
 fun buildCompileLocalInProgressChatContent() = CodeTransformChatMessageContent(
