@@ -58,13 +58,13 @@ interface AmazonQLanguageClient : LanguageClient {
     fun sendContextCommands(params: LSPAny): CompletableFuture<Unit>
 
     @JsonNotification(CHAT_SEND_PINNED_CONTEXT)
-    fun sendPinnedContext(params: LSPAny): CompletableFuture<Unit>
+    fun sendPinnedContext(params: LSPAny)
 
     @JsonNotification(CHAT_PINNED_CONTEXT_ADD)
-    fun pinnedContextAdd(params: LSPAny): CompletableFuture<Unit>
+    fun pinnedContextAdd(params: LSPAny)
 
     @JsonNotification(CHAT_PINNED_CONTEXT_REMOVE)
-    fun pinnedContextRemove(params: LSPAny): CompletableFuture<Unit>
+    fun pinnedContextRemove(params: LSPAny)
 
     @JsonNotification(DID_COPY_FILE)
     fun copyFile(params: CopyFileParams)

@@ -79,8 +79,8 @@ import java.util.concurrent.TimeUnit
  * Concrete implementation of [AmazonQLanguageClient] to handle messages sent from server
  */
 class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageClient {
-    private val chatManager = ChatCommunicationManager.getInstance(project)
-
+    private val chatManager
+        get() = ChatCommunicationManager.getInstance(project)
     private fun handleTelemetryMap(telemetryMap: Map<*, *>) {
         try {
             val name = telemetryMap["name"] as? String ?: return
@@ -427,7 +427,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
         return CompletableFuture.completedFuture(Unit)
     }
 
-    override fun sendPinnedContext(params: LSPAny): CompletableFuture<Unit> {
+    override fun sendPinnedContext(params: LSPAny) {
         // Send the active text file path with pinned context
         val editor = FileEditorManager.getInstance(project).selectedTextEditor
         val textDocument = editor?.let {
@@ -456,27 +456,24 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                 params = updatedParams,
             )
         )
-        return CompletableFuture.completedFuture(Unit)
     }
 
-    override fun pinnedContextAdd(params: LSPAny): CompletableFuture<Unit> {
+    override fun pinnedContextAdd(params: LSPAny) {
         chatManager.notifyUi(
             FlareUiMessage(
                 command = CHAT_PINNED_CONTEXT_ADD,
                 params = params,
             )
         )
-        return CompletableFuture.completedFuture(Unit)
     }
 
-    override fun pinnedContextRemove(params: LSPAny): CompletableFuture<Unit> {
+    override fun pinnedContextRemove(params: LSPAny) {
         chatManager.notifyUi(
             FlareUiMessage(
                 command = CHAT_PINNED_CONTEXT_REMOVE,
                 params = params,
             )
         )
-        return CompletableFuture.completedFuture(Unit)
     }
 
     override fun appendFile(params: FileParams) = refreshVfs(params.path)
