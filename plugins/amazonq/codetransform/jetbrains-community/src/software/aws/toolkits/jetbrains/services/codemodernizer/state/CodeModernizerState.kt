@@ -7,10 +7,12 @@ import com.intellij.openapi.components.BaseState
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.projectRoots.JavaSdkVersion
 import com.intellij.util.xmlb.annotations.Property
-import software.aws.toolkits.jetbrains.services.codemodernizer.EXPLAINABILITY_V1
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CLIENT_SIDE_BUILD
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerSessionContext
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.EXPLAINABILITY_V1
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MAVEN_BUILD_RUN_UNIT_TESTS
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.SELECTIVE_TRANSFORMATION_V2
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.toVirtualFile
 
 enum class JobDetails {
@@ -67,7 +69,7 @@ class CodeModernizerState : BaseState() {
             configurationFile,
             sourceJavaSdkVersion,
             targetJavaSdkVersion,
-            listOf(EXPLAINABILITY_V1), // default to one diff
+            listOf(EXPLAINABILITY_V1, SELECTIVE_TRANSFORMATION_V2, CLIENT_SIDE_BUILD),
             lastJobContext[JobDetails.CUSTOM_BUILD_COMMAND] ?: MAVEN_BUILD_RUN_UNIT_TESTS // default to running unit tests
         )
     }
