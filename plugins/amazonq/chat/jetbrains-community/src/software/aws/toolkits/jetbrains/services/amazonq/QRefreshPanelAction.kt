@@ -7,8 +7,10 @@ import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.progress.currentThreadCoroutineScope
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.util.messages.Topic
+import kotlinx.coroutines.launch
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommunicationManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_TAB_REMOVE
@@ -22,9 +24,11 @@ class QRefreshPanelAction : DumbAwareAction(AmazonQBundle.message("amazonq.refre
 
         // Notify LSP server about all open tabs being removed
         val chatManager = ChatCommunicationManager.getInstance(project)
-        chatManager.getAllTabIds().forEach { tabId ->
-            AmazonQLspService.executeIfRunning(project) { server ->
-                rawEndpoint.notify(CHAT_TAB_REMOVE, mapOf("tabId" to tabId))
+        currentThreadCoroutineScope().launch {
+            chatManager.getAllTabIds().forEach { tabId ->
+                AmazonQLspService.executeAsyncIfRunning(project) {
+                    rawEndpoint.notify(CHAT_TAB_REMOVE, mapOf("tabId" to tabId))
+                }
             }
         }
 

@@ -187,7 +187,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                 CodeWhispererInvocationStatus.getInstance().setInvocationStart()
                 var nextToken: Either<String, Int>? = null
                 do {
-                    val result = AmazonQLspService.executeIfRunning(requestContext.project) { server ->
+                    val result = AmazonQLspService.executeAsyncIfRunning(requestContext.project) { server ->
                         val params = createInlineCompletionParams(requestContext.editor, requestContext.triggerTypeInfo, nextToken)
                         server.inlineCompletionWithReferences(params)
                     }
@@ -426,7 +426,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         CodeWhispererTelemetryService.getInstance().sendUserTriggerDecisionEvent(project, latencyContext, sessionId, recommendationContext)
     }
 
-    fun getRequestContext(
+    suspend fun getRequestContext(
         triggerTypeInfo: TriggerTypeInfo,
         editor: Editor,
         project: Project,
@@ -472,11 +472,11 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         )
     }
 
-    fun getWorkspaceIds(project: Project): CompletableFuture<LspServerConfigurations> {
+    suspend fun getWorkspaceIds(project: Project): CompletableFuture<LspServerConfigurations> {
         val payload = GetConfigurationFromServerParams(
             section = "aws.q.workspaceContext"
         )
-        return AmazonQLspService.executeIfRunning(project) { server ->
+        return AmazonQLspService.executeAsyncIfRunning(project) { server ->
             server.getConfigurationFromServer(payload)
         } ?: (CompletableFuture.failedFuture(IllegalStateException("LSP Server not running")))
     }

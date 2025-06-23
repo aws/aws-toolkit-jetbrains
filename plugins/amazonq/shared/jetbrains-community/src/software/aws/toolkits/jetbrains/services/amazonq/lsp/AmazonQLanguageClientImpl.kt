@@ -325,7 +325,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
         }
     }
 
-    override fun sendChatUpdate(params: LSPAny): CompletableFuture<Unit> {
+    override fun sendChatUpdate(params: LSPAny) {
         AsyncChatUiListener.notifyPartialMessageUpdate(
             project,
             FlareUiMessage(
@@ -333,8 +333,6 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                 params = params,
             )
         )
-
-        return CompletableFuture.completedFuture(Unit)
     }
 
     private fun File.toVirtualFile() = LocalFileSystem.getInstance().findFileByIoFile(this)
@@ -345,76 +343,74 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
         MessageType.Info, MessageType.Log -> NotificationType.INFORMATION
     }
 
-    override fun openFileDiff(params: OpenFileDiffParams): CompletableFuture<Unit> =
-        CompletableFuture.supplyAsync(
-            {
-                var tempPath: java.nio.file.Path? = null
-                try {
-                    val fileName = Paths.get(params.originalFileUri).fileName.toString()
-                    // Create a temporary virtual file for syntax highlighting
-                    val fileExtension = fileName.substringAfterLast('.', "")
-                    tempPath = Files.createTempFile(null, ".$fileExtension")
-                    val virtualFile = tempPath.toFile()
-                        .also { it.setReadOnly() }
-                        .toVirtualFile()
+    override fun openFileDiff(params: OpenFileDiffParams) {
+        ApplicationManager.getApplication().invokeLater {
+            var tempPath: java.nio.file.Path? = null
+            try {
+                val fileName = Paths.get(params.originalFileUri).fileName.toString()
+                // Create a temporary virtual file for syntax highlighting
+                val fileExtension = fileName.substringAfterLast('.', "")
+                tempPath = Files.createTempFile(null, ".$fileExtension")
+                val virtualFile = tempPath.toFile()
+                    .also { it.setReadOnly() }
+                    .toVirtualFile()
 
-                    val originalContent = params.originalFileContent ?: run {
-                        val sourceFile = File(params.originalFileUri)
-                        if (sourceFile.exists()) sourceFile.readText() else ""
+                val originalContent = params.originalFileContent ?: run {
+                    val sourceFile = File(params.originalFileUri)
+                    if (sourceFile.exists()) sourceFile.readText() else ""
+                }
+
+                val contentFactory = DiffContentFactory.getInstance()
+                var isNewFile = false
+                val (leftContent, rightContent) = when {
+                    params.isDeleted -> {
+                        contentFactory.create(project, originalContent, virtualFile) to
+                            contentFactory.createEmpty()
                     }
 
-                    val contentFactory = DiffContentFactory.getInstance()
-                    var isNewFile = false
-                    val (leftContent, rightContent) = when {
-                        params.isDeleted -> {
-                            contentFactory.create(project, originalContent, virtualFile) to
-                                contentFactory.createEmpty()
-                        }
+                    else -> {
+                        val newContent = params.fileContent.orEmpty()
+                        isNewFile = newContent == originalContent
+                        when {
+                            isNewFile -> {
+                                contentFactory.createEmpty() to
+                                    contentFactory.create(project, newContent, virtualFile)
+                            }
 
-                        else -> {
-                            val newContent = params.fileContent.orEmpty()
-                            isNewFile = newContent == originalContent
-                            when {
-                                isNewFile -> {
-                                    contentFactory.createEmpty() to
-                                        contentFactory.create(project, newContent, virtualFile)
-                                }
-
-                                else -> {
-                                    contentFactory.create(project, originalContent, virtualFile) to
-                                        contentFactory.create(project, newContent, virtualFile)
-                                }
+                            else -> {
+                                contentFactory.create(project, originalContent, virtualFile) to
+                                    contentFactory.create(project, newContent, virtualFile)
                             }
                         }
                     }
-                    val diffRequest = SimpleDiffRequest(
-                        "$fileName ${message("aws.q.lsp.client.diff_message")}",
-                        leftContent,
-                        rightContent,
-                        "Original",
-                        when {
-                            params.isDeleted -> "Deleted"
-                            isNewFile -> "Created"
-                            else -> "Modified"
-                        }
-                    )
-
-                    AmazonQDiffVirtualFile.openDiff(project, diffRequest)
-                } catch (e: Exception) {
-                    LOG.warn { "Failed to open file diff: ${e.message}" }
-                } finally {
-                    // Clean up the temporary file used for syntax highlight
-                    try {
-                        tempPath?.let { Files.deleteIfExists(it) }
-                    } catch (e: Exception) {
-                        LOG.warn { "Failed to delete temporary file: ${e.message}" }
-                    }
                 }
-            },
-            ApplicationManager.getApplication()::invokeLater
-        )
+                val diffRequest = SimpleDiffRequest(
+                    "$fileName ${message("aws.q.lsp.client.diff_message")}",
+                    leftContent,
+                    rightContent,
+                    "Original",
+                    when {
+                        params.isDeleted -> "Deleted"
+                        isNewFile -> "Created"
+                        else -> "Modified"
+                    }
+                )
 
-    override fun sendContextCommands(params: LSPAny): CompletableFuture<Unit> {
+                AmazonQDiffVirtualFile.openDiff(project, diffRequest)
+            } catch (e: Exception) {
+                LOG.warn { "Failed to open file diff: ${e.message}" }
+            } finally {
+                // Clean up the temporary file used for syntax highlight
+                try {
+                    tempPath?.let { Files.deleteIfExists(it) }
+                } catch (e: Exception) {
+                    LOG.warn { "Failed to delete temporary file: ${e.message}" }
+                }
+            }
+        }
+    }
+
+    override fun sendContextCommands(params: LSPAny) {
         val chatManager = ChatCommunicationManager.getInstance(project)
         chatManager.notifyUi(
             FlareUiMessage(
@@ -422,7 +418,6 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                 params = params,
             )
         )
-        return CompletableFuture.completedFuture(Unit)
     }
 
     override fun appendFile(params: FileParams) = refreshVfs(params.path)

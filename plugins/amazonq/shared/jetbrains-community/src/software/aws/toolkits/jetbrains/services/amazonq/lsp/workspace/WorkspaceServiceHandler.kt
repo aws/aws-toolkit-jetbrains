@@ -102,8 +102,8 @@ class WorkspaceServiceHandler(
         }
     }
 
-    private fun didCreateFiles(events: List<VFileEvent>) {
-        AmazonQLspService.executeIfRunning(project) { languageServer ->
+    private suspend fun didCreateFiles(events: List<VFileEvent>) {
+        AmazonQLspService.executeAsyncIfRunning(project) { languageServer ->
             val validFiles = events.mapNotNull { event ->
                 when (event) {
                     is VFileCopyEvent -> {
@@ -137,8 +137,8 @@ class WorkspaceServiceHandler(
         }
     }
 
-    private fun didDeleteFiles(events: List<VFileEvent>) {
-        AmazonQLspService.executeIfRunning(project) { languageServer ->
+    private suspend fun didDeleteFiles(events: List<VFileEvent>) {
+        AmazonQLspService.executeAsyncIfRunning(project) { languageServer ->
             val validFiles = events.mapNotNull { event ->
                 when (event) {
                     is VFileDeleteEvent -> {
@@ -167,8 +167,8 @@ class WorkspaceServiceHandler(
         }
     }
 
-    private fun didRenameFiles(events: List<VFilePropertyChangeEvent>) {
-        AmazonQLspService.executeIfRunning(project) { languageServer ->
+    private suspend fun didRenameFiles(events: List<VFilePropertyChangeEvent>) {
+        AmazonQLspService.executeAsyncIfRunning(project) { languageServer ->
             val validRenames = events
                 .filter { it.propertyName == VirtualFile.PROP_NAME }
                 .mapNotNull { event ->
@@ -220,8 +220,8 @@ class WorkspaceServiceHandler(
         }
     }
 
-    private fun didChangeWatchedFiles(events: List<VFileEvent>) {
-        AmazonQLspService.executeIfRunning(project) { languageServer ->
+    private suspend fun didChangeWatchedFiles(events: List<VFileEvent>) {
+        AmazonQLspService.executeAsyncIfRunning(project) { languageServer ->
             val validChanges = events.flatMap { event ->
                 when (event) {
                     is VFileCopyEvent -> {
@@ -296,23 +296,25 @@ class WorkspaceServiceHandler(
     }
 
     override fun rootsChanged(event: ModuleRootEvent) {
-        AmazonQLspService.executeIfRunning(project) { languageServer ->
-            val currentSnapshot = createWorkspaceFolders(project)
-            val addedFolders = currentSnapshot.filter { folder -> lastSnapshot.none { it.uri == folder.uri } }
-            val removedFolders = lastSnapshot.filter { folder -> currentSnapshot.none { it.uri == folder.uri } }
+        cs.launch {
+            AmazonQLspService.executeAsyncIfRunning(project) { languageServer ->
+                val currentSnapshot = createWorkspaceFolders(project)
+                val addedFolders = currentSnapshot.filter { folder -> lastSnapshot.none { it.uri == folder.uri } }
+                val removedFolders = lastSnapshot.filter { folder -> currentSnapshot.none { it.uri == folder.uri } }
 
-            if (addedFolders.isNotEmpty() || removedFolders.isNotEmpty()) {
-                languageServer.workspaceService.didChangeWorkspaceFolders(
-                    DidChangeWorkspaceFoldersParams().apply {
-                        this.event = WorkspaceFoldersChangeEvent().apply {
-                            added = addedFolders
-                            removed = removedFolders
+                if (addedFolders.isNotEmpty() || removedFolders.isNotEmpty()) {
+                    languageServer.workspaceService.didChangeWorkspaceFolders(
+                        DidChangeWorkspaceFoldersParams().apply {
+                            this.event = WorkspaceFoldersChangeEvent().apply {
+                                added = addedFolders
+                                removed = removedFolders
+                            }
                         }
-                    }
-                )
-            }
+                    )
+                }
 
-            lastSnapshot = currentSnapshot
+                lastSnapshot = currentSnapshot
+            }
         }
     }
 

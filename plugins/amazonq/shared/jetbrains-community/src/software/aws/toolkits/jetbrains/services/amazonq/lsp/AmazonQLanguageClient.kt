@@ -46,13 +46,13 @@ interface AmazonQLanguageClient : LanguageClient {
     fun getSerializedChat(params: LSPAny): CompletableFuture<GetSerializedChatResult>
 
     @JsonNotification(CHAT_SEND_UPDATE)
-    fun sendChatUpdate(params: LSPAny): CompletableFuture<Unit>
+    fun sendChatUpdate(params: LSPAny)
 
     @JsonNotification(OPEN_FILE_DIFF)
-    fun openFileDiff(params: OpenFileDiffParams): CompletableFuture<Unit>
+    fun openFileDiff(params: OpenFileDiffParams)
 
     @JsonNotification(CHAT_SEND_CONTEXT_COMMANDS)
-    fun sendContextCommands(params: LSPAny): CompletableFuture<Unit>
+    fun sendContextCommands(params: LSPAny)
 
     @JsonNotification(DID_COPY_FILE)
     fun copyFile(params: CopyFileParams)

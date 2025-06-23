@@ -36,8 +36,8 @@ class DefaultModuleDependenciesService(
     }
 
     override fun didChangeDependencyPaths(params: DidChangeDependencyPathsParams) {
-        AmazonQLspService.executeIfRunning(project) { languageServer ->
-            cs.launch {
+        cs.launch {
+            AmazonQLspService.executeAsyncIfRunning(project) { languageServer ->
                 languageServer.didChangeDependencyPaths(params)
             }
         }

@@ -36,6 +36,7 @@ import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.isActive
@@ -43,11 +44,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import org.apache.http.client.utils.URIBuilder
 import org.eclipse.lsp4j.ClientCapabilities
 import org.eclipse.lsp4j.ClientInfo
-import org.eclipse.lsp4j.DidChangeConfigurationParams
 import org.eclipse.lsp4j.FileOperationsWorkspaceCapabilities
 import org.eclipse.lsp4j.InitializeParams
 import org.eclipse.lsp4j.InitializedParams
@@ -58,16 +59,18 @@ import org.eclipse.lsp4j.jsonrpc.Launcher
 import org.eclipse.lsp4j.jsonrpc.MessageConsumer
 import org.eclipse.lsp4j.jsonrpc.RemoteEndpoint
 import org.eclipse.lsp4j.jsonrpc.json.JsonRpcMethod
+import org.eclipse.lsp4j.jsonrpc.json.StreamMessageConsumer
+import org.eclipse.lsp4j.jsonrpc.messages.NotificationMessage
+import org.eclipse.lsp4j.jsonrpc.messages.RequestMessage
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseMessage
 import org.eclipse.lsp4j.launch.LSPLauncher
 import org.jetbrains.annotations.VisibleForTesting
-import org.slf4j.event.Level
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.core.utils.writeText
-import software.aws.toolkits.jetbrains.isDeveloperMode
+import software.aws.toolkits.jetbrains.core.coroutines.ioDispatcher
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts.ArtifactManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.auth.DefaultAuthCredentialsService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.dependencies.DefaultModuleDependenciesService
@@ -153,8 +156,6 @@ class AmazonQLspService @VisibleForTesting constructor(
     val instanceFlow = _flowInstance.asSharedFlow().map { it.languageServer }
 
     private var instance: Deferred<AmazonQServerInstanceFacade>
-    val capabilities
-        get() = instance.getCompleted().initializeResult.getCompleted().capabilities
 
     val encryptionManager
         get() = instance.getCompleted().encryptionManager
@@ -289,7 +290,7 @@ class AmazonQLspService @VisibleForTesting constructor(
     }
 
     suspend fun<T> execute(runnable: suspend AmazonQLspService.(AmazonQLanguageServer) -> T): T {
-        val lsp = withTimeout(10.seconds) {
+        val lsp = withTimeout(5.seconds) {
             val holder = mutex.withLock { instance }.await()
             holder.initializeResult.join()
 
@@ -298,31 +299,20 @@ class AmazonQLspService @VisibleForTesting constructor(
         return runnable(lsp)
     }
 
-    suspend fun<T> executeIfRunning(runnable: suspend AmazonQLspService.(AmazonQLanguageServer) -> T): T? {
-        val lsp = try {
-            withTimeout(1.seconds) {
-                val holder = mutex.withLock { instance }.await()
-                holder.initializeResult.join()
-
-                holder.languageServer
-            }
-        } catch (_: Exception) {
+    suspend fun<T> executeIfRunning(runnable: suspend AmazonQLspService.(AmazonQLanguageServer) -> T): T? = withContext(dispatcher) {
+        instanceFlow.firstOrNull()?.let { runnable(it) } ?: run {
             LOG.debug { "LSP not running" }
+
             null
         }
-
-        return lsp?.let { runnable(it) }
     }
 
-    fun<T> executeSync(runnable: suspend AmazonQLspService.(AmazonQLanguageServer) -> T): T =
-        runBlocking {
-            execute(runnable)
-        }
-
     fun<T> syncExecuteIfRunning(runnable: suspend AmazonQLspService.(AmazonQLanguageServer) -> T): T? =
-        runBlocking {
+        runBlocking(dispatcher) {
             executeIfRunning(runnable)
         }
+
+    internal val dispatcher = ioDispatcher(20)
 
     companion object {
         private val LOG = getLogger<AmazonQLspService>()
@@ -330,18 +320,8 @@ class AmazonQLspService @VisibleForTesting constructor(
         private const val RESTART_WINDOW_MS = 3 * 60 * 1000
         fun getInstance(project: Project) = project.service<AmazonQLspService>()
 
-        @Deprecated("Easy to accidentally freeze EDT")
-        fun <T> executeIfRunning(project: Project, runnable: AmazonQLspService.(AmazonQLanguageServer) -> T): T? =
-            project.serviceIfCreated<AmazonQLspService>()?.syncExecuteIfRunning(runnable)
-
         suspend fun <T> executeAsyncIfRunning(project: Project, runnable: suspend AmazonQLspService.(AmazonQLanguageServer) -> T): T? =
             project.serviceIfCreated<AmazonQLspService>()?.executeIfRunning(runnable)
-
-        fun didChangeConfiguration(project: Project) {
-            executeIfRunning(project) {
-                it.workspaceService.didChangeConfiguration(DidChangeConfigurationParams())
-            }
-        }
     }
 }
 
@@ -519,9 +499,27 @@ private class AmazonQServerInstance(private val project: Project, private val cs
             .wrapMessages { consumer ->
                 MessageConsumer { message ->
                     // logging
-                    val traceLogger = LOG.atLevel(if (isDeveloperMode()) Level.INFO else Level.DEBUG)
-                    val direction = if (consumer is RemoteEndpoint) "Sent" else "Received"
-                    traceLogger.log { "$direction: $message" }
+                    // add "software.aws.toolkits.jetbrains.services.amazonq.lsp:separate" to "Debug Log Settings"
+                    LOG.debug {
+                        val direction = when (consumer) {
+                            is StreamMessageConsumer -> "Sending"
+                            is RemoteEndpoint -> "Receiving"
+                            else -> "Unknown direction"
+                        }
+
+                        when (message) {
+                            is ResponseMessage -> {
+                                "$direction: ${message.result}"
+                            }
+                            is RequestMessage -> {
+                                "$direction: ${message.method}"
+                            }
+                            is NotificationMessage -> {
+                                "$direction: ${message.method}"
+                            }
+                            else -> "$direction: $message"
+                        }
+                    }
 
                     if (message is ResponseMessage && message.result is AwsExtendedInitializeResult) {
                         val result = message.result as AwsExtendedInitializeResult
@@ -535,9 +533,6 @@ private class AmazonQServerInstance(private val project: Project, private val cs
             .setLocalService(AmazonQLanguageClientImpl(project))
             .setRemoteInterface(AmazonQLanguageServer::class.java)
             .configureGson {
-                // TODO: maybe need adapter for initialize:
-                //   https://github.com/aws/amazon-q-eclipse/blob/b9d5bdcd5c38e1dd8ad371d37ab93a16113d7d4b/plugin/src/software/aws/toolkits/eclipse/amazonq/lsp/QLspTypeAdapterFactory.java
-
                 // otherwise Gson treats all numbers as double which causes deser issues
                 it.setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
                 it.registerTypeAdapterFactory(AmazonQLspTypeAdapterFactory())
@@ -576,7 +571,7 @@ private class AmazonQServerInstance(private val project: Project, private val cs
             }
 
             this@AmazonQServerInstance.apply {
-                DefaultAuthCredentialsService(project, encryptionManager).also {
+                DefaultAuthCredentialsService(project, encryptionManager, cs).also {
                     Disposer.register(this, it)
                 }
                 TextDocumentServiceHandler(project, cs).also {
