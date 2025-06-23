@@ -9,6 +9,8 @@ import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
 import migration.software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
+import org.jetbrains.annotations.VisibleForTesting
+import software.amazon.awssdk.core.exception.SdkClientException
 import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
 import software.amazon.awssdk.services.toolkittelemetry.model.MetricUnit
 import software.aws.toolkits.core.ClientConnectionSettings
@@ -26,13 +28,16 @@ import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAu
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
+import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.utils.runUnderProgressIfNeeded
 import software.aws.toolkits.resources.AwsCoreBundle
+import software.aws.toolkits.resources.AwsCoreBundle.message
 import software.aws.toolkits.telemetry.AuthTelemetry
 import software.aws.toolkits.telemetry.CredentialSourceId
 import software.aws.toolkits.telemetry.CredentialType
 import software.aws.toolkits.telemetry.Result
 import java.time.Instant
+import java.util.concurrent.atomic.AtomicBoolean
 
 sealed interface ToolkitConnection {
     val id: String
@@ -273,6 +278,7 @@ fun reauthConnectionIfNeeded(
                         source = source,
                     )
                 }
+                hasSeenFirstNetworkError.set(false)
             } catch (e: Exception) {
                 if (isReAuth) {
                     val result = if (e is ProcessCanceledException) Result.Cancelled else Result.Failed
@@ -324,13 +330,30 @@ fun maybeReauthProviderIfNeeded(
                 return runUnderProgressIfNeeded(project, AwsCoreBundle.message("credentials.refreshing"), true) {
                     tokenProvider.resolveToken()
                     BearerTokenProviderListener.notifyCredUpdate(tokenProvider.id)
+                    hasSeenFirstNetworkError.set(false)
                     return@runUnderProgressIfNeeded false
                 }
-            } catch (e: SsoOidcException) {
-                AuthTelemetry.sourceOfRefresh(authRefreshSource = reauthSource.toString())
-                getLogger<ToolkitAuthManager>().warn(e) { "Redriving bearer token login flow since token could not be refreshed" }
-                onReauthRequired(e)
-                return true
+            } catch (e: Exception) {
+                when (e) {
+                    is SsoOidcException -> {
+                        AuthTelemetry.sourceOfRefresh(authRefreshSource = reauthSource.toString())
+                        getLogger<ToolkitAuthManager>().warn(e) { "Redriving bearer token login flow since token could not be refreshed" }
+                        onReauthRequired(e)
+                        return true
+                    }
+                    is SdkClientException -> {
+                        getLogger<ToolkitAuthManager>().warn(e) { "Failed to refresh token" }
+                        if (hasSeenFirstNetworkError.compareAndSet(false, true)) {
+                            notifyInfo(
+                                message("general.auth.network.error"),
+                                message("general.auth.network.error.message"),
+                                project
+                            )
+                        }
+                        throw e
+                    }
+                    else -> { return false }
+                }
             }
         }
 
@@ -409,6 +432,13 @@ private fun recordAddConnection(
             source?.let { metadata("source", it) }
         }
     }
+}
+
+private var hasSeenFirstNetworkError: AtomicBoolean = AtomicBoolean(false)
+
+@VisibleForTesting
+internal fun resetNetworkErrorState() {
+    hasSeenFirstNetworkError.set(false)
 }
 
 data class ConnectionMetadata(
