@@ -3,18 +3,17 @@
 
 package software.aws.toolkits.jetbrains.services.codemodernizer.model
 
-// TODO: include custom yaml file path in manifest.json?
 data class ZipManifest(
     val sourcesRoot: String = ZIP_SOURCES_PATH,
     val dependenciesRoot: String = ZIP_DEPENDENCIES_PATH,
-    val buildLogs: String = BUILD_LOG_PATH,
     val version: String = UPLOAD_ZIP_MANIFEST_VERSION,
     val hilCapabilities: List<String> = listOf(HIL_1P_UPGRADE_CAPABILITY),
-    // TODO: add CLIENT_SIDE_BUILD to transformCapabilities when releasing CSB
-    val transformCapabilities: List<String> = listOf(EXPLAINABILITY_V1, SELECTIVE_TRANSFORMATION_V2),
-    val noInteractiveMode: Boolean = true,
+    val transformCapabilities: List<String> = listOf(EXPLAINABILITY_V1, CLIENT_SIDE_BUILD, SELECTIVE_TRANSFORMATION_V2),
     val customBuildCommand: String = MAVEN_BUILD_RUN_UNIT_TESTS,
     val requestedConversions: RequestedConversions? = null, // only used for SQL conversions for now
+    var dependencyUpgradeConfigFile: String? = null,
+    val noInteractiveMode: Boolean = true,
+    val compilationsJsonFile: String = COMPILATIONS_JSON_FILE,
 )
 
 data class RequestedConversions(
