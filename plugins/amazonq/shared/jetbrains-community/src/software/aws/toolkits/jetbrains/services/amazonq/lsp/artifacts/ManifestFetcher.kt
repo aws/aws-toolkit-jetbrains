@@ -29,7 +29,7 @@ class ManifestFetcher(
         private val logger = getLogger<ManifestFetcher>()
 
         private const val DEFAULT_MANIFEST_URL =
-            "https://aws-toolkit-language-servers.amazonaws.com/qAgenticChatServer/0/manifest.json"
+            "https://d3akiidp1wvqyg.cloudfront.net/qAgenticChatServer/0/manifest.json"
 
         private val DEFAULT_MANIFEST_PATH: Path = getToolkitsCommonCacheRoot()
             .resolve("aws")
