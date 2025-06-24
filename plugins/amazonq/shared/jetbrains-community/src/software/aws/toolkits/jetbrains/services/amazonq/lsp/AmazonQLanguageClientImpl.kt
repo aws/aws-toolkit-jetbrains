@@ -16,6 +16,7 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VfsUtil
+import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFileManager
 import migration.software.aws.toolkits.jetbrains.settings.AwsSettings
 import org.eclipse.lsp4j.ConfigurationParams
@@ -27,6 +28,7 @@ import org.eclipse.lsp4j.PublishDiagnosticsParams
 import org.eclipse.lsp4j.ShowDocumentParams
 import org.eclipse.lsp4j.ShowDocumentResult
 import org.eclipse.lsp4j.ShowMessageRequestParams
+import org.eclipse.lsp4j.TextDocumentIdentifier
 import org.eclipse.lsp4j.jsonrpc.ResponseErrorException
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseError
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseErrorCode
@@ -44,7 +46,10 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.FlareUiMes
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LSPAny
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_OPEN_TAB
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_OPTIONS_UPDATE_NOTIFICATION
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_PINNED_CONTEXT_ADD
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_PINNED_CONTEXT_REMOVE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_CONTEXT_COMMANDS
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_PINNED_CONTEXT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_UPDATE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CopyFileParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FileParams
@@ -74,7 +79,8 @@ import java.util.concurrent.TimeUnit
  * Concrete implementation of [AmazonQLanguageClient] to handle messages sent from server
  */
 class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageClient {
-
+    private val chatManager
+        get() = ChatCommunicationManager.getInstance(project)
     private fun handleTelemetryMap(telemetryMap: Map<*, *>) {
         try {
             val name = telemetryMap["name"] as? String ?: return
@@ -201,7 +207,6 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
     override fun openTab(params: LSPAny): CompletableFuture<LSPAny> {
         val requestId = UUID.randomUUID().toString()
         val result = CompletableFuture<LSPAny>()
-        val chatManager = ChatCommunicationManager.getInstance(project)
         chatManager.addTabOpenRequest(requestId, result)
 
         chatManager.notifyUi(
@@ -252,7 +257,6 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
     override fun getSerializedChat(params: LSPAny): CompletableFuture<GetSerializedChatResult> {
         val requestId = UUID.randomUUID().toString()
         val result = CompletableFuture<GetSerializedChatResult>()
-        val chatManager = ChatCommunicationManager.getInstance(project)
         chatManager.addSerializedChatRequest(requestId, result)
 
         chatManager.notifyUi(
@@ -317,9 +321,8 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
 
     override fun notifyProgress(params: ProgressParams?) {
         if (params == null) return
-        val chatCommunicationManager = ChatCommunicationManager.getInstance(project)
         try {
-            chatCommunicationManager.handlePartialResultProgressNotification(project, params)
+            chatManager.handlePartialResultProgressNotification(project, params)
         } catch (e: Exception) {
             LOG.error(e) { "Cannot handle partial chat" }
         }
@@ -415,7 +418,6 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
         )
 
     override fun sendContextCommands(params: LSPAny): CompletableFuture<Unit> {
-        val chatManager = ChatCommunicationManager.getInstance(project)
         chatManager.notifyUi(
             FlareUiMessage(
                 command = CHAT_SEND_CONTEXT_COMMANDS,
@@ -423,6 +425,55 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
             )
         )
         return CompletableFuture.completedFuture(Unit)
+    }
+
+    override fun sendPinnedContext(params: LSPAny) {
+        // Send the active text file path with pinned context
+        val editor = FileEditorManager.getInstance(project).selectedTextEditor
+        val textDocument = editor?.let {
+            val relativePath = VfsUtilCore.getRelativePath(it.virtualFile, project.baseDir)
+                ?: it.virtualFile.path // Use absolute path if not in project
+            TextDocumentIdentifier(relativePath)
+        }
+
+        // Create updated params with text document information
+        // Since params is LSPAny, we need to handle it as a generic object
+        val updatedParams = when (params) {
+            is Map<*, *> -> {
+                val mutableParams = params.toMutableMap()
+                mutableParams["textDocument"] = textDocument
+                mutableParams
+            }
+            else -> mapOf(
+                "params" to params,
+                "textDocument" to textDocument
+            )
+        }
+
+        chatManager.notifyUi(
+            FlareUiMessage(
+                command = CHAT_SEND_PINNED_CONTEXT,
+                params = updatedParams,
+            )
+        )
+    }
+
+    override fun pinnedContextAdd(params: LSPAny) {
+        chatManager.notifyUi(
+            FlareUiMessage(
+                command = CHAT_PINNED_CONTEXT_ADD,
+                params = params,
+            )
+        )
+    }
+
+    override fun pinnedContextRemove(params: LSPAny) {
+        chatManager.notifyUi(
+            FlareUiMessage(
+                command = CHAT_PINNED_CONTEXT_REMOVE,
+                params = params,
+            )
+        )
     }
 
     override fun appendFile(params: FileParams) = refreshVfs(params.path)
@@ -439,7 +490,6 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
     }
 
     override fun sendChatOptionsUpdate(params: LSPAny) {
-        val chatManager = ChatCommunicationManager.getInstance(project)
         chatManager.notifyUi(
             FlareUiMessage(
                 command = CHAT_OPTIONS_UPDATE_NOTIFICATION,
