@@ -24,6 +24,7 @@ reported the issue. Please try to include as much information as you can. Detail
 
 * [Java 21](https://docs.aws.amazon.com/corretto/latest/corretto-21-ug/downloads-list.html)
 * [Git](https://git-scm.com/)
+  * If you run into a build issue on first build, ensure Git is configured to handle longer paths (common with Windows - run command as Admin): `git config --system core.longpaths true`
 * .NET 6
   * In theory, you can use a higher version, however we build with .NET 6 in CI
   * macOS steps:
