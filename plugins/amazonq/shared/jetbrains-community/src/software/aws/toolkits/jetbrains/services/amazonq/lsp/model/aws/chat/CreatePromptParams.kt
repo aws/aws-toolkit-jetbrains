@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat
 
 data class CreatePromptParams(
     val promptName: String,
+    val isRule: Boolean? = null,
 )
 
 data class CreatePromptNotification(
