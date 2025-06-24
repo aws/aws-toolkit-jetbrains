@@ -3,12 +3,16 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer
 
+import com.intellij.codeInsight.inline.completion.InlineCompletionLifecycleTestDSL
+import com.intellij.codeInsight.inline.completion.testInlineCompletion
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.RuleChain
+import com.intellij.testFramework.common.waitUntil
+import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.intellij.testFramework.replaceService
 import com.intellij.testFramework.runInEdtAndWait
 import io.mockk.every
@@ -59,6 +63,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationCo
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.LatencyContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.TriggerTypeInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
+import software.aws.toolkits.jetbrains.services.codewhisperer.popup.QInlineCompletionProvider
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererRecommendationManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService

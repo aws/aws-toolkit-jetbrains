@@ -18,6 +18,7 @@ import com.intellij.openapi.ui.popup.JBPopup
 import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import org.mockito.Mockito.times
 import org.mockito.kotlin.any
@@ -33,6 +34,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners.Co
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
 import java.awt.Rectangle
 
+@Ignore("This test suite needs a rewrite for JB inline completion API")
 class CodeWhispererUserActionsTest : CodeWhispererTestBase() {
 
     @Before

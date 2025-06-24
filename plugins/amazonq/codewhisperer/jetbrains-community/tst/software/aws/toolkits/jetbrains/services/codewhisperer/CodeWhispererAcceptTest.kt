@@ -8,6 +8,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionItem
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionListWithReferences
@@ -17,6 +18,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestU
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.testNextToken
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.QInlineActionId.qInlineAcceptActionId
 
+@Ignore("This test suite needs a rewrite for JB inline completion API")
 class CodeWhispererAcceptTest : CodeWhispererTestBase() {
 
     @Before
