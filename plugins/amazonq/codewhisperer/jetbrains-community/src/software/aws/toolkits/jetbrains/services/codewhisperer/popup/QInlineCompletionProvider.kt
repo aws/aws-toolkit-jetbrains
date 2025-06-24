@@ -150,7 +150,7 @@ class QInlineCompletionProvider(private val cs: CoroutineScope) : InlineCompleti
     }
 
     fun getAllValidVariantsCount(session: InlineCompletionSession) =
-        session.capture()?.variants?.filter { isValidVariant(it) }?.size ?: 0
+        session.capture()?.variants?.count { isValidVariant(it) } ?: 0
 
     private fun isValidVariant(variant: InlineCompletionVariant.Snapshot) =
         (

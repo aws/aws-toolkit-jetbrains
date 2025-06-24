@@ -95,7 +95,7 @@ class CodeWhispererTelemetryService {
         val params = LogInlineCompletionSessionResultsParams(
             sessionId = sessionContext.sessionId,
             completionSessionResult = sessionContext.itemContexts.filter { it.item != null }.associate {
-                (it.item?.itemId ?: "") to InlineCompletionStates(
+                it.item?.itemId.orEmpty() to InlineCompletionStates(
                     seen = it.hasSeen,
                     accepted = it.isAccepted,
                     discarded = it.isDiscarded
