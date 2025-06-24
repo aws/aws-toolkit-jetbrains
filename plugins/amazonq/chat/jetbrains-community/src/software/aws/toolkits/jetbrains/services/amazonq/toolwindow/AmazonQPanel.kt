@@ -46,6 +46,11 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isCodeTrans
 import software.aws.toolkits.resources.message
 import java.util.concurrent.CompletableFuture
 import javax.swing.JButton
+import java.awt.dnd.DropTarget
+import java.awt.dnd.DropTargetDropEvent
+import java.awt.datatransfer.DataFlavor
+import com.google.gson.Gson
+import java.util.Base64
 
 class AmazonQPanel(val project: Project, private val scope: CoroutineScope) : Disposable {
     private val browser = CompletableFuture<Browser>()
@@ -122,12 +127,106 @@ class AmazonQPanel(val project: Project, private val scope: CoroutineScope) : Di
 
                 withContext(EDT) {
                     browser.complete(
-                        Browser(this@AmazonQPanel, webUri, project).also {
-                            wrapper.setContent(it.component())
+                        Browser(this@AmazonQPanel, webUri, project).also { browserInstance ->
+                            wrapper.setContent(browserInstance.component())
+
+                            // Add DropTarget to the browser component
+                            val dropTarget = object : DropTarget() {
+                                override fun drop(dtde: DropTargetDropEvent) {
+
+                                    try {
+                                        dtde.acceptDrop(dtde.dropAction)
+                                        val transferable = dtde.transferable
+                                        if (transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
+                                            val fileList = transferable.getTransferData(DataFlavor.javaFileListFlavor) as List<*>
+
+                                            val errorMessages = mutableListOf<String>()
+                                            val validImages = mutableListOf<java.io.File>()
+                                            val allowedTypes = setOf("jpg", "jpeg", "png", "gif", "webp")
+                                            val maxFileSize = 3.75 * 1024 * 1024 // 3.75MB in bytes
+                                            val maxDimension = 8000
+
+                                            for (file in fileList) {
+                                                val fileObj = file as? java.io.File ?: continue
+                                                val fileName = fileObj.name
+                                                val ext = fileName.substringAfterLast('.', "").lowercase()
+
+                                                // File type restriction
+                                                if (ext !in allowedTypes) {
+                                                    errorMessages.add("$fileName: File must be an image in JPEG, PNG, GIF, or WebP format.")
+                                                    continue
+                                                }
+
+                                                // Size restriction
+                                                if (fileObj.length() > maxFileSize) {
+                                                    errorMessages.add("$fileName: Image must be no more than 3.75MB in size.")
+                                                    continue
+                                                }
+
+                                                // Width/Height restriction (only for image types)
+                                                try {
+                                                    val img = javax.imageio.ImageIO.read(fileObj)
+                                                    if (img == null) {
+                                                        errorMessages.add("$fileName: File could not be read as an image.")
+                                                        continue
+                                                    }
+                                                    if (img.width > maxDimension) {
+                                                        errorMessages.add("$fileName: Image must be no more than 8,000px in width.")
+                                                        continue
+                                                    }
+                                                    if (img.height > maxDimension) {
+                                                        errorMessages.add("$fileName: Image must be no more than 8,000px in height.")
+                                                        continue
+                                                    }
+                                                } catch (e: Exception) {
+                                                    errorMessages.add("$fileName: File could not be read as an image.")
+                                                    continue
+                                                }
+
+                                                validImages.add(fileObj)
+                                            }
+
+                                            // File count restriction
+                                            if (validImages.size > 20) {
+                                                errorMessages.add("A maximum of 20 images can be added to a single message.")
+                                                validImages.subList(20, validImages.size).clear()
+                                            }
+
+
+
+                                            val json = Gson().toJson(validImages).replace("\\", "\\\\").replace("'", "\\'")
+                                            browserInstance.jcefBrowser.cefBrowser.executeJavaScript(
+                                                "window.handleNativeDrop('$json')",
+                                                browserInstance.jcefBrowser.cefBrowser.url,
+                                                0
+                                            )
+
+                                            val errorJson = Gson().toJson(errorMessages).replace("\\", "\\\\").replace("'", "\\'")
+                                            browserInstance.jcefBrowser.cefBrowser.executeJavaScript(
+                                                "window.handleNativeNotify('$errorJson')",
+                                                browserInstance.jcefBrowser.cefBrowser.url,
+                                                0
+                                            )
+
+                                        }
+                                        dtde.dropComplete(true)
+                                    } catch (e: Exception) {
+                                        e.printStackTrace()
+                                        dtde.dropComplete(false)
+                                    }
+                                }
+                            }
+                            
+                            // Set DropTarget on the browser component and its children
+                            browserInstance.component()?.let { component ->
+                                component.dropTarget = dropTarget
+                                // Also try setting on parent if needed
+                                component.parent?.dropTarget = dropTarget
+                            }
 
                             initConnections()
-                            connectUi(it)
-                            connectApps(it)
+                            connectUi(browserInstance)
+                            connectApps(browserInstance)
 
                             loadingPanel.stopLoading()
                         }

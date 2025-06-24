@@ -8,6 +8,7 @@ import com.google.gson.Gson
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
+import com.intellij.ui.jcef.JBCefJSQuery
 import org.cef.CefApp
 import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AwsServerCapabilitiesProvider
@@ -124,7 +125,7 @@ class Browser(parent: Disposable, private val webUri: URI, val project: Project)
             <script type="text/javascript" charset="UTF-8" src="$webUri" defer onload="init()"></script>
             
             <script type="text/javascript">
-            
+                let qChat = undefined
                 const init = () => {
                     const hybridChatConnector = connectorAdapter.initiateAdapter(
                      ${MeetQSettings.getInstance().reinvent2024OnboardingCount < MAX_ONBOARDING_PAGE_COUNT},
@@ -141,7 +142,7 @@ class Browser(parent: Disposable, private val webUri: URI, val project: Project)
                         },
                     
                      "${activeProfile?.profileName.orEmpty()}")
-                    amazonQChat.createChat(
+                    const qChat = amazonQChat.createChat(
                         {
                             postMessage: message => {
                                 $postMessageToJavaJsCode
@@ -157,6 +158,30 @@ class Browser(parent: Disposable, private val webUri: URI, val project: Project)
                         hybridChatConnector,
                         ${CodeWhispererFeatureConfigService.getInstance().getFeatureConfigJsonString()}                     
                     );
+                    window.qChat = qChat;
+                    window.handleNativeDrop = function(filePath) {
+                        const parsedFilePath = JSON.parse(filePath);
+                        const contextArray = parsedFilePath.map(fileObj => {
+                            const fullPath = fileObj.path;
+                            const fileName = fullPath.split(/[\\/]/).pop();
+                            return {
+                                command: fileName,
+                                label: 'image',
+                                route: [fullPath],
+                                description: fullPath
+                            };
+                        });
+                        qChat.addCustomContextToPrompt(qChat.getSelectedTabId(), contextArray);
+                    };
+                      
+                    window.handleNativeNotify = function(errorMessages) {
+                        const messages = JSON.parse(errorMessages);
+                        messages.forEach(msg => {
+                            qChat.notify({
+                                content: msg
+                            })
+                        });
+                    };
                 }
             </script>        
         """.trimIndent()
