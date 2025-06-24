@@ -14,6 +14,7 @@ import com.intellij.execution.process.ProcessListener
 import com.intellij.execution.process.ProcessOutputType
 import com.intellij.notification.NotificationAction
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.components.serviceIfCreated
@@ -175,20 +176,16 @@ class AmazonQLspService @VisibleForTesting constructor(
         var attempts = 0
         while (attempts < 3) {
             try {
-                val result = withTimeout(30.seconds) {
-                    val instance = starter.start(project, cs).also {
-                        Disposer.register(this@AmazonQLspService, it)
-                    }
-                    // wait for handshake to complete
-                    instance.initializeResult.join()
-
-                    instance.also {
-                        _flowInstance.emit(it)
-                    }
+                // no timeout; start() can download which may take long time
+                val instance = starter.start(project, cs).also {
+                    Disposer.register(this@AmazonQLspService, it)
                 }
+                // wait for handshake to complete
+                instance.initializeResult.join()
 
-                // withTimeout can throw
-                return@async result
+                return@async instance.also {
+                    _flowInstance.emit(it)
+                }
             } catch (e: Exception) {
                 LOG.warn(e) { "Failed to start LSP server" }
             }
@@ -203,6 +200,9 @@ class AmazonQLspService @VisibleForTesting constructor(
 
         // Initialize heartbeat job
         heartbeatJob = cs.launch {
+            if (ApplicationManager.getApplication().isUnitTestMode) {
+                return@launch
+            }
             while (isActive) {
                 delay(5.seconds) // Check every 5 seconds
                 val shouldLoop = checkConnectionStatus()
@@ -300,11 +300,20 @@ class AmazonQLspService @VisibleForTesting constructor(
     }
 
     suspend fun<T> executeIfRunning(runnable: suspend AmazonQLspService.(AmazonQLanguageServer) -> T): T? = withContext(dispatcher) {
-        instanceFlow.firstOrNull()?.let { runnable(it) } ?: run {
+        val lsp = try {
+            withTimeout(5.seconds) {
+                val holder = mutex.withLock { instance }.await()
+                holder.initializeResult.join()
+
+                holder.languageServer
+            }
+        } catch (_: Exception) {
             LOG.debug { "LSP not running" }
 
             null
         }
+
+        lsp?.let { runnable(it) }
     }
 
     fun<T> syncExecuteIfRunning(runnable: suspend AmazonQLspService.(AmazonQLanguageServer) -> T): T? =

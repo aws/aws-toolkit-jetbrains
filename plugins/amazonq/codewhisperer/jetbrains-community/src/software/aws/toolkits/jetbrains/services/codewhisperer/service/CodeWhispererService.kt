@@ -191,7 +191,13 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                         val params = createInlineCompletionParams(requestContext.editor, requestContext.triggerTypeInfo, nextToken)
                         server.inlineCompletionWithReferences(params)
                     }
-                    val completion = result?.await() ?: break
+                    val completion = result?.await()
+                    if (completion == null) {
+                        // no result / not running
+                        CodeWhispererInvocationStatus.getInstance().finishInvocation()
+                        break
+                    }
+
                     nextToken = completion.partialResultToken
                     val endTime = System.nanoTime()
                     val latency = TimeUnit.NANOSECONDS.toMillis(endTime - startTime).toDouble()

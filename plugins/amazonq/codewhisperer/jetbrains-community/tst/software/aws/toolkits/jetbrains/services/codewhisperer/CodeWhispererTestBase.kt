@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.services.codewhisperer
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Disposer
 import com.intellij.psi.PsiFile
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.RuleChain
@@ -18,6 +19,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.yield
@@ -31,12 +33,14 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doNothing
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doSuspendableAnswer
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.timeout
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.mockito.kotlin.wheneverBlocking
 import software.amazon.awssdk.services.ssooidc.SsoOidcClient
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.ManagedSsoProfile
@@ -112,7 +116,7 @@ open class CodeWhispererTestBase {
     protected lateinit var codeScanManager: CodeWhispererCodeScanManager
 
     @Before
-    open fun setUp() {
+    open fun setUp() = runTest {
         mockLanguageServer = mockk()
         val starter = object : AmazonQServerInstanceStarter {
             override fun start(
@@ -141,10 +145,13 @@ open class CodeWhispererTestBase {
             }
         }
 
-        mockLspService = spy(AmazonQLspService(starter, projectRule.project, TestScope()))
+        mockLspService = spy(AmazonQLspService(starter, projectRule.project, this))
 
         // Mock the service methods on Project
         projectRule.project.replaceService(AmazonQLspService::class.java, mockLspService, disposableRule.disposable)
+        // wait for init to finish
+        mockLspService.instanceFlow.first()
+
         mockLspInlineCompletionResponse(pythonResponse)
 
         mockClientManagerRule.create<SsoOidcClient>()
@@ -165,12 +172,10 @@ open class CodeWhispererTestBase {
         stateManager = spy(CodeWhispererExplorerActionManager.getInstance())
         recommendationManager = CodeWhispererRecommendationManager.getInstance()
         codewhispererService = spy(CodeWhispererService.getInstance())
-        codewhispererService.stub {
-            onBlocking {
-                getWorkspaceIds(any())
-            } doAnswer {
-                CompletableFuture.completedFuture(LspServerConfigurations(listOf(WorkspaceInfo("file:///", "workspaceId"))))
-            }
+        doAnswer {
+            CompletableFuture.completedFuture(LspServerConfigurations(listOf(WorkspaceInfo("file:///", "workspaceId"))))
+        }.wheneverBlocking(codewhispererService) {
+            getWorkspaceIds(any())
         }
         ApplicationManager.getApplication().replaceService(CodeWhispererService::class.java, codewhispererService, disposableRule.disposable)
         editorManager = CodeWhispererEditorManager.getInstance()
@@ -233,6 +238,8 @@ open class CodeWhispererTestBase {
         runInEdtAndWait {
             popupManagerSpy.closePopup()
         }
+
+        Disposer.dispose(mockLspService)
     }
 
     fun withCodeWhispererServiceInvokedAndWait(runnable: (InvocationContext) -> Unit) {

@@ -192,8 +192,10 @@ class TextDocumentServiceHandler(
         )
 
         // Send notification to the language server
-        AmazonQLspService.executeIfRunning(project) { _ ->
-            rawEndpoint.notify(ACTIVE_EDITOR_CHANGED_NOTIFICATION, params)
+        cs.launch {
+            AmazonQLspService.executeAsyncIfRunning(project) { _ ->
+                rawEndpoint.notify(ACTIVE_EDITOR_CHANGED_NOTIFICATION, params)
+            }
         }
     }
 
