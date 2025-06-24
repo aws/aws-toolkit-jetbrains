@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat
 
+const val ACTIVE_EDITOR_CHANGED_NOTIFICATION = "aws/chat/activeEditorChanged"
 const val AUTH_FOLLOW_UP_CLICKED = "authFollowUpClicked"
 const val CHAT_BUTTON_CLICK = "aws/chat/buttonClick"
 const val CHAT_CONVERSATION_CLICK = "aws/chat/conversationClick"
@@ -25,7 +26,10 @@ const val CHAT_PROMPT_OPTION_ACKNOWLEDGED = "chatPromptOptionAcknowledged"
 const val CHAT_QUICK_ACTION = "aws/chat/sendChatQuickAction"
 const val CHAT_READY = "aws/chat/ready"
 const val CHAT_SEND_CONTEXT_COMMANDS = "aws/chat/sendContextCommands"
+const val CHAT_SEND_PINNED_CONTEXT = "aws/chat/sendPinnedContext"
 const val CHAT_SEND_UPDATE = "aws/chat/sendChatUpdate"
+const val CHAT_PINNED_CONTEXT_ADD = "aws/chat/pinnedContextAdd"
+const val CHAT_PINNED_CONTEXT_REMOVE = "aws/chat/pinnedContextRemove"
 const val CHAT_SOURCE_LINK_CLICK = "aws/chat/sourceLinkClick"
 const val CHAT_TAB_ADD = "aws/chat/tabAdd"
 const val CHAT_TAB_BAR_ACTIONS = "aws/chat/tabBarAction"
@@ -55,3 +59,5 @@ const val TELEMETRY_EVENT = "telemetry/event"
 // https://github.com/aws/language-server-runtimes/blob/112feba70219a98a12f13727d67c540205fa9c9f/types/chat.ts#L32
 const val LIST_MCP_SERVERS_REQUEST_METHOD = "aws/chat/listMcpServers"
 const val MCP_SERVER_CLICK_REQUEST_METHOD = "aws/chat/mcpServerClick"
+const val LIST_RULES_REQUEST_METHOD = "aws/chat/listRules"
+const val RULE_CLICK_REQUEST_METHOD = "aws/chat/ruleClick"
