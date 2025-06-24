@@ -56,7 +56,7 @@ class CodeWhispererServiceTest : CodeWhispererTestBase() {
         projectRule.project.replaceService(FileContextProvider::class.java, fileContextProviderSpy, disposableRule.disposable)
 
         codewhispererService.stub {
-            onGeneric {
+            onBlocking {
                 getRequestContext(any(), any(), any(), any(), any())
             }.thenCallRealMethod()
         }
@@ -81,7 +81,7 @@ class CodeWhispererServiceTest : CodeWhispererTestBase() {
     }
 
     @Test
-    fun `getRequestContext should have customizationArn if it's present`() {
+    fun `getRequestContext should have customizationArn if it's present`() = runTest {
         whenever(customizationConfig.activeCustomization(projectRule.project)).thenReturn(
             CodeWhispererCustomization(
                 "fake-arn",
@@ -96,7 +96,7 @@ class CodeWhispererServiceTest : CodeWhispererTestBase() {
 
         projectRule.project.replaceService(FileContextProvider::class.java, mockFileContextProvider, disposableRule.disposable)
         codewhispererService.stub {
-            onGeneric {
+            onBlocking {
                 getRequestContext(any(), any(), any(), any(), any())
             }.thenCallRealMethod()
         }

@@ -31,6 +31,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doNothing
+import org.mockito.kotlin.doSuspendableAnswer
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.timeout
@@ -147,7 +148,7 @@ open class CodeWhispererTestBase {
         mockLspInlineCompletionResponse(pythonResponse)
 
         mockClientManagerRule.create<SsoOidcClient>()
-        every { mockLanguageServer.logInlineCompletionSessionResults(any()) } returns CompletableFuture.completedFuture(Unit)
+        every { mockLanguageServer.logInlineCompletionSessionResults(any()) } returns Unit
 
         popupManagerSpy = spy(CodeWhispererPopupManager.getInstance())
         popupManagerSpy.reset()
@@ -165,7 +166,7 @@ open class CodeWhispererTestBase {
         recommendationManager = CodeWhispererRecommendationManager.getInstance()
         codewhispererService = spy(CodeWhispererService.getInstance())
         codewhispererService.stub {
-            onGeneric {
+            onBlocking {
                 getWorkspaceIds(any())
             } doAnswer {
                 CompletableFuture.completedFuture(LspServerConfigurations(listOf(WorkspaceInfo("file:///", "workspaceId"))))
@@ -307,7 +308,7 @@ open class CodeWhispererTestBase {
         val psiFileCaptor = argumentCaptor<PsiFile>()
         val latencyContextCaptor = argumentCaptor<LatencyContext>()
         codewhispererService.stub {
-            onGeneric {
+            onBlocking {
                 getRequestContext(
                     triggerTypeCaptor.capture(),
                     editorCaptor.capture(),
@@ -315,7 +316,7 @@ open class CodeWhispererTestBase {
                     psiFileCaptor.capture(),
                     latencyContextCaptor.capture()
                 )
-            }.doAnswer {
+            }.doSuspendableAnswer {
                 val requestContext = codewhispererService.getRequestContext(
                     triggerTypeCaptor.firstValue,
                     editorCaptor.firstValue,
