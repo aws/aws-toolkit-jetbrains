@@ -13,11 +13,12 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.doCallRealMethod
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
-import org.mockito.kotlin.stub
 import org.mockito.kotlin.whenever
+import org.mockito.kotlin.wheneverBlocking
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionTriggerKind
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.LspEditorUtil.toUriString
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
@@ -55,10 +56,8 @@ class CodeWhispererServiceTest : CodeWhispererTestBase() {
         val fileContextProviderSpy = spy(fileContextProvider)
         projectRule.project.replaceService(FileContextProvider::class.java, fileContextProviderSpy, disposableRule.disposable)
 
-        codewhispererService.stub {
-            onBlocking {
-                getRequestContext(any(), any(), any(), any(), any())
-            }.thenCallRealMethod()
+        doCallRealMethod().wheneverBlocking(codewhispererService) {
+            getRequestContext(any(), any(), any(), any(), any())
         }
 
         val requestContext = codewhispererService.getRequestContext(
@@ -95,10 +94,8 @@ class CodeWhispererServiceTest : CodeWhispererTestBase() {
         }
 
         projectRule.project.replaceService(FileContextProvider::class.java, mockFileContextProvider, disposableRule.disposable)
-        codewhispererService.stub {
-            onBlocking {
-                getRequestContext(any(), any(), any(), any(), any())
-            }.thenCallRealMethod()
+        doCallRealMethod().wheneverBlocking(codewhispererService) {
+            getRequestContext(any(), any(), any(), any(), any())
         }
 
         val actual = codewhispererService.getRequestContext(

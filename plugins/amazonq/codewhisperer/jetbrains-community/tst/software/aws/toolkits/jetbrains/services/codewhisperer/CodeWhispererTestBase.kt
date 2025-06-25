@@ -20,7 +20,6 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.yield
 import org.assertj.core.api.Assertions.assertThat
@@ -33,7 +32,6 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doNothing
-import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doSuspendableAnswer
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
@@ -314,27 +312,26 @@ open class CodeWhispererTestBase {
         val projectCaptor = argumentCaptor<Project>()
         val psiFileCaptor = argumentCaptor<PsiFile>()
         val latencyContextCaptor = argumentCaptor<LatencyContext>()
-        codewhispererService.stub {
-            onBlocking {
-                getRequestContext(
-                    triggerTypeCaptor.capture(),
-                    editorCaptor.capture(),
-                    projectCaptor.capture(),
-                    psiFileCaptor.capture(),
-                    latencyContextCaptor.capture()
-                )
-            }.doSuspendableAnswer {
-                val requestContext = codewhispererService.getRequestContext(
-                    triggerTypeCaptor.firstValue,
-                    editorCaptor.firstValue,
-                    projectCaptor.firstValue,
-                    psiFileCaptor.firstValue,
-                    latencyContextCaptor.firstValue
-                )
-                projectRule.fixture.type(userInput)
-                requestContext
-            }.thenCallRealMethod()
-        }
+
+        wheneverBlocking {
+            codewhispererService.getRequestContext(
+                triggerTypeCaptor.capture(),
+                editorCaptor.capture(),
+                projectCaptor.capture(),
+                psiFileCaptor.capture(),
+                latencyContextCaptor.capture()
+            )
+        }.doSuspendableAnswer {
+            val requestContext = codewhispererService.getRequestContext(
+                triggerTypeCaptor.firstValue,
+                editorCaptor.firstValue,
+                projectCaptor.firstValue,
+                psiFileCaptor.firstValue,
+                latencyContextCaptor.firstValue
+            )
+            projectRule.fixture.type(userInput)
+            requestContext
+        }.thenCallRealMethod()
     }
 
     fun mockLspInlineCompletionResponse(response: InlineCompletionListWithReferences) {
