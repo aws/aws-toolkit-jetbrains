@@ -203,7 +203,7 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
             var requestCount = 0
             var nextToken: Either<String, Int>? = null
             do {
-                val result = AmazonQLspService.executeIfRunning(requestContext.project) { server ->
+                val result = AmazonQLspService.executeAsyncIfRunning(requestContext.project) { server ->
                     val params = createInlineCompletionParams(requestContext.editor, requestContext.triggerTypeInfo, nextToken)
                     server.inlineCompletionWithReferences(params)
                 }
