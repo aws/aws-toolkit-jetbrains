@@ -170,7 +170,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
         whenever(featureDevClient.createTaskAssistConversation()).thenReturn(exampleCreateTaskAssistConversationResponse)
         whenever(featureDevClient.sendFeatureDevTelemetryEvent(any())).thenReturn(exampleSendTelemetryEventResponse)
         whenever(chatSessionStorage.getSession(any(), any())).thenReturn(spySession)
-        doNothing().`when`(chatSessionStorage).deleteSession(any())
+        doNothing().whenever(chatSessionStorage).deleteSession(any())
 
         mockkObject(AmazonqTelemetry)
         every { AmazonqTelemetry.endChat(amazonqConversationId = any(), amazonqEndOfTheConversationLatency = any()) } just runs

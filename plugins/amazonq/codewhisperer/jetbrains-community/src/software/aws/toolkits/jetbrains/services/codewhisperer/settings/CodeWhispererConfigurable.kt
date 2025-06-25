@@ -10,6 +10,7 @@ import com.intellij.openapi.options.BoundConfigurable
 import com.intellij.openapi.options.Configurable
 import com.intellij.openapi.options.SearchableConfigurable
 import com.intellij.openapi.options.ex.Settings
+import com.intellij.openapi.progress.currentThreadCoroutineScope
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.ui.emptyText
@@ -22,6 +23,8 @@ import com.intellij.ui.dsl.builder.bindText
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.util.concurrency.EdtExecutorService
 import com.intellij.util.execution.ParametersListUtil
+import kotlinx.coroutines.launch
+import org.eclipse.lsp4j.DidChangeConfigurationParams
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
@@ -310,7 +313,12 @@ class CodeWhispererConfigurable(private val project: Project) :
                         if (project.isDisposed) {
                             return@forEach
                         }
-                        AmazonQLspService.didChangeConfiguration(project)
+
+                        currentThreadCoroutineScope().launch {
+                            AmazonQLspService.executeAsyncIfRunning(project) { server ->
+                                server.workspaceService.didChangeConfiguration(DidChangeConfigurationParams())
+                            }
+                        }
                     }
                 }
             }
