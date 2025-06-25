@@ -127,8 +127,8 @@ class CodeWhispererCodeReferenceManager(private val project: Project) {
         )
     }
 
-    fun insertCodeReference(editor: Editor, item: InlineCompletionItem, offset: Int) {
-        insertCodeReference(item.insertText, item.references, editor, offset)
+    fun insertCodeReference(editor: Editor, item: InlineCompletionItem?, offset: Int) {
+        insertCodeReference(item?.insertText ?: "", item?.references, editor, offset)
     }
 
     fun getReferenceLineNums(editor: Editor, start: Int, end: Int): String {

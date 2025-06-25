@@ -247,6 +247,7 @@ data class InlineCompletionSessionContext(
 )
 
 data class InlineCompletionItemContext(
+    val project: Project,
     var item: InlineCompletionItem?,
     val channel: Channel<InlineCompletionElement>,
     val data: UserDataHolderBase = UserDataHolderBase(),

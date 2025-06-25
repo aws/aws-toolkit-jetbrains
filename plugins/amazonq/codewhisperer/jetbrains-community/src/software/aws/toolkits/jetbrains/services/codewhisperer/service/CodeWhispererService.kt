@@ -453,7 +453,6 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                 if (psiFile.virtualFile.path.startsWith(workspaceRootPath)) {
                     workspaceId = workspaceInfo.workspaceId
                     LOG.info { "Found workspaceId from LSP '$workspaceId'" }
-                    val workspaceRoot = Paths.get(workspaceInfo.workspaceRoot).toUri()
                     break
                 }
             }

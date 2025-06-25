@@ -9,10 +9,12 @@ import com.intellij.codeInsight.inline.completion.InlineCompletionEvent
 import com.intellij.codeInsight.inline.completion.InlineCompletionEventAdapter
 import com.intellij.codeInsight.inline.completion.InlineCompletionEventType
 import com.intellij.codeInsight.inline.completion.InlineCompletionHandler
+import com.intellij.codeInsight.inline.completion.InlineCompletionInsertEnvironment
 import com.intellij.codeInsight.inline.completion.InlineCompletionProvider
 import com.intellij.codeInsight.inline.completion.InlineCompletionProviderID
 import com.intellij.codeInsight.inline.completion.InlineCompletionProviderPresentation
 import com.intellij.codeInsight.inline.completion.InlineCompletionRequest
+import com.intellij.codeInsight.inline.completion.elements.InlineCompletionElement
 import com.intellij.codeInsight.inline.completion.elements.InlineCompletionGrayTextElement
 import com.intellij.codeInsight.inline.completion.logs.InlineCompletionUsageTracker
 import com.intellij.codeInsight.inline.completion.session.InlineCompletionSession
@@ -71,6 +73,34 @@ class QInlineCompletionProvider(private val cs: CoroutineScope) : InlineCompleti
     // such as on backspace when variants are showing, future improvements
     override val suggestionUpdateManager: InlineCompletionSuggestionUpdateManager
         get() = super.suggestionUpdateManager
+    override val insertHandler: QInlineCompletionInsertHandler
+        get() = object : QInlineCompletionInsertHandler {
+            override fun afterTyped(editor: Editor, startOffset: Int) {
+                insertCodeReferencesAndImports(editor, startOffset)
+            }
+
+            override fun afterInsertion(environment: InlineCompletionInsertEnvironment, elements: List<InlineCompletionElement>) {
+                insertCodeReferencesAndImports(environment.editor, environment.insertedRange.startOffset)
+            }
+
+            private fun insertCodeReferencesAndImports(editor: Editor, startOffset: Int) {
+                currentAcceptedItemContext?.let {
+                    CodeWhispererCodeReferenceManager.getInstance(it.project).insertCodeReference(editor, it.item, startOffset)
+                    val importAdder = CodeWhispererImportAdder.getFallback()
+                    if (importAdder == null) {
+                        logInline(triggerSessionId) {
+                            "No import adder found for JB inline"
+                        }
+                        return
+                    }
+                    importAdder.insertImportStatements(it.project, editor, it.item?.mostRelevantMissingImports)
+                    logInline(triggerSessionId) {
+                        "Accepted suggestion has ${it.item?.references?.size ?: 0} references and " +
+                            "${it.item?.mostRelevantMissingImports?.size ?: 0} imports"
+                    }
+                }
+            }
+        }
     override val id: InlineCompletionProviderID = Q_INLINE_PROVIDER_ID
     override val providerPresentation: InlineCompletionProviderPresentation
         get() = object : InlineCompletionProviderPresentation {
@@ -87,6 +117,7 @@ class QInlineCompletionProvider(private val cs: CoroutineScope) : InlineCompleti
         }
     private var cell: Cell<JEditorPane>? = null
     private var triggerSessionId = 0
+    private var currentAcceptedItemContext: InlineCompletionItemContext? = null
 
     // not needed for current implementation, will need this when we support concurrent triggers, so leave it here
     private val activeTriggerSessions = mutableMapOf<Int, InlineCompletionSessionContext>()
@@ -239,22 +270,7 @@ class QInlineCompletionProvider(private val cs: CoroutineScope) : InlineCompleti
                 }
 
                 override fun onInsert(event: InlineCompletionEventType.Insert) {
-                    session.capture()?.activeVariant?.data?.getUserData(KEY_Q_INLINE_ITEM_CONTEXT)?.item?.let {
-                        CodeWhispererCodeReferenceManager.getInstance(project).insertCodeReference(editor, it, sessionContext.triggerOffset)
-                        val importAdder = CodeWhispererImportAdder.getFallback()
-                        if (importAdder == null) {
-                            logInline(triggerSessionId) {
-                                "No import adder found for JB inline"
-                            }
-                            return
-                        }
-                        importAdder.insertImportStatements(project, editor, it.mostRelevantMissingImports)
-                        logInline(triggerSessionId) {
-                            "Accepted suggestion has ${it.references?.size ?: 0} references and " +
-                                "${it.mostRelevantMissingImports?.size ?: 0} imports"
-                        }
-                    }
-                    super.onInsert(event)
+                    currentAcceptedItemContext = session.capture()?.activeVariant?.data?.getUserData(KEY_Q_INLINE_ITEM_CONTEXT)
                 }
 
                 override fun onHide(event: InlineCompletionEventType.Hide) {
@@ -272,6 +288,9 @@ class QInlineCompletionProvider(private val cs: CoroutineScope) : InlineCompleti
                             setCurrentVariantAsRejected(session)
                         }
                         InlineCompletionUsageTracker.ShownEvents.FinishType.TYPED -> {
+                            // TYPED finished type will not trigger insert hook from JB (to insert imports and references) so have to manually set and invoke here
+                            currentAcceptedItemContext = session.capture()?.activeVariant?.data?.getUserData(KEY_Q_INLINE_ITEM_CONTEXT)
+                            insertHandler.afterTyped(editor, sessionContext.triggerOffset)
                             setCurrentVariantAsAccepted(session)
                         }
                         InlineCompletionUsageTracker.ShownEvents.FinishType.EMPTY -> {
@@ -389,7 +408,7 @@ class QInlineCompletionProvider(private val cs: CoroutineScope) : InlineCompleti
         // Create channel placeholder for upcoming pagination results
         // this is the only known way paginated items can show later
         repeat(MAX_CHANNELS) {
-            sessionContext.itemContexts.add(InlineCompletionItemContext(null, Channel(Channel.UNLIMITED)))
+            sessionContext.itemContexts.add(InlineCompletionItemContext(project, null, Channel(Channel.UNLIMITED)))
         }
 
         activeTriggerSessions[triggerSessionId] = sessionContext
@@ -436,7 +455,6 @@ class QInlineCompletionProvider(private val cs: CoroutineScope) : InlineCompleti
                     it.channel.close()
                 }
                 if (session.context.isDisposed) {
-                    // previously disposed by new triggers, sending STE right away since we already know the decisions
                     logInline(triggerSessionId) {
                         "Current display session already disposed by a new trigger before pagination finishes, exiting"
                     }

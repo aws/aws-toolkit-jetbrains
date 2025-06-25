@@ -42,7 +42,6 @@ abstract class CodeWhispererImportAdder {
     }
 
     fun insertImportStatements(project: Project, editor: Editor, imports: List<InlineCompletionImports>?) {
-//        LOG.info { "Adding ${imports?.size ?: 0} imports for completions, sessionId: ${states.responseContext.sessionId}" }
         imports?.forEach {
             insertImportStatement(project, editor, it)
         }
