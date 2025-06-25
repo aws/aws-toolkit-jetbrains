@@ -20,7 +20,6 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.yield
 import org.assertj.core.api.Assertions.assertThat
@@ -314,26 +313,26 @@ open class CodeWhispererTestBase {
         val psiFileCaptor = argumentCaptor<PsiFile>()
         val latencyContextCaptor = argumentCaptor<LatencyContext>()
 
-        runBlocking {
-            whenever(codewhispererService.getRequestContext(
-                triggerTypeCaptor.capture(),
-                editorCaptor.capture(),
-                projectCaptor.capture(),
-                psiFileCaptor.capture(),
-                latencyContextCaptor.capture()
+        doSuspendableAnswer {
+            val requestContext = codewhispererService.getRequestContext(
+                triggerTypeCaptor.firstValue,
+                editorCaptor.firstValue,
+                projectRule.project,
+                psiFileCaptor.firstValue,
+                latencyContextCaptor.firstValue
+            )
+            projectRule.fixture.type(userInput)
+            requestContext
+        }.doCallRealMethod()
+            .wheneverBlocking(codewhispererService) {
+                getRequestContext(
+                    triggerTypeCaptor.capture(),
+                    editorCaptor.capture(),
+                    projectCaptor.capture(),
+                    psiFileCaptor.capture(),
+                    latencyContextCaptor.capture()
                 )
-            ).doSuspendableAnswer {
-                val requestContext = codewhispererService.getRequestContext(
-                    triggerTypeCaptor.firstValue,
-                    editorCaptor.firstValue,
-                    projectRule.project,
-                    psiFileCaptor.firstValue,
-                    latencyContextCaptor.firstValue
-                )
-                projectRule.fixture.type(userInput)
-                requestContext
-            }.thenCallRealMethod()
-        }
+            }
     }
 
     fun mockLspInlineCompletionResponse(response: InlineCompletionListWithReferences) {
