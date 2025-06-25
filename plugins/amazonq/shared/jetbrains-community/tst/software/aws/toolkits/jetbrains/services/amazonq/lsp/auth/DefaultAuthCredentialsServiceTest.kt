@@ -34,6 +34,7 @@ import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBe
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLanguageServer
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LspServerConfigurations
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.ConnectionMetadata
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.SsoProfileData
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.UpdateCredentialsPayload
@@ -87,6 +88,10 @@ class DefaultAuthCredentialsServiceTest {
         every {
             mockLanguageServer.deleteTokenCredentials()
         } returns Unit
+
+        every {
+            mockLanguageServer.updateConfiguration(any())
+        } returns CompletableFuture.completedFuture(LspServerConfigurations(emptyList()))
 
         every { project.getService(AmazonQLspService::class.java) } returns mockLspService
         every { project.serviceIfCreated<AmazonQLspService>() } returns mockLspService

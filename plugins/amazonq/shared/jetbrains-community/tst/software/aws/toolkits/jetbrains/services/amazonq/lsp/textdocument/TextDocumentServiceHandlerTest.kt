@@ -86,7 +86,7 @@ class TextDocumentServiceHandlerTest {
 
         // Mock the LSP service's executeSync method as a suspend function
         coEvery {
-            mockLspService.execute<CompletableFuture<ResponseMessage>>(any())
+            mockLspService.executeIfRunning<CompletableFuture<ResponseMessage>>(any())
         } coAnswers {
             val func = firstArg<suspend AmazonQLspService.(AmazonQLanguageServer) -> CompletableFuture<ResponseMessage>>()
             func.invoke(mockLspService, mockLanguageServer)
