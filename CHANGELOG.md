@@ -1,3 +1,7 @@
+# _3.79_ (2025-06-25)
+- **(Feature)** /transform: run all builds client-side
+- **(Feature)** Amazon Q Chat: Pin context items in chat and manage workspace rules
+
 # _3.78_ (2025-06-18)
 - **(Feature)** Add model selection feature
 
