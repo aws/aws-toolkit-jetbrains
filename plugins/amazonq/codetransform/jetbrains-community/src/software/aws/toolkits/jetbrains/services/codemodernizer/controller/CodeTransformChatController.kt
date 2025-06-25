@@ -465,7 +465,13 @@ class CodeTransformChatController(
     }
 
     private suspend fun promptForCustomYamlFile() {
-        codeTransformChatHelper.addNewMessage(buildUserInputCustomDependencyVersionsChatContent())
+        val sourceJdk = codeModernizerManager.codeTransformationSession?.sessionContext?.sourceJavaVersion?.name
+        val targetJdk = codeModernizerManager.codeTransformationSession?.sessionContext?.targetJavaVersion?.name
+        var message = message("codemodernizer.chat.message.custom_dependency_upgrades_prompt_library_upgrade")
+        if (sourceJdk != targetJdk) {
+            message = message("codemodernizer.chat.message.custom_dependency_upgrades_prompt_jdk_upgrade")
+        }
+        codeTransformChatHelper.addNewMessage(buildUserInputCustomDependencyVersionsChatContent(message))
         val sampleYAML = """
 name: "dependency-upgrade"
 description: "Custom dependency version management for Java migration from JDK 8/11/17 to JDK 17/21"
