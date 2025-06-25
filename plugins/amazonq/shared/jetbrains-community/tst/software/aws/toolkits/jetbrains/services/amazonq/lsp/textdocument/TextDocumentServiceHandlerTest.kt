@@ -53,6 +53,7 @@ class TextDocumentServiceHandlerTest {
     private lateinit var mockLanguageServer: AmazonQLanguageServer
     private lateinit var mockTextDocumentService: TextDocumentService
     private lateinit var sut: TextDocumentServiceHandler
+
     // not ideal
     private lateinit var testScope: TestScope
 

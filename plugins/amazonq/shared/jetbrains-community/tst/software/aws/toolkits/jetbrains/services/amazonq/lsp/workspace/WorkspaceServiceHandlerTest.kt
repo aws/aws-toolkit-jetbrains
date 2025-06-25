@@ -67,6 +67,7 @@ class WorkspaceServiceHandlerTest {
     private lateinit var mockWorkspaceService: WorkspaceService
     private lateinit var mockTextDocumentService: TextDocumentService
     private lateinit var sut: WorkspaceServiceHandler
+
     // not ideal
     private lateinit var testScope: TestScope
 
