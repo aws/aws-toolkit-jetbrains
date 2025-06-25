@@ -34,6 +34,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.map
@@ -59,7 +60,6 @@ import org.eclipse.lsp4j.jsonrpc.Launcher
 import org.eclipse.lsp4j.jsonrpc.MessageConsumer
 import org.eclipse.lsp4j.jsonrpc.RemoteEndpoint
 import org.eclipse.lsp4j.jsonrpc.json.JsonRpcMethod
-import org.eclipse.lsp4j.jsonrpc.messages.ResponseMessage
 import org.eclipse.lsp4j.launch.LSPLauncher
 import org.slf4j.event.Level
 import software.aws.toolkits.core.utils.debug
@@ -74,7 +74,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.dependencies.Default
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AmazonQLspTypeAdapterFactory
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AwsExtendedInitializeResult
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AwsServerCapabilitiesProvider
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.createExtendedClientMetadata
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.textdocument.TextDocumentServiceHandler
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.WorkspaceFolderUtil.createWorkspaceFolders
@@ -138,11 +137,9 @@ internal class LSPProcessListener : ProcessListener {
 @Service(Service.Level.PROJECT)
 class AmazonQLspService(private val project: Project, private val cs: CoroutineScope) : Disposable {
     private val _flowInstance = MutableSharedFlow<AmazonQServerInstance>(replay = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
-    val instanceFlow = _flowInstance.asSharedFlow().map { it.languageServer }
+    val instanceFlow: Flow<AmazonQServerInstanceFacade> = _flowInstance.asSharedFlow()
 
     private var instance: Deferred<AmazonQServerInstance>
-    val capabilities
-        get() = instance.getCompleted().initializeResult.getCompleted().capabilities
 
     val encryptionManager
         get() = instance.getCompleted().encryptionManager
@@ -312,12 +309,17 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
     }
 }
 
-private class AmazonQServerInstance(private val project: Project, private val cs: CoroutineScope) : Disposable {
+interface AmazonQServerInstanceFacade {
+    val languageServer: AmazonQLanguageServer
+    val initializeResult: Deferred<AwsExtendedInitializeResult>
+}
+
+private class AmazonQServerInstance(private val project: Project, private val cs: CoroutineScope) : Disposable, AmazonQServerInstanceFacade {
     val encryptionManager = JwtEncryptionManager()
 
     private val launcher: Launcher<AmazonQLanguageServer>
 
-    val languageServer: AmazonQLanguageServer
+    override val languageServer: AmazonQLanguageServer
         get() = launcher.remoteProxy
 
     val rawEndpoint: RemoteEndpoint
@@ -326,7 +328,7 @@ private class AmazonQServerInstance(private val project: Project, private val cs
     @Suppress("ForbiddenVoid")
     val launcherFuture: Future<Void>
     private val launcherHandler: KillableProcessHandler
-    val initializeResult: Deferred<InitializeResult>
+    override val initializeResult: Deferred<AwsExtendedInitializeResult>
 
     private fun createClientCapabilities(): ClientCapabilities =
         ClientCapabilities().apply {
@@ -479,10 +481,12 @@ private class AmazonQServerInstance(private val project: Project, private val cs
         }
             .wrapMessages { consumer ->
                 MessageConsumer { message ->
-                    if (message is ResponseMessage && message.result is AwsExtendedInitializeResult) {
-                        val result = message.result as AwsExtendedInitializeResult
-                        AwsServerCapabilitiesProvider.getInstance(project).setAwsServerCapabilities(result.getAwsServerCapabilities())
-                    }
+                    // logging
+                    val traceLogger = LOG.atLevel(if (isDeveloperMode()) Level.INFO else Level.DEBUG)
+                    val direction = if (consumer is RemoteEndpoint) "Sent" else "Received"
+                    traceLogger.log { "$direction: $message" }
+
+                    // required
                     consumer?.consume(message)
                 }
             }
@@ -495,18 +499,7 @@ private class AmazonQServerInstance(private val project: Project, private val cs
                 // otherwise Gson treats all numbers as double which causes deser issues
                 it.setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
                 it.registerTypeAdapterFactory(AmazonQLspTypeAdapterFactory())
-            }.traceMessages(
-                PrintWriter(
-                    object : StringWriter() {
-                        private val traceLogger = LOG.atLevel(if (isDeveloperMode()) Level.INFO else Level.DEBUG)
-
-                        override fun flush() {
-                            traceLogger.log { buffer.toString() }
-                            buffer.setLength(0)
-                        }
-                    }
-                )
-            )
+            }
             .setInput(inputWrapper.inputStream)
             .setOutput(launcherHandler.process.outputStream)
             .create()
@@ -531,7 +524,7 @@ private class AmazonQServerInstance(private val project: Project, private val cs
             }
             languageServer.initialized(InitializedParams())
 
-            initializeResult
+            initializeResult as AwsExtendedInitializeResult
         }
 
         // invokeOnCompletion results in weird lock/timeout error
