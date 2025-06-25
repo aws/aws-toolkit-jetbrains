@@ -124,6 +124,7 @@ open class CodeWhispererTestBase {
                 override val launcher: Launcher<AmazonQLanguageServer>
                     get() = TODO("Not yet implemented")
 
+                @Suppress("ForbiddenVoid")
                 override val launcherFuture: Future<Void>
                     get() = CompletableFuture()
 

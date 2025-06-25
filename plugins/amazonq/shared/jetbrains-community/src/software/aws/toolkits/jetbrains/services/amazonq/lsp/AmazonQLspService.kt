@@ -335,6 +335,8 @@ class AmazonQLspService @VisibleForTesting constructor(
 
 interface AmazonQServerInstanceFacade : Disposable {
     val launcher: Launcher<AmazonQLanguageServer>
+
+    @Suppress("ForbiddenVoid")
     val launcherFuture: Future<Void>
     val initializeResult: Deferred<AwsExtendedInitializeResult>
     val encryptionManager: JwtEncryptionManager

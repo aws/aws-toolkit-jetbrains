@@ -18,6 +18,7 @@ import com.intellij.openapi.vfs.newvfs.events.VFileMoveEvent
 import com.intellij.openapi.vfs.newvfs.events.VFilePropertyChangeEvent
 import com.intellij.util.messages.MessageBus
 import com.intellij.util.messages.MessageBusConnection
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -26,7 +27,8 @@ import io.mockk.mockkStatic
 import io.mockk.runs
 import io.mockk.slot
 import io.mockk.verify
-import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceUntilIdle
 import org.assertj.core.api.Assertions.assertThat
 import org.eclipse.lsp4j.CreateFilesParams
 import org.eclipse.lsp4j.DeleteFilesParams
@@ -65,6 +67,8 @@ class WorkspaceServiceHandlerTest {
     private lateinit var mockWorkspaceService: WorkspaceService
     private lateinit var mockTextDocumentService: TextDocumentService
     private lateinit var sut: WorkspaceServiceHandler
+    // not ideal
+    private lateinit var testScope: TestScope
 
     @BeforeEach
     fun setup() {
@@ -88,8 +92,8 @@ class WorkspaceServiceHandlerTest {
         every { project.serviceIfCreated<AmazonQLspService>() } returns mockLspService
 
         // Mock the LSP service's executeSync method as a suspend function
-        every {
-            mockLspService.executeSync<CompletableFuture<ResponseMessage>>(any())
+        coEvery {
+            mockLspService.executeIfRunning<CompletableFuture<ResponseMessage>>(any())
         } coAnswers {
             val func = firstArg<suspend AmazonQLspService.(AmazonQLanguageServer) -> CompletableFuture<ResponseMessage>>()
             func.invoke(mockLspService, mockLanguageServer)
@@ -146,177 +150,192 @@ class WorkspaceServiceHandlerTest {
         every { mockInitializeResult.capabilities } returns mockCapabilities
 
         // Create WorkspaceServiceHandler with mocked InitializeResult
-        sut = WorkspaceServiceHandler(project, mockInitializeResult)
+        testScope = TestScope()
+        sut = WorkspaceServiceHandler(project, testScope, mockInitializeResult)
     }
 
     @Test
-    fun `test didCreateFiles with Python file`() = runTest {
+    fun `test didCreateFiles with Python file`() {
         val pyUri = URI("file:///test/path")
         val pyEvent = createMockVFileEvent(pyUri, FileChangeType.Created, false, "py")
 
         sut.after(listOf(pyEvent))
 
+        testScope.advanceUntilIdle()
         val paramsSlot = slot<CreateFilesParams>()
         verify { mockWorkspaceService.didCreateFiles(capture(paramsSlot)) }
         assertThat(paramsSlot.captured.files[0].uri).isEqualTo(normalizeFileUri(pyUri.toString()))
     }
 
     @Test
-    fun `test didCreateFiles with TypeScript file`() = runTest {
+    fun `test didCreateFiles with TypeScript file`() {
         val tsUri = URI("file:///test/path")
         val tsEvent = createMockVFileEvent(tsUri, FileChangeType.Created, false, "ts")
 
         sut.after(listOf(tsEvent))
 
+        testScope.advanceUntilIdle()
         val paramsSlot = slot<CreateFilesParams>()
         verify { mockWorkspaceService.didCreateFiles(capture(paramsSlot)) }
         assertThat(paramsSlot.captured.files[0].uri).isEqualTo(normalizeFileUri(tsUri.toString()))
     }
 
     @Test
-    fun `test didCreateFiles with JavaScript file`() = runTest {
+    fun `test didCreateFiles with JavaScript file`() {
         val jsUri = URI("file:///test/path")
         val jsEvent = createMockVFileEvent(jsUri, FileChangeType.Created, false, "js")
 
         sut.after(listOf(jsEvent))
 
+        testScope.advanceUntilIdle()
         val paramsSlot = slot<CreateFilesParams>()
         verify { mockWorkspaceService.didCreateFiles(capture(paramsSlot)) }
         assertThat(paramsSlot.captured.files[0].uri).isEqualTo(normalizeFileUri(jsUri.toString()))
     }
 
     @Test
-    fun `test didCreateFiles with Java file`() = runTest {
+    fun `test didCreateFiles with Java file`() {
         val javaUri = URI("file:///test/path")
         val javaEvent = createMockVFileEvent(javaUri, FileChangeType.Created, false, "java")
 
         sut.after(listOf(javaEvent))
 
+        testScope.advanceUntilIdle()
         val paramsSlot = slot<CreateFilesParams>()
         verify { mockWorkspaceService.didCreateFiles(capture(paramsSlot)) }
         assertThat(paramsSlot.captured.files[0].uri).isEqualTo(normalizeFileUri(javaUri.toString()))
     }
 
     @Test
-    fun `test didCreateFiles called for directory`() = runTest {
+    fun `test didCreateFiles called for directory`() {
         val dirUri = URI("file:///test/directory/path")
         val dirEvent = createMockVFileEvent(dirUri, FileChangeType.Created, true, "")
 
         sut.after(listOf(dirEvent))
 
+        testScope.advanceUntilIdle()
         val paramsSlot = slot<CreateFilesParams>()
         verify { mockWorkspaceService.didCreateFiles(capture(paramsSlot)) }
         assertThat(paramsSlot.captured.files[0].uri).isEqualTo(normalizeFileUri(dirUri.toString()))
     }
 
     @Test
-    fun `test didCreateFiles not called for unsupported file extension`() = runTest {
+    fun `test didCreateFiles not called for unsupported file extension`() {
         val txtUri = URI("file:///test/path")
         val txtEvent = createMockVFileEvent(txtUri, FileChangeType.Created, false, "txt")
 
         sut.after(listOf(txtEvent))
 
+        testScope.advanceUntilIdle()
         verify(exactly = 0) { mockWorkspaceService.didCreateFiles(any()) }
     }
 
     @Test
-    fun `test didCreateFiles with move event`() = runTest {
+    fun `test didCreateFiles with move event`() {
         val oldUri = URI("file:///test/oldPath")
         val newUri = URI("file:///test/newPath")
         val moveEvent = createMockVFileMoveEvent(oldUri, newUri, "test.py")
 
         sut.after(listOf(moveEvent))
 
+        testScope.advanceUntilIdle()
         val paramsSlot = slot<CreateFilesParams>()
         verify { mockWorkspaceService.didCreateFiles(capture(paramsSlot)) }
         assertThat(paramsSlot.captured.files[0].uri).isEqualTo(normalizeFileUri(newUri.toString()))
     }
 
     @Test
-    fun `test didCreateFiles with copy event`() = runTest {
+    fun `test didCreateFiles with copy event`() {
         val originalUri = URI("file:///test/original")
         val newUri = URI("file:///test/new")
         val copyEvent = createMockVFileCopyEvent(originalUri, newUri, "test.py")
 
         sut.after(listOf(copyEvent))
 
+        testScope.advanceUntilIdle()
         val paramsSlot = slot<CreateFilesParams>()
         verify { mockWorkspaceService.didCreateFiles(capture(paramsSlot)) }
         assertThat(paramsSlot.captured.files[0].uri).isEqualTo(normalizeFileUri(newUri.toString()))
     }
 
     @Test
-    fun `test didDeleteFiles with Python file`() = runTest {
+    fun `test didDeleteFiles with Python file`() {
         val pyUri = URI("file:///test/path")
         val pyEvent = createMockVFileEvent(pyUri, FileChangeType.Deleted, false, "py")
 
         sut.after(listOf(pyEvent))
 
+        testScope.advanceUntilIdle()
         val paramsSlot = slot<DeleteFilesParams>()
         verify { mockWorkspaceService.didDeleteFiles(capture(paramsSlot)) }
         assertThat(paramsSlot.captured.files[0].uri).isEqualTo(normalizeFileUri(pyUri.toString()))
     }
 
     @Test
-    fun `test didDeleteFiles with TypeScript file`() = runTest {
+    fun `test didDeleteFiles with TypeScript file`() {
         val tsUri = URI("file:///test/path")
         val tsEvent = createMockVFileEvent(tsUri, FileChangeType.Deleted, false, "ts")
 
         sut.after(listOf(tsEvent))
 
+        testScope.advanceUntilIdle()
         val paramsSlot = slot<DeleteFilesParams>()
         verify { mockWorkspaceService.didDeleteFiles(capture(paramsSlot)) }
         assertThat(paramsSlot.captured.files[0].uri).isEqualTo(normalizeFileUri(tsUri.toString()))
     }
 
     @Test
-    fun `test didDeleteFiles with JavaScript file`() = runTest {
+    fun `test didDeleteFiles with JavaScript file`() {
         val jsUri = URI("file:///test/path")
         val jsEvent = createMockVFileEvent(jsUri, FileChangeType.Deleted, false, "js")
 
         sut.after(listOf(jsEvent))
 
+        testScope.advanceUntilIdle()
         val paramsSlot = slot<DeleteFilesParams>()
         verify { mockWorkspaceService.didDeleteFiles(capture(paramsSlot)) }
         assertThat(paramsSlot.captured.files[0].uri).isEqualTo(normalizeFileUri(jsUri.toString()))
     }
 
     @Test
-    fun `test didDeleteFiles with Java file`() = runTest {
+    fun `test didDeleteFiles with Java file`() {
         val javaUri = URI("file:///test/path")
         val javaEvent = createMockVFileEvent(javaUri, FileChangeType.Deleted, false, "java")
 
         sut.after(listOf(javaEvent))
 
+        testScope.advanceUntilIdle()
         val paramsSlot = slot<DeleteFilesParams>()
         verify { mockWorkspaceService.didDeleteFiles(capture(paramsSlot)) }
         assertThat(paramsSlot.captured.files[0].uri).isEqualTo(normalizeFileUri(javaUri.toString()))
     }
 
     @Test
-    fun `test didDeleteFiles not called for unsupported file extension`() = runTest {
+    fun `test didDeleteFiles not called for unsupported file extension`() {
         val txtUri = URI("file:///test/path")
         val txtEvent = createMockVFileEvent(txtUri, FileChangeType.Deleted, false, "txt")
 
         sut.after(listOf(txtEvent))
 
+        testScope.advanceUntilIdle()
         verify(exactly = 0) { mockWorkspaceService.didDeleteFiles(any()) }
     }
 
     @Test
-    fun `test didDeleteFiles called for directory`() = runTest {
+    fun `test didDeleteFiles called for directory`() {
         val dirUri = URI("file:///test/directory/path")
         val dirEvent = createMockVFileEvent(dirUri, FileChangeType.Deleted, true, "")
 
         sut.after(listOf(dirEvent))
 
+        testScope.advanceUntilIdle()
         val paramsSlot = slot<DeleteFilesParams>()
         verify { mockWorkspaceService.didDeleteFiles(capture(paramsSlot)) }
         assertThat(paramsSlot.captured.files[0].uri).isEqualTo(normalizeFileUri(dirUri.toString()))
     }
 
     @Test
-    fun `test didDeleteFiles handles both delete and move events in same batch`() = runTest {
+    fun `test didDeleteFiles handles both delete and move events in same batch`() {
         val deleteUri = URI("file:///test/deleteFile")
         val oldMoveUri = URI("file:///test/oldMoveFile")
         val newMoveUri = URI("file:///test/newMoveFile")
@@ -326,6 +345,7 @@ class WorkspaceServiceHandlerTest {
 
         sut.after(listOf(deleteEvent, moveEvent))
 
+        testScope.advanceUntilIdle()
         val deleteParamsSlot = slot<DeleteFilesParams>()
         verify { mockWorkspaceService.didDeleteFiles(capture(deleteParamsSlot)) }
         assertThat(deleteParamsSlot.captured.files).hasSize(2)
@@ -334,31 +354,33 @@ class WorkspaceServiceHandlerTest {
     }
 
     @Test
-    fun `test didDeleteFiles with move event of unsupported file type`() = runTest {
+    fun `test didDeleteFiles with move event of unsupported file type`() {
         val oldUri = URI("file:///test/oldPath")
         val newUri = URI("file:///test/newPath")
         val moveEvent = createMockVFileMoveEvent(oldUri, newUri, "test.txt")
 
         sut.after(listOf(moveEvent))
 
+        testScope.advanceUntilIdle()
         verify(exactly = 0) { mockWorkspaceService.didDeleteFiles(any()) }
     }
 
     @Test
-    fun `test didDeleteFiles with move event of directory`() = runTest {
+    fun `test didDeleteFiles with move event of directory`() {
         val oldUri = URI("file:///test/oldDir")
         val newUri = URI("file:///test/newDir")
         val moveEvent = createMockVFileMoveEvent(oldUri, newUri, "", true)
 
         sut.after(listOf(moveEvent))
 
+        testScope.advanceUntilIdle()
         val deleteParamsSlot = slot<DeleteFilesParams>()
         verify { mockWorkspaceService.didDeleteFiles(capture(deleteParamsSlot)) }
         assertThat(deleteParamsSlot.captured.files[0].uri).isEqualTo(normalizeFileUri(oldUri.toString()))
     }
 
     @Test
-    fun `test didChangeWatchedFiles with valid events`() = runTest {
+    fun `test didChangeWatchedFiles with valid events`() {
         // Arrange
         val createURI = URI("file:///test/pathOfCreation")
         val deleteURI = URI("file:///test/pathOfDeletion")
@@ -372,6 +394,7 @@ class WorkspaceServiceHandlerTest {
         sut.after(listOf(virtualFileCreate, virtualFileDelete, virtualFileChange))
 
         // Assert
+        testScope.advanceUntilIdle()
         val paramsSlot = slot<DidChangeWatchedFilesParams>()
         verify { mockWorkspaceService.didChangeWatchedFiles(capture(paramsSlot)) }
         assertThat(paramsSlot.captured.changes[0].uri).isEqualTo(normalizeFileUri(createURI.toString()))
@@ -383,13 +406,14 @@ class WorkspaceServiceHandlerTest {
     }
 
     @Test
-    fun `test didChangeWatchedFiles with move event reports both delete and create`() = runTest {
+    fun `test didChangeWatchedFiles with move event reports both delete and create`() {
         val oldUri = URI("file:///test/oldPath")
         val newUri = URI("file:///test/newPath")
         val moveEvent = createMockVFileMoveEvent(oldUri, newUri, "test.py")
 
         sut.after(listOf(moveEvent))
 
+        testScope.advanceUntilIdle()
         val paramsSlot = slot<DidChangeWatchedFilesParams>()
         verify { mockWorkspaceService.didChangeWatchedFiles(capture(paramsSlot)) }
 
@@ -401,13 +425,14 @@ class WorkspaceServiceHandlerTest {
     }
 
     @Test
-    fun `test didChangeWatchedFiles with copy event`() = runTest {
+    fun `test didChangeWatchedFiles with copy event`() {
         val originalUri = URI("file:///test/original")
         val newUri = URI("file:///test/new")
         val copyEvent = createMockVFileCopyEvent(originalUri, newUri, "test.py")
 
         sut.after(listOf(copyEvent))
 
+        testScope.advanceUntilIdle()
         val paramsSlot = slot<DidChangeWatchedFilesParams>()
         verify { mockWorkspaceService.didChangeWatchedFiles(capture(paramsSlot)) }
         assertThat(paramsSlot.captured.changes[0].uri).isEqualTo(normalizeFileUri(newUri.toString()))
@@ -415,7 +440,7 @@ class WorkspaceServiceHandlerTest {
     }
 
     @Test
-    fun `test no invoked messages when events are empty`() = runTest {
+    fun `test no invoked messages when events are empty`() {
         // Act
         sut.after(emptyList())
 
@@ -426,7 +451,7 @@ class WorkspaceServiceHandlerTest {
     }
 
     @Test
-    fun `test didRenameFiles with supported file`() = runTest {
+    fun `test didRenameFiles with supported file`() {
         // Arrange
         val oldName = "oldFile.java"
         val newName = "newFile.java"
@@ -441,6 +466,7 @@ class WorkspaceServiceHandlerTest {
         // Act
         sut.after(listOf(propertyEvent))
 
+        testScope.advanceUntilIdle()
         val closeParams = slot<DidCloseTextDocumentParams>()
         verify { mockTextDocumentService.didClose(capture(closeParams)) }
         assertThat(closeParams.captured.textDocument.uri).isEqualTo(normalizeFileUri("file:///testDir/$oldName"))
@@ -464,7 +490,7 @@ class WorkspaceServiceHandlerTest {
     }
 
     @Test
-    fun `test didRenameFiles with unsupported file type`() = runTest {
+    fun `test didRenameFiles with unsupported file type`() {
         // Arrange
         val propertyEvent = createMockPropertyChangeEvent(
             oldName = "oldFile.txt",
@@ -476,13 +502,14 @@ class WorkspaceServiceHandlerTest {
         sut.after(listOf(propertyEvent))
 
         // Assert
+        testScope.advanceUntilIdle()
         verify(exactly = 0) { mockTextDocumentService.didClose(any()) }
         verify(exactly = 0) { mockTextDocumentService.didOpen(any()) }
         verify(exactly = 0) { mockWorkspaceService.didRenameFiles(any()) }
     }
 
     @Test
-    fun `test didRenameFiles with directory`() = runTest {
+    fun `test didRenameFiles with directory`() {
         // Arrange
         val propertyEvent = createMockPropertyChangeEvent(
             oldName = "oldDir",
@@ -494,6 +521,7 @@ class WorkspaceServiceHandlerTest {
         sut.after(listOf(propertyEvent))
 
         // Assert
+        testScope.advanceUntilIdle()
         verify(exactly = 0) { mockTextDocumentService.didClose(any()) }
         verify(exactly = 0) { mockTextDocumentService.didOpen(any()) }
         val paramsSlot = slot<RenameFilesParams>()
@@ -505,7 +533,7 @@ class WorkspaceServiceHandlerTest {
     }
 
     @Test
-    fun `test didRenameFiles with multiple files`() = runTest {
+    fun `test didRenameFiles with multiple files`() {
         // Arrange
         val event1 = createMockPropertyChangeEvent(
             oldName = "old1.java",
@@ -524,6 +552,7 @@ class WorkspaceServiceHandlerTest {
         sut.after(listOf(event1, event2))
 
         // Assert
+        testScope.advanceUntilIdle()
         val paramsSlot = slot<RenameFilesParams>()
         verify { mockWorkspaceService.didRenameFiles(capture(paramsSlot)) }
         assertThat(paramsSlot.captured.files).hasSize(2)
@@ -541,7 +570,7 @@ class WorkspaceServiceHandlerTest {
     }
 
     @Test
-    fun `rootsChanged does not notify when no changes`() = runTest {
+    fun `rootsChanged does not notify when no changes`() {
         // Arrange
         mockkObject(WorkspaceFolderUtil)
         val folders = listOf(
@@ -557,12 +586,13 @@ class WorkspaceServiceHandlerTest {
         sut.rootsChanged(mockk())
 
         // Assert
+        testScope.advanceUntilIdle()
         verify(exactly = 0) { mockWorkspaceService.didChangeWorkspaceFolders(any()) }
     }
 
     // rootsChanged handles
     @Test
-    fun `rootsChanged handles init`() = runTest {
+    fun `rootsChanged handles init`() {
         // Arrange
         mockkObject(WorkspaceFolderUtil)
         val oldFolders = emptyList<WorkspaceFolder>()
@@ -580,6 +610,7 @@ class WorkspaceServiceHandlerTest {
         sut.rootsChanged(mockk())
 
         // Assert
+        testScope.advanceUntilIdle()
         val paramsSlot = slot<DidChangeWorkspaceFoldersParams>()
         verify(exactly = 1) { mockWorkspaceService.didChangeWorkspaceFolders(capture(paramsSlot)) }
         assertThat(paramsSlot.captured.event.added).hasSize(1)
@@ -588,7 +619,7 @@ class WorkspaceServiceHandlerTest {
 
     // rootsChanged handles additional files added to root
     @Test
-    fun `rootsChanged handles additional files added to root`() = runTest {
+    fun `rootsChanged handles additional files added to root`() {
         // Arrange
         mockkObject(WorkspaceFolderUtil)
         val oldFolders = listOf(
@@ -615,6 +646,7 @@ class WorkspaceServiceHandlerTest {
         sut.rootsChanged(mockk())
 
         // Assert
+        testScope.advanceUntilIdle()
         val paramsSlot = slot<DidChangeWorkspaceFoldersParams>()
         verify(exactly = 1) { mockWorkspaceService.didChangeWorkspaceFolders(capture(paramsSlot)) }
         assertThat(paramsSlot.captured.event.added).hasSize(1)
@@ -623,7 +655,7 @@ class WorkspaceServiceHandlerTest {
 
     // rootsChanged handles removal of files from root
     @Test
-    fun `rootsChanged handles removal of files from root`() = runTest {
+    fun `rootsChanged handles removal of files from root`() {
         // Arrange
         mockkObject(WorkspaceFolderUtil)
         val oldFolders = listOf(
@@ -650,6 +682,7 @@ class WorkspaceServiceHandlerTest {
         sut.rootsChanged(mockk())
 
         // Assert
+        testScope.advanceUntilIdle()
         val paramsSlot = slot<DidChangeWorkspaceFoldersParams>()
         verify(exactly = 1) { mockWorkspaceService.didChangeWorkspaceFolders(capture(paramsSlot)) }
         assertThat(paramsSlot.captured.event.removed).hasSize(1)
@@ -657,7 +690,7 @@ class WorkspaceServiceHandlerTest {
     }
 
     @Test
-    fun `rootsChanged handles multiple simultaneous additions and removals`() = runTest {
+    fun `rootsChanged handles multiple simultaneous additions and removals`() {
         // Arrange
         mockkObject(WorkspaceFolderUtil)
         val oldFolders = listOf(
@@ -688,6 +721,7 @@ class WorkspaceServiceHandlerTest {
         sut.rootsChanged(mockk())
 
         // Assert
+        testScope.advanceUntilIdle()
         val paramsSlot = slot<DidChangeWorkspaceFoldersParams>()
         verify(exactly = 1) { mockWorkspaceService.didChangeWorkspaceFolders(capture(paramsSlot)) }
         assertThat(paramsSlot.captured.event.added).hasSize(1)

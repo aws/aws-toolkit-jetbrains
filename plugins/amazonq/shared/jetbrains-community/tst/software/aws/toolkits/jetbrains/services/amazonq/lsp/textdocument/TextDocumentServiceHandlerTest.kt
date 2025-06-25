@@ -16,6 +16,7 @@ import com.intellij.testFramework.LightVirtualFile
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory
 import com.intellij.testFramework.replaceService
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
@@ -23,6 +24,8 @@ import io.mockk.mockkStatic
 import io.mockk.slot
 import io.mockk.spyk
 import io.mockk.verify
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import org.assertj.core.api.Assertions.assertThat
@@ -50,6 +53,8 @@ class TextDocumentServiceHandlerTest {
     private lateinit var mockLanguageServer: AmazonQLanguageServer
     private lateinit var mockTextDocumentService: TextDocumentService
     private lateinit var sut: TextDocumentServiceHandler
+    // not ideal
+    private lateinit var testScope: TestScope
 
     @get:Rule
     val projectRule = object : CodeInsightTestFixtureRule() {
@@ -80,8 +85,8 @@ class TextDocumentServiceHandlerTest {
         projectRule.project.replaceService(AmazonQLspService::class.java, mockLspService, disposableRule.disposable)
 
         // Mock the LSP service's executeSync method as a suspend function
-        every {
-            mockLspService.executeSync<CompletableFuture<ResponseMessage>>(any())
+        coEvery {
+            mockLspService.execute<CompletableFuture<ResponseMessage>>(any())
         } coAnswers {
             val func = firstArg<suspend AmazonQLspService.(AmazonQLanguageServer) -> CompletableFuture<ResponseMessage>>()
             func.invoke(mockLspService, mockLanguageServer)
@@ -94,11 +99,12 @@ class TextDocumentServiceHandlerTest {
         every { mockTextDocumentService.didOpen(any()) } returns Unit
         every { mockTextDocumentService.didClose(any()) } returns Unit
 
-        sut = TextDocumentServiceHandler(projectRule.project)
+        testScope = TestScope()
+        sut = TextDocumentServiceHandler(projectRule.project, testScope)
     }
 
     @Test
-    fun `didSave runs on beforeDocumentSaving`() = runTest {
+    fun `didSave runs on beforeDocumentSaving`() {
         // Create test document and file
         val uri = URI.create("file:///test/path/file.txt")
         val document = mockk<Document> {
@@ -120,6 +126,7 @@ class TextDocumentServiceHandlerTest {
             sut.beforeDocumentSaving(document)
 
             // Verify the correct LSP method was called with matching parameters
+            testScope.advanceUntilIdle()
             val paramsSlot = slot<DidSaveTextDocumentParams>()
             verify { mockTextDocumentService.didSave(capture(paramsSlot)) }
 
@@ -137,8 +144,9 @@ class TextDocumentServiceHandlerTest {
             projectRule.fixture.createFile("name", content).also { projectRule.fixture.openFileInEditor(it) }
         }
 
-        sut = TextDocumentServiceHandler(projectRule.project)
+        sut = TextDocumentServiceHandler(projectRule.project, this)
 
+        advanceUntilIdle()
         val paramsSlot = mutableListOf<DidOpenTextDocumentParams>()
         verify { mockTextDocumentService.didOpen(capture(paramsSlot)) }
 
@@ -158,6 +166,8 @@ class TextDocumentServiceHandlerTest {
 
         sut.fileOpened(mockk(), file)
 
+        advanceUntilIdle()
+        testScope.advanceUntilIdle()
         val paramsSlot = mutableListOf<DidOpenTextDocumentParams>()
         verify { mockTextDocumentService.didOpen(capture(paramsSlot)) }
 
@@ -175,6 +185,8 @@ class TextDocumentServiceHandlerTest {
 
         sut.fileClosed(mockk(), file)
 
+        advanceUntilIdle()
+        testScope.advanceUntilIdle()
         val paramsSlot = slot<DidCloseTextDocumentParams>()
         verify { mockTextDocumentService.didClose(capture(paramsSlot)) }
 
@@ -194,6 +206,8 @@ class TextDocumentServiceHandlerTest {
         }
 
         // Verify the correct LSP method was called with matching parameters
+        advanceUntilIdle()
+        testScope.advanceUntilIdle()
         val paramsSlot = mutableListOf<DidChangeTextDocumentParams>()
         verify { mockTextDocumentService.didChange(capture(paramsSlot)) }
 
@@ -220,6 +234,7 @@ class TextDocumentServiceHandlerTest {
 
                 sut.beforeDocumentSaving(document)
 
+                testScope.advanceUntilIdle()
                 verify(exactly = 0) { mockTextDocumentService.didSave(any()) }
             }
         }
@@ -238,6 +253,7 @@ class TextDocumentServiceHandlerTest {
 
             sut.beforeDocumentSaving(document)
 
+            testScope.advanceUntilIdle()
             verify(exactly = 0) { mockTextDocumentService.didSave(any()) }
         }
     }
@@ -248,6 +264,7 @@ class TextDocumentServiceHandlerTest {
 
         sut.after(mutableListOf(nonContentEvent))
 
+        testScope.advanceUntilIdle()
         verify(exactly = 0) { mockTextDocumentService.didChange(any()) }
     }
 
@@ -273,6 +290,7 @@ class TextDocumentServiceHandlerTest {
 
             sut.after(mutableListOf(changeEvent))
 
+            testScope.advanceUntilIdle()
             verify(exactly = 0) { mockTextDocumentService.didChange(any()) }
         }
     }
