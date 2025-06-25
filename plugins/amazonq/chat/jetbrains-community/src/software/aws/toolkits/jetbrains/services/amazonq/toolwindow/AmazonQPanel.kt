@@ -21,6 +21,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
@@ -47,9 +48,12 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isCodeTrans
 import software.aws.toolkits.resources.message
 import java.awt.datatransfer.DataFlavor
 import java.awt.dnd.DropTarget
+import java.awt.dnd.DropTargetDragEvent
 import java.awt.dnd.DropTargetDropEvent
+import java.awt.dnd.DropTargetEvent
 import java.util.concurrent.CompletableFuture
 import javax.swing.JButton
+import javax.imageio.ImageIO.read
 
 class AmazonQPanel(val project: Project, private val scope: CoroutineScope) : Disposable {
     private val browser = CompletableFuture<Browser>()
@@ -163,7 +167,7 @@ class AmazonQPanel(val project: Project, private val scope: CoroutineScope) : Di
 
                                                 // Width/Height restriction (only for image types)
                                                 try {
-                                                    val img = javax.imageio.ImageIO.read(fileObj)
+                                                    val img = read(fileObj)
                                                     if (img == null) {
                                                         errorMessages.add("$fileName: File could not be read as an image.")
                                                         continue
@@ -190,23 +194,26 @@ class AmazonQPanel(val project: Project, private val scope: CoroutineScope) : Di
                                                 validImages.subList(20, validImages.size).clear()
                                             }
 
-                                            val json = Gson().toJson(validImages).replace("\\", "\\\\").replace("'", "\\'")
+                                            val json = Gson().toJson(validImages)
                                             browserInstance.jcefBrowser.cefBrowser.executeJavaScript(
                                                 "window.handleNativeDrop('$json')",
                                                 browserInstance.jcefBrowser.cefBrowser.url,
                                                 0
                                             )
 
-                                            val errorJson = Gson().toJson(errorMessages).replace("\\", "\\\\").replace("'", "\\'")
+                                            val errorJson = Gson().toJson(errorMessages)
                                             browserInstance.jcefBrowser.cefBrowser.executeJavaScript(
                                                 "window.handleNativeNotify('$errorJson')",
                                                 browserInstance.jcefBrowser.cefBrowser.url,
                                                 0
                                             )
+                                            
+                                            dtde.dropComplete(true)
+                                        } else {
+                                            dtde.dropComplete(false)
                                         }
-                                        dtde.dropComplete(true)
                                     } catch (e: Exception) {
-                                        e.printStackTrace()
+                                        LOG.error("Failed to handle file drop operation", e.message)
                                         dtde.dropComplete(false)
                                     }
                                 }
@@ -303,6 +310,12 @@ class AmazonQPanel(val project: Project, private val scope: CoroutineScope) : Di
                 themeSource = editorThemeAdapter.onThemeChange(),
             )
         }
+    }
+
+    companion object {
+        private val LOG = getLogger<AmazonQPanel>()
+
+        fun getInstance(project: Project) = project.service<AmazonQPanel>()
     }
 
     override fun dispose() {

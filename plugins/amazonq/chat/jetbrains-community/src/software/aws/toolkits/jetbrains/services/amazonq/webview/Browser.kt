@@ -125,7 +125,7 @@ class Browser(parent: Disposable, private val webUri: URI, val project: Project)
             <script type="text/javascript" charset="UTF-8" src="$webUri" defer onload="init()"></script>
             
             <script type="text/javascript">
-                let qChat = undefined
+                
                 const init = () => {
                     const hybridChatConnector = connectorAdapter.initiateAdapter(
                      ${MeetQSettings.getInstance().reinvent2024OnboardingCount < MAX_ONBOARDING_PAGE_COUNT},
@@ -158,7 +158,7 @@ class Browser(parent: Disposable, private val webUri: URI, val project: Project)
                         hybridChatConnector,
                         ${CodeWhispererFeatureConfigService.getInstance().getFeatureConfigJsonString()}                     
                     );
-                    window.qChat = qChat;
+                    
                     window.handleNativeDrop = function(filePath) {
                         const parsedFilePath = JSON.parse(filePath);
                         const contextArray = parsedFilePath.map(fileObj => {

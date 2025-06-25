@@ -25,6 +25,7 @@ data class DeveloperProfiles(
     val developerProfiles: Boolean,
     val mcp: Boolean,
     val pinnedContextEnabled: Boolean,
+    val imageContextEnabled: Boolean = true,
 )
 
 data class WindowSettings(
@@ -65,6 +66,7 @@ fun createExtendedClientMetadata(project: Project): ExtendedClientMetadata {
                     developerProfiles = true,
                     mcp = true,
                     pinnedContextEnabled = true,
+                    imageContextEnabled = true,
                 ),
                 window = WindowSettings(
                     showSaveFileDialog = true
