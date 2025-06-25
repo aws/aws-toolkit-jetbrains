@@ -19,9 +19,7 @@ import com.intellij.codeInsight.inline.completion.session.InlineCompletionSessio
 import com.intellij.codeInsight.inline.completion.suggestion.InlineCompletionSuggestion
 import com.intellij.codeInsight.inline.completion.suggestion.InlineCompletionSuggestionUpdateManager
 import com.intellij.codeInsight.inline.completion.suggestion.InlineCompletionVariant
-import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.actionSystem.DataKey
-import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.editor.Editor
@@ -29,7 +27,6 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.Key
-import com.intellij.openapi.util.UserDataHolderBase
 import com.intellij.ui.dsl.builder.Cell
 import com.intellij.ui.dsl.builder.RightGap
 import com.intellij.ui.dsl.builder.panel
@@ -169,20 +166,7 @@ class QInlineCompletionProvider(private val cs: CoroutineScope) : InlineCompleti
         val KEY_Q_AUTO_TRIGGER_INTELLISENSE = Key<Boolean>("amazon.q.auto.trigger.intellisense")
 
         fun invokeCompletion(editor: Editor, isIntelliSenseAccept: Boolean = false) {
-            val currentBuild = ApplicationInfo.getInstance().build.withoutProductCode()
-            val event =
-                if (currentBuild.baselineVersion == 242) {
-                    val dataContext = DataContext { dataId ->
-                        when (dataId) {
-                            DATA_KEY_Q_AUTO_TRIGGER_INTELLISENSE.name -> isIntelliSenseAccept
-                            else -> null
-                        }
-                    }
-                    InlineCompletionEvent.DirectCall(editor, editor.caretModel.currentCaret, dataContext)
-                } else {
-                    val data = UserDataHolderBase().apply { this.putUserData(KEY_Q_AUTO_TRIGGER_INTELLISENSE, isIntelliSenseAccept) }
-                    InlineCompletionEvent.ManualCall(editor, Q_INLINE_PROVIDER_ID, data)
-                }
+            val event = getManualCallEvent(editor, isIntelliSenseAccept)
             InlineCompletion.getHandlerOrNull(editor)?.invokeEvent(event)
         }
 
@@ -369,7 +353,7 @@ class QInlineCompletionProvider(private val cs: CoroutineScope) : InlineCompleti
                     CodeWhispererAutomatedTriggerType.Enter()
                 } else if (CodeWhispererConstants.SPECIAL_CHARACTERS_LIST.contains(triggerString)) {
                     CodeWhispererAutomatedTriggerType.SpecialChar(triggerString.single())
-                } else if (event is InlineCompletionEvent.ManualCall || event is InlineCompletionEvent.DirectCall) {
+                } else if (event.isManualCall()) {
                     CodeWhispererAutomatedTriggerType.IntelliSense()
                 } else {
                     CodeWhispererAutomatedTriggerType.Classifier()
@@ -583,15 +567,5 @@ class QInlineCompletionProvider(private val cs: CoroutineScope) : InlineCompleti
         if (!CodeWhispererExplorerActionManager.getInstance().isAutoEnabled() && event.isManualCall()) return false
         if (QRegionProfileManager.getInstance().hasValidConnectionButNoActiveProfile(project)) return false
         return true
-    }
-}
-
-// DirectCall is deprecated starting 243, replaced by ManualCall
-fun InlineCompletionEvent.isManualCall(): Boolean {
-    val currentBuild = ApplicationInfo.getInstance().build.withoutProductCode()
-    if (currentBuild.baselineVersion == 242) {
-        return this is InlineCompletionEvent.DirectCall && this.context?.getData(QInlineCompletionProvider.DATA_KEY_Q_AUTO_TRIGGER_INTELLISENSE) == false
-    } else {
-        return this is InlineCompletionEvent.ManualCall && this.additionalData.getUserData(QInlineCompletionProvider.KEY_Q_AUTO_TRIGGER_INTELLISENSE) == false
     }
 }

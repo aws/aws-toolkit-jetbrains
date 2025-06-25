@@ -57,9 +57,6 @@
             instance="software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererConfigurable"
         />
 
-        <typedHandler implementation="software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererTypedHandler"/>
-        <editorActionHandler action="EditorEnter" implementationClass="software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEnterHandler"
-                             order="first, before editorEnter"/>
         <fileEditorProvider implementation="software.aws.toolkits.jetbrains.services.codewhisperer.learn.LearnCodeWhispererEditorProvider"/>
 
         <!-- Inline Completion Provider -->
