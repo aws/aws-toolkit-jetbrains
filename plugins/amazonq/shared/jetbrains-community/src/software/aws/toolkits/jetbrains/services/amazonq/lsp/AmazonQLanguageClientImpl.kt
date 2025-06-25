@@ -255,13 +255,68 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
     override fun showOpenFileDialog(params: ShowOpenFileDialogParams): CompletableFuture<LSPAny> {
         return CompletableFuture.supplyAsync(
             {
-                val descriptor = if (params.canSelectMany) {
-                    FileChooserDescriptorFactory.createMultipleFilesNoJarsDescriptor().apply {
-                        title = "Select Files"
-                        description = "Choose files to open"
+                // Handle the case where both canSelectFiles and canSelectFolders are false (should never be sent from flare)
+                if (!params.canSelectFiles && !params.canSelectFolders) {
+                    return@supplyAsync mapOf("uris" to emptyList<String>()) as LSPAny
+                }
+
+                val descriptor = when {
+                    params.canSelectFolders && params.canSelectFiles -> {
+                        if (params.canSelectMany) {
+                            FileChooserDescriptorFactory.createSingleFileOrFolderDescriptor()
+                        } else {
+                            FileChooserDescriptorFactory.createAllButJarContentsDescriptor()
+                        }
                     }
-                } else {
-                    FileChooserDescriptorFactory.createSingleFileNoJarsDescriptor()
+                    params.canSelectFolders -> {
+                        if (params.canSelectMany) {
+                            FileChooserDescriptorFactory.createMultipleFoldersDescriptor()
+                        } else {
+                            FileChooserDescriptorFactory.createSingleFolderDescriptor()
+                        }
+                    }
+                    else -> {
+                        if (params.canSelectMany) {
+                            FileChooserDescriptorFactory.createMultipleFilesNoJarsDescriptor()
+                        } else {
+                            FileChooserDescriptorFactory.createSingleFileNoJarsDescriptor()
+                        }
+                    }
+                }.apply {
+                    withTitle(
+                        params.title ?: when {
+                            params.canSelectFolders && params.canSelectFiles -> "Select Files or Folders"
+                            params.canSelectFolders -> "Select Folders"
+                            else -> "Select Files"
+                        }
+                    )
+                    withDescription(
+                        when {
+                            params.canSelectFolders && params.canSelectFiles -> "Choose files or folders to open"
+                            params.canSelectFolders -> "Choose folders to open"
+                            else -> "Choose files to open"
+                        }
+                    )
+
+                    // Apply file filters if provided
+                    if (params.filters.isNotEmpty() && !params.canSelectFolders) {
+                        // Create a combined list of all allowed extensions
+                        val allowedExtensions = params.filters.values.flatten()
+                            .map { pattern ->
+                                // Convert patterns like "*.jpg" to "jpg"
+                                pattern.removePrefix("*.").lowercase()
+                            }
+                            .toSet()
+
+                        withFileFilter { virtualFile ->
+                            if (virtualFile.isDirectory) {
+                                true // Always allow directories for navigation
+                            } else {
+                                val extension = virtualFile.extension?.lowercase()
+                                extension != null && allowedExtensions.contains(extension)
+                            }
+                        }
+                    }
                 }
 
                 val chosenFiles = FileChooser.chooseFiles(descriptor, project, null)

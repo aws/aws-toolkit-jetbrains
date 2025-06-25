@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.toolwindow
 
+import com.google.gson.Gson
 import com.intellij.idea.AppMode
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.service
@@ -44,13 +45,11 @@ import software.aws.toolkits.jetbrains.services.amazonqDoc.auth.isDocAvailable
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.auth.isFeatureDevAvailable
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isCodeTransformAvailable
 import software.aws.toolkits.resources.message
-import java.util.concurrent.CompletableFuture
-import javax.swing.JButton
+import java.awt.datatransfer.DataFlavor
 import java.awt.dnd.DropTarget
 import java.awt.dnd.DropTargetDropEvent
-import java.awt.datatransfer.DataFlavor
-import com.google.gson.Gson
-import java.util.Base64
+import java.util.concurrent.CompletableFuture
+import javax.swing.JButton
 
 class AmazonQPanel(val project: Project, private val scope: CoroutineScope) : Disposable {
     private val browser = CompletableFuture<Browser>()
@@ -133,7 +132,6 @@ class AmazonQPanel(val project: Project, private val scope: CoroutineScope) : Di
                             // Add DropTarget to the browser component
                             val dropTarget = object : DropTarget() {
                                 override fun drop(dtde: DropTargetDropEvent) {
-
                                     try {
                                         dtde.acceptDrop(dtde.dropAction)
                                         val transferable = dtde.transferable
@@ -192,8 +190,6 @@ class AmazonQPanel(val project: Project, private val scope: CoroutineScope) : Di
                                                 validImages.subList(20, validImages.size).clear()
                                             }
 
-
-
                                             val json = Gson().toJson(validImages).replace("\\", "\\\\").replace("'", "\\'")
                                             browserInstance.jcefBrowser.cefBrowser.executeJavaScript(
                                                 "window.handleNativeDrop('$json')",
@@ -207,7 +203,6 @@ class AmazonQPanel(val project: Project, private val scope: CoroutineScope) : Di
                                                 browserInstance.jcefBrowser.cefBrowser.url,
                                                 0
                                             )
-
                                         }
                                         dtde.dropComplete(true)
                                     } catch (e: Exception) {
@@ -216,7 +211,7 @@ class AmazonQPanel(val project: Project, private val scope: CoroutineScope) : Di
                                     }
                                 }
                             }
-                            
+
                             // Set DropTarget on the browser component and its children
                             browserInstance.component()?.let { component ->
                                 component.dropTarget = dropTarget
