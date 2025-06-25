@@ -6,6 +6,11 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp.auth
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
 import com.intellij.util.concurrency.AppExecutorUtil
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.future.asCompletableFuture
+import kotlinx.coroutines.future.await
+import kotlinx.coroutines.launch
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseMessage
 import software.aws.toolkits.core.TokenConnectionSettings
 import software.aws.toolkits.core.utils.getLogger
@@ -19,7 +24,6 @@ import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenPr
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LspServerConfigurations
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.UpdateConfigurationParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.BearerCredentials
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.ConnectionMetadata
@@ -38,6 +42,7 @@ import java.util.concurrent.TimeUnit
 class DefaultAuthCredentialsService(
     private val project: Project,
     private val encryptionManager: JwtEncryptionManager,
+    private val cs: CoroutineScope,
 ) : AuthCredentialsService,
     BearerTokenProviderListener,
     ToolkitConnectionManagerListener,
@@ -111,23 +116,26 @@ class DefaultAuthCredentialsService(
             return CompletableFuture.failedFuture(e)
         }
 
-        val future = AmazonQLspService.executeIfRunning(project) { server ->
-            server.updateTokenCredentials(payload)
-        } ?: CompletableFuture.failedFuture(IllegalStateException("LSP Server not running"))
+        return cs.async {
+            val result = AmazonQLspService.executeAsyncIfRunning(project) { server ->
+                server.updateTokenCredentials(payload)
+            } ?: CompletableFuture.failedFuture(IllegalStateException("LSP Server not running"))
 
-        return future.thenApply { response ->
-            updateConfiguration()
-            response
-        }
+            result.thenApply { response ->
+                updateConfiguration()
+
+                response
+            }.await()
+        }.asCompletableFuture()
     }
 
-    override fun deleteTokenCredentials(): CompletableFuture<Unit> =
-        CompletableFuture<Unit>().also { completableFuture ->
-            AmazonQLspService.executeIfRunning(project) { server ->
+    override fun deleteTokenCredentials() {
+        cs.launch {
+            AmazonQLspService.executeAsyncIfRunning(project) { server ->
                 server.deleteTokenCredentials()
-                completableFuture.complete(null)
-            } ?: completableFuture.completeExceptionally(IllegalStateException("LSP Server not running"))
+            }
         }
+    }
 
     override fun onChange(providerId: String, newScopes: List<String>?) {
         updateTokenFromActiveConnection()
@@ -189,16 +197,18 @@ class DefaultAuthCredentialsService(
         updateConfiguration()
     }
 
-    private fun updateConfiguration(): CompletableFuture<LspServerConfigurations> {
-        val payload = UpdateConfigurationParams(
-            section = "aws.q",
-            settings = mapOf(
-                "profileArn" to QRegionProfileManager.getInstance().activeProfile(project)?.arn
+    private fun updateConfiguration() {
+        cs.launch {
+            val payload = UpdateConfigurationParams(
+                section = "aws.q",
+                settings = mapOf(
+                    "profileArn" to QRegionProfileManager.getInstance().activeProfile(project)?.arn
+                )
             )
-        )
-        return AmazonQLspService.executeIfRunning(project) { server ->
-            server.updateConfiguration(payload)
-        } ?: (CompletableFuture.failedFuture(IllegalStateException("LSP Server not running")))
+            AmazonQLspService.executeAsyncIfRunning(project) { server ->
+                server.updateConfiguration(payload)
+            }
+        }
     }
 
     override fun dispose() {

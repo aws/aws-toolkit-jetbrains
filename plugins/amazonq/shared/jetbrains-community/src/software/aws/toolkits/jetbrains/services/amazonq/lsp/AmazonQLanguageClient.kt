@@ -9,7 +9,10 @@ import org.eclipse.lsp4j.services.LanguageClient
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LSPAny
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_OPEN_TAB
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_OPTIONS_UPDATE_NOTIFICATION
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_PINNED_CONTEXT_ADD
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_PINNED_CONTEXT_REMOVE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_CONTEXT_COMMANDS
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_PINNED_CONTEXT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_UPDATE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CopyFileParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.DID_APPEND_FILE
@@ -51,13 +54,22 @@ interface AmazonQLanguageClient : LanguageClient {
     fun getSerializedChat(params: LSPAny): CompletableFuture<GetSerializedChatResult>
 
     @JsonNotification(CHAT_SEND_UPDATE)
-    fun sendChatUpdate(params: LSPAny): CompletableFuture<Unit>
+    fun sendChatUpdate(params: LSPAny)
 
     @JsonNotification(OPEN_FILE_DIFF)
-    fun openFileDiff(params: OpenFileDiffParams): CompletableFuture<Unit>
+    fun openFileDiff(params: OpenFileDiffParams)
 
     @JsonNotification(CHAT_SEND_CONTEXT_COMMANDS)
-    fun sendContextCommands(params: LSPAny): CompletableFuture<Unit>
+    fun sendContextCommands(params: LSPAny)
+
+    @JsonNotification(CHAT_SEND_PINNED_CONTEXT)
+    fun sendPinnedContext(params: LSPAny)
+
+    @JsonNotification(CHAT_PINNED_CONTEXT_ADD)
+    fun pinnedContextAdd(params: LSPAny)
+
+    @JsonNotification(CHAT_PINNED_CONTEXT_REMOVE)
+    fun pinnedContextRemove(params: LSPAny)
 
     @JsonNotification(DID_COPY_FILE)
     fun copyFile(params: CopyFileParams)
