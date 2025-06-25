@@ -116,7 +116,7 @@ class BrowserConnector(
     private val themeBrowserAdapter: ThemeBrowserAdapter = ThemeBrowserAdapter(),
     private val project: Project,
 ) {
-    var uiReady = CompletableDeferred<Boolean>()
+    val uiReady = CompletableDeferred<Boolean>()
     private val chatCommunicationManager = ChatCommunicationManager.getInstance(project)
     private val chatAsyncResultManager = ChatAsyncResultManager.getInstance(project)
 
@@ -216,7 +216,7 @@ class BrowserConnector(
         }
     }
 
-    private fun handleFlareChatMessages(browser: Browser, node: JsonNode) {
+    private suspend fun handleFlareChatMessages(browser: Browser, node: JsonNode) {
         when (node.command) {
             SEND_CHAT_COMMAND_PROMPT -> {
                 val requestFromUi = serializer.deserializeChatMessages<SendChatPromptRequest>(node)
@@ -238,7 +238,7 @@ class BrowserConnector(
                 chatCommunicationManager.registerPartialResultToken(partialResultToken)
 
                 var encryptionManager: JwtEncryptionManager? = null
-                val result = AmazonQLspService.executeIfRunning(project) { server ->
+                val result = AmazonQLspService.executeAsyncIfRunning(project) { server ->
                     encryptionManager = this.encryptionManager
 
                     val encryptedParams = EncryptedChatParams(this.encryptionManager.encrypt(chatParams), partialResultToken)
@@ -258,7 +258,7 @@ class BrowserConnector(
                 val partialResultToken = chatCommunicationManager.addPartialChatMessage(tabId)
                 chatCommunicationManager.registerPartialResultToken(partialResultToken)
                 var encryptionManager: JwtEncryptionManager? = null
-                val result = AmazonQLspService.executeIfRunning(project) { server ->
+                val result = AmazonQLspService.executeAsyncIfRunning(project) { server ->
                     encryptionManager = this.encryptionManager
 
                     val encryptedParams = EncryptedQuickActionChatParams(this.encryptionManager.encrypt(quickActionParams), partialResultToken)
@@ -613,7 +613,7 @@ class BrowserConnector(
         }
     }
 
-    private inline fun <reified Request, Response> handleChat(
+    private suspend inline fun <reified Request, Response> handleChat(
         lspMethod: JsonRpcMethod<Request, Response>,
         node: JsonNode,
         crossinline serverAction: (params: Request, invokeService: () -> CompletableFuture<Response>) -> CompletableFuture<Response>,
@@ -624,7 +624,7 @@ class BrowserConnector(
             serializer.deserializeChatMessages<Request>(node.params, lspMethod.params)
         }
 
-        return AmazonQLspService.executeIfRunning(project) { _ ->
+        return AmazonQLspService.executeAsyncIfRunning(project) { _ ->
             val invokeService = when (lspMethod) {
                 is JsonRpcNotification<Request> -> {
                     // notify is Unit
@@ -646,7 +646,7 @@ class BrowserConnector(
         } ?: CompletableFuture.failedFuture<Response>(IllegalStateException("LSP Server not running"))
     }
 
-    private inline fun <reified Request, Response> handleChat(
+    private suspend inline fun <reified Request, Response> handleChat(
         lspMethod: JsonRpcMethod<Request, Response>,
         node: JsonNode,
     ): CompletableFuture<Response> = handleChat(
