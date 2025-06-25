@@ -26,16 +26,16 @@ interface AmazonQLanguageServer : LanguageServer {
     fun inlineCompletionWithReferences(params: InlineCompletionWithReferencesParams): CompletableFuture<InlineCompletionListWithReferences>
 
     @JsonNotification("aws/logInlineCompletionSessionResults")
-    fun logInlineCompletionSessionResults(params: LogInlineCompletionSessionResultsParams): CompletableFuture<Unit>
+    fun logInlineCompletionSessionResults(params: LogInlineCompletionSessionResultsParams)
 
     @JsonNotification("aws/didChangeDependencyPaths")
-    fun didChangeDependencyPaths(params: DidChangeDependencyPathsParams): CompletableFuture<Unit>
+    fun didChangeDependencyPaths(params: DidChangeDependencyPathsParams)
 
     @JsonRequest("aws/credentials/token/update")
     fun updateTokenCredentials(payload: UpdateCredentialsPayload): CompletableFuture<ResponseMessage>
 
     @JsonNotification("aws/credentials/token/delete")
-    fun deleteTokenCredentials(): CompletableFuture<Unit>
+    fun deleteTokenCredentials()
 
     @JsonRequest("aws/getConfigurationFromServer")
     fun getConfigurationFromServer(params: GetConfigurationFromServerParams): CompletableFuture<LspServerConfigurations>

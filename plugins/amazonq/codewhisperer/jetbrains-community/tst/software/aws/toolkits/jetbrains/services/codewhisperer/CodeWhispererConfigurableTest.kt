@@ -8,6 +8,7 @@ import com.intellij.ui.dsl.builder.components.DslLabel
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 import org.mockito.kotlin.doNothing
+import org.mockito.kotlin.whenever
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererConfigurable
 import software.aws.toolkits.resources.message
@@ -19,9 +20,9 @@ class CodeWhispererConfigurableTest : CodeWhispererTestBase() {
 
     @Test
     fun `test CodeWhisperer configurable`() {
-        doNothing().`when`(codeScanManager).buildCodeScanUI()
-        doNothing().`when`(codeScanManager).showCodeScanUI()
-        doNothing().`when`(codeScanManager).removeCodeScanUI()
+        doNothing().whenever(codeScanManager).buildCodeScanUI()
+        doNothing().whenever(codeScanManager).showCodeScanUI()
+        doNothing().whenever(codeScanManager).removeCodeScanUI()
         val configurable = CodeWhispererConfigurable(projectRule.project)
 
         // A workaround to initialize disposable in the DslConfigurableBase since somehow the disposable is
