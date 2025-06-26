@@ -26,34 +26,24 @@ class AuthController {
      */
     fun getAuthNeededStates(project: Project): AuthNeededStates {
         val connectionState = checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q)
-        val codeWhispererState = checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER)
 
         // CW chat is enabled for Builder and IDC users, same for Amazon Q
         return AuthNeededStates(
-            chat = getAuthNeededState(connectionState, codeWhispererState),
-            amazonQ = getAuthNeededState(connectionState, codeWhispererState)
+            chat = getAuthNeededState(connectionState),
+            amazonQ = getAuthNeededState(connectionState)
         )
     }
 
     private fun getAuthNeededState(
         amazonqConnectionState: ActiveConnection,
-        codeWhispererConnectionState: ActiveConnection,
         onlyIamIdcConnection: Boolean = false,
     ): AuthNeededState? =
         when (amazonqConnectionState) {
             ActiveConnection.NotConnected -> {
-                if (codeWhispererConnectionState == ActiveConnection.NotConnected) {
-                    AuthNeededState(
-                        message = message("q.connection.disconnected"),
-                        authType = AuthFollowUpType.FullAuth,
-                    )
-                } else {
-                    // There is a connection for codewhisperer, but it's not valid for Q
-                    AuthNeededState(
-                        message = message("q.connection.need_scopes"),
-                        authType = AuthFollowUpType.MissingScopes,
-                    )
-                }
+                AuthNeededState(
+                    message = message("q.connection.disconnected"),
+                    authType = AuthFollowUpType.FullAuth,
+                )
             }
 
             is ActiveConnection.ValidBearer -> {
