@@ -12,12 +12,12 @@ import software.amazon.awssdk.services.codewhispererruntime.model.OperatingSyste
 import software.amazon.awssdk.services.codewhispererruntime.model.UserContext
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
+import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.services.telemetry.ClientMetadata
 
 fun <T> calculateIfIamIdentityCenterConnection(project: Project, calculationTask: (connection: ToolkitConnection) -> T): T? =
-    ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())?.let {
+    ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())?.let {
         calculateIfIamIdentityCenterConnection(it, calculationTask)
     }
 
@@ -29,7 +29,7 @@ fun <T> calculateIfIamIdentityCenterConnection(connection: ToolkitConnection, ca
     }
 
 fun <T> calculateIfBIDConnection(project: Project, calculationTask: (connection: ToolkitConnection) -> T): T? =
-    ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())?.let {
+    ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())?.let {
         if (it.isSono()) {
             calculationTask(it)
         } else {

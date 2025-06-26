@@ -326,6 +326,6 @@ class CodeWhispererConfigurable(private val project: Project) :
     }
 
     companion object {
-        private const val Q_INLINE_KEYBINDING_SEARCH_TEXT = "Amazon Q"
+        private const val Q_INLINE_KEYBINDING_SEARCH_TEXT = "Inline Proposal"
     }
 }
