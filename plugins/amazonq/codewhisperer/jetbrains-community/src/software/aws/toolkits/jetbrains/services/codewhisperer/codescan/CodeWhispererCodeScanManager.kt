@@ -67,7 +67,7 @@ import software.aws.toolkits.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
+import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.listeners.CodeWhispererCodeScanDocumentListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.listeners.CodeWhispererCodeScanEditorMouseMotionListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.listeners.CodeWhispererCodeScanFileListener
@@ -384,7 +384,7 @@ class CodeWhispererCodeScanManager(val project: Project, private val defaultScop
         var codeScanStatus: Result = Result.Failed
         val startTime = Instant.now().toEpochMilli()
         var codeScanResponseContext = defaultCodeScanResponseContext()
-        val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())
+        val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
         var language: CodeWhispererProgrammingLanguage = CodeWhispererUnknownLanguage.INSTANCE
         var skipTelemetry = false
         try {

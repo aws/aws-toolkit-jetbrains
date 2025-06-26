@@ -30,7 +30,7 @@ import software.aws.toolkits.jetbrains.core.credentials.ReauthSource
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.maybeReauthProviderIfNeeded
-import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
+import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.reauthConnectionIfNeeded
 import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
@@ -62,7 +62,7 @@ import java.nio.file.Paths
 // 1. It will be sent for Builder ID users, only if they have optin telemetry sharing.
 // 2. It will be sent for IdC users, regardless of telemetry optout status.
 fun runIfIdcConnectionOrTelemetryEnabled(project: Project, callback: (connection: ToolkitConnection) -> Unit) =
-    ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())?.let {
+    ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())?.let {
         runIfIdcConnectionOrTelemetryEnabled(it, callback)
     }
 
@@ -279,14 +279,14 @@ object CodeWhispererUtil {
     fun getCodeWhispererStartUrl(project: Project): String? {
         val connection = ToolkitConnectionManager.getInstance(
             project
-        ).activeConnectionForFeature(CodeWhispererConnection.getInstance()) as? AwsBearerTokenConnection?
+        ).activeConnectionForFeature(QConnection.getInstance()) as? AwsBearerTokenConnection?
         return connection?.startUrl
     }
 
     private fun tokenConnection(project: Project) = (
         ToolkitConnectionManager
             .getInstance(project)
-            .activeConnectionForFeature(CodeWhispererConnection.getInstance()) as? AwsBearerTokenConnection
+            .activeConnectionForFeature(QConnection.getInstance()) as? AwsBearerTokenConnection
         )
 
     private fun tokenProvider(project: Project) =
@@ -296,7 +296,7 @@ object CodeWhispererUtil {
             ?.delegate as? BearerTokenProvider
 
     fun reconnectCodeWhisperer(project: Project) {
-        val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())
+        val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
         if (connection !is ManagedBearerSsoConnection) return
         pluginAwareExecuteOnPooledThread {
             reauthConnectionIfNeeded(project, connection, isReAuth = true, reauthSource = ReauthSource.CODEWHISPERER)
