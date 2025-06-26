@@ -48,12 +48,10 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isCodeTrans
 import software.aws.toolkits.resources.message
 import java.awt.datatransfer.DataFlavor
 import java.awt.dnd.DropTarget
-import java.awt.dnd.DropTargetDragEvent
 import java.awt.dnd.DropTargetDropEvent
-import java.awt.dnd.DropTargetEvent
 import java.util.concurrent.CompletableFuture
-import javax.swing.JButton
 import javax.imageio.ImageIO.read
+import javax.swing.JButton
 
 class AmazonQPanel(val project: Project, private val scope: CoroutineScope) : Disposable {
     private val browser = CompletableFuture<Browser>()
@@ -207,7 +205,6 @@ class AmazonQPanel(val project: Project, private val scope: CoroutineScope) : Di
                                                 browserInstance.jcefBrowser.cefBrowser.url,
                                                 0
                                             )
-                                            
                                             dtde.dropComplete(true)
                                         } else {
                                             dtde.dropComplete(false)

@@ -532,7 +532,6 @@ class BrowserConnector(
             CHAT_PINNED_CONTEXT_REMOVE -> {
                 handleChat(AmazonQChatServer.pinnedContextRemove, node)
             }
-
         }
     }
 

@@ -257,8 +257,8 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
         )
     }
 
-    override fun showOpenFileDialog(params: ShowOpenFileDialogParams): CompletableFuture<LSPAny> {
-        return CompletableFuture.supplyAsync(
+    override fun showOpenFileDialog(params: ShowOpenFileDialogParams): CompletableFuture<LSPAny> =
+        CompletableFuture.supplyAsync(
             {
                 // Handle the case where both canSelectFiles and canSelectFolders are false (should never be sent from flare)
                 if (!params.canSelectFiles && !params.canSelectFolders) {
@@ -331,7 +331,6 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
             },
             ApplicationManager.getApplication()::invokeLater
         )
-    }
 
     override fun getSerializedChat(params: LSPAny): CompletableFuture<GetSerializedChatResult> {
         val requestId = UUID.randomUUID().toString()
