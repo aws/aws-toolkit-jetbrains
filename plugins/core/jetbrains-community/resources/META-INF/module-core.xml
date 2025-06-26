@@ -9,7 +9,6 @@
 
         <!-- need to resolve hard dependency on telemetry querying the status of these -->
         <connection.pinned.feature implementation="software.aws.toolkits.jetbrains.core.credentials.pinning.CodeCatalystConnection"/>
-        <connection.pinned.feature implementation="software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection"/>
         <connection.pinned.feature implementation="software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection"/>
     </extensions>
 </idea-plugin>

@@ -44,7 +44,7 @@ import javax.swing.JLabel
 import javax.swing.JPanel
 
 class CodeWhispererPopupComponents {
-    val prevButton = createNavigationButton(prevButtonText())
+    val prevButton = createNavigationButton("←")
     fun prevButtonText() =
         message(
             "codewhisperer.popup.button.prev",
@@ -53,7 +53,7 @@ class CodeWhispererPopupComponents {
                 ActionManager.getInstance().getAction("codewhisperer.inline.navigate.previous")
             )
         )
-    val nextButton = createNavigationButton(nextButtonText()).apply { preferredSize = prevButton.preferredSize }
+    val nextButton = createNavigationButton("→").apply { preferredSize = prevButton.preferredSize }
     fun nextButtonText() = message(
         "codewhisperer.popup.button.next",
         POPUP_DIM_HEX,

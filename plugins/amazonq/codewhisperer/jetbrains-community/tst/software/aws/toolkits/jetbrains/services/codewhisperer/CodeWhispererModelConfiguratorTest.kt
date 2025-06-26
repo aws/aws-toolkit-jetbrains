@@ -35,7 +35,7 @@ import software.aws.toolkits.jetbrains.core.credentials.LegacyManagedBearerSsoCo
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerState
-import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
+import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
@@ -416,7 +416,7 @@ class CodeWhispererModelConfiguratorTest {
         val builderIdConn = LegacyManagedBearerSsoConnection(region = SONO_REGION, startUrl = SONO_URL, scopes = Q_SCOPES)
         connectionManager.switchConnection(builderIdConn)
 
-        assertThat(connectionManager.activeConnectionForFeature(CodeWhispererConnection.getInstance()).isSono()).isTrue
+        assertThat(connectionManager.activeConnectionForFeature(QConnection.getInstance()).isSono()).isTrue
 
         val actual = sut.listCustomizations(projectRule.project)
         assertThat(actual).isNull()
