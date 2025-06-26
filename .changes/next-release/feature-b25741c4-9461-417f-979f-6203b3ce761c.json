@@ -1,4 +1,0 @@
-{
-  "type" : "feature",
-  "description" : "Amazon Q inline: The new UX allows configurable shortcuts for accepting completions and navigating through completions. *Caveat: for users using the previous versions, if you have configured your custom key shortcuts for the Q inline before, you will have to re-configure them again in Amazon Q settings due to a change in the keymap actions."
-}
