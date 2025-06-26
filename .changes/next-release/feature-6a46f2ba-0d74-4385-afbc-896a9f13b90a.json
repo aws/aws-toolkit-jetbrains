@@ -1,4 +1,0 @@
-{
-  "type" : "feature",
-  "description" : "Amazon Q inline: now Q completions can co-exist with JetBrains' native IntelliSense completions, when both are showing, press Tab or your customized key shortcuts to accept Q completions and press Enter to accept IntelliSense completions."
-}
