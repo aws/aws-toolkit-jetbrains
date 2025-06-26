@@ -590,9 +590,9 @@ private class AmazonQServerInstance(private val project: Project, private val cs
                 WorkspaceServiceHandler(project, cs, lspInitResult).also {
                     Disposer.register(this, it)
                 }
-                DefaultModuleDependenciesService(project, cs).also {
-                    Disposer.register(this, it)
-                }
+                // DefaultModuleDependenciesService(project, cs).also {
+                //    Disposer.register(this, it)
+                // }
             }
         }
     }
