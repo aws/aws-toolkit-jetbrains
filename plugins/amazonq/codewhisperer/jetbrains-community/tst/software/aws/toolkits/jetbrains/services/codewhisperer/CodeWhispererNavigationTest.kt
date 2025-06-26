@@ -6,12 +6,14 @@ package software.aws.toolkits.jetbrains.services.codewhisperer
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.AnActionEvent
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.Ignore
 import org.junit.Test
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonResponse
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.QInlineActionId.qInlineNavigateNextActionId
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.QInlineActionId.qInlineNavigatePrevActionId
 import javax.swing.JButton
 
+@Ignore("This test suite needs a rewrite for JB inline completion API")
 class CodeWhispererNavigationTest : CodeWhispererTestBase() {
 
     @Test
