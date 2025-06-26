@@ -22,6 +22,8 @@ import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.openapi.vfs.newvfs.BulkFileListener
 import com.intellij.openapi.vfs.newvfs.events.VFileContentChangeEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import org.eclipse.lsp4j.DidChangeTextDocumentParams
 import org.eclipse.lsp4j.DidCloseTextDocumentParams
 import org.eclipse.lsp4j.DidOpenTextDocumentParams
@@ -34,10 +36,10 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ACTIVE_EDITOR_CHANGED_NOTIFICATION
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.LspEditorUtil.getCursorState
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.LspEditorUtil.toUriString
-import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 
 class TextDocumentServiceHandler(
     private val project: Project,
+    private val cs: CoroutineScope,
 ) : FileDocumentManagerListener,
     FileEditorManagerListener,
     BulkFileListener,
@@ -81,9 +83,10 @@ class TextDocumentServiceHandler(
                 file.putUserData(KEY_REAL_TIME_EDIT_LISTENER, listener)
             }
         }
-        AmazonQLspService.executeIfRunning(project) { languageServer ->
-            toUriString(file)?.let { uri ->
-                pluginAwareExecuteOnPooledThread {
+
+        cs.launch {
+            AmazonQLspService.executeAsyncIfRunning(project) { languageServer ->
+                toUriString(file)?.let { uri ->
                     languageServer.textDocumentService.didOpen(
                         DidOpenTextDocumentParams().apply {
                             textDocument = TextDocumentItem().apply {
@@ -100,10 +103,10 @@ class TextDocumentServiceHandler(
     }
 
     override fun beforeDocumentSaving(document: Document) {
-        AmazonQLspService.executeIfRunning(project) { languageServer ->
-            val file = FileDocumentManager.getInstance().getFile(document) ?: return@executeIfRunning
-            toUriString(file)?.let { uri ->
-                pluginAwareExecuteOnPooledThread {
+        cs.launch {
+            AmazonQLspService.executeAsyncIfRunning(project) { languageServer ->
+                val file = FileDocumentManager.getInstance().getFile(document) ?: return@executeAsyncIfRunning
+                toUriString(file)?.let { uri ->
                     languageServer.textDocumentService.didSave(
                         DidSaveTextDocumentParams().apply {
                             textDocument = TextDocumentIdentifier().apply {
@@ -118,8 +121,8 @@ class TextDocumentServiceHandler(
     }
 
     override fun after(events: MutableList<out VFileEvent>) {
-        AmazonQLspService.executeIfRunning(project) { languageServer ->
-            pluginAwareExecuteOnPooledThread {
+        cs.launch {
+            AmazonQLspService.executeAsyncIfRunning(project) { languageServer ->
                 events.filterIsInstance<VFileContentChangeEvent>().forEach { event ->
                     val document = FileDocumentManager.getInstance().getCachedDocument(event.file) ?: return@forEach
                     toUriString(event.file)?.let { uri ->
@@ -158,15 +161,17 @@ class TextDocumentServiceHandler(
             FileDocumentManager.getInstance().getDocument(file)?.removeDocumentListener(listener)
             file.putUserData(KEY_REAL_TIME_EDIT_LISTENER, null)
         }
-        AmazonQLspService.executeIfRunning(project) { languageServer ->
-            toUriString(file)?.let { uri ->
-                languageServer.textDocumentService.didClose(
-                    DidCloseTextDocumentParams().apply {
-                        textDocument = TextDocumentIdentifier().apply {
-                            this.uri = uri
+        cs.launch {
+            AmazonQLspService.executeAsyncIfRunning(project) { languageServer ->
+                toUriString(file)?.let { uri ->
+                    languageServer.textDocumentService.didClose(
+                        DidCloseTextDocumentParams().apply {
+                            textDocument = TextDocumentIdentifier().apply {
+                                this.uri = uri
+                            }
                         }
-                    }
-                )
+                    )
+                }
             }
         }
     }
@@ -187,15 +192,17 @@ class TextDocumentServiceHandler(
         )
 
         // Send notification to the language server
-        AmazonQLspService.executeIfRunning(project) { _ ->
-            rawEndpoint.notify(ACTIVE_EDITOR_CHANGED_NOTIFICATION, params)
+        cs.launch {
+            AmazonQLspService.executeAsyncIfRunning(project) { _ ->
+                rawEndpoint.notify(ACTIVE_EDITOR_CHANGED_NOTIFICATION, params)
+            }
         }
     }
 
     private fun realTimeEdit(event: DocumentEvent) {
-        AmazonQLspService.executeIfRunning(project) { languageServer ->
-            pluginAwareExecuteOnPooledThread {
-                val vFile = FileDocumentManager.getInstance().getFile(event.document) ?: return@pluginAwareExecuteOnPooledThread
+        cs.launch {
+            AmazonQLspService.executeAsyncIfRunning(project) { languageServer ->
+                val vFile = FileDocumentManager.getInstance().getFile(event.document) ?: return@executeAsyncIfRunning
                 toUriString(vFile)?.let { uri ->
                     languageServer.textDocumentService.didChange(
                         DidChangeTextDocumentParams().apply {

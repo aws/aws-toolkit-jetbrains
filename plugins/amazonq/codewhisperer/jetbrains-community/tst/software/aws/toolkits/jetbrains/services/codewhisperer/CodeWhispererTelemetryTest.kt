@@ -14,6 +14,7 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doNothing
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
+import org.mockito.kotlin.whenever
 import software.aws.toolkits.core.telemetry.MetricEvent
 import software.aws.toolkits.core.telemetry.TelemetryBatcher
 import software.aws.toolkits.core.telemetry.TelemetryPublisher
@@ -51,7 +52,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
     @Test
     fun `test toggle autoSuggestion will emit autoSuggestionActivation telemetry (popup)`() {
         val metricCaptor = argumentCaptor<MetricEvent>()
-        doNothing().`when`(batcher).enqueue(metricCaptor.capture())
+        doNothing().whenever(batcher).enqueue(metricCaptor.capture())
 
         Pause().actionPerformed(TestActionEvent { projectRule.project })
         assertEventsContainsFieldsAndCount(
