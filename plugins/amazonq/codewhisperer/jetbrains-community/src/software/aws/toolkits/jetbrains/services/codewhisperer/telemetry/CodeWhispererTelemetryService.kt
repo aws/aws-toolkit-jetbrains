@@ -70,7 +70,7 @@ class CodeWhispererTelemetryService(private val cs: CoroutineScope) {
         }
     }
 
-    fun sendUserTriggerDecisionEventForTriggerSession(
+    suspend fun sendUserTriggerDecisionEventForTriggerSession(
         project: Project,
         latencyContext: LatencyContext,
         sessionContext: InlineCompletionSessionContext,
@@ -112,7 +112,7 @@ class CodeWhispererTelemetryService(private val cs: CoroutineScope) {
             // user input is always 0
             typeaheadLength = 0
         )
-        AmazonQLspService.executeIfRunning(project) { server ->
+        AmazonQLspService.executeAsyncIfRunning(project) { server ->
             server.logInlineCompletionSessionResults(params)
         }
     }

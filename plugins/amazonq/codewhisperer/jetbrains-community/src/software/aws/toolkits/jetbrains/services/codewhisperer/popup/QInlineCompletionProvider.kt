@@ -326,13 +326,15 @@ class QInlineCompletionProvider(private val cs: CoroutineScope) : InlineCompleti
                             }
                         }
                     }
-                    CodeWhispererTelemetryService.getInstance().sendUserTriggerDecisionEventForTriggerSession(
-                        project,
-                        latencyContext,
-                        sessionContext,
-                        triggerSessionId,
-                    )
-                    activeTriggerSessions.remove(triggerSessionId)
+                    cs.launch {
+                        CodeWhispererTelemetryService.getInstance().sendUserTriggerDecisionEventForTriggerSession(
+                            project,
+                            latencyContext,
+                            sessionContext,
+                            triggerSessionId,
+                        )
+                        activeTriggerSessions.remove(triggerSessionId)
+                    }
                 }
             },
             session
@@ -492,7 +494,7 @@ class QInlineCompletionProvider(private val cs: CoroutineScope) : InlineCompleti
                 "Fetching next paginated results with token: ${nextToken?.left}"
             }
 
-            val nextPageResult = AmazonQLspService.executeIfRunning(project) { server ->
+            val nextPageResult = AmazonQLspService.executeAsyncIfRunning(project) { server ->
                 val params = createInlineCompletionParams(editor, triggerTypeInfo, nextToken)
                 server.inlineCompletionWithReferences(params)
             }?.await() ?: run {
