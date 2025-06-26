@@ -40,13 +40,6 @@ fun getEnabledConnectionsForTelemetry(project: Project?): Set<AuthFormId> {
     )
 
     addConnectionInfoToSet(
-        checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER),
-        enabledConnections,
-        AuthFormId.IDENTITYCENTER_CODEWHISPERER,
-        AuthFormId.BUILDERID_CODEWHISPERER
-    )
-
-    addConnectionInfoToSet(
         checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q),
         enabledConnections,
         AuthFormId.IDENTITYCENTER_Q,
@@ -137,8 +130,6 @@ enum class AuthFormId {
     IDENTITYCENTER_EXPLORER,
     BUILDERID_CODECATALYST,
     IDENTITYCENTER_CODECATALYST,
-    BUILDERID_CODEWHISPERER,
-    IDENTITYCENTER_CODEWHISPERER,
     BUILDERID_Q,
     IDENTITYCENTER_Q,
     UNKNOWN,
