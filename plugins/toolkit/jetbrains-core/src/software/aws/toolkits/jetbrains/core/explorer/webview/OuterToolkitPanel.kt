@@ -9,7 +9,7 @@ import com.intellij.util.ui.components.BorderLayoutPanel
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.explorer.AwsToolkitExplorerToolWindow
-import software.aws.toolkits.jetbrains.utils.isTookitConnected
+import software.aws.toolkits.jetbrains.utils.isTookitConnected2
 import javax.swing.JComponent
 
 class OuterToolkitPanel(val project: Project) : BorderLayoutPanel() {
@@ -17,7 +17,7 @@ class OuterToolkitPanel(val project: Project) : BorderLayoutPanel() {
     init {
         isOpaque = false
         addToCenter(wrapper)
-        val component = if (!isTookitConnected(project) || shouldPromptToolkitReauth(project)) {
+        val component = if (!isTookitConnected2(project) || shouldPromptToolkitReauth(project)) {
             ToolkitWebviewPanel.getInstance(project).component
         } else {
             AwsToolkitExplorerToolWindow.getInstance(project)
