@@ -120,10 +120,13 @@ internal class LSPProcessListener : ProcessListener {
             }
         } else if (ProcessOutputType.isStderr(outputType)) {
             LOG.warn { "LSP process stderr: ${event.text}" }
+        } else if (outputType == ProcessOutputType.SYSTEM) {
+            LOG.info { "LSP system events: ${event.text}" }
         }
     }
 
     override fun processTerminated(event: ProcessEvent) {
+        LOG.info { "LSP process terminated with exit code ${event.exitCode}" }
         try {
             this.outputStreamWriter.close()
             this.outputStream.close()
