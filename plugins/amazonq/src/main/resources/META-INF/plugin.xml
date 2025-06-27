@@ -75,6 +75,9 @@
                      restartRequired="true"/>
         <registryKey key="inline.completion.rem.dev.use.rhizome" description="Defined by IntelliJ. Used for Amazon Q to display suggestions on remote."
                      defaultValue="false" restartRequired="true"/>
+        <registryKey defaultValue=""
+                     description="Endpoint to use to download flare artifacts"
+                     key="amazon.q.flare.endpoint"/>
     </extensions>
 
     <extensionPoints>
