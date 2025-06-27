@@ -73,7 +73,6 @@ import software.aws.toolkits.core.utils.writeText
 import software.aws.toolkits.jetbrains.core.coroutines.ioDispatcher
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts.ArtifactManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.auth.DefaultAuthCredentialsService
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.dependencies.DefaultModuleDependenciesService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AmazonQLspTypeAdapterFactory
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AwsExtendedInitializeResult
@@ -590,9 +589,9 @@ private class AmazonQServerInstance(private val project: Project, private val cs
                 WorkspaceServiceHandler(project, cs, lspInitResult).also {
                     Disposer.register(this, it)
                 }
-                DefaultModuleDependenciesService(project, cs).also {
-                    Disposer.register(this, it)
-                }
+                // DefaultModuleDependenciesService(project, cs).also {
+                //    Disposer.register(this, it)
+                // }
             }
         }
     }
