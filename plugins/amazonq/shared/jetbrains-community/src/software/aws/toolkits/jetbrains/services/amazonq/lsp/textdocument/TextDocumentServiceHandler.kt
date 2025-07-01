@@ -23,6 +23,7 @@ import com.intellij.openapi.vfs.newvfs.BulkFileListener
 import com.intellij.openapi.vfs.newvfs.events.VFileContentChangeEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.eclipse.lsp4j.DidChangeTextDocumentParams
 import org.eclipse.lsp4j.DidCloseTextDocumentParams
@@ -65,9 +66,12 @@ class TextDocumentServiceHandler(
         )
 
         // open files on startup
-        val fileEditorManager = FileEditorManager.getInstance(project)
-        fileEditorManager.openFiles.forEach { file ->
-            handleFileOpened(file)
+        cs.launch {
+            val fileEditorManager = FileEditorManager.getInstance(project)
+            fileEditorManager.openFiles.forEach { file ->
+                handleFileOpened(file)
+                delay(100)
+            }
         }
     }
 
