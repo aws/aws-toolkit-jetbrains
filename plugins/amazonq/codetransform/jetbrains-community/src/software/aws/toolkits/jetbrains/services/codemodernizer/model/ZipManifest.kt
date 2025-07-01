@@ -8,7 +8,7 @@ data class ZipManifest(
     val dependenciesRoot: String = ZIP_DEPENDENCIES_PATH,
     val version: String = UPLOAD_ZIP_MANIFEST_VERSION,
     val hilCapabilities: List<String> = listOf(HIL_1P_UPGRADE_CAPABILITY),
-    val transformCapabilities: List<String> = listOf(EXPLAINABILITY_V1, CLIENT_SIDE_BUILD, SELECTIVE_TRANSFORMATION_V2),
+    val transformCapabilities: List<String> = listOf(EXPLAINABILITY_V1, CLIENT_SIDE_BUILD, SELECTIVE_TRANSFORMATION_V2, IDE),
     val customBuildCommand: String = MAVEN_BUILD_RUN_UNIT_TESTS,
     val requestedConversions: RequestedConversions? = null, // only used for SQL conversions for now
     var dependencyUpgradeConfigFile: String? = null,
