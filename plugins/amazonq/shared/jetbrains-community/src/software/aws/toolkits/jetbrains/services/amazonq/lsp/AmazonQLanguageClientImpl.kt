@@ -149,6 +149,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
             MessageType.Error -> Level.ERROR
             MessageType.Warning -> Level.WARN
             MessageType.Info, MessageType.Log -> Level.INFO
+            else -> Level.WARN
         }
 
         if (type == Level.ERROR &&

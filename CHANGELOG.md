@@ -1,3 +1,11 @@
+# _3.81_ (2025-06-27)
+
+# _3.80_ (2025-06-26)
+- **(Feature)** Amazon Q inline: now display completions much more consistently at the user's current caret position
+- **(Feature)** Amazon Q inline: now Q completions can co-exist with JetBrains' native IntelliSense completions, when both are showing, press Tab or your customized key shortcuts to accept Q completions and press Enter to accept IntelliSense completions.
+- **(Feature)** Amazon Q inline: now shows in a JetBrains native UX of popup and inlay text style
+- **(Feature)** Amazon Q inline: The new UX allows configurable shortcuts for accepting completions and navigating through completions. *Caveat: for users using the previous versions, if you have configured your custom key shortcuts for the Q inline before, you will have to re-configure them again in Amazon Q settings due to a change in the keymap actions.
+
 # _3.79_ (2025-06-25)
 - **(Feature)** /transform: run all builds client-side
 - **(Feature)** Amazon Q Chat: Pin context items in chat and manage workspace rules

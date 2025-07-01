@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.model
 
+import com.intellij.codeInsight.inline.completion.elements.InlineCompletionElement
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.VisualPosition
@@ -10,7 +11,9 @@ import com.intellij.openapi.editor.markup.RangeHighlighter
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.JBPopup
 import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.util.UserDataHolderBase
 import com.intellij.util.concurrency.annotations.RequiresEdt
+import kotlinx.coroutines.channels.Channel
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionItem
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionListWithReferences
@@ -234,4 +237,22 @@ data class LatencyContext(
 data class TryExampleRowContext(
     val description: String,
     val filename: String?,
+)
+
+data class InlineCompletionSessionContext(
+    val itemContexts: MutableList<InlineCompletionItemContext> = mutableListOf(),
+    var sessionId: String = "",
+    val triggerOffset: Int,
+    var counter: Int = 0,
+)
+
+data class InlineCompletionItemContext(
+    val project: Project,
+    var item: InlineCompletionItem?,
+    val channel: Channel<InlineCompletionElement>,
+    val data: UserDataHolderBase = UserDataHolderBase(),
+    var hasSeen: Boolean = false,
+    var isAccepted: Boolean = false,
+    var isDiscarded: Boolean = false,
+    var isEmpty: Boolean = false,
 )
