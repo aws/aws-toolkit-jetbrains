@@ -67,7 +67,7 @@ What would you like to work on?`,
         ],
         [
             'codetransform',
-            `Welcome to Code Transformation! You can also run transformations from the command line. To install the tool, see the [documentation](https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/run-CLI-transformations.html).`,
+            `Welcome to Code Transformation! **You can also run transformations from the command line. To install the tool, see the [documentation](https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/run-CLI-transformations.html).**`,
         ],
         [
             'doc',
