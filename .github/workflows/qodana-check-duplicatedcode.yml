@@ -39,7 +39,7 @@ jobs:
           QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }}
         with:
           args:
-            --config,$GITHUB_WORKSPACE/qodana-configs/duplicated-code/qodana.yaml,--baseline,$GITHUB_WORKSPACE/qodana-configs/duplicated-code/qodana.sarif.yaml,--baseline-include-absent
+            --config,${{ github.workspace }}/qodana-configs/duplicated-code/qodana.yaml,--baseline,${{ github.workspace }}/qodana-configs/duplicated-code/qodana.sarif.json,--baseline-include-absent
           cache-default-branch-only: true
       - uses: github/codeql-action/upload-sarif@v3
         with:
