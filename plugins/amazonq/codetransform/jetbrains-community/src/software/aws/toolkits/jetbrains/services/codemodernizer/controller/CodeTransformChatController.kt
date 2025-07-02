@@ -138,6 +138,7 @@ class CodeTransformChatController(
     private val codeModernizerManager = CodeModernizerManager.getInstance(context.project)
     private val artifactHandler = ArtifactHandler(context.project, GumbyClient.getInstance(context.project), codeTransformChatHelper)
     private val telemetry = CodeTransformTelemetryManager.getInstance(context.project)
+    private val jdkVersionToName = mutableMapOf<String, String>()
 
     override suspend fun processChatPromptMessage(message: IncomingCodeTransformMessage.ChatPrompt) {
         if (chatSessionStorage.getSession(message.tabId).conversationState == CodeTransformConversationState.PROMPT_TARGET_JDK_NAME) {
@@ -456,6 +457,10 @@ class CodeTransformChatController(
             codeTransformChatHelper.addNewMessage(buildInvalidTargetJdkNameChatContent(providedJdkName))
             return
         }
+        val jdkVersion = codeModernizerManager.codeTransformationSession?.sessionContext?.targetJavaVersion?.name
+        if (jdkVersion != null) {
+            jdkVersionToName[jdkVersion] = targetJdkName
+        }
         codeModernizerManager.codeTransformationSession?.sessionContext?.targetJdkName = targetJdkName
         codeTransformChatHelper.addNewMessage(buildUserReplyChatContent(message.message.trim()))
         // start local build once we get target JDK path
@@ -506,7 +511,8 @@ dependencyManagement:
     private suspend fun promptForTargetJdkName(tabId: String) {
         chatSessionStorage.getSession(tabId).conversationState = CodeTransformConversationState.PROMPT_TARGET_JDK_NAME
         val targetJdkVersion = codeModernizerManager.codeTransformationSession?.sessionContext?.targetJavaVersion?.name.orEmpty()
-        codeTransformChatHelper.addNewMessage(buildPromptTargetJDKNameChatContent(targetJdkVersion))
+        val currentJdkName = jdkVersionToName[targetJdkVersion]
+        codeTransformChatHelper.addNewMessage(buildPromptTargetJDKNameChatContent(targetJdkVersion, currentJdkName))
         codeTransformChatHelper.sendChatInputEnabledMessage(tabId, true)
         codeTransformChatHelper.sendUpdatePlaceholderMessage(tabId, "Enter the name of your $targetJdkVersion")
     }
