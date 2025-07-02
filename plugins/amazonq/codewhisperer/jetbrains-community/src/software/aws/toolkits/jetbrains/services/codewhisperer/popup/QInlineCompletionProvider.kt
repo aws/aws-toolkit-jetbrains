@@ -404,9 +404,8 @@ class QInlineCompletionProvider(private val cs: CoroutineScope) : InlineCompleti
             CodeWhispererInvocationStatus.getInstance().setIsInvokingQInline(session, false)
         }
 
-        // ideally we want to use if (request.event is InlineCompletionEvent.Backspace) {
-        // but this API is marked as experimental and it will not compile on 2024.2
-        if (request.startOffset == request.endOffset) {
+        // this is only available in 2024.3+
+        if (request.event.isDeletion()) {
             logInline(triggerSessionId) {
                 "Skip inline completion when deleting"
             }

@@ -19,3 +19,5 @@ fun getManualCallEvent(editor: Editor, isIntelliSenseAccept: Boolean): InlineCom
     }
     return InlineCompletionEvent.DirectCall(editor, editor.caretModel.currentCaret, dataContext)
 }
+
+fun InlineCompletionEvent.isDeletion(): Boolean = false
