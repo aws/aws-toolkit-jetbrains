@@ -411,7 +411,6 @@ class QInlineCompletionProvider(private val cs: CoroutineScope) : InlineCompleti
             return InlineCompletionSuggestion.Empty
         }
 
-
         val sessionContext = InlineCompletionSessionContext(triggerOffset = request.endOffset)
 
         // Pagination workaround: Always return exactly 5 variants
