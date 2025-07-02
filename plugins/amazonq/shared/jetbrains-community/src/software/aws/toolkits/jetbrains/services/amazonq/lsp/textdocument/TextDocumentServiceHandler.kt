@@ -84,8 +84,8 @@ class TextDocumentServiceHandler(
             }
             ApplicationManager.getApplication().runReadAction {
                 FileDocumentManager.getInstance().getDocument(file)?.addDocumentListener(listener)
-                file.putUserData(KEY_REAL_TIME_EDIT_LISTENER, listener)
             }
+            file.putUserData(KEY_REAL_TIME_EDIT_LISTENER, listener)
 
             Disposer.register(this) {
                 ApplicationManager.getApplication().runReadAction {
