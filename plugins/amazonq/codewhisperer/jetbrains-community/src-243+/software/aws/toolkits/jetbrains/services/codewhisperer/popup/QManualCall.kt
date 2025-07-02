@@ -15,3 +15,6 @@ fun getManualCallEvent(editor: Editor, isIntelliSenseAccept: Boolean): InlineCom
     val data = UserDataHolderBase().apply { this.putUserData(KEY_Q_AUTO_TRIGGER_INTELLISENSE, isIntelliSenseAccept) }
     return InlineCompletionEvent.ManualCall(editor, Q_INLINE_PROVIDER_ID, data)
 }
+
+fun InlineCompletionEvent.isDeletion(): Boolean =
+    this is InlineCompletionEvent.Backspace
