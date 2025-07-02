@@ -20,4 +20,5 @@ fun getManualCallEvent(editor: Editor, isIntelliSenseAccept: Boolean): InlineCom
     return InlineCompletionEvent.DirectCall(editor, editor.caretModel.currentCaret, dataContext)
 }
 
+@Suppress("FunctionOnlyReturningConstant")
 fun InlineCompletionEvent.isDeletion(): Boolean = false
