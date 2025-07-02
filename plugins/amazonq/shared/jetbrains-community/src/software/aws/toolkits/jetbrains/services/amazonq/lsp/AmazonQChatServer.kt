@@ -45,6 +45,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.LIST_
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.LinkClickParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ListConversationsParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.MCP_SERVER_CLICK_REQUEST_METHOD
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OPEN_FILE_DIALOG_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.PROMPT_INPUT_OPTIONS_CHANGE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.PromptInputOptionChangeParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.RULE_CLICK_REQUEST_METHOD
@@ -247,5 +248,11 @@ object AmazonQChatServer : JsonRpcMethodProvider {
     val telemetryEvent = JsonRpcNotification(
         TELEMETRY_EVENT,
         Any::class.java
+    )
+
+    val showOpenFileDialog = JsonRpcRequest(
+        OPEN_FILE_DIALOG_REQUEST_METHOD,
+        Any::class.java,
+        LSPAny::class.java
     )
 }
