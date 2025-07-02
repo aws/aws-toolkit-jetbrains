@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Skip inline completion when deleting characters"
+}
