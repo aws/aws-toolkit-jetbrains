@@ -21,10 +21,7 @@ import software.aws.toolkits.jetbrains.core.getTextFromUrl
 import software.aws.toolkits.jetbrains.core.saveFileFromUrl
 import java.nio.file.Path
 
-class ManifestFetcher(
-    private val lspManifestUrl: String = getManifestEndpoint(),
-    private val manifestPath: Path = DEFAULT_MANIFEST_PATH,
-) {
+class ManifestFetcher {
     companion object {
         private val mapper = jacksonObjectMapper().apply { configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false) }
         private val logger = getLogger<ManifestFetcher>()
@@ -40,6 +37,10 @@ class ManifestFetcher(
             .resolve("language-servers")
             .resolve("jetbrains-lsp-manifest.json")
     }
+
+    private val lspManifestUrl
+        get() = getManifestEndpoint()
+    private val manifestPath: Path = DEFAULT_MANIFEST_PATH
 
     @get:VisibleForTesting
     internal val lspManifestFilePath: Path
