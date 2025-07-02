@@ -404,6 +404,14 @@ class QInlineCompletionProvider(private val cs: CoroutineScope) : InlineCompleti
             CodeWhispererInvocationStatus.getInstance().setIsInvokingQInline(session, false)
         }
 
+        // this is only available in 2024.3+
+        if (request.event.isDeletion()) {
+            logInline(triggerSessionId) {
+                "Skip inline completion when deleting"
+            }
+            return InlineCompletionSuggestion.Empty
+        }
+
         val sessionContext = InlineCompletionSessionContext(triggerOffset = request.endOffset)
 
         // Pagination workaround: Always return exactly 5 variants
