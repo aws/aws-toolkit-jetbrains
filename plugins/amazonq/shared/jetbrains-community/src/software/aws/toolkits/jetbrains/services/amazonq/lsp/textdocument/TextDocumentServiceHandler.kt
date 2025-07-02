@@ -89,9 +89,9 @@ class TextDocumentServiceHandler(
 
             Disposer.register(this) {
                 ApplicationManager.getApplication().runReadAction {
-                    val listener = file.getUserData(KEY_REAL_TIME_EDIT_LISTENER)
-                    if (listener != null) {
-                        FileDocumentManager.getInstance().getDocument(file)?.removeDocumentListener(listener)
+                    val existingListener = file.getUserData(KEY_REAL_TIME_EDIT_LISTENER)
+                    if (existingListener != null) {
+                        FileDocumentManager.getInstance().getDocument(file)?.removeDocumentListener(existingListener)
                         file.putUserData(KEY_REAL_TIME_EDIT_LISTENER, null)
                     }
                 }
