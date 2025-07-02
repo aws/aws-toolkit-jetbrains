@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.popup
 import com.intellij.codeInsight.inline.completion.InlineCompletionEvent
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.util.UserDataHolderBase
-import software.aws.toolkits.jetbrains.services.codewhisperer.popup.QInlineCompletionProvider.Companion.DATA_KEY_Q_AUTO_TRIGGER_INTELLISENSE
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.QInlineCompletionProvider.Companion.KEY_Q_AUTO_TRIGGER_INTELLISENSE
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.QInlineCompletionProvider.Companion.Q_INLINE_PROVIDER_ID
 
@@ -19,4 +18,3 @@ fun getManualCallEvent(editor: Editor, isIntelliSenseAccept: Boolean): InlineCom
 
 fun InlineCompletionEvent.isDeletion(): Boolean =
     this is InlineCompletionEvent.Backspace
-
