@@ -195,7 +195,7 @@ class InteractiveBearerTokenProviderTest {
         val sut = buildSut()
         sut.invalidate()
 
-        verify(mockListener).onChange(sut.id)
+        verify(mockListener).onProviderChange(sut.id)
     }
 
     @Test
@@ -260,7 +260,7 @@ class InteractiveBearerTokenProviderTest {
         sut.reauthenticate()
 
         // once for invalidate, once after the token has been retrieved
-        verify(mockListener, times(2)).onChange(sut.id)
+        verify(mockListener, times(2)).onProviderChange(sut.id)
     }
 
     private fun buildSut() = InteractiveBearerTokenProvider(

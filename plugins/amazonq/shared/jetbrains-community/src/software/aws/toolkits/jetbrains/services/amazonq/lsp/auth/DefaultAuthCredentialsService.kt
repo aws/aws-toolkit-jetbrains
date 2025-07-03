@@ -43,8 +43,7 @@ class DefaultAuthCredentialsService(
     private val project: Project,
     private val encryptionManager: JwtEncryptionManager,
     private val cs: CoroutineScope,
-) : AuthCredentialsService,
-    BearerTokenProviderListener,
+) : BearerTokenProviderListener,
     ToolkitConnectionManagerListener,
     QRegionProfileSelectedListener,
     Disposable {
@@ -71,6 +70,7 @@ class DefaultAuthCredentialsService(
         startPeriodicTokenSync()
     }
 
+    // TODO: we really only need a single application-wide instance of this
     private fun startPeriodicTokenSync() {
         tokenSyncTask = scheduler.scheduleWithFixedDelay(
             {
@@ -89,14 +89,10 @@ class DefaultAuthCredentialsService(
                             if (tokenProvider.state() == BearerTokenAuthState.NEEDS_REFRESH) {
                                 try {
                                     tokenProvider.resolveToken()
-                                    // Now that the token is refreshed, update it in Flare
-                                    updateTokenFromActiveConnection()
                                 } catch (e: Exception) {
                                     LOG.warn(e) { "Failed to refresh bearer token" }
                                 }
                             }
-                        } else {
-                            updateTokenFromActiveConnection()
                         }
                     }
                 } catch (e: Exception) {
@@ -109,7 +105,7 @@ class DefaultAuthCredentialsService(
         )
     }
 
-    override fun updateTokenCredentials(connection: ToolkitConnection, encrypted: Boolean): CompletableFuture<ResponseMessage> {
+    fun updateTokenCredentials(connection: ToolkitConnection, encrypted: Boolean): CompletableFuture<ResponseMessage> {
         val payload = try {
             createUpdateCredentialsPayload(connection, encrypted)
         } catch (e: Exception) {
@@ -129,7 +125,7 @@ class DefaultAuthCredentialsService(
         }.asCompletableFuture()
     }
 
-    override fun deleteTokenCredentials() {
+    fun deleteTokenCredentials() {
         cs.launch {
             AmazonQLspService.executeAsyncIfRunning(project) { server ->
                 server.deleteTokenCredentials()
@@ -137,8 +133,16 @@ class DefaultAuthCredentialsService(
         }
     }
 
-    override fun onChange(providerId: String, newScopes: List<String>?) {
+    override fun onProviderChange(providerId: String, newScopes: List<String>?) {
         updateTokenFromActiveConnection()
+    }
+
+    override fun onTokenModified(providerId: String) {
+        updateTokenFromActiveConnection()
+    }
+
+    override fun invalidate(providerId: String) {
+        deleteTokenCredentials()
     }
 
     override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
@@ -161,9 +165,6 @@ class DefaultAuthCredentialsService(
     private fun updateTokenFromConnection(connection: ToolkitConnection): CompletableFuture<ResponseMessage> =
         updateTokenCredentials(connection, true)
 
-    override fun invalidate(providerId: String) {
-        deleteTokenCredentials()
-    }
 
     private fun createUpdateCredentialsPayload(connection: ToolkitConnection, encrypted: Boolean): UpdateCredentialsPayload {
         val token = (connection.getConnectionSettings() as? TokenConnectionSettings)
