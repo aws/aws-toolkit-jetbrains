@@ -1,3 +1,6 @@
+# _3.82_ (2025-07-03)
+- **(Bug Fix)** Skip inline completion when deleting characters
+
 # _3.81_ (2025-06-27)
 
 # _3.80_ (2025-06-26)
