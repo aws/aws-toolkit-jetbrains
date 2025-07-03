@@ -56,7 +56,6 @@ import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
-import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
 import software.aws.toolkits.jetbrains.services.codewhisperer.importadder.CodeWhispererImportAdder
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InlineCompletionItemContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InlineCompletionSessionContext
@@ -403,7 +402,6 @@ class QInlineCompletionProvider(private val cs: CoroutineScope) : InlineCompleti
     override suspend fun getSuggestion(request: InlineCompletionRequest): InlineCompletionSuggestion {
         val editor = request.editor
         val project = editor.project ?: return InlineCompletionSuggestion.Empty
-        if (!isCodeWhispererEnabled(project)) return InlineCompletionSuggestion.Empty
 
         // try to refresh automatically if possible, otherwise ask user to login again
         if (isQExpired(project)) {
@@ -609,7 +607,7 @@ class QInlineCompletionProvider(private val cs: CoroutineScope) : InlineCompleti
                         // TODO: fragile
                         try {
                             it.refresh()
-                        } catch (_: InvalidGrantException){
+                        } catch (_: InvalidGrantException) {
                             it.invalidate()
                             CodeWhispererUtil.reconnectCodeWhisperer(project)
                         }
