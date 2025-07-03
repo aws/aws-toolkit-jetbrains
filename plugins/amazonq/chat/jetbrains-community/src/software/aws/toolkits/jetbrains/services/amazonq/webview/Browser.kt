@@ -224,7 +224,7 @@ class Browser(parent: Disposable, private val webUri: URI, val project: Project)
                     select.mynah-form-input {
                         -webkit-appearance: menulist !important;
                         appearance: menulist !important;
-                        padding: 0px var(--mynah-sizing-2);
+                        padding: 0 !important;
                     }
                     .mynah-select-handle {
                         visibility: hidden;
