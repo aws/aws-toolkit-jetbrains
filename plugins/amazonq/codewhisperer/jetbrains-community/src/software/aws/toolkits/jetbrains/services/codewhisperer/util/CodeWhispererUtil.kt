@@ -25,6 +25,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
+import software.amazon.awssdk.services.codewhispererruntime.model.DiagnosticSeverity
 import software.amazon.awssdk.services.codewhispererruntime.model.IdeDiagnostic
 import software.amazon.awssdk.services.codewhispererruntime.model.OptOutPreference
 import software.amazon.awssdk.services.codewhispererruntime.model.Position
@@ -355,17 +356,16 @@ enum class CaretMovement {
     NO_CHANGE, MOVE_FORWARD, MOVE_BACKWARD
 }
 
+val diagnosticPatterns = mapOf(
+    "TYPE_ERROR" to listOf("type", "cast"),
+    "SYNTAX_ERROR" to listOf("expected", "indent", "syntax"),
+    "REFERENCE_ERROR" to listOf("undefined", "not defined", "undeclared", "reference", "symbol"),
+    "BEST_PRACTICE" to listOf("deprecated", "unused", "uninitialized", "not initialized"),
+    "SECURITY" to listOf("security", "vulnerability")
+)
+
 fun getDiagnosticsType(message: String): String {
     val lowercaseMessage = message.lowercase()
-
-    val diagnosticPatterns = mapOf(
-        "TYPE_ERROR" to listOf("type", "cast"),
-        "SYNTAX_ERROR" to listOf("expected", "indent", "syntax"),
-        "REFERENCE_ERROR" to listOf("undefined", "not defined", "undeclared", "reference", "symbol"),
-        "BEST_PRACTICE" to listOf("deprecated", "unused", "uninitialized", "not initialized"),
-        "SECURITY" to listOf("security", "vulnerability")
-    )
-
     return diagnosticPatterns
         .entries
         .firstOrNull { (_, keywords) ->
@@ -374,19 +374,19 @@ fun getDiagnosticsType(message: String): String {
         ?.key ?: "OTHER"
 }
 
-fun convertSeverity(severity: HighlightSeverity): String = when {
-    severity == HighlightSeverity.ERROR -> "ERROR"
+fun convertSeverity(severity: HighlightSeverity): DiagnosticSeverity = when {
+    severity == HighlightSeverity.ERROR -> DiagnosticSeverity.ERROR
     severity == HighlightSeverity.WARNING ||
-        severity == HighlightSeverity.WEAK_WARNING -> "WARNING"
-    severity == HighlightSeverity.INFORMATION -> "INFORMATION"
-    severity.toString().contains("TEXT", ignoreCase = true) -> "HINT"
-    severity == HighlightSeverity.INFO -> "INFORMATION"
+        severity == HighlightSeverity.WEAK_WARNING -> DiagnosticSeverity.WARNING
+    severity == HighlightSeverity.INFORMATION -> DiagnosticSeverity.INFORMATION
+    severity.toString().contains("TEXT", ignoreCase = true) -> DiagnosticSeverity.HINT
+    severity == HighlightSeverity.INFO -> DiagnosticSeverity.INFORMATION
     // For severities that might indicate performance issues
-    severity.toString().contains("PERFORMANCE", ignoreCase = true) -> "WARNING"
+    severity.toString().contains("PERFORMANCE", ignoreCase = true) -> DiagnosticSeverity.WARNING
     // For deprecation warnings
-    severity.toString().contains("DEPRECATED", ignoreCase = true) -> "WARNING"
+    severity.toString().contains("DEPRECATED", ignoreCase = true) -> DiagnosticSeverity.WARNING
     // Default case
-    else -> "INFORMATION"
+    else -> DiagnosticSeverity.INFORMATION
 }
 
 fun getDocumentDiagnostics(document: Document, project: Project): List<IdeDiagnostic> = runCatching {
