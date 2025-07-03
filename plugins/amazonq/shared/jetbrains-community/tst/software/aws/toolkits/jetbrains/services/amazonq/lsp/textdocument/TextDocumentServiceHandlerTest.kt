@@ -6,7 +6,9 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp.textdocument
 import com.intellij.openapi.application.writeAction
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.fileEditor.FileDocumentManager
+import com.intellij.openapi.fileEditor.ex.FileEditorManagerEx
 import com.intellij.openapi.fileTypes.FileType
+import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.newvfs.events.VFileContentChangeEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
@@ -24,7 +26,6 @@ import io.mockk.mockkStatic
 import io.mockk.slot
 import io.mockk.spyk
 import io.mockk.verify
-import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
@@ -35,9 +36,11 @@ import org.eclipse.lsp4j.DidOpenTextDocumentParams
 import org.eclipse.lsp4j.DidSaveTextDocumentParams
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseMessage
 import org.eclipse.lsp4j.services.TextDocumentService
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TestName
 import software.aws.toolkits.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLanguageServer
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
@@ -53,9 +56,6 @@ class TextDocumentServiceHandlerTest {
     private lateinit var mockLanguageServer: AmazonQLanguageServer
     private lateinit var mockTextDocumentService: TextDocumentService
     private lateinit var sut: TextDocumentServiceHandler
-
-    // not ideal
-    private lateinit var testScope: TestScope
 
     @get:Rule
     val projectRule = object : CodeInsightTestFixtureRule() {
@@ -73,6 +73,9 @@ class TextDocumentServiceHandlerTest {
 
     @get:Rule
     val disposableRule = DisposableRule()
+
+    @get:Rule
+    val testName = TestName()
 
     @Before
     fun setup() {
@@ -99,13 +102,20 @@ class TextDocumentServiceHandlerTest {
         every { mockTextDocumentService.didSave(any()) } returns Unit
         every { mockTextDocumentService.didOpen(any()) } returns Unit
         every { mockTextDocumentService.didClose(any()) } returns Unit
+    }
 
-        testScope = TestScope()
-        sut = TextDocumentServiceHandler(projectRule.project, testScope)
+    @After
+    fun tearDown() {
+        try {
+            Disposer.dispose(sut)
+        } catch (_: Exception) {
+        }
     }
 
     @Test
-    fun `didSave runs on beforeDocumentSaving`() {
+    fun `didSave runs on beforeDocumentSaving`() = runTest {
+        sut = TextDocumentServiceHandler(projectRule.project, this)
+
         // Create test document and file
         val uri = URI.create("file:///test/path/file.txt")
         val document = mockk<Document> {
@@ -127,7 +137,7 @@ class TextDocumentServiceHandlerTest {
             sut.beforeDocumentSaving(document)
 
             // Verify the correct LSP method was called with matching parameters
-            testScope.advanceUntilIdle()
+            advanceUntilIdle()
             val paramsSlot = slot<DidSaveTextDocumentParams>()
             verify { mockTextDocumentService.didSave(capture(paramsSlot)) }
 
@@ -142,12 +152,12 @@ class TextDocumentServiceHandlerTest {
     fun `didOpen runs on service init`() = runTest {
         val content = "test content"
         val file = withContext(EDT) {
-            projectRule.fixture.createFile("name", content).also { projectRule.fixture.openFileInEditor(it) }
+            projectRule.fixture.createFile(testName.methodName, content).also { projectRule.fixture.openFileInEditor(it) }
         }
-
-        sut = TextDocumentServiceHandler(projectRule.project, this)
-
         advanceUntilIdle()
+        sut = TextDocumentServiceHandler(projectRule.project, this)
+        advanceUntilIdle()
+
         val paramsSlot = mutableListOf<DidOpenTextDocumentParams>()
         verify { mockTextDocumentService.didOpen(capture(paramsSlot)) }
 
@@ -160,15 +170,14 @@ class TextDocumentServiceHandlerTest {
 
     @Test
     fun `didOpen runs on fileOpened`() = runTest {
+        sut = TextDocumentServiceHandler(projectRule.project, this)
+        advanceUntilIdle()
         val content = "test content"
         val file = withContext(EDT) {
-            projectRule.fixture.createFile("name", content).also { projectRule.fixture.openFileInEditor(it) }
+            projectRule.fixture.createFile(testName.methodName, content).also { projectRule.fixture.openFileInEditor(it) }
         }
-
-        sut.fileOpened(mockk(), file)
-
         advanceUntilIdle()
-        testScope.advanceUntilIdle()
+
         val paramsSlot = mutableListOf<DidOpenTextDocumentParams>()
         verify { mockTextDocumentService.didOpen(capture(paramsSlot)) }
 
@@ -181,23 +190,26 @@ class TextDocumentServiceHandlerTest {
 
     @Test
     fun `didClose runs on fileClosed`() = runTest {
-        val uri = URI.create("file:///test/path/file.txt")
-        val file = createMockVirtualFile(uri)
-
-        sut.fileClosed(mockk(), file)
+        sut = TextDocumentServiceHandler(projectRule.project, this)
+        val file = withContext(EDT) {
+            projectRule.fixture.createFile(testName.methodName, "").also {
+                projectRule.fixture.openFileInEditor(it)
+                FileEditorManagerEx.getInstanceEx(projectRule.project).closeAllFiles()
+            }
+        }
 
         advanceUntilIdle()
-        testScope.advanceUntilIdle()
         val paramsSlot = slot<DidCloseTextDocumentParams>()
         verify { mockTextDocumentService.didClose(capture(paramsSlot)) }
 
-        assertThat(paramsSlot.captured.textDocument.uri).isEqualTo(normalizeFileUri(uri.toString()))
+        assertThat(paramsSlot.captured.textDocument.uri).isEqualTo(file.toNioPath().toUri().toString())
     }
 
     @Test
     fun `didChange runs on content change events`() = runTest {
+        sut = TextDocumentServiceHandler(projectRule.project, this)
         val file = withContext(EDT) {
-            projectRule.fixture.createFile("name", "").also {
+            projectRule.fixture.createFile(testName.methodName, "").also {
                 projectRule.fixture.openFileInEditor(it)
 
                 writeAction {
@@ -208,7 +220,6 @@ class TextDocumentServiceHandlerTest {
 
         // Verify the correct LSP method was called with matching parameters
         advanceUntilIdle()
-        testScope.advanceUntilIdle()
         val paramsSlot = mutableListOf<DidChangeTextDocumentParams>()
         verify { mockTextDocumentService.didChange(capture(paramsSlot)) }
 
@@ -220,6 +231,7 @@ class TextDocumentServiceHandlerTest {
 
     @Test
     fun `didSave does not run when URI is empty`() = runTest {
+        sut = TextDocumentServiceHandler(projectRule.project, this)
         val document = mockk<Document>()
         val file = createMockVirtualFile(URI.create(""))
 
@@ -235,7 +247,7 @@ class TextDocumentServiceHandlerTest {
 
                 sut.beforeDocumentSaving(document)
 
-                testScope.advanceUntilIdle()
+                advanceUntilIdle()
                 verify(exactly = 0) { mockTextDocumentService.didSave(any()) }
             }
         }
@@ -243,6 +255,7 @@ class TextDocumentServiceHandlerTest {
 
     @Test
     fun `didSave does not run when file is null`() = runTest {
+        sut = TextDocumentServiceHandler(projectRule.project, this)
         val document = mockk<Document>()
 
         val fileDocumentManager = mockk<FileDocumentManager> {
@@ -254,23 +267,25 @@ class TextDocumentServiceHandlerTest {
 
             sut.beforeDocumentSaving(document)
 
-            testScope.advanceUntilIdle()
+            advanceUntilIdle()
             verify(exactly = 0) { mockTextDocumentService.didSave(any()) }
         }
     }
 
     @Test
     fun `didChange ignores non-content change events`() = runTest {
+        sut = TextDocumentServiceHandler(projectRule.project, this)
         val nonContentEvent = mockk<VFileEvent>() // Some other type of VFileEvent
 
         sut.after(mutableListOf(nonContentEvent))
 
-        testScope.advanceUntilIdle()
+        advanceUntilIdle()
         verify(exactly = 0) { mockTextDocumentService.didChange(any()) }
     }
 
     @Test
     fun `didChange skips files without cached documents`() = runTest {
+        sut = TextDocumentServiceHandler(projectRule.project, this)
         val uri = URI.create("file:///test/path/file.txt")
         val path = mockk<Path> {
             every { toUri() } returns uri
@@ -291,7 +306,7 @@ class TextDocumentServiceHandlerTest {
 
             sut.after(mutableListOf(changeEvent))
 
-            testScope.advanceUntilIdle()
+            advanceUntilIdle()
             verify(exactly = 0) { mockTextDocumentService.didChange(any()) }
         }
     }
