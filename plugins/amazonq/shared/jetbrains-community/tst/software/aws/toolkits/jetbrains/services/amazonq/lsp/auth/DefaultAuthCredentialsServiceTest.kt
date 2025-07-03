@@ -180,7 +180,7 @@ class DefaultAuthCredentialsServiceTest {
         sut = DefaultAuthCredentialsService(project, mockEncryptionManager, this)
         setupMockConnectionManager("updated-token")
 
-        sut.onChange("providerId", listOf("new-scope"))
+        sut.onProviderChange("providerId", listOf("new-scope"))
 
         advanceUntilIdle()
         verify(exactly = 1) { mockLanguageServer.updateTokenCredentials(any()) }

@@ -125,7 +125,7 @@ class CodeScanChatApp(private val scope: CoroutineScope) : AmazonQApp {
         ApplicationManager.getApplication().messageBus.connect(this).subscribe(
             BearerTokenProviderListener.TOPIC,
             object : BearerTokenProviderListener {
-                override fun onChange(providerId: String, newScopes: List<String>?) {
+                override fun onProviderChange(providerId: String, newScopes: List<String>?) {
                     val qProvider = getQTokenProvider(context.project)
                     val isQ = qProvider?.id == providerId
                     val isAuthorized = qProvider?.state() == BearerTokenAuthState.AUTHORIZED

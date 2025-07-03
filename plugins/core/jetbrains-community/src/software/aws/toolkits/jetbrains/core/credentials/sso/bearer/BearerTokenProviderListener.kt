@@ -8,8 +8,19 @@ import com.intellij.util.messages.Topic
 import java.util.EventListener
 
 interface BearerTokenProviderListener : EventListener {
-    fun onChange(providerId: String, newScopes: List<String>? = null) {}
+    /**
+     * Called when token permissions have potentially changed, or is no longer logged in
+     */
+    fun onProviderChange(providerId: String, newScopes: List<String>? = null) {}
 
+    /**
+     * Called when token has changed but connection properties are the same
+     */
+    fun onTokenModified(providerId: String) {}
+
+    /**
+     * Called when provider is being deleted
+     */
     fun invalidate(providerId: String) {}
 
     companion object {
@@ -17,7 +28,7 @@ interface BearerTokenProviderListener : EventListener {
         val TOPIC = Topic.create("AWS SSO bearer token provider status change", BearerTokenProviderListener::class.java)
 
         fun notifyCredUpdate(providerId: String) {
-            ApplicationManager.getApplication().messageBus.syncPublisher(BearerTokenProviderListener.TOPIC).onChange(providerId)
+            ApplicationManager.getApplication().messageBus.syncPublisher(TOPIC).onProviderChange(providerId)
         }
     }
 }

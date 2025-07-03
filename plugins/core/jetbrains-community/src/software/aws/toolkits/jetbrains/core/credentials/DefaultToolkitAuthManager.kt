@@ -61,7 +61,7 @@ class DefaultToolkitAuthManager : ToolkitAuthManager, PersistentStateComponent<T
                                 if (it && connection is Disposable) {
                                     // don't invalidate because we kill the token we just retrieved
                                     ApplicationManager.getApplication().messageBus.syncPublisher(BearerTokenProviderListener.TOPIC)
-                                        .onChange(connection.id)
+                                        .onProviderChange(connection.id)
                                     Disposer.dispose(connection)
                                 }
                             }
@@ -147,7 +147,7 @@ class DefaultToolkitAuthManager : ToolkitAuthManager, PersistentStateComponent<T
             (existOldConn.id == newConnection.id).also { isDuplicate ->
                 if (isDuplicate && existOldConn is Disposable) {
                     ApplicationManager.getApplication().messageBus.syncPublisher(BearerTokenProviderListener.TOPIC)
-                        .onChange(existOldConn.id, newConnection.scopes)
+                        .onProviderChange(existOldConn.id, newConnection.scopes)
                     Disposer.dispose(existOldConn)
                 }
             }
@@ -157,7 +157,7 @@ class DefaultToolkitAuthManager : ToolkitAuthManager, PersistentStateComponent<T
             (existOldConn.id == newConnection.id).also { isDuplicate ->
                 if (isDuplicate && existOldConn is Disposable) {
                     ApplicationManager.getApplication().messageBus.syncPublisher(BearerTokenProviderListener.TOPIC)
-                        .onChange(existOldConn.id, newConnection.scopes)
+                        .onProviderChange(existOldConn.id, newConnection.scopes)
                     Disposer.dispose(existOldConn)
                 }
             }
