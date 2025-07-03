@@ -33,6 +33,16 @@ jobs:
         with:
           tool-cache: false
           large-packages: false
+      - name: Test ls command
+        run: ls $GITHUB_WORKSPACE
+      - name: test more
+        run: ls $GITHUB_WORKSPACE/qodana-configs
+      - name: test more more
+        run: ls $GITHUB_WORKSPACE/qodana-configs/duplicated-code
+      - name: test more more more
+        run: cat  $GITHUB_WORKSPACE/qodana-configs/duplicated-code/qodana.yaml
+      - name: test more more more more
+        run: cd  $GITHUB_WORKSPACE/qodana-configs/duplicated-code && pwd
       - name: 'Qodana Scan'
         uses: JetBrains/qodana-action@v2024.2.3
         env:
