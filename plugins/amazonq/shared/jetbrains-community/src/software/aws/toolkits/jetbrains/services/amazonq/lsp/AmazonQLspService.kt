@@ -717,7 +717,7 @@ private class AmazonQServerInstance(private val project: Project, private val cs
     override fun dispose() {
         if (!launcherFuture.isDone) {
             try {
-                // can deadlock waiting for frozen flare process
+                // otherwise can deadlock waiting for frozen flare process
                 cs.launch {
                     languageServer.apply {
                         withTimeout(2000) {
