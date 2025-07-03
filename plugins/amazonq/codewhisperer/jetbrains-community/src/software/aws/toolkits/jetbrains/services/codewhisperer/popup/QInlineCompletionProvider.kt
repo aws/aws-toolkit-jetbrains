@@ -592,9 +592,10 @@ class QInlineCompletionProvider(private val cs: CoroutineScope) : InlineCompleti
         val project = editor.project ?: return false
 
         if (!isQConnected(project)) return false
+        if (QRegionProfileManager.getInstance().hasValidConnectionButNoActiveProfile(project)) return false
         if (event.isManualCall()) return true
         if (!CodeWhispererExplorerActionManager.getInstance().isAutoEnabled()) return false
-        if (QRegionProfileManager.getInstance().hasValidConnectionButNoActiveProfile(project)) return false
+
         return true
     }
 }
