@@ -1,0 +1,11 @@
+{
+  "date" : "2025-06-25",
+  "version" : "3.79",
+  "entries" : [ {
+    "type" : "feature",
+    "description" : "/transform: run all builds client-side"
+  }, {
+    "type" : "feature",
+    "description" : "Amazon Q Chat: Pin context items in chat and manage workspace rules"
+  } ]
+}

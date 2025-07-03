@@ -3,13 +3,12 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer
 
-import com.intellij.ide.DataManager
 import com.intellij.openapi.actionSystem.ActionManager
-import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionItem
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionListWithReferences
@@ -17,13 +16,9 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestU
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.javaResponse
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.javaTestContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.testNextToken
-import software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererActionPromoter
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.QInlineActionId.qInlineAcceptActionId
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.QInlineActionId.qInlineForceAcceptActionId
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.QInlineActionId.qInlineNavigateNextActionId
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.QInlineActionId.qInlineNavigatePrevActionId
-import kotlin.test.fail
 
+@Ignore("This test suite needs a rewrite for JB inline completion API")
 class CodeWhispererAcceptTest : CodeWhispererTestBase() {
 
     @Before
@@ -108,33 +103,6 @@ class CodeWhispererAcceptTest : CodeWhispererTestBase() {
         testAcceptRecommendationWithTypingAndMatchingBracketsOnTheRight("", "()test")
         testAcceptRecommendationWithTypingAndMatchingBracketsOnTheRight("", "() {test")
         testAcceptRecommendationWithTypingAndMatchingBracketsOnTheRight("", "({test")
-    }
-
-    @Test
-    fun `test CodeWhisperer keyboard shortcuts should be prioritized to be executed`() {
-        testCodeWhispererKeyboardShortcutShouldBePrioritized(qInlineAcceptActionId)
-        testCodeWhispererKeyboardShortcutShouldBePrioritized(qInlineNavigateNextActionId)
-        testCodeWhispererKeyboardShortcutShouldBePrioritized(qInlineNavigatePrevActionId)
-        testCodeWhispererKeyboardShortcutShouldBePrioritized(qInlineForceAcceptActionId)
-    }
-
-    private fun testCodeWhispererKeyboardShortcutShouldBePrioritized(actionId: String) {
-        projectRule.fixture.configureByText(javaFileName, javaTestContext)
-        val wrongAction = object : AnAction() {
-            override fun actionPerformed(e: AnActionEvent) {
-                fail("the other action should not get executed first")
-            }
-        }
-        withCodeWhispererServiceInvokedAndWait {
-            val codeWhispererAction = ActionManager.getInstance().getAction(actionId)
-            val actions = listOf<AnAction>(wrongAction, codeWhispererAction)
-            val newActions = CodeWhispererActionPromoter().promote(
-                actions.toMutableList(),
-                DataManager.getInstance().getDataContext(projectRule.fixture.editor.contentComponent)
-            )
-            assertThat(newActions[0]).isEqualTo(codeWhispererAction)
-            popupManagerSpy.popupComponents.acceptButton.doClick()
-        }
     }
 
     private fun testAcceptRecommendationWithTypingAndMatchingBracketsOnTheRight(

@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.importadder
 
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.extensions.ExtensionPointName
+import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
@@ -40,9 +41,13 @@ abstract class CodeWhispererImportAdder {
         }
     }
 
-    private fun insertImportStatement(states: InvocationContext, import: InlineCompletionImports) {
-        val project = states.requestContext.project
-        val editor = states.requestContext.editor
+    fun insertImportStatements(project: Project, editor: Editor, imports: List<InlineCompletionImports>?) {
+        imports?.forEach {
+            insertImportStatement(project, editor, it)
+        }
+    }
+
+    private fun insertImportStatement(project: Project, editor: Editor, import: InlineCompletionImports) {
         val document = editor.document
         val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(document) ?: return
 
@@ -70,6 +75,12 @@ abstract class CodeWhispererImportAdder {
 
         val added = addImport(psiFile, editor, newImport)
         LOG.info { "Added import: $added" }
+    }
+
+    private fun insertImportStatement(states: InvocationContext, import: InlineCompletionImports) {
+        val project = states.requestContext.project
+        val editor = states.requestContext.editor
+        insertImportStatement(project, editor, import)
     }
 
     private fun insertImportStatement(states: InvocationContextNew, import: InlineCompletionImports) {
@@ -154,5 +165,8 @@ abstract class CodeWhispererImportAdder {
         fun get(language: CodeWhispererProgrammingLanguage): CodeWhispererImportAdder? =
             EP.extensionList.firstOrNull { language in it.supportedLanguages }
                 ?: EP.extensionList.find { it is CodeWhispererFallbackImportAdder }
+
+        fun getFallback(): CodeWhispererImportAdder? =
+            EP.extensionList.find { it is CodeWhispererFallbackImportAdder }
     }
 }

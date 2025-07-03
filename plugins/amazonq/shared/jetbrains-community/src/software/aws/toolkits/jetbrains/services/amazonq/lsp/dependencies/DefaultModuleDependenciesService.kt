@@ -8,13 +8,15 @@ import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ModuleRootEvent
 import com.intellij.openapi.roots.ModuleRootListener
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.dependencies.ModuleDependencyProvider.Companion.EP_NAME
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.dependencies.DidChangeDependencyPathsParams
-import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 
 class DefaultModuleDependenciesService(
     private val project: Project,
+    private val cs: CoroutineScope,
 ) : ModuleDependenciesService,
     ModuleRootListener,
     Disposable {
@@ -34,8 +36,8 @@ class DefaultModuleDependenciesService(
     }
 
     override fun didChangeDependencyPaths(params: DidChangeDependencyPathsParams) {
-        AmazonQLspService.executeIfRunning(project) { languageServer ->
-            pluginAwareExecuteOnPooledThread {
+        cs.launch {
+            AmazonQLspService.executeAsyncIfRunning(project) { languageServer ->
                 languageServer.didChangeDependencyPaths(params)
             }
         }

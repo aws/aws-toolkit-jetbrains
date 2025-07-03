@@ -347,8 +347,8 @@ fun buildUserInputSQLConversionMetadataChatContent() = CodeTransformChatMessageC
     type = CodeTransformChatMessageType.FinalizedAnswer,
 )
 
-fun buildUserInputCustomDependencyVersionsChatContent() = CodeTransformChatMessageContent(
-    message = message("codemodernizer.chat.message.custom_dependency_upgrades_prompt"),
+fun buildUserInputCustomDependencyVersionsChatContent(message: String) = CodeTransformChatMessageContent(
+    message = message,
     buttons = listOf(
         confirmCustomDependencyVersionsButton,
         continueTransformationButton,
@@ -356,10 +356,16 @@ fun buildUserInputCustomDependencyVersionsChatContent() = CodeTransformChatMessa
     type = CodeTransformChatMessageType.PendingAnswer,
 )
 
-fun buildPromptTargetJDKNameChatContent(version: String) = CodeTransformChatMessageContent(
-    message = message("codemodernizer.chat.message.enter_jdk_name", version),
-    type = CodeTransformChatMessageType.FinalizedAnswer,
-)
+fun buildPromptTargetJDKNameChatContent(version: String, currentJdkName: String?): CodeTransformChatMessageContent {
+    var message = message("codemodernizer.chat.message.enter_jdk_name", version)
+    if (currentJdkName != null) {
+        message += "\n\ncurrent: `$currentJdkName`"
+    }
+    return CodeTransformChatMessageContent(
+        message = message,
+        type = CodeTransformChatMessageType.FinalizedAnswer,
+    )
+}
 
 fun buildInvalidTargetJdkNameChatContent(jdkName: String) = CodeTransformChatMessageContent(
     message = message("codemodernizer.chat.message.enter_jdk_name_error", jdkName),
