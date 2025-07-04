@@ -13,6 +13,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.regions.Region
+import software.amazon.awssdk.services.codewhispererruntime.model.DiagnosticSeverity
 import software.amazon.awssdk.services.codewhispererruntime.model.IdeDiagnostic
 import software.amazon.awssdk.services.codewhispererruntime.model.OptOutPreference
 import software.amazon.awssdk.services.codewhispererruntime.model.Position
@@ -304,10 +305,10 @@ class CodeWhispererUtilTest {
 
     @Test
     fun `convertSeverity correctly maps severity levels`() {
-        assertThat(convertSeverity(HighlightSeverity.ERROR)).isEqualTo("ERROR")
-        assertThat(convertSeverity(HighlightSeverity.WARNING)).isEqualTo("WARNING")
-        assertThat(convertSeverity(HighlightSeverity.INFORMATION)).isEqualTo("INFORMATION")
-        assertThat(convertSeverity(HighlightSeverity.INFO)).isEqualTo("INFORMATION")
+        assertThat(convertSeverity(HighlightSeverity.ERROR)).isEqualTo(DiagnosticSeverity.ERROR)
+        assertThat(convertSeverity(HighlightSeverity.WARNING)).isEqualTo(DiagnosticSeverity.WARNING)
+        assertThat(convertSeverity(HighlightSeverity.INFORMATION)).isEqualTo(DiagnosticSeverity.INFORMATION)
+        assertThat(convertSeverity(HighlightSeverity.INFO)).isEqualTo(DiagnosticSeverity.INFORMATION)
     }
 
     @Test
