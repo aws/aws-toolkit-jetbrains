@@ -379,7 +379,7 @@ fun convertSeverity(severity: HighlightSeverity): DiagnosticSeverity = when {
     severity == HighlightSeverity.WARNING ||
         severity == HighlightSeverity.WEAK_WARNING -> DiagnosticSeverity.WARNING
     severity == HighlightSeverity.INFORMATION -> DiagnosticSeverity.INFORMATION
-    severity.toString().contains("TEXT", ignoreCase = true) -> DiagnosticSeverity.HINT
+    severity == HighlightSeverity.TEXT_ATTRIBUTES -> DiagnosticSeverity.HINT
     severity == HighlightSeverity.INFO -> DiagnosticSeverity.INFORMATION
     // For severities that might indicate performance issues
     severity.toString().contains("PERFORMANCE", ignoreCase = true) -> DiagnosticSeverity.WARNING

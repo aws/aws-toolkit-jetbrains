@@ -307,6 +307,7 @@ class CodeWhispererUtilTest {
     fun `convertSeverity correctly maps severity levels`() {
         assertThat(convertSeverity(HighlightSeverity.ERROR)).isEqualTo(DiagnosticSeverity.ERROR)
         assertThat(convertSeverity(HighlightSeverity.WARNING)).isEqualTo(DiagnosticSeverity.WARNING)
+        assertThat(convertSeverity(HighlightSeverity.TEXT_ATTRIBUTES)).isEqualTo(DiagnosticSeverity.HINT)
         assertThat(convertSeverity(HighlightSeverity.INFORMATION)).isEqualTo(DiagnosticSeverity.INFORMATION)
         assertThat(convertSeverity(HighlightSeverity.INFO)).isEqualTo(DiagnosticSeverity.INFORMATION)
     }
