@@ -1,4 +1,0 @@
-{
-  "type" : "bugfix",
-  "description" : "Fix auto-suggestions being shown when suggestions are paused"
-}
