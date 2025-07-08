@@ -404,6 +404,14 @@ class QInlineCompletionProvider(private val cs: CoroutineScope) : InlineCompleti
             CodeWhispererInvocationStatus.getInstance().setIsInvokingQInline(session, false)
         }
 
+        // this is only available in 2024.3+
+        if (request.event.isDeletion()) {
+            logInline(triggerSessionId) {
+                "Skip inline completion when deleting"
+            }
+            return InlineCompletionSuggestion.Empty
+        }
+
         val sessionContext = InlineCompletionSessionContext(triggerOffset = request.endOffset)
 
         // Pagination workaround: Always return exactly 5 variants
@@ -584,8 +592,10 @@ class QInlineCompletionProvider(private val cs: CoroutineScope) : InlineCompleti
         val project = editor.project ?: return false
 
         if (!isQConnected(project)) return false
-        if (!CodeWhispererExplorerActionManager.getInstance().isAutoEnabled() && event.isManualCall()) return false
         if (QRegionProfileManager.getInstance().hasValidConnectionButNoActiveProfile(project)) return false
+        if (event.isManualCall()) return true
+        if (!CodeWhispererExplorerActionManager.getInstance().isAutoEnabled()) return false
+
         return true
     }
 }

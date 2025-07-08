@@ -102,6 +102,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.CustomerSel
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.DownloadArtifactResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.DownloadFailureReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.EXPLAINABILITY_V1
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.IDE
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.InvalidTelemetryReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MAVEN_BUILD_RUN_UNIT_TESTS
@@ -137,6 +138,7 @@ class CodeTransformChatController(
     private val codeModernizerManager = CodeModernizerManager.getInstance(context.project)
     private val artifactHandler = ArtifactHandler(context.project, GumbyClient.getInstance(context.project), codeTransformChatHelper)
     private val telemetry = CodeTransformTelemetryManager.getInstance(context.project)
+    private val jdkVersionToName = mutableMapOf<String, String>()
 
     override suspend fun processChatPromptMessage(message: IncomingCodeTransformMessage.ChatPrompt) {
         if (chatSessionStorage.getSession(message.tabId).conversationState == CodeTransformConversationState.PROMPT_TARGET_JDK_NAME) {
@@ -418,7 +420,7 @@ class CodeTransformChatController(
         codeModernizerManager.codeTransformationSession?.let {
             it.sessionContext.customBuildCommand = customBuildCommand
         }
-        val transformCapabilities = listOf(EXPLAINABILITY_V1, CLIENT_SIDE_BUILD, SELECTIVE_TRANSFORMATION_V2)
+        val transformCapabilities = listOf(EXPLAINABILITY_V1, CLIENT_SIDE_BUILD, SELECTIVE_TRANSFORMATION_V2, IDE)
         codeModernizerManager.codeTransformationSession?.let {
             it.sessionContext.transformCapabilities = transformCapabilities
         }
@@ -454,6 +456,10 @@ class CodeTransformChatController(
         if (targetJdkName == null) {
             codeTransformChatHelper.addNewMessage(buildInvalidTargetJdkNameChatContent(providedJdkName))
             return
+        }
+        val jdkVersion = codeModernizerManager.codeTransformationSession?.sessionContext?.targetJavaVersion?.name
+        if (jdkVersion != null) {
+            jdkVersionToName[jdkVersion] = targetJdkName
         }
         codeModernizerManager.codeTransformationSession?.sessionContext?.targetJdkName = targetJdkName
         codeTransformChatHelper.addNewMessage(buildUserReplyChatContent(message.message.trim()))
@@ -505,7 +511,8 @@ dependencyManagement:
     private suspend fun promptForTargetJdkName(tabId: String) {
         chatSessionStorage.getSession(tabId).conversationState = CodeTransformConversationState.PROMPT_TARGET_JDK_NAME
         val targetJdkVersion = codeModernizerManager.codeTransformationSession?.sessionContext?.targetJavaVersion?.name.orEmpty()
-        codeTransformChatHelper.addNewMessage(buildPromptTargetJDKNameChatContent(targetJdkVersion))
+        val currentJdkName = jdkVersionToName[targetJdkVersion]
+        codeTransformChatHelper.addNewMessage(buildPromptTargetJDKNameChatContent(targetJdkVersion, currentJdkName))
         codeTransformChatHelper.sendChatInputEnabledMessage(tabId, true)
         codeTransformChatHelper.sendUpdatePlaceholderMessage(tabId, "Enter the name of your $targetJdkVersion")
     }
