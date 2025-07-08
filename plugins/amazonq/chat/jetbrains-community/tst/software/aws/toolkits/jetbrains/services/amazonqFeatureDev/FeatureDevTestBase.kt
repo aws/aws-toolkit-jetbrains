@@ -164,11 +164,7 @@ open class FeatureDevTestBase(
     open fun setup() {
         project = projectRule.project
         toolkitConnectionManager = spy(ToolkitConnectionManager.getInstance(project))
-        val accessToken = DeviceAuthorizationGrantToken(aString(), aString(), aString(), aString(), Instant.MAX, Instant.now())
-        val provider =
-            mock<BearerTokenProvider> {
-                doReturn(accessToken).whenever(it).refresh()
-            }
+        val provider = mock<BearerTokenProvider>()
         val mockBearerProvider =
             mock<ToolkitBearerTokenProvider> {
                 doReturn(provider).whenever(it).delegate
