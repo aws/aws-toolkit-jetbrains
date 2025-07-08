@@ -52,11 +52,6 @@ interface BearerTokenProvider : SdkTokenProvider, SdkAutoCloseable, ToolkitBeare
     fun currentToken(): AccessToken?
 
     /**
-     * Not meant to be invoked outside the implementation
-     */
-    fun refresh(): AccessToken
-
-    /**
      * @return The authentication state of [currentToken]
      */
     fun state(): BearerTokenAuthState = state(currentToken())
@@ -211,11 +206,6 @@ class InteractiveBearerTokenProvider(
     // internal nonsense so we can query the token without triggering a refresh
     override fun currentToken() = supplier.supplier.lastToken.get()
 
-    /**
-     * Only use if you know what you're doing. Does not attempt interactive reauthentication
-     */
-    override fun refresh(): AccessToken = supplier.supplier.refresh()
-
     override fun invalidate() {
         accessTokenProvider.invalidate()
         supplier.cachedSupplier.close()
@@ -271,10 +261,6 @@ class ProfileSdkTokenProviderWrapper(private val sessionName: String, region: St
             refreshToken = it.refreshToken(),
             expiresAt = it.expirationTime().orElseThrow()
         )
-    }
-
-    override fun refresh(): AccessToken {
-        error("Not yet implemented")
     }
 
     override fun close() {

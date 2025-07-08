@@ -250,11 +250,7 @@ open class CodeWhispererCodeModernizerTestBase(
         project = projectRule.project
         toolkitConnectionManager = spy(ToolkitConnectionManager.getInstance(project))
 
-        val accessToken = DeviceAuthorizationGrantToken(aString(), aString(), aString(), aString(), Instant.MAX, Instant.now())
-        val provider =
-            mock<BearerTokenProvider> {
-                doReturn(accessToken).whenever(it).refresh()
-            }
+        val provider = mock<BearerTokenProvider> { }
         val mockBearerProvider =
             mock<ToolkitBearerTokenProvider> {
                 doReturn(provider).whenever(it).delegate
@@ -340,7 +336,6 @@ open class CodeWhispererCodeModernizerTestBase(
         val accessToken = PKCEAuthorizationGrantToken(aString(), aString(), aString(), aString(), Instant.MAX, Instant.now())
 
         val provider = mock<BearerTokenProvider> {
-            doReturn(accessToken).whenever(it).refresh()
             doReturn(accessToken).whenever(it).currentToken()
             doReturn(authState).whenever(it).state()
         }
