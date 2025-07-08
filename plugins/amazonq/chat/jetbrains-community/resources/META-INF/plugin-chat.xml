@@ -72,6 +72,11 @@
                 <keyboard-shortcut keymap="$default" first-keystroke="meta alt A" />
             </action>
 
+            <action id="aws.toolkit.jetbrains.core.services.cwc.commands.GenerateUnitTestsAction"
+                    class="software.aws.toolkits.jetbrains.services.cwc.commands.GenerateUnitTestsAction">
+                <keyboard-shortcut keymap="$default" first-keystroke="meta alt T" />
+            </action>
+
             <action id="aws.toolkit.jetbrains.core.services.cwc.commands.SendToPromptAction"
                     class="software.aws.toolkits.jetbrains.services.cwc.commands.SendToPromptAction">
                 <keyboard-shortcut keymap="$default" first-keystroke="meta alt S" />
