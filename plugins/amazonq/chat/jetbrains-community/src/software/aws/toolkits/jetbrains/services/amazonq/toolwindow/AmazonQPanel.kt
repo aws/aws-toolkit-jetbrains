@@ -26,7 +26,7 @@ import software.aws.toolkits.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AppConnection
-import software.aws.toolkits.jetbrains.services.amazonq.commands.MessageSerializer
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import software.aws.toolkits.jetbrains.services.amazonq.commands.MessageTypeRegistry
 import software.aws.toolkits.jetbrains.services.amazonq.isQSupportedInThisVersion
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
@@ -166,14 +166,14 @@ class AmazonQPanel(val project: Project, private val scope: CoroutineScope) : Di
                                                 validImages.subList(20, validImages.size).clear()
                                             }
 
-                                            val json = MessageSerializer.getInstance().serialize(validImages)
+                                            val json = OBJECT_MAPPER.writeValueAsString(validImages)
                                             browserInstance.jcefBrowser.cefBrowser.executeJavaScript(
                                                 "window.handleNativeDrop('$json')",
                                                 browserInstance.jcefBrowser.cefBrowser.url,
                                                 0
                                             )
 
-                                            val errorJson = MessageSerializer.getInstance().serialize(errorMessages)
+                                            val errorJson = OBJECT_MAPPER.writeValueAsString(errorMessages)
                                             browserInstance.jcefBrowser.cefBrowser.executeJavaScript(
                                                 "window.handleNativeNotify('$errorJson')",
                                                 browserInstance.jcefBrowser.cefBrowser.url,
@@ -310,6 +310,7 @@ class AmazonQPanel(val project: Project, private val scope: CoroutineScope) : Di
 
     companion object {
         private val LOG = getLogger<AmazonQPanel>()
+        private val OBJECT_MAPPER = jacksonObjectMapper()
     }
 
     override fun dispose() {
