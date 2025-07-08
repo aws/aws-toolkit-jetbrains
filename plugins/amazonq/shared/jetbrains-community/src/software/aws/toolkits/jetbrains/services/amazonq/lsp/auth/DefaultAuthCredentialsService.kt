@@ -49,8 +49,8 @@ class DefaultAuthCredentialsService(
     Disposable {
 
     private val scheduler: ScheduledExecutorService = AppExecutorUtil.getAppScheduledExecutorService()
-    private var tokenSyncTask: ScheduledFuture<*>? = null
-    private val tokenSyncIntervalMinutes = 5L
+    private var tokenRefreshTask: ScheduledFuture<*>? = null
+    private val tokenRefreshInterval = 5L
 
     init {
         project.messageBus.connect(this).apply {
@@ -66,13 +66,13 @@ class DefaultAuthCredentialsService(
                 }
         }
 
-        // Start periodic token sync
-        startPeriodicTokenSync()
+        // Start periodic token refresh
+        startPeriodicTokenRefresh()
     }
 
     // TODO: we really only need a single application-wide instance of this
-    private fun startPeriodicTokenSync() {
-        tokenSyncTask = scheduler.scheduleWithFixedDelay(
+    private fun startPeriodicTokenRefresh() {
+        tokenRefreshTask = scheduler.scheduleWithFixedDelay(
             {
                 try {
                     if (isQConnected(project)) {
@@ -86,12 +86,11 @@ class DefaultAuthCredentialsService(
                                 ?.delegate
                                 ?.let { it as? BearerTokenProvider } ?: return@scheduleWithFixedDelay
 
-                            if (tokenProvider.state() == BearerTokenAuthState.NEEDS_REFRESH) {
-                                try {
-                                    tokenProvider.resolveToken()
-                                } catch (e: Exception) {
-                                    LOG.warn(e) { "Failed to refresh bearer token" }
-                                }
+                            // periodically poll token to trigger a background refresh if needed
+                            try {
+                                tokenProvider.resolveToken()
+                            } catch (e: Exception) {
+                                LOG.warn(e) { "Failed to refresh bearer token" }
                             }
                         }
                     }
@@ -99,8 +98,8 @@ class DefaultAuthCredentialsService(
                     LOG.warn(e) { "Failed to sync bearer token to Flare" }
                 }
             },
-            tokenSyncIntervalMinutes,
-            tokenSyncIntervalMinutes,
+            tokenRefreshInterval,
+            tokenRefreshInterval,
             TimeUnit.MINUTES
         )
     }
@@ -212,8 +211,8 @@ class DefaultAuthCredentialsService(
     }
 
     override fun dispose() {
-        tokenSyncTask?.cancel(false)
-        tokenSyncTask = null
+        tokenRefreshTask?.cancel(false)
+        tokenRefreshTask = null
     }
 
     companion object {
