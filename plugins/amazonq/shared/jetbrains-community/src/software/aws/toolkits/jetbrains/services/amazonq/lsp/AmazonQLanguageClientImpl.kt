@@ -152,7 +152,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
             MessageType.Error -> Level.ERROR
             MessageType.Warning -> Level.WARN
             MessageType.Info, MessageType.Log -> Level.INFO
-            else -> Level.WARN
+            else -> Level.Warn
         }
 
         if (type == Level.ERROR &&
@@ -269,23 +269,23 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                 val descriptor = when {
                     params.canSelectFolders && params.canSelectFiles -> {
                         if (params.canSelectMany) {
-                            FileChooserDescriptorFactory.multiFilesOrDirs()
+                            FileChooserDescriptorFactory.createAllButJarContentsDescriptor()
                         } else {
-                            FileChooserDescriptorFactory.singleFileOrDir()
+                            FileChooserDescriptorFactory.createSingleFileOrFolderDescriptor()
                         }
                     }
                     params.canSelectFolders -> {
                         if (params.canSelectMany) {
-                            FileChooserDescriptorFactory.multiDirs()
+                            FileChooserDescriptorFactory.createMultipleFoldersDescriptor()
                         } else {
-                            FileChooserDescriptorFactory.singleDir()
+                            FileChooserDescriptorFactory.createSingleFolderDescriptor()
                         }
                     }
-                    else -> { // Only files
+                    else -> {
                         if (params.canSelectMany) {
-                            FileChooserDescriptorFactory.multiFiles()
+                            FileChooserDescriptorFactory.createMultipleFilesNoJarsDescriptor()
                         } else {
-                            FileChooserDescriptorFactory.singleFile()
+                            FileChooserDescriptorFactory.createSingleFileNoJarsDescriptor()
                         }
                     }
                 }.apply {
