@@ -4,9 +4,9 @@
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat
 
 data class ShowOpenFileDialogParams(
-    val canSelectFiles: Boolean = false,
-    val canSelectFolders: Boolean = false,
-    val canSelectMany: Boolean = false,
-    val filters: Map<String, List<String>> = emptyMap(),
-    val title: String? = null,
+    val canSelectFiles: Boolean,
+    val canSelectFolders: Boolean,
+    val canSelectMany: Boolean,
+    val filters: Map<String, List<String>>,
+    val title: String?,
 )

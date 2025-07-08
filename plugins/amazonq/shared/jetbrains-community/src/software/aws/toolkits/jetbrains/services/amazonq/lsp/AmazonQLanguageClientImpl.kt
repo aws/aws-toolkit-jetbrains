@@ -269,23 +269,23 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                 val descriptor = when {
                     params.canSelectFolders && params.canSelectFiles -> {
                         if (params.canSelectMany) {
-                            FileChooserDescriptorFactory.createSingleFileOrFolderDescriptor()
+                            FileChooserDescriptorFactory.multiFilesOrDirs()
                         } else {
-                            FileChooserDescriptorFactory.createAllButJarContentsDescriptor()
+                            FileChooserDescriptorFactory.singleFileOrDir()
                         }
                     }
                     params.canSelectFolders -> {
                         if (params.canSelectMany) {
-                            FileChooserDescriptorFactory.createMultipleFoldersDescriptor()
+                            FileChooserDescriptorFactory.multiDirs()
                         } else {
-                            FileChooserDescriptorFactory.createSingleFolderDescriptor()
+                            FileChooserDescriptorFactory.singleDir()
                         }
                     }
-                    else -> {
+                    else -> { // Only files
                         if (params.canSelectMany) {
-                            FileChooserDescriptorFactory.createMultipleFilesNoJarsDescriptor()
+                            FileChooserDescriptorFactory.multiFiles()
                         } else {
-                            FileChooserDescriptorFactory.createSingleFileNoJarsDescriptor()
+                            FileChooserDescriptorFactory.singleFile()
                         }
                     }
                 }.apply {
@@ -307,12 +307,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                     // Apply file filters if provided
                     if (params.filters.isNotEmpty() && !params.canSelectFolders) {
                         // Create a combined list of all allowed extensions
-                        val allowedExtensions = params.filters.values.flatten()
-                            .map { pattern ->
-                                // Convert patterns like "*.jpg" to "jpg"
-                                pattern.removePrefix("*.").lowercase()
-                            }
-                            .toSet()
+                        val allowedExtensions = params.filters.values.flatten().toSet()
 
                         withFileFilter { virtualFile ->
                             if (virtualFile.isDirectory) {

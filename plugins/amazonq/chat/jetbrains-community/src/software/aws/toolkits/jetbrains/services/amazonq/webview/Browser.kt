@@ -161,8 +161,7 @@ class Browser(parent: Disposable, private val webUri: URI, val project: Project)
                     
                     window.handleNativeDrop = function(filePath) {
                         const parsedFilePath = JSON.parse(filePath);
-                        const contextArray = parsedFilePath.map(fileObj => {
-                            const fullPath = fileObj.path;
+                        const contextArray = parsedFilePath.map(fullPath => {
                             const fileName = fullPath.split(/[\\/]/).pop();
                             return {
                                 command: fileName,

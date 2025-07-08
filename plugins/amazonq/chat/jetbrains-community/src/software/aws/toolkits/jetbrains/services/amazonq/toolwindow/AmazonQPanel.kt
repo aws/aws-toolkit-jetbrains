@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.toolwindow
 
-import com.google.gson.Gson
 import com.intellij.idea.AppMode
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.service
@@ -26,6 +25,7 @@ import software.aws.toolkits.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AppConnection
+import software.aws.toolkits.jetbrains.services.amazonq.commands.MessageSerializer
 import software.aws.toolkits.jetbrains.services.amazonq.commands.MessageTypeRegistry
 import software.aws.toolkits.jetbrains.services.amazonq.isQSupportedInThisVersion
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
@@ -49,6 +49,7 @@ import software.aws.toolkits.resources.message
 import java.awt.datatransfer.DataFlavor
 import java.awt.dnd.DropTarget
 import java.awt.dnd.DropTargetDropEvent
+import java.io.File
 import java.util.concurrent.CompletableFuture
 import javax.imageio.ImageIO.read
 import javax.swing.JButton
@@ -132,6 +133,9 @@ class AmazonQPanel(val project: Project, private val scope: CoroutineScope) : Di
                             wrapper.setContent(browserInstance.component())
 
                             // Add DropTarget to the browser component
+                            // JCEF does not propagate OS-level dragenter, dragOver and drop into DOM.
+                            // As an alternative, enabling the native drag in JCEF,
+                            // and let the native handling the drop event, and update the UI through JS bridge.
                             val dropTarget = object : DropTarget() {
                                 override fun drop(dtde: DropTargetDropEvent) {
                                     try {
@@ -141,14 +145,13 @@ class AmazonQPanel(val project: Project, private val scope: CoroutineScope) : Di
                                             val fileList = transferable.getTransferData(DataFlavor.javaFileListFlavor) as List<*>
 
                                             val errorMessages = mutableListOf<String>()
-                                            val validImages = mutableListOf<java.io.File>()
+                                            val validImages = mutableListOf<File>()
                                             val allowedTypes = setOf("jpg", "jpeg", "png", "gif", "webp")
                                             val maxFileSize = 3.75 * 1024 * 1024 // 3.75MB in bytes
                                             val maxDimension = 8000
 
-                                            for (file in fileList) {
-                                                val fileObj = file as? java.io.File ?: continue
-                                                val fileName = fileObj.name
+                                            for (file in fileList as List<File>) {
+                                                val fileName = file.name
                                                 val ext = fileName.substringAfterLast('.', "").lowercase()
 
                                                 // File type restriction
@@ -158,14 +161,14 @@ class AmazonQPanel(val project: Project, private val scope: CoroutineScope) : Di
                                                 }
 
                                                 // Size restriction
-                                                if (fileObj.length() > maxFileSize) {
+                                                if (file.length() > maxFileSize) {
                                                     errorMessages.add("$fileName: Image must be no more than 3.75MB in size.")
                                                     continue
                                                 }
 
                                                 // Width/Height restriction (only for image types)
                                                 try {
-                                                    val img = read(fileObj)
+                                                    val img = read(file)
                                                     if (img == null) {
                                                         errorMessages.add("$fileName: File could not be read as an image.")
                                                         continue
@@ -183,7 +186,7 @@ class AmazonQPanel(val project: Project, private val scope: CoroutineScope) : Di
                                                     continue
                                                 }
 
-                                                validImages.add(fileObj)
+                                                validImages.add(file)
                                             }
 
                                             // File count restriction
@@ -192,14 +195,14 @@ class AmazonQPanel(val project: Project, private val scope: CoroutineScope) : Di
                                                 validImages.subList(20, validImages.size).clear()
                                             }
 
-                                            val json = Gson().toJson(validImages)
+                                            val json = MessageSerializer.getInstance().serialize(validImages)
                                             browserInstance.jcefBrowser.cefBrowser.executeJavaScript(
                                                 "window.handleNativeDrop('$json')",
                                                 browserInstance.jcefBrowser.cefBrowser.url,
                                                 0
                                             )
 
-                                            val errorJson = Gson().toJson(errorMessages)
+                                            val errorJson = MessageSerializer.getInstance().serialize(errorMessages)
                                             browserInstance.jcefBrowser.cefBrowser.executeJavaScript(
                                                 "window.handleNativeNotify('$errorJson')",
                                                 browserInstance.jcefBrowser.cefBrowser.url,
@@ -311,8 +314,6 @@ class AmazonQPanel(val project: Project, private val scope: CoroutineScope) : Di
 
     companion object {
         private val LOG = getLogger<AmazonQPanel>()
-
-        fun getInstance(project: Project) = project.service<AmazonQPanel>()
     }
 
     override fun dispose() {
