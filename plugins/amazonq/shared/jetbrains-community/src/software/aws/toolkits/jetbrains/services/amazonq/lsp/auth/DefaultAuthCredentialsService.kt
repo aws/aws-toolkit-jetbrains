@@ -19,7 +19,6 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
-import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
@@ -76,26 +75,18 @@ class DefaultAuthCredentialsService(
             {
                 try {
                     if (isQConnected(project)) {
-                        if (isQExpired(project)) {
-                            val manager = ToolkitConnectionManager.getInstance(project)
-                            val connection = manager.activeConnectionForFeature(QConnection.getInstance()) ?: return@scheduleWithFixedDelay
+                        val manager = ToolkitConnectionManager.getInstance(project)
+                        val connection = manager.activeConnectionForFeature(QConnection.getInstance()) ?: return@scheduleWithFixedDelay
 
-                            // Try to refresh the token if it's in NEEDS_REFRESH state
-                            val tokenProvider = (connection.getConnectionSettings() as? TokenConnectionSettings)
-                                ?.tokenProvider
-                                ?.delegate
-                                ?.let { it as? BearerTokenProvider } ?: return@scheduleWithFixedDelay
-
-                            // periodically poll token to trigger a background refresh if needed
-                            try {
-                                tokenProvider.resolveToken()
-                            } catch (e: Exception) {
-                                LOG.warn(e) { "Failed to refresh bearer token" }
-                            }
-                        }
+                        // periodically poll token to trigger a background refresh if needed
+                        val tokenProvider = (connection.getConnectionSettings() as? TokenConnectionSettings)
+                            ?.tokenProvider
+                            ?.delegate
+                            ?.let { it as? BearerTokenProvider } ?: return@scheduleWithFixedDelay
+                        tokenProvider.resolveToken()
                     }
                 } catch (e: Exception) {
-                    LOG.warn(e) { "Failed to sync bearer token to Flare" }
+                    LOG.warn(e) { "Failed to refresh bearer token" }
                 }
             },
             tokenRefreshInterval,

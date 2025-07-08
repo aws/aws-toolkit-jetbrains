@@ -248,11 +248,13 @@ class InteractiveBearerTokenProviderTest {
         stubClientRegistration()
         stubAccessToken()
         val sut = buildSut()
+        whenever(diskCache.loadAccessToken(any<DeviceGrantAccessTokenCacheKey>())).thenReturn(null)
         sut.invalidate()
 
         // initial load
         // invalidate attempts to reload token from disk
         verify(diskCache, times(2)).loadAccessToken(any<DeviceGrantAccessTokenCacheKey>())
+        verify(diskCache).loadAccessToken(any<PKCEAccessTokenCacheKey>())
         verify(diskCache).invalidateClientRegistration(region)
         verify(diskCache).invalidateAccessToken(startUrl)
 
@@ -268,6 +270,10 @@ class InteractiveBearerTokenProviderTest {
 
         // nothing else
         verifyNoMoreInteractions(diskCache)
+
+        // should not have a token now
+        assertThat(sut.currentToken()?.accessToken).isNull()
+        assertThrows<NoTokenInitializedException> { sut.resolveToken() }
     }
 
     @Test
