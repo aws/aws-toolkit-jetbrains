@@ -1,3 +1,11 @@
+# _3.83_ (2025-07-07)
+- **(Bug Fix)** Fix auto-suggestions being shown when suggestions are paused
+
+# _3.82_ (2025-07-03)
+- **(Bug Fix)** Skip inline completion when deleting characters
+
+# _3.81_ (2025-06-27)
+
 # _3.80_ (2025-06-26)
 - **(Feature)** Amazon Q inline: now display completions much more consistently at the user's current caret position
 - **(Feature)** Amazon Q inline: now Q completions can co-exist with JetBrains' native IntelliSense completions, when both are showing, press Tab or your customized key shortcuts to accept Q completions and press Enter to accept IntelliSense completions.
