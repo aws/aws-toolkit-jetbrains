@@ -151,42 +151,12 @@ class AmazonQPanel(val project: Project, private val scope: CoroutineScope) : Di
                                             val maxDimension = 8000
 
                                             for (file in fileList as List<File>) {
-                                                val fileName = file.name
-                                                val ext = fileName.substringAfterLast('.', "").lowercase()
-
-                                                // File type restriction
-                                                if (ext !in allowedTypes) {
-                                                    errorMessages.add("$fileName: File must be an image in JPEG, PNG, GIF, or WebP format.")
-                                                    continue
+                                                val validationResult = validateImageFile(file, allowedTypes, maxFileSize, maxDimension)
+                                                if (validationResult != null) {
+                                                    errorMessages.add(validationResult)
+                                                } else {
+                                                    validImages.add(file)
                                                 }
-
-                                                // Size restriction
-                                                if (file.length() > maxFileSize) {
-                                                    errorMessages.add("$fileName: Image must be no more than 3.75MB in size.")
-                                                    continue
-                                                }
-
-                                                // Width/Height restriction (only for image types)
-                                                try {
-                                                    val img = read(file)
-                                                    if (img == null) {
-                                                        errorMessages.add("$fileName: File could not be read as an image.")
-                                                        continue
-                                                    }
-                                                    if (img.width > maxDimension) {
-                                                        errorMessages.add("$fileName: Image must be no more than 8,000px in width.")
-                                                        continue
-                                                    }
-                                                    if (img.height > maxDimension) {
-                                                        errorMessages.add("$fileName: Image must be no more than 8,000px in height.")
-                                                        continue
-                                                    }
-                                                } catch (e: Exception) {
-                                                    errorMessages.add("$fileName: File could not be read as an image.")
-                                                    continue
-                                                }
-
-                                                validImages.add(file)
                                             }
 
                                             // File count restriction
@@ -309,6 +279,31 @@ class AmazonQPanel(val project: Project, private val scope: CoroutineScope) : Di
                 chatBrowser = browser.jcefBrowser.cefBrowser,
                 themeSource = editorThemeAdapter.onThemeChange(),
             )
+        }
+    }
+
+    private fun validateImageFile(file: File, allowedTypes: Set<String>, maxFileSize: Double, maxDimension: Int): String? {
+        val fileName = file.name
+        val ext = fileName.substringAfterLast('.', "").lowercase()
+
+        if (ext !in allowedTypes) {
+            return "$fileName: File must be an image in JPEG, PNG, GIF, or WebP format."
+        }
+
+        if (file.length() > maxFileSize) {
+            return "$fileName: Image must be no more than 3.75MB in size."
+        }
+
+        return try {
+            val img = read(file)
+            when {
+                img == null -> "$fileName: File could not be read as an image."
+                img.width > maxDimension -> "$fileName: Image must be no more than 8,000px in width."
+                img.height > maxDimension -> "$fileName: Image must be no more than 8,000px in height."
+                else -> null
+            }
+        } catch (e: Exception) {
+            "$fileName: File could not be read as an image."
         }
     }
 
