@@ -20,6 +20,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.isDeveloperMode
@@ -183,7 +184,7 @@ class AmazonQPanel(val project: Project, private val scope: CoroutineScope) : Di
                                             dtde.dropComplete(false)
                                         }
                                     } catch (e: Exception) {
-                                        LOG.error("Failed to handle file drop operation", e.message)
+                                        LOG.error { "Failed to handle file drop operation: ${e.message}" }
                                         dtde.dropComplete(false)
                                     }
                                 }
