@@ -25,7 +25,7 @@ data class DeveloperProfiles(
     val developerProfiles: Boolean,
     val mcp: Boolean,
     val pinnedContextEnabled: Boolean,
-    val imageContextEnabled: Boolean = true,
+    val imageContextEnabled: Boolean,
 )
 
 data class WindowSettings(
