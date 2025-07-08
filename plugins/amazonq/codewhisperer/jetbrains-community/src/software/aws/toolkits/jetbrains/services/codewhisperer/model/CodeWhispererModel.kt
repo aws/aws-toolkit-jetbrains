@@ -14,6 +14,7 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.UserDataHolderBase
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import kotlinx.coroutines.channels.Channel
+import software.amazon.awssdk.services.codewhispererruntime.model.IdeDiagnostic
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionItem
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionListWithReferences
@@ -244,6 +245,7 @@ data class InlineCompletionSessionContext(
     var sessionId: String = "",
     val triggerOffset: Int,
     var counter: Int = 0,
+    val diagnostics: List<IdeDiagnostic>? = emptyList(),
 )
 
 data class InlineCompletionItemContext(
