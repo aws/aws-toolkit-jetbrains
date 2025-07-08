@@ -59,6 +59,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispe
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
 import software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.getDocumentDiagnostics
 import software.aws.toolkits.jetbrains.utils.isQConnected
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodewhispererTriggerType
@@ -332,6 +333,7 @@ class QInlineCompletionProvider(private val cs: CoroutineScope) : InlineCompleti
                             latencyContext,
                             sessionContext,
                             triggerSessionId,
+                            editor.document
                         )
                         activeTriggerSessions.remove(triggerSessionId)
                     }
@@ -398,6 +400,7 @@ class QInlineCompletionProvider(private val cs: CoroutineScope) : InlineCompleti
         val triggerSessionId = triggerSessionId++
         val latencyContext = LatencyContext(codewhispererEndToEndStart = System.nanoTime())
         val triggerTypeInfo = getTriggerTypeInfo(request)
+        val diagnostics = getDocumentDiagnostics(editor.document, project)
 
         CodeWhispererInvocationStatus.getInstance().setIsInvokingQInline(session, true)
         Disposer.register(session) {
@@ -412,7 +415,7 @@ class QInlineCompletionProvider(private val cs: CoroutineScope) : InlineCompleti
             return InlineCompletionSuggestion.Empty
         }
 
-        val sessionContext = InlineCompletionSessionContext(triggerOffset = request.endOffset)
+        val sessionContext = InlineCompletionSessionContext(triggerOffset = request.endOffset, diagnostics = diagnostics)
 
         // Pagination workaround: Always return exactly 5 variants
         // Create channel placeholder for upcoming pagination results
