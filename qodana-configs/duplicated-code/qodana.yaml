@@ -1,0 +1,10 @@
+version: 1.0
+linter: jetbrains/qodana-jvm-community:latest
+projectJDK: "21"
+bootstrap: ./gradlew :plugin-core:sdk-codegen:generateSdks :plugin-core:jetbrains-community:generateTelemetry :plugin-toolkit:jetbrains-rider:generateModels
+exclude:
+  - name: All
+dot-net:
+  solution: ReSharper.AWS.sln
+include:
+  - name: DuplicatedCode
