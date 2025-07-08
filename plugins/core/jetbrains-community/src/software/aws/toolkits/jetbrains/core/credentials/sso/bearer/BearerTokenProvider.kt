@@ -37,8 +37,8 @@ import software.aws.toolkits.jetbrains.core.credentials.sso.DiskCache
 import software.aws.toolkits.jetbrains.core.credentials.sso.PendingAuthorization
 import software.aws.toolkits.jetbrains.core.credentials.sso.SsoAccessTokenProvider
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener.Companion.TOPIC
+import java.time.Clock
 import java.time.Duration
-import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Supplier
@@ -75,11 +75,11 @@ interface BearerTokenProvider : SdkTokenProvider, SdkAutoCloseable, ToolkitBeare
     }
 
     companion object {
-        internal fun tokenExpired(accessToken: AccessToken) = Instant.now().isAfter(accessToken.expiresAt)
+        private fun tokenExpired(accessToken: AccessToken, clock: Clock) = clock.instant().isAfter(accessToken.expiresAt)
 
-        internal fun state(accessToken: AccessToken?) = when {
+        internal fun state(accessToken: AccessToken?, clock: Clock = Clock.systemUTC()) = when {
             accessToken == null -> BearerTokenAuthState.NOT_AUTHENTICATED
-            tokenExpired(accessToken) -> {
+            tokenExpired(accessToken, clock) -> {
                 if (accessToken.refreshToken != null) {
                     BearerTokenAuthState.NEEDS_REFRESH
                 } else {
@@ -98,6 +98,7 @@ class InteractiveBearerTokenProvider(
     val scopes: List<String>,
     override val id: String,
     cache: DiskCache = diskCache,
+    private val clock: Clock = Clock.systemUTC(),
 ) : BearerTokenProvider, BearerTokenLogoutSupport, Disposable {
     override val displayName = ToolkitBearerTokenProvider.ssoDisplayName(startUrl)
 
@@ -146,7 +147,7 @@ class InteractiveBearerTokenProvider(
         SupplierWithInitialValue(initialValue, accessTokenProvider).let {
             SupplierHolder(
                 it,
-                CachedSupplier.builder(it).prefetchStrategy(NonBlocking("AWS SSO bearer token refresher")).build()
+                CachedSupplier.builder(it).clock(clock).prefetchStrategy(NonBlocking("AWS SSO bearer token refresher")).build()
             )
         }
 
@@ -163,8 +164,14 @@ class InteractiveBearerTokenProvider(
             val token = if (hasCalledAtLeastOnce.getAndSet(true)) {
                 refresh()
             } else {
-                initialValue ?: throw NoTokenInitializedException("Token refresh started before session initialized")
+                // on initial call, refresh if needed
+                if (initialValue != null && initialValue.expiresAt.minus(DEFAULT_PREFETCH_DURATION) < clock.instant()) {
+                    refresh()
+                } else {
+                    initialValue ?: throw NoTokenInitializedException("Token provider initialized with no token")
+                }
             }
+
             return RefreshResult.builder(token)
                 .staleTime(token.expiresAt.minus(DEFAULT_STALE_DURATION))
                 .prefetchTime(token.expiresAt.minus(DEFAULT_PREFETCH_DURATION))
@@ -186,6 +193,8 @@ class InteractiveBearerTokenProvider(
             }
         }
     }
+
+    override fun state() = BearerTokenProvider.state(currentToken(), clock)
 
     // how we expect consumers to obtain a token
     override fun resolveToken() = supplier.cachedSupplier.get()
@@ -209,6 +218,7 @@ class InteractiveBearerTokenProvider(
 
     override fun invalidate() {
         accessTokenProvider.invalidate()
+        supplier.cachedSupplier.close()
         supplier = supplier()
         BearerTokenProviderListener.notifyCredUpdate(id)
     }
@@ -217,6 +227,7 @@ class InteractiveBearerTokenProvider(
         // we probably don't need to invalidate this, but we might as well since we need to login again anyways
         invalidate()
         accessTokenProvider.accessToken().also {
+            supplier.cachedSupplier.close()
             supplier = supplier(it)
             BearerTokenProviderListener.notifyCredUpdate(id)
         }

@@ -165,7 +165,6 @@ class DefaultAuthCredentialsService(
     private fun updateTokenFromConnection(connection: ToolkitConnection): CompletableFuture<ResponseMessage> =
         updateTokenCredentials(connection, true)
 
-
     private fun createUpdateCredentialsPayload(connection: ToolkitConnection, encrypted: Boolean): UpdateCredentialsPayload {
         val token = (connection.getConnectionSettings() as? TokenConnectionSettings)
             ?.tokenProvider
