@@ -321,7 +321,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                 }
 
                 val chosenFiles = FileChooser.chooseFiles(descriptor, project, null)
-                val uris = chosenFiles.map { it.url }
+                val uris = chosenFiles.map { it.path }
 
                 mapOf("uris" to uris) as LSPAny
             },
