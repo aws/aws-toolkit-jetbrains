@@ -3,13 +3,11 @@
 @file:Suppress("BannedImports")
 package software.aws.toolkits.jetbrains.services.cwc.commands
 
-import com.google.gson.Gson
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.runBlocking
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AsyncChatUiListener
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.FlareUiMessage
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GENERIC_COMMAND
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GenericCommandParams
@@ -17,7 +15,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SendToPromptParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TriggerType
 import software.aws.toolkits.jetbrains.services.amazonq.messages.AmazonQMessage
-import software.aws.toolkits.jetbrains.services.amazonqCodeTest.controller.TestCommandMessage
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.ActiveFileContextExtractor
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.ExtractionTriggerType
 
