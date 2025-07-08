@@ -28,25 +28,21 @@ class ActionRegistrar {
     val flow = _messages.asSharedFlow()
 
     fun reportMessageClick(command: EditorContextCommand, project: Project) {
-        if (command == EditorContextCommand.GenerateUnitTests) {
-            AsyncChatUiListener.notifyPartialMessageUpdate(project, Gson().toJson(TestCommandMessage()))
-        } else {
-            // new agentic chat route
-            ApplicationManager.getApplication().executeOnPooledThread {
-                runBlocking {
-                    val contextExtractor = ActiveFileContextExtractor.create(fqnWebviewAdapter = null, project = project)
-                    val fileContext = contextExtractor.extractContextForTrigger(ExtractionTriggerType.ContextMenu)
-                    val codeSelection = "\n```\n${fileContext.focusAreaContext?.codeSelection?.trimIndent()?.trim()}\n```\n"
-                    var uiMessage: FlareUiMessage? = null
-                    if (command.verb != SEND_TO_PROMPT) {
-                        val params = GenericCommandParams(selection = codeSelection, triggerType = TriggerType.CONTEXT_MENU, genericCommand = command.name)
-                        uiMessage = FlareUiMessage(command = GENERIC_COMMAND, params = params)
-                    } else {
-                        val params = SendToPromptParams(selection = codeSelection, triggerType = TriggerType.CONTEXT_MENU)
-                        uiMessage = FlareUiMessage(command = SEND_TO_PROMPT, params = params)
-                    }
-                    AsyncChatUiListener.notifyPartialMessageUpdate(project, uiMessage)
+        // new agentic chat route
+        ApplicationManager.getApplication().executeOnPooledThread {
+            runBlocking {
+                val contextExtractor = ActiveFileContextExtractor.create(fqnWebviewAdapter = null, project = project)
+                val fileContext = contextExtractor.extractContextForTrigger(ExtractionTriggerType.ContextMenu)
+                val codeSelection = "\n```\n${fileContext.focusAreaContext?.codeSelection?.trimIndent()?.trim()}\n```\n"
+                var uiMessage: FlareUiMessage? = null
+                if (command.verb != SEND_TO_PROMPT) {
+                    val params = GenericCommandParams(selection = codeSelection, triggerType = TriggerType.CONTEXT_MENU, genericCommand = command.name)
+                    uiMessage = FlareUiMessage(command = GENERIC_COMMAND, params = params)
+                } else {
+                    val params = SendToPromptParams(selection = codeSelection, triggerType = TriggerType.CONTEXT_MENU)
+                    uiMessage = FlareUiMessage(command = SEND_TO_PROMPT, params = params)
                 }
+                AsyncChatUiListener.notifyPartialMessageUpdate(project, uiMessage)
             }
         }
     }
