@@ -11,12 +11,8 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.util.Alarm
 import com.intellij.util.AlarmFactory
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
 import org.apache.commons.collections4.queue.CircularFifoQueue
-import software.aws.toolkits.jetbrains.core.coroutines.EDT
-import software.aws.toolkits.jetbrains.core.coroutines.applicationCoroutineScope
 import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.LatencyContext
 import software.aws.toolkits.telemetry.CodewhispererPreviousSuggestionState
 import software.aws.toolkits.telemetry.CodewhispererTriggerType
 import java.time.Duration
@@ -37,7 +33,7 @@ class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, Disposa
     }
 
     // real auto trigger logic
-    fun invoke(editor: Editor, triggerType: CodeWhispererAutomatedTriggerType): Job? {
+    fun invoke(editor: Editor): Job? {
         timeAtLastCharTyped = System.nanoTime()
         if (!(
                 if (CodeWhispererFeatureConfigService.getInstance().getNewAutoTriggerUX()) {
@@ -53,15 +49,7 @@ class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, Disposa
         lastInvocationTime = Instant.now()
         lastInvocationLineNum = runReadAction { editor.caretModel.visualPosition.line }
 
-        val latencyContext = LatencyContext().apply {
-            codewhispererEndToEndStart = System.nanoTime()
-        }
-
-        val coroutineScope = applicationCoroutineScope()
-
-        return coroutineScope.launch(EDT) {
-            performAutomatedTriggerAction(editor, triggerType, latencyContext)
-        }
+        return null
     }
 
     private fun scheduleReset() {

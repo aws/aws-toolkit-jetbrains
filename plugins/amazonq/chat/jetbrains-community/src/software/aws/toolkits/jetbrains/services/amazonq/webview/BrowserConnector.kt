@@ -60,6 +60,8 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_LINK_CLICK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_LIST_CONVERSATIONS
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_OPEN_TAB
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_PINNED_CONTEXT_ADD
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_PINNED_CONTEXT_REMOVE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_PROMPT_OPTION_ACKNOWLEDGED
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_QUICK_ACTION
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_READY
@@ -73,6 +75,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.Encry
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GET_SERIALIZED_CHAT_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatResponse
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.LIST_MCP_SERVERS_REQUEST_METHOD
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.LIST_RULES_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.MCP_SERVER_CLICK_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OPEN_SETTINGS
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OPEN_WORKSPACE_SETTINGS_KEY
@@ -83,6 +86,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenTabResultSuccess
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.PROMPT_INPUT_OPTIONS_CHANGE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.QuickChatActionRequest
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.RULE_CLICK_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_CHAT_COMMAND_PROMPT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.STOP_CHAT_RESPONSE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SendChatPromptRequest
@@ -112,7 +116,7 @@ class BrowserConnector(
     private val themeBrowserAdapter: ThemeBrowserAdapter = ThemeBrowserAdapter(),
     private val project: Project,
 ) {
-    var uiReady = CompletableDeferred<Boolean>()
+    val uiReady = CompletableDeferred<Boolean>()
     private val chatCommunicationManager = ChatCommunicationManager.getInstance(project)
     private val chatAsyncResultManager = ChatAsyncResultManager.getInstance(project)
 
@@ -212,7 +216,7 @@ class BrowserConnector(
         }
     }
 
-    private fun handleFlareChatMessages(browser: Browser, node: JsonNode) {
+    private suspend fun handleFlareChatMessages(browser: Browser, node: JsonNode) {
         when (node.command) {
             SEND_CHAT_COMMAND_PROMPT -> {
                 val requestFromUi = serializer.deserializeChatMessages<SendChatPromptRequest>(node)
@@ -234,7 +238,7 @@ class BrowserConnector(
                 chatCommunicationManager.registerPartialResultToken(partialResultToken)
 
                 var encryptionManager: JwtEncryptionManager? = null
-                val result = AmazonQLspService.executeIfRunning(project) { server ->
+                val result = AmazonQLspService.executeAsyncIfRunning(project) { server ->
                     encryptionManager = this.encryptionManager
 
                     val encryptedParams = EncryptedChatParams(this.encryptionManager.encrypt(chatParams), partialResultToken)
@@ -254,7 +258,7 @@ class BrowserConnector(
                 val partialResultToken = chatCommunicationManager.addPartialChatMessage(tabId)
                 chatCommunicationManager.registerPartialResultToken(partialResultToken)
                 var encryptionManager: JwtEncryptionManager? = null
-                val result = AmazonQLspService.executeIfRunning(project) { server ->
+                val result = AmazonQLspService.executeAsyncIfRunning(project) { server ->
                     encryptionManager = this.encryptionManager
 
                     val encryptedParams = EncryptedQuickActionChatParams(this.encryptionManager.encrypt(quickActionParams), partialResultToken)
@@ -485,6 +489,34 @@ class BrowserConnector(
                         )
                     }
             }
+            LIST_RULES_REQUEST_METHOD -> {
+                handleChat(AmazonQChatServer.listRules, node)
+                    .whenComplete { response, _ ->
+                        browser.postChat(
+                            FlareUiMessage(
+                                command = LIST_RULES_REQUEST_METHOD,
+                                params = response
+                            )
+                        )
+                    }
+            }
+            RULE_CLICK_REQUEST_METHOD -> {
+                handleChat(AmazonQChatServer.ruleClick, node)
+                    .whenComplete { response, _ ->
+                        browser.postChat(
+                            FlareUiMessage(
+                                command = RULE_CLICK_REQUEST_METHOD,
+                                params = response
+                            )
+                        )
+                    }
+            }
+            CHAT_PINNED_CONTEXT_ADD -> {
+                handleChat(AmazonQChatServer.pinnedContextAdd, node)
+            }
+            CHAT_PINNED_CONTEXT_REMOVE -> {
+                handleChat(AmazonQChatServer.pinnedContextRemove, node)
+            }
         }
     }
 
@@ -585,7 +617,7 @@ class BrowserConnector(
         }
     }
 
-    private inline fun <reified Request, Response> handleChat(
+    private suspend inline fun <reified Request, Response> handleChat(
         lspMethod: JsonRpcMethod<Request, Response>,
         node: JsonNode,
         crossinline serverAction: (params: Request, invokeService: () -> CompletableFuture<Response>) -> CompletableFuture<Response>,
@@ -596,7 +628,7 @@ class BrowserConnector(
             serializer.deserializeChatMessages<Request>(node.params, lspMethod.params)
         }
 
-        return AmazonQLspService.executeIfRunning(project) { _ ->
+        return AmazonQLspService.executeAsyncIfRunning(project) { _ ->
             val invokeService = when (lspMethod) {
                 is JsonRpcNotification<Request> -> {
                     // notify is Unit
@@ -618,7 +650,7 @@ class BrowserConnector(
         } ?: CompletableFuture.failedFuture<Response>(IllegalStateException("LSP Server not running"))
     }
 
-    private inline fun <reified Request, Response> handleChat(
+    private suspend inline fun <reified Request, Response> handleChat(
         lspMethod: JsonRpcMethod<Request, Response>,
         node: JsonNode,
     ): CompletableFuture<Response> = handleChat(

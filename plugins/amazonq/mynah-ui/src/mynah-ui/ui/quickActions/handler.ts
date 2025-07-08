@@ -394,6 +394,8 @@ private handleDocCommand(chatPrompt: ChatPrompt, tabID: string, taskName: string
                 loadingChat: true,
                 cancelButtonWhenLoading: false,
             })
+        } else {
+            this.mynahUI?.updateStore(affectedTabId, { promptInputOptions: [], promptTopBarTitle: '' })
         }
 
         if (affectedTabId && this.isHybridChatEnabled) {

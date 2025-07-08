@@ -16,6 +16,7 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VfsUtil
+import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFileManager
 import migration.software.aws.toolkits.jetbrains.settings.AwsSettings
 import org.eclipse.lsp4j.ConfigurationParams
@@ -27,6 +28,7 @@ import org.eclipse.lsp4j.PublishDiagnosticsParams
 import org.eclipse.lsp4j.ShowDocumentParams
 import org.eclipse.lsp4j.ShowDocumentResult
 import org.eclipse.lsp4j.ShowMessageRequestParams
+import org.eclipse.lsp4j.TextDocumentIdentifier
 import org.eclipse.lsp4j.jsonrpc.ResponseErrorException
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseError
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseErrorCode
@@ -44,7 +46,10 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.FlareUiMes
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LSPAny
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_OPEN_TAB
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_OPTIONS_UPDATE_NOTIFICATION
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_PINNED_CONTEXT_ADD
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_PINNED_CONTEXT_REMOVE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_CONTEXT_COMMANDS
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_PINNED_CONTEXT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_UPDATE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CopyFileParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FileParams
@@ -74,7 +79,8 @@ import java.util.concurrent.TimeUnit
  * Concrete implementation of [AmazonQLanguageClient] to handle messages sent from server
  */
 class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageClient {
-
+    private val chatManager
+        get() = ChatCommunicationManager.getInstance(project)
     private fun handleTelemetryMap(telemetryMap: Map<*, *>) {
         try {
             val name = telemetryMap["name"] as? String ?: return
@@ -143,6 +149,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
             MessageType.Error -> Level.ERROR
             MessageType.Warning -> Level.WARN
             MessageType.Info, MessageType.Log -> Level.INFO
+            else -> Level.WARN
         }
 
         if (type == Level.ERROR &&
@@ -201,7 +208,6 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
     override fun openTab(params: LSPAny): CompletableFuture<LSPAny> {
         val requestId = UUID.randomUUID().toString()
         val result = CompletableFuture<LSPAny>()
-        val chatManager = ChatCommunicationManager.getInstance(project)
         chatManager.addTabOpenRequest(requestId, result)
 
         chatManager.notifyUi(
@@ -252,7 +258,6 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
     override fun getSerializedChat(params: LSPAny): CompletableFuture<GetSerializedChatResult> {
         val requestId = UUID.randomUUID().toString()
         val result = CompletableFuture<GetSerializedChatResult>()
-        val chatManager = ChatCommunicationManager.getInstance(project)
         chatManager.addSerializedChatRequest(requestId, result)
 
         chatManager.notifyUi(
@@ -317,15 +322,14 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
 
     override fun notifyProgress(params: ProgressParams?) {
         if (params == null) return
-        val chatCommunicationManager = ChatCommunicationManager.getInstance(project)
         try {
-            chatCommunicationManager.handlePartialResultProgressNotification(project, params)
+            chatManager.handlePartialResultProgressNotification(project, params)
         } catch (e: Exception) {
             LOG.error(e) { "Cannot handle partial chat" }
         }
     }
 
-    override fun sendChatUpdate(params: LSPAny): CompletableFuture<Unit> {
+    override fun sendChatUpdate(params: LSPAny) {
         AsyncChatUiListener.notifyPartialMessageUpdate(
             project,
             FlareUiMessage(
@@ -333,8 +337,6 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                 params = params,
             )
         )
-
-        return CompletableFuture.completedFuture(Unit)
     }
 
     private fun File.toVirtualFile() = LocalFileSystem.getInstance().findFileByIoFile(this)
@@ -345,84 +347,129 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
         MessageType.Info, MessageType.Log -> NotificationType.INFORMATION
     }
 
-    override fun openFileDiff(params: OpenFileDiffParams): CompletableFuture<Unit> =
-        CompletableFuture.supplyAsync(
-            {
-                var tempPath: java.nio.file.Path? = null
-                try {
-                    val fileName = Paths.get(params.originalFileUri).fileName.toString()
-                    // Create a temporary virtual file for syntax highlighting
-                    val fileExtension = fileName.substringAfterLast('.', "")
-                    tempPath = Files.createTempFile(null, ".$fileExtension")
-                    val virtualFile = tempPath.toFile()
-                        .also { it.setReadOnly() }
-                        .toVirtualFile()
+    override fun openFileDiff(params: OpenFileDiffParams) {
+        ApplicationManager.getApplication().invokeLater {
+            var tempPath: java.nio.file.Path? = null
+            try {
+                val fileName = Paths.get(params.originalFileUri).fileName.toString()
+                // Create a temporary virtual file for syntax highlighting
+                val fileExtension = fileName.substringAfterLast('.', "")
+                tempPath = Files.createTempFile(null, ".$fileExtension")
+                val virtualFile = tempPath.toFile()
+                    .also { it.setReadOnly() }
+                    .toVirtualFile()
 
-                    val originalContent = params.originalFileContent ?: run {
-                        val sourceFile = File(params.originalFileUri)
-                        if (sourceFile.exists()) sourceFile.readText() else ""
+                val originalContent = params.originalFileContent ?: run {
+                    val sourceFile = File(params.originalFileUri)
+                    if (sourceFile.exists()) sourceFile.readText() else ""
+                }
+
+                val contentFactory = DiffContentFactory.getInstance()
+                var isNewFile = false
+                val (leftContent, rightContent) = when {
+                    params.isDeleted -> {
+                        contentFactory.create(project, originalContent, virtualFile) to
+                            contentFactory.createEmpty()
                     }
 
-                    val contentFactory = DiffContentFactory.getInstance()
-                    var isNewFile = false
-                    val (leftContent, rightContent) = when {
-                        params.isDeleted -> {
-                            contentFactory.create(project, originalContent, virtualFile) to
-                                contentFactory.createEmpty()
-                        }
+                    else -> {
+                        val newContent = params.fileContent.orEmpty()
+                        isNewFile = newContent == originalContent
+                        when {
+                            isNewFile -> {
+                                contentFactory.createEmpty() to
+                                    contentFactory.create(project, newContent, virtualFile)
+                            }
 
-                        else -> {
-                            val newContent = params.fileContent.orEmpty()
-                            isNewFile = newContent == originalContent
-                            when {
-                                isNewFile -> {
-                                    contentFactory.createEmpty() to
-                                        contentFactory.create(project, newContent, virtualFile)
-                                }
-
-                                else -> {
-                                    contentFactory.create(project, originalContent, virtualFile) to
-                                        contentFactory.create(project, newContent, virtualFile)
-                                }
+                            else -> {
+                                contentFactory.create(project, originalContent, virtualFile) to
+                                    contentFactory.create(project, newContent, virtualFile)
                             }
                         }
                     }
-                    val diffRequest = SimpleDiffRequest(
-                        "$fileName ${message("aws.q.lsp.client.diff_message")}",
-                        leftContent,
-                        rightContent,
-                        "Original",
-                        when {
-                            params.isDeleted -> "Deleted"
-                            isNewFile -> "Created"
-                            else -> "Modified"
-                        }
-                    )
-
-                    AmazonQDiffVirtualFile.openDiff(project, diffRequest)
-                } catch (e: Exception) {
-                    LOG.warn { "Failed to open file diff: ${e.message}" }
-                } finally {
-                    // Clean up the temporary file used for syntax highlight
-                    try {
-                        tempPath?.let { Files.deleteIfExists(it) }
-                    } catch (e: Exception) {
-                        LOG.warn { "Failed to delete temporary file: ${e.message}" }
-                    }
                 }
-            },
-            ApplicationManager.getApplication()::invokeLater
-        )
+                val diffRequest = SimpleDiffRequest(
+                    "$fileName ${message("aws.q.lsp.client.diff_message")}",
+                    leftContent,
+                    rightContent,
+                    "Original",
+                    when {
+                        params.isDeleted -> "Deleted"
+                        isNewFile -> "Created"
+                        else -> "Modified"
+                    }
+                )
 
-    override fun sendContextCommands(params: LSPAny): CompletableFuture<Unit> {
-        val chatManager = ChatCommunicationManager.getInstance(project)
+                AmazonQDiffVirtualFile.openDiff(project, diffRequest)
+            } catch (e: Exception) {
+                LOG.warn { "Failed to open file diff: ${e.message}" }
+            } finally {
+                // Clean up the temporary file used for syntax highlight
+                try {
+                    tempPath?.let { Files.deleteIfExists(it) }
+                } catch (e: Exception) {
+                    LOG.warn { "Failed to delete temporary file: ${e.message}" }
+                }
+            }
+        }
+    }
+
+    override fun sendContextCommands(params: LSPAny) {
         chatManager.notifyUi(
             FlareUiMessage(
                 command = CHAT_SEND_CONTEXT_COMMANDS,
                 params = params,
             )
         )
-        return CompletableFuture.completedFuture(Unit)
+    }
+
+    override fun sendPinnedContext(params: LSPAny) {
+        // Send the active text file path with pinned context
+        val editor = FileEditorManager.getInstance(project).selectedTextEditor
+        val textDocument = editor?.let {
+            val relativePath = VfsUtilCore.getRelativePath(it.virtualFile, project.baseDir)
+                ?: it.virtualFile.path // Use absolute path if not in project
+            TextDocumentIdentifier(relativePath)
+        }
+
+        // Create updated params with text document information
+        // Since params is LSPAny, we need to handle it as a generic object
+        val updatedParams = when (params) {
+            is Map<*, *> -> {
+                val mutableParams = params.toMutableMap()
+                mutableParams["textDocument"] = textDocument
+                mutableParams
+            }
+            else -> mapOf(
+                "params" to params,
+                "textDocument" to textDocument
+            )
+        }
+
+        chatManager.notifyUi(
+            FlareUiMessage(
+                command = CHAT_SEND_PINNED_CONTEXT,
+                params = updatedParams,
+            )
+        )
+    }
+
+    override fun pinnedContextAdd(params: LSPAny) {
+        chatManager.notifyUi(
+            FlareUiMessage(
+                command = CHAT_PINNED_CONTEXT_ADD,
+                params = params,
+            )
+        )
+    }
+
+    override fun pinnedContextRemove(params: LSPAny) {
+        chatManager.notifyUi(
+            FlareUiMessage(
+                command = CHAT_PINNED_CONTEXT_REMOVE,
+                params = params,
+            )
+        )
     }
 
     override fun appendFile(params: FileParams) = refreshVfs(params.path)
@@ -439,7 +486,6 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
     }
 
     override fun sendChatOptionsUpdate(params: LSPAny) {
-        val chatManager = ChatCommunicationManager.getInstance(project)
         chatManager.notifyUi(
             FlareUiMessage(
                 command = CHAT_OPTIONS_UPDATE_NOTIFICATION,

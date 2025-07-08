@@ -149,6 +149,7 @@ class Browser(parent: Disposable, private val webUri: URI, val project: Project)
                         {
                         agenticMode: true,
                         quickActionCommands: [],
+                        modelSelectionEnabled: true,
                         disclaimerAcknowledged: ${MeetQSettings.getInstance().disclaimerAcknowledged},
                         pairProgrammingAcknowledged: ${MeetQSettings.getInstance().pairProgrammingAcknowledged}
                         },
@@ -220,6 +221,14 @@ class Browser(parent: Disposable, private val webUri: URI, val project: Project)
                         outline: none !important;
                         box-shadow: none !important;
                         border-radius: 0 !important;
+                    }
+                    select.mynah-form-input {
+                        -webkit-appearance: menulist !important;
+                        appearance: menulist !important;
+                        padding: 0 !important;
+                    }
+                    .mynah-select-handle {
+                        visibility: hidden;
                     }
                     .mynah-ui-spinner-container > span.mynah-ui-spinner-logo-part > .mynah-ui-spinner-logo-mask.text {
                         will-change: transform !important;

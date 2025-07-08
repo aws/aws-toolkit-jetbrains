@@ -347,8 +347,8 @@ fun buildUserInputSQLConversionMetadataChatContent() = CodeTransformChatMessageC
     type = CodeTransformChatMessageType.FinalizedAnswer,
 )
 
-fun buildUserInputCustomDependencyVersionsChatContent() = CodeTransformChatMessageContent(
-    message = "Optionally, provide a .YAML file which specifies custom dependency versions you want Q to upgrade to.",
+fun buildUserInputCustomDependencyVersionsChatContent(message: String) = CodeTransformChatMessageContent(
+    message = message,
     buttons = listOf(
         confirmCustomDependencyVersionsButton,
         continueTransformationButton,
@@ -356,10 +356,16 @@ fun buildUserInputCustomDependencyVersionsChatContent() = CodeTransformChatMessa
     type = CodeTransformChatMessageType.PendingAnswer,
 )
 
-fun buildPromptTargetJDKNameChatContent(version: String) = CodeTransformChatMessageContent(
-    message = message("codemodernizer.chat.message.enter_jdk_name", version),
-    type = CodeTransformChatMessageType.FinalizedAnswer,
-)
+fun buildPromptTargetJDKNameChatContent(version: String, currentJdkName: String?): CodeTransformChatMessageContent {
+    var message = message("codemodernizer.chat.message.enter_jdk_name", version)
+    if (currentJdkName != null) {
+        message += "\n\ncurrent: `$currentJdkName`"
+    }
+    return CodeTransformChatMessageContent(
+        message = message,
+        type = CodeTransformChatMessageType.FinalizedAnswer,
+    )
+}
 
 fun buildInvalidTargetJdkNameChatContent(jdkName: String) = CodeTransformChatMessageContent(
     message = message("codemodernizer.chat.message.enter_jdk_name_error", jdkName),
@@ -368,7 +374,7 @@ fun buildInvalidTargetJdkNameChatContent(jdkName: String) = CodeTransformChatMes
 )
 
 fun buildCustomDependencyVersionsFileValidChatContent() = CodeTransformChatMessageContent(
-    message = "I received your .yaml file and will upload it to Q.",
+    message = message("codemodernizer.chat.message.custom_dependency_upgrades_valid"),
     type = CodeTransformChatMessageType.FinalizedAnswer,
 )
 
@@ -415,7 +421,7 @@ fun buildSQLMetadataValidationErrorChatContent(errorReason: String) = CodeTransf
 
 fun buildCustomDependencyVersionsFileInvalidChatContent() = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.FinalizedAnswer,
-    message = "The file you uploaded does not follow the format of the sample YAML file provided.",
+    message = message("codemodernizer.chat.message.custom_dependency_upgrades_invalid"),
 )
 
 fun buildUserCancelledChatContent() = CodeTransformChatMessageContent(
@@ -455,7 +461,7 @@ fun buildUserLanguageUpgradeSelectionSummaryChatContent(moduleName: String, targ
 
 fun buildContinueTransformationChatContent() = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.FinalizedAnswer,
-    message = "Ok, I will continue without this information.",
+    message = message("codemodernizer.chat.message.custom_dependency_upgrades_continue"),
 )
 
 fun buildCompileLocalInProgressChatContent() = CodeTransformChatMessageContent(
@@ -554,7 +560,7 @@ fun buildTransformResumingChatContent() = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.PendingAnswer,
 )
 
-fun buildTransformResultChatContent(result: CodeModernizerJobCompletedResult, targetJdkVersion: String = ""): CodeTransformChatMessageContent {
+fun buildTransformResultChatContent(result: CodeModernizerJobCompletedResult): CodeTransformChatMessageContent {
     val resultMessage = when (result) {
         is CodeModernizerJobCompletedResult.JobAbortedZipTooLarge -> {
             "${message(
@@ -568,7 +574,7 @@ fun buildTransformResultChatContent(result: CodeModernizerJobCompletedResult, ta
             buildZipUploadFailedChatMessage(result.failureReason)
         }
         is CodeModernizerJobCompletedResult.JobCompletedSuccessfully -> {
-            message("codemodernizer.chat.message.result.success", targetJdkVersion)
+            message("codemodernizer.chat.message.result.success")
         }
         is CodeModernizerJobCompletedResult.JobPartiallySucceeded -> {
             message("codemodernizer.chat.message.result.partially_success")

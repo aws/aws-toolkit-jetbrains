@@ -4,9 +4,11 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer
 
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.Ignore
 import org.junit.Test
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonResponse
 
+@Ignore("This test suite needs a rewrite for JB inline completion API")
 class CodeWhispererUserInputTest : CodeWhispererTestBase() {
 
     @Test

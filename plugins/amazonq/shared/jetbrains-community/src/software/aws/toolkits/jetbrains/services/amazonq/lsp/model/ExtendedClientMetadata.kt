@@ -24,6 +24,8 @@ data class AwsClientCapabilities(
 data class QCapabilities(
     val developerProfiles: Boolean,
     val mcp: Boolean,
+    val pinnedContextEnabled: Boolean,
+    val workspaceFilePath: String?,
 )
 
 data class WindowCapabilities(
@@ -62,7 +64,9 @@ fun createExtendedClientMetadata(project: Project): ExtendedClientMetadata {
             awsClientCapabilities = AwsClientCapabilities(
                 q = QCapabilities(
                     developerProfiles = true,
-                    mcp = true
+                    mcp = true,
+                    pinnedContextEnabled = true,
+                    workspaceFilePath = project.workspaceFile?.path,
                 ),
                 window = WindowCapabilities(
                     showSaveFileDialog = true
