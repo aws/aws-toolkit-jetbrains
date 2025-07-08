@@ -5,11 +5,14 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.telemetry
 
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
+import com.intellij.openapi.editor.Document
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.jetbrains.core.credentials.sono.isInternalUser
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.InlineCompletionStates
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LogInlineCompletionSessionResultsParams
@@ -24,6 +27,10 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispe
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getCodeWhispererStartUrl
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getConnectionStartUrl
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.DiagnosticDifferences
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.getDiagnosticDifferences
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.getDocumentDiagnostics
+import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
 import software.aws.toolkits.jetbrains.settings.AwsSettings
 import software.aws.toolkits.telemetry.CodeFixAction
 import software.aws.toolkits.telemetry.CodewhispererCodeScanScope
@@ -75,6 +82,7 @@ class CodeWhispererTelemetryService(private val cs: CoroutineScope) {
         latencyContext: LatencyContext,
         sessionContext: InlineCompletionSessionContext,
         triggerSessionId: Int,
+        document: Document,
     ) {
         if (sessionContext.sessionId.isEmpty()) {
             QInlineCompletionProvider.logInline(triggerSessionId) {
@@ -96,6 +104,18 @@ class CodeWhispererTelemetryService(private val cs: CoroutineScope) {
                 "total session display time: ${CodeWhispererInvocationStatus.getInstance().completionShownTime?.let { Duration.between(it, Instant.now()) }
                     ?.toMillis()?.toDouble()}"
         }
+        var diffDiagnostics = DiagnosticDifferences(
+            added = emptyList(),
+            removed = emptyList()
+        )
+
+        if (isInternalUser(getStartUrl(project))) {
+            val oldDiagnostics = sessionContext.diagnostics.orEmpty()
+            // wait for the IDE itself to update its diagnostics for current file
+            delay(500)
+            val newDiagnostics = getDocumentDiagnostics(document, project)
+            diffDiagnostics = getDiagnosticDifferences(oldDiagnostics, newDiagnostics)
+        }
         val params = LogInlineCompletionSessionResultsParams(
             sessionId = sessionContext.sessionId,
             completionSessionResult = sessionContext.itemContexts.filter { it.item != null }.associate {
@@ -110,7 +130,9 @@ class CodeWhispererTelemetryService(private val cs: CoroutineScope) {
                 ?.toMillis()?.toDouble(),
             // no userInput in JB inline completion API, every new char input will discard the previous trigger so
             // user input is always 0
-            typeaheadLength = 0
+            typeaheadLength = 0,
+            addedDiagnostics = diffDiagnostics.added,
+            removedDiagnostics = diffDiagnostics.removed,
         )
         AmazonQLspService.executeAsyncIfRunning(project) { server ->
             server.logInlineCompletionSessionResults(params)

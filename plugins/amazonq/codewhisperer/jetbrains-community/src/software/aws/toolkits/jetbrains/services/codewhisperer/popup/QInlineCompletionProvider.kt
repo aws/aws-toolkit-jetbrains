@@ -68,6 +68,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhis
 import software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.getDocumentDiagnostics
 import software.aws.toolkits.jetbrains.utils.isQConnected
 import software.aws.toolkits.jetbrains.utils.isQExpired
 import software.aws.toolkits.resources.message
@@ -342,6 +343,7 @@ class QInlineCompletionProvider(private val cs: CoroutineScope) : InlineCompleti
                             latencyContext,
                             sessionContext,
                             triggerSessionId,
+                            editor.document
                         )
                         activeTriggerSessions.remove(triggerSessionId)
                     }
@@ -422,6 +424,7 @@ class QInlineCompletionProvider(private val cs: CoroutineScope) : InlineCompleti
         val triggerSessionId = triggerSessionId++
         val latencyContext = LatencyContext(codewhispererEndToEndStart = System.nanoTime())
         val triggerTypeInfo = getTriggerTypeInfo(request)
+        val diagnostics = getDocumentDiagnostics(editor.document, project)
 
         CodeWhispererInvocationStatus.getInstance().setIsInvokingQInline(session, true)
         Disposer.register(session) {
@@ -436,7 +439,7 @@ class QInlineCompletionProvider(private val cs: CoroutineScope) : InlineCompleti
             return InlineCompletionSuggestion.Empty
         }
 
-        val sessionContext = InlineCompletionSessionContext(triggerOffset = request.endOffset)
+        val sessionContext = InlineCompletionSessionContext(triggerOffset = request.endOffset, diagnostics = diagnostics)
 
         // Pagination workaround: Always return exactly 5 variants
         // Create channel placeholder for upcoming pagination results
@@ -635,8 +638,10 @@ class QInlineCompletionProvider(private val cs: CoroutineScope) : InlineCompleti
 
         // qExpired case handled in completion handler
         if (!isQConnected(project)) return false
-        if (!CodeWhispererExplorerActionManager.getInstance().isAutoEnabled() && event.isManualCall()) return false
         if (QRegionProfileManager.getInstance().hasValidConnectionButNoActiveProfile(project)) return false
+        if (event.isManualCall()) return true
+        if (!CodeWhispererExplorerActionManager.getInstance().isAutoEnabled()) return false
+
         return true
     }
 }
