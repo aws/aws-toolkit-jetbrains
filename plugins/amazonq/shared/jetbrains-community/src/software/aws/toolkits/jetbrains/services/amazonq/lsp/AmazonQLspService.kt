@@ -25,7 +25,6 @@ import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.util.EnvironmentUtil
 import com.intellij.util.io.DigestUtil
-import com.intellij.util.io.await
 import com.intellij.util.net.HttpConfigurable
 import com.intellij.util.net.JdkProxyProvider
 import com.intellij.util.net.ssl.CertificateManager
@@ -39,6 +38,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.future.asCompletableFuture
+import kotlinx.coroutines.future.await
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -717,15 +717,22 @@ private class AmazonQServerInstance(private val project: Project, private val cs
     override fun dispose() {
         if (!launcherFuture.isDone) {
             try {
-                languageServer.apply {
-                    shutdown().thenRun { exit() }
-                }
+                // otherwise can deadlock waiting for frozen flare process
+                cs.launch {
+                    languageServer.apply {
+                        withTimeout(2000) {
+                            shutdown().await()
+                            exit()
+                        }
+                    }
+                }.asCompletableFuture()
+                    .get(3000, TimeUnit.MILLISECONDS)
             } catch (e: Exception) {
                 LOG.warn(e) { "LSP shutdown failed" }
-                launcherHandler.destroyProcess()
+                launcherHandler.killProcess()
             }
         } else if (!launcherHandler.isProcessTerminated) {
-            launcherHandler.destroyProcess()
+            launcherHandler.killProcess()
         }
     }
 
