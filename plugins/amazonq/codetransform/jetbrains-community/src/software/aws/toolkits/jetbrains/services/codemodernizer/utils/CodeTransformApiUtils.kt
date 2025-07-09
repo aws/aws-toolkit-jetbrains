@@ -87,11 +87,6 @@ suspend fun JobId.pollTransformationStatusAndPlan(
     var transformationPlan: TransformationPlan? = null
     var didSleepOnce = false
     var hasSeenTransforming = false
-    val maxRefreshes = 10
-    var numRefreshes = 0
-
-    // refresh token at start of polling since local build just prior can take a long time
-    refreshToken(project)
 
     try {
         waitUntil(
@@ -138,13 +133,10 @@ suspend fun JobId.pollTransformationStatusAndPlan(
                     onStateChange(state, newStatus, transformationPlan)
                 }
                 state = newStatus
-                numRefreshes = 0
                 return@waitUntil state
-            } catch (e: AccessDeniedException) {
-                if (numRefreshes++ > maxRefreshes) throw e
-                refreshToken(project)
-                return@waitUntil state
-            } catch (e: InvalidGrantException) {
+            } catch (e: Exception) {
+                if (e !is AccessDeniedException && e !is InvalidGrantException) throw e
+
                 CodeTransformMessageListener.instance.onReauthStarted()
                 notifyStickyWarn(
                     message("codemodernizer.notification.warn.expired_credentials.title"),
