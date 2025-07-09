@@ -46,9 +46,9 @@ import kotlinx.coroutines.withContext
 import migration.software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import org.eclipse.lsp4j.jsonrpc.ResponseErrorException
 import org.eclipse.lsp4j.jsonrpc.messages.Either
-import software.amazon.awssdk.services.ssooidc.model.InvalidGrantException
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
@@ -601,20 +601,17 @@ class QInlineCompletionProvider(private val cs: CoroutineScope) : InlineCompleti
                 // https://github.com/aws/language-servers/blob/1f3e93024eeb22186a34f0bd560f8d552f517300/server/aws-lsp-codewhisperer/src/language-server/chat/utils.ts#L22-L23
                 // error data is nullable
                 if (e.responseError.data?.toString()?.contains("E_AMAZON_Q_CONNECTION_EXPIRED") == true) {
-                    // kill the session if the connection is expired
-                    val connection = ToolkitConnectionManager
-                        .getInstance(project)
-                        .activeConnectionForFeature(QConnection.getInstance()) as? AwsBearerTokenConnection
-                    val tokenProvider = connection?.let { it.getConnectionSettings().tokenProvider.delegate as? BearerTokenProvider }
-                    tokenProvider?.let {
-                        // TODO: fragile
-                        try {
-                            it.refresh()
-                        } catch (_: InvalidGrantException) {
-                            it.invalidate()
-                            CodeWhispererUtil.reconnectCodeWhisperer(project)
+                    try {
+                        // kill the session if the connection is expired
+                        val connection = ToolkitConnectionManager
+                            .getInstance(project)
+                            .activeConnectionForFeature(QConnection.getInstance()) as? AwsBearerTokenConnection
+                        connection?.let { it.getConnectionSettings().tokenProvider.delegate as? BearerTokenProvider }
+                            ?.invalidate()
+                        } catch (e: Exception) {
+                            LOG.warn(e) { "Failed to invalidate existing token in response to E_AMAZON_Q_CONNECTION_EXPIRED" }
                         }
-                    }
+                    CodeWhispererUtil.reconnectCodeWhisperer(project)
                 }
             }
             return null
