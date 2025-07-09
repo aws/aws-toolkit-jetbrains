@@ -114,7 +114,12 @@ class QRegionProfileManager : PersistentStateComponent<QProfileState>, Disposabl
                 connectionIdToProfileCount[connection.id] = it.size
             } ?: error("You don't have access to the resource")
         } catch (e: Exception) {
-            LOG.warn(e) { "Failed to list region profiles: ${e.message}" }
+            if (e is AccessDeniedException) {
+                LOG.warn { "Failed to list region profiles: ${e.message}" }
+            } else {
+                LOG.warn(e) { "Failed to list region profiles" }
+            }
+
             throw e
         }
     }
