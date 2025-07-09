@@ -33,6 +33,7 @@ import org.eclipse.lsp4j.TextDocumentContentChangeEvent
 import org.eclipse.lsp4j.TextDocumentIdentifier
 import org.eclipse.lsp4j.TextDocumentItem
 import org.eclipse.lsp4j.VersionedTextDocumentIdentifier
+import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ACTIVE_EDITOR_CHANGED_NOTIFICATION
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.LspEditorUtil.getCursorState
@@ -91,7 +92,7 @@ class TextDocumentServiceHandler(
                 ApplicationManager.getApplication().runReadAction {
                     val existingListener = file.getUserData(KEY_REAL_TIME_EDIT_LISTENER)
                     if (existingListener != null) {
-                        FileDocumentManager.getInstance().getDocument(file)?.removeDocumentListener(existingListener)
+                        tryOrNull { FileDocumentManager.getInstance().getDocument(file)?.removeDocumentListener(existingListener) }
                         file.putUserData(KEY_REAL_TIME_EDIT_LISTENER, null)
                     }
                 }
@@ -175,7 +176,7 @@ class TextDocumentServiceHandler(
     ) {
         val listener = file.getUserData(KEY_REAL_TIME_EDIT_LISTENER)
         if (listener != null) {
-            FileDocumentManager.getInstance().getDocument(file)?.removeDocumentListener(listener)
+            tryOrNull { FileDocumentManager.getInstance().getDocument(file)?.removeDocumentListener(listener) }
             file.putUserData(KEY_REAL_TIME_EDIT_LISTENER, null)
 
             cs.launch {
