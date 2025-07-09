@@ -77,8 +77,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSe
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.LIST_MCP_SERVERS_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.LIST_RULES_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.MCP_SERVER_CLICK_REQUEST_METHOD
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OPEN_FILE_DIALOG
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OPEN_FILE_DIALOG_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OPEN_SETTINGS
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OPEN_WORKSPACE_SETTINGS_KEY
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenSettingsNotification
@@ -491,19 +489,6 @@ class BrowserConnector(
                         )
                     }
             }
-
-            OPEN_FILE_DIALOG -> {
-                handleChat(AmazonQChatServer.showOpenFileDialog, node)
-                    .whenComplete { response, _ ->
-                        browser.postChat(
-                            FlareUiMessage(
-                                command = OPEN_FILE_DIALOG_REQUEST_METHOD,
-                                params = response
-                            )
-                        )
-                    }
-            }
-
             LIST_RULES_REQUEST_METHOD -> {
                 handleChat(AmazonQChatServer.listRules, node)
                     .whenComplete { response, _ ->
