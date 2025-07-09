@@ -9,6 +9,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ModuleRootEvent
 import com.intellij.openapi.roots.ModuleRootListener
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.dependencies.ModuleDependencyProvider.Companion.EP_NAME
@@ -66,7 +67,12 @@ class DefaultModuleDependenciesService(
             }
         }
 
-        paramsMap.values.forEach { didChangeDependencyPaths(it) }
+        paramsMap.values.chunked(10).forEachIndexed { index, chunk ->
+            cs.launch {
+                delay(index * 1000L)
+                chunk.forEach { didChangeDependencyPaths(it) }
+            }
+        }
     }
 
     override fun dispose() {
