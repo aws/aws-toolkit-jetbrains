@@ -608,9 +608,9 @@ class QInlineCompletionProvider(private val cs: CoroutineScope) : InlineCompleti
                             .activeConnectionForFeature(QConnection.getInstance()) as? AwsBearerTokenConnection
                         connection?.let { it.getConnectionSettings().tokenProvider.delegate as? BearerTokenProvider }
                             ?.invalidate()
-                        } catch (e: Exception) {
-                            LOG.warn(e) { "Failed to invalidate existing token in response to E_AMAZON_Q_CONNECTION_EXPIRED" }
-                        }
+                    } catch (e: Exception) {
+                        LOG.warn(e) { "Failed to invalidate existing token in response to E_AMAZON_Q_CONNECTION_EXPIRED" }
+                    }
                     CodeWhispererUtil.reconnectCodeWhisperer(project)
                 }
             }
