@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.toolwindow
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.idea.AppMode
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.service
@@ -26,7 +27,6 @@ import software.aws.toolkits.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AppConnection
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import software.aws.toolkits.jetbrains.services.amazonq.commands.MessageTypeRegistry
 import software.aws.toolkits.jetbrains.services.amazonq.isQSupportedInThisVersion
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
