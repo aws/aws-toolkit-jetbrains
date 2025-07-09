@@ -31,6 +31,7 @@ import org.eclipse.lsp4j.jsonrpc.ResponseErrorException
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseErrorCode
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AppConnection
 import software.aws.toolkits.jetbrains.services.amazonq.commands.MessageSerializer
@@ -303,6 +304,7 @@ class BrowserConnector(
             }
 
             CHAT_READY -> {
+                LOG.info { "Amazon Q Chat UI loaded and ready for input" }
                 handleChat(AmazonQChatServer.chatReady, node) { params, invoke ->
                     uiReady.complete(true)
                     chatCommunicationManager.setUiReady()
