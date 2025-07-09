@@ -38,6 +38,7 @@ export class QuickActionGenerator {
 
         const quickActionCommands = [
             {
+                groupName: `Q Developer Agent for <b>Software Development</b>`,
                 commands: [
                     ...(this.isFeatureDevEnabled
                         ? [
@@ -77,6 +78,11 @@ export class QuickActionGenerator {
                             },
                         ]
                         : []),
+                ],
+            },
+            {
+                groupName: `Q Developer Agent for <b>Code Transformation</b>`,
+                commands:[
                     ...(this.isCodeTransformEnabled
                         ? [
                             {
@@ -87,7 +93,22 @@ export class QuickActionGenerator {
                         ]
                         : []),
                 ],
-            }
+            },
+            {
+                groupName: 'Quick Actions',
+                commands: [
+                    {
+                        command: '/help',
+                        icon: MynahIcons.HELP,
+                        description: 'Learn more about Amazon Q',
+                    },
+                    {
+                        command: '/clear',
+                        icon: MynahIcons.TRASH,
+                        description: 'Clear this session',
+                    },
+                ],
+            },
         ].filter((section) => section.commands.length > 0)
 
         const commandUnavailability: Record<
