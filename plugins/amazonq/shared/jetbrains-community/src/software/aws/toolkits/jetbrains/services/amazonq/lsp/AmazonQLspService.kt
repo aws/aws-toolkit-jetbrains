@@ -76,7 +76,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.auth.DefaultAuthCred
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AmazonQLspTypeAdapterFactory
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AwsExtendedInitializeResult
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AwsServerCapabilitiesProvider
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.createExtendedClientMetadata
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.textdocument.TextDocumentServiceHandler
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.WorkspaceFolderUtil.createWorkspaceFolders
@@ -155,7 +154,7 @@ class AmazonQLspService @VisibleForTesting constructor(
     constructor(project: Project, cs: CoroutineScope) : this(DefaultAmazonQServerInstanceStarter, project, cs)
 
     private val _flowInstance = MutableSharedFlow<AmazonQServerInstanceFacade>(replay = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
-    val instanceFlow = _flowInstance.asSharedFlow().map { it.languageServer }
+    val instanceFlow = _flowInstance.asSharedFlow()
 
     private var instance: Deferred<AmazonQServerInstanceFacade>
 
@@ -531,11 +530,6 @@ private class AmazonQServerInstance(private val project: Project, private val cs
                             }
                             else -> "$direction: $message"
                         }
-                    }
-
-                    if (message is ResponseMessage && message.result is AwsExtendedInitializeResult) {
-                        val result = message.result as AwsExtendedInitializeResult
-                        AwsServerCapabilitiesProvider.getInstance(project).setAwsServerCapabilities(result.getAwsServerCapabilities())
                     }
 
                     // required

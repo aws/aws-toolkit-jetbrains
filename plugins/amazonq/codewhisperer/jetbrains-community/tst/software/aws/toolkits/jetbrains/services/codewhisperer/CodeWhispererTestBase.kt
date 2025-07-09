@@ -129,7 +129,7 @@ open class CodeWhispererTestBase {
                     get() = CompletableFuture()
 
                 override val initializeResult: Deferred<AwsExtendedInitializeResult>
-                    get() = CompletableDeferred(AwsExtendedInitializeResult())
+                    get() = CompletableDeferred(AwsExtendedInitializeResult(mockk()))
 
                 override val encryptionManager: JwtEncryptionManager
                     get() = TODO("Not yet implemented")
