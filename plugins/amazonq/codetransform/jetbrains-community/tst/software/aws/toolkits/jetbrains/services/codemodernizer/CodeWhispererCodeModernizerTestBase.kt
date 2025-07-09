@@ -45,7 +45,6 @@ import software.aws.toolkits.core.credentials.ToolkitBearerTokenProvider
 import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.sso.DeviceAuthorizationGrantToken
 import software.aws.toolkits.jetbrains.core.credentials.sso.PKCEAuthorizationGrantToken
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
@@ -250,11 +249,7 @@ open class CodeWhispererCodeModernizerTestBase(
         project = projectRule.project
         toolkitConnectionManager = spy(ToolkitConnectionManager.getInstance(project))
 
-        val accessToken = DeviceAuthorizationGrantToken(aString(), aString(), aString(), aString(), Instant.MAX, Instant.now())
-        val provider =
-            mock<BearerTokenProvider> {
-                doReturn(accessToken).whenever(it).refresh()
-            }
+        val provider = mock<BearerTokenProvider> { }
         val mockBearerProvider =
             mock<ToolkitBearerTokenProvider> {
                 doReturn(provider).whenever(it).delegate
@@ -340,7 +335,6 @@ open class CodeWhispererCodeModernizerTestBase(
         val accessToken = PKCEAuthorizationGrantToken(aString(), aString(), aString(), aString(), Instant.MAX, Instant.now())
 
         val provider = mock<BearerTokenProvider> {
-            doReturn(accessToken).whenever(it).refresh()
             doReturn(accessToken).whenever(it).currentToken()
             doReturn(authState).whenever(it).state()
         }
