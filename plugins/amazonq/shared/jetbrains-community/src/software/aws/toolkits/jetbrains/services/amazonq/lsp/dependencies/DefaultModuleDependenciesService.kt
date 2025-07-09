@@ -44,14 +44,29 @@ class DefaultModuleDependenciesService(
     }
 
     private fun syncAllModules() {
+        val paramsMap = mutableMapOf<Pair<String, String>, DidChangeDependencyPathsParams>()
+
         ModuleManager.getInstance(project).modules.forEach { module ->
             EP_NAME.forEachExtensionSafe {
                 if (it.isApplicable(module)) {
-                    didChangeDependencyPaths(it.createParams(module))
+                    val params = it.createParams(module)
+                    val key = params.moduleName to params.runtimeLanguage
+
+                    paramsMap.merge(key, params) { existing, new ->
+                        DidChangeDependencyPathsParams(
+                            moduleName = existing.moduleName,
+                            runtimeLanguage = existing.runtimeLanguage,
+                            paths = (existing.paths + new.paths).distinct(),
+                            includePatterns = (existing.includePatterns + new.includePatterns).distinct(),
+                            excludePatterns = (existing.excludePatterns + new.excludePatterns).distinct()
+                        )
+                    }
                     return@forEachExtensionSafe
                 }
             }
         }
+
+        paramsMap.values.forEach { didChangeDependencyPaths(it) }
     }
 
     override fun dispose() {
