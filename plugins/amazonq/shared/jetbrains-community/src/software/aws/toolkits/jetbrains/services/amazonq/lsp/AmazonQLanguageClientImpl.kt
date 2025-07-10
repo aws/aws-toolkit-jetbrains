@@ -21,6 +21,8 @@ import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFileManager
 import migration.software.aws.toolkits.jetbrains.settings.AwsSettings
+import org.eclipse.lsp4j.ApplyWorkspaceEditParams
+import org.eclipse.lsp4j.ApplyWorkspaceEditResponse
 import org.eclipse.lsp4j.ConfigurationParams
 import org.eclipse.lsp4j.MessageActionItem
 import org.eclipse.lsp4j.MessageParams
@@ -62,6 +64,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowO
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowSaveFileDialogParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowSaveFileDialogResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.ConnectionMetadata
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.LspEditorUtil
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.TelemetryParsingUtil
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
@@ -564,6 +567,21 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                 command = CHAT_OPTIONS_UPDATE_NOTIFICATION,
                 params = params,
             )
+        )
+    }
+
+    override fun applyEdit(params: ApplyWorkspaceEditParams): CompletableFuture<ApplyWorkspaceEditResponse> {
+        return CompletableFuture.supplyAsync(
+            {
+                try {
+                    LspEditorUtil.applyWorkspaceEdit(project, params.edit)
+                    ApplyWorkspaceEditResponse(true)
+                } catch (e: Exception) {
+                    LOG.warn(e) { "Failed to apply workspace edit" }
+                    ApplyWorkspaceEditResponse(false)
+                }
+            },
+            ApplicationManager.getApplication()::invokeLater
         )
     }
 

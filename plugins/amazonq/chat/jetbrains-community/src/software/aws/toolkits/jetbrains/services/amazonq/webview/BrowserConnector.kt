@@ -355,13 +355,12 @@ class BrowserConnector(
             CHAT_INSERT_TO_CURSOR -> {
                 val editor = FileEditorManager.getInstance(project).selectedTextEditor
                 val textDocument = editor?.let { TextDocumentIdentifier(toUriString(it.virtualFile)) }
-                val cursorPosition = editor?.let { LspEditorUtil.getCursorState(it) }
-                
+                val cursorPosition = editor?.let { LspEditorUtil.getCursorPosition(it) }
                 val enrichedParams = (node.params as? ObjectNode)?.apply {
-                    put("textDocument", serializer.objectMapper.valueToTree<JsonNode>(textDocument))
-                    put("cursorPosition", serializer.objectMapper.valueToTree<JsonNode>(cursorPosition))
+                    set<JsonNode>("cursorPosition", serializer.objectMapper.valueToTree(cursorPosition))
+                    set<JsonNode>("textDocument", serializer.objectMapper.valueToTree(textDocument))
                 } ?: node.params
-                
+
                 val enrichedNode = (node as ObjectNode).apply {
                     set<JsonNode>("params", enrichedParams)
                 }
