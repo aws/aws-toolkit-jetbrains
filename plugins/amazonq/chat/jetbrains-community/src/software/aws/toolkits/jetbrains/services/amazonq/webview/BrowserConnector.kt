@@ -353,7 +353,20 @@ class BrowserConnector(
             }
 
             CHAT_INSERT_TO_CURSOR -> {
-                handleChat(AmazonQChatServer.insertToCursorPosition, node)
+                val editor = FileEditorManager.getInstance(project).selectedTextEditor
+                val textDocument = editor?.let { TextDocumentIdentifier(toUriString(it.virtualFile)) }
+                val cursorPosition = editor?.let { LspEditorUtil.getCursorState(it) }
+                
+                val enrichedParams = (node.params as? ObjectNode)?.apply {
+                    put("textDocument", serializer.objectMapper.valueToTree<JsonNode>(textDocument))
+                    put("cursorPosition", serializer.objectMapper.valueToTree<JsonNode>(cursorPosition))
+                } ?: node.params
+                
+                val enrichedNode = (node as ObjectNode).apply {
+                    set<JsonNode>("params", enrichedParams)
+                }
+                
+                handleChat(AmazonQChatServer.insertToCursorPosition, enrichedNode)
             }
 
             CHAT_LINK_CLICK -> {
