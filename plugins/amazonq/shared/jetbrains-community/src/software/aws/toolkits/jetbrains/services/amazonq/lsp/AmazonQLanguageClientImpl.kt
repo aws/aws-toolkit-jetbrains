@@ -570,8 +570,8 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
         )
     }
 
-    override fun applyEdit(params: ApplyWorkspaceEditParams): CompletableFuture<ApplyWorkspaceEditResponse> {
-        return CompletableFuture.supplyAsync(
+    override fun applyEdit(params: ApplyWorkspaceEditParams): CompletableFuture<ApplyWorkspaceEditResponse> =
+        CompletableFuture.supplyAsync(
             {
                 try {
                     LspEditorUtil.applyWorkspaceEdit(project, params.edit)
@@ -583,7 +583,6 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
             },
             ApplicationManager.getApplication()::invokeLater
         )
-    }
 
     private fun refreshVfs(path: String) {
         val currPath = Paths.get(path)

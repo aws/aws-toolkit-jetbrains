@@ -364,7 +364,6 @@ class BrowserConnector(
                 val enrichedNode = (node as ObjectNode).apply {
                     set<JsonNode>("params", enrichedParams)
                 }
-                
                 handleChat(AmazonQChatServer.insertToCursorPosition, enrichedNode)
             }
 

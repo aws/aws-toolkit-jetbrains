@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp.util
 
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.command.WriteCommandAction
+import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.LogicalPosition
 import com.intellij.openapi.fileEditor.FileDocumentManager
@@ -15,6 +16,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
 import org.eclipse.lsp4j.Position
 import org.eclipse.lsp4j.Range
+import org.eclipse.lsp4j.TextEdit
 import org.eclipse.lsp4j.WorkspaceEdit
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
@@ -88,55 +90,36 @@ object LspEditorUtil {
             edit.documentChanges?.forEach { change ->
                 if (change.isLeft) {
                     val textDocumentEdit = change.left
-                    val file = VirtualFileManager.getInstance().findFileByUrl(textDocumentEdit.textDocument.uri)
-                    file?.let {
-                        val document = FileDocumentManager.getInstance().getDocument(it)
-                        val editor = FileEditorManager.getInstance(project).getSelectedEditor(it)?.let { fileEditor ->
-                            if (fileEditor is com.intellij.openapi.fileEditor.TextEditor) fileEditor.editor else null
-                        }
-                        document?.let { doc ->
-                            textDocumentEdit.edits.forEach { textEdit ->
-                                val startOffset = if (editor != null) {
-                                    editor.logicalPositionToOffset(LogicalPosition(textEdit.range.start.line, textEdit.range.start.character))
-                                } else {
-                                    doc.getLineStartOffset(textEdit.range.start.line) + textEdit.range.start.character
-                                }
-                                val endOffset = if (editor != null) {
-                                    editor.logicalPositionToOffset(LogicalPosition(textEdit.range.end.line, textEdit.range.end.character))
-                                } else {
-                                    doc.getLineStartOffset(textEdit.range.end.line) + textEdit.range.end.character
-                                }
-                                doc.replaceString(startOffset, endOffset, textEdit.newText)
-                            }
-                        }
-                    }
+                    applyEditsToFile(project, textDocumentEdit.textDocument.uri, textDocumentEdit.edits)
                 }
-            } ?: edit.changes?.forEach { (uri, textEdits) ->
-                val file = VirtualFileManager.getInstance().findFileByUrl(uri)
-                file?.let {
-                    val document = FileDocumentManager.getInstance().getDocument(it)
-                    val editor = FileEditorManager.getInstance(project).getSelectedEditor(it)?.let { fileEditor ->
-                        if (fileEditor is com.intellij.openapi.fileEditor.TextEditor) fileEditor.editor else null
-                    }
-                    document?.let { doc ->
-                        textEdits.forEach { textEdit ->
-                            val startOffset = if (editor != null) {
-                                editor.logicalPositionToOffset(LogicalPosition(textEdit.range.start.line, textEdit.range.start.character))
-                            } else {
-                                doc.getLineStartOffset(textEdit.range.start.line) + textEdit.range.start.character
-                            }
-                            val endOffset = if (editor != null) {
-                                editor.logicalPositionToOffset(LogicalPosition(textEdit.range.end.line, textEdit.range.end.character))
-                            } else {
-                                doc.getLineStartOffset(textEdit.range.end.line) + textEdit.range.end.character
-                            }
-                            doc.replaceString(startOffset, endOffset, textEdit.newText)
-                        }
-                    }
-                }
+            }
+
+            edit.changes?.forEach { (uri, textEdits) ->
+                applyEditsToFile(project, uri, textEdits)
             }
         }
     }
+
+    private fun applyEditsToFile(project: Project, uri: String, textEdits: List<TextEdit>) {
+        val file = VirtualFileManager.getInstance().findFileByUrl(uri) ?: return
+        val document = FileDocumentManager.getInstance().getDocument(file) ?: return
+        val editor = FileEditorManager.getInstance(project).getSelectedEditor(file)?.let {
+            if (it is com.intellij.openapi.fileEditor.TextEditor) it.editor else null
+        }
+
+        textEdits.forEach { textEdit ->
+            val startOffset = calculateOffset(editor, document, textEdit.range.start)
+            val endOffset = calculateOffset(editor, document, textEdit.range.end)
+            document.replaceString(startOffset, endOffset, textEdit.newText)
+        }
+    }
+
+    private fun calculateOffset(editor: Editor?, document: Document, position: Position): Int =
+        if (editor != null) {
+            editor.logicalPositionToOffset(LogicalPosition(position.line, position.character))
+        } else {
+            document.getLineStartOffset(position.line) + position.character
+        }
 
     private val LOG = getLogger<LspEditorUtil>()
 }
