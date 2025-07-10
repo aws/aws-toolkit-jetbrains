@@ -10,6 +10,8 @@ import com.intellij.ide.BrowserUtil
 import com.intellij.notification.NotificationAction
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.fileChooser.FileChooser
+import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.fileChooser.FileChooserFactory
 import com.intellij.openapi.fileChooser.FileSaverDescriptor
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -56,6 +58,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FileP
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GET_SERIALIZED_CHAT_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenFileDiffParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowOpenFileDialogParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowSaveFileDialogParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowSaveFileDialogResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.ConnectionMetadata
@@ -254,6 +257,76 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
             ApplicationManager.getApplication()::invokeLater
         )
     }
+
+    override fun showOpenFileDialog(params: ShowOpenFileDialogParams): CompletableFuture<LSPAny> =
+        CompletableFuture.supplyAsync(
+            {
+                // Handle the case where both canSelectFiles and canSelectFolders are false (should never be sent from flare)
+                if (!params.canSelectFiles && !params.canSelectFolders) {
+                    return@supplyAsync mapOf("uris" to emptyList<String>()) as LSPAny
+                }
+
+                val descriptor = when {
+                    params.canSelectFolders && params.canSelectFiles -> {
+                        if (params.canSelectMany) {
+                            FileChooserDescriptorFactory.createAllButJarContentsDescriptor()
+                        } else {
+                            FileChooserDescriptorFactory.createSingleFileOrFolderDescriptor()
+                        }
+                    }
+                    params.canSelectFolders -> {
+                        if (params.canSelectMany) {
+                            FileChooserDescriptorFactory.createMultipleFoldersDescriptor()
+                        } else {
+                            FileChooserDescriptorFactory.createSingleFolderDescriptor()
+                        }
+                    }
+                    else -> {
+                        if (params.canSelectMany) {
+                            FileChooserDescriptorFactory.createMultipleFilesNoJarsDescriptor()
+                        } else {
+                            FileChooserDescriptorFactory.createSingleFileNoJarsDescriptor()
+                        }
+                    }
+                }.apply {
+                    withTitle(
+                        params.title ?: when {
+                            params.canSelectFolders && params.canSelectFiles -> "Select Files or Folders"
+                            params.canSelectFolders -> "Select Folders"
+                            else -> "Select Files"
+                        }
+                    )
+                    withDescription(
+                        when {
+                            params.canSelectFolders && params.canSelectFiles -> "Choose files or folders to open"
+                            params.canSelectFolders -> "Choose folders to open"
+                            else -> "Choose files to open"
+                        }
+                    )
+
+                    // Apply file filters if provided
+                    if (params.filters.isNotEmpty() && !params.canSelectFolders) {
+                        // Create a combined list of all allowed extensions
+                        val allowedExtensions = params.filters.values.flatten().toSet()
+
+                        withFileFilter { virtualFile ->
+                            if (virtualFile.isDirectory) {
+                                true // Always allow directories for navigation
+                            } else {
+                                val extension = virtualFile.extension?.lowercase()
+                                extension != null && allowedExtensions.contains(extension)
+                            }
+                        }
+                    }
+                }
+
+                val chosenFiles = FileChooser.chooseFiles(descriptor, project, null)
+                val uris = chosenFiles.map { it.path }
+
+                mapOf("uris" to uris) as LSPAny
+            },
+            ApplicationManager.getApplication()::invokeLater
+        )
 
     override fun getSerializedChat(params: LSPAny): CompletableFuture<GetSerializedChatResult> {
         val requestId = UUID.randomUUID().toString()
