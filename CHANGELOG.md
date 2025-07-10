@@ -1,3 +1,5 @@
+# _3.84_ (2025-07-09)
+
 # _3.83_ (2025-07-07)
 - **(Bug Fix)** Fix auto-suggestions being shown when suggestions are paused
 
