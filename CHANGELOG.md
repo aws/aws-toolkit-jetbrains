@@ -1,3 +1,7 @@
+# _3.85_ (2025-07-10)
+- **(Feature)** Amazon Q /test, /doc, and /dev capabilities integrated into Agentic coding.
+- **(Feature)** Add image context support
+
 # _3.84_ (2025-07-09)
 
 # _3.83_ (2025-07-07)
