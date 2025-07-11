@@ -26,6 +26,8 @@ tasks.test {
 }
 
 val download = tasks.register<Download>("downloadResources") {
+    notCompatibleWithConfigurationCache("requires some untangling")
+
     dest("$buildDir/downloaded-resources/software/aws/toolkits/resources/")
     src(listOf("https://idetoolkits.amazonwebservices.com/endpoints.json"))
     onlyIfModified(true)

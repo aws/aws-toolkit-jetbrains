@@ -40,10 +40,10 @@ dependencies {
     }
 }
 
-val changelog = tasks.register<GeneratePluginChangeLog>("pluginChangeLog") {
-    includeUnreleased.set(true)
-    changeLogFile.set(project.file("$buildDir/changelog/change-notes.xml"))
-}
+//val changelog = tasks.register<GeneratePluginChangeLog>("pluginChangeLog") {
+//    includeUnreleased.set(true)
+//    changeLogFile.set(project.file("$buildDir/changelog/change-notes.xml"))
+//}
 
 tasks.compileJava {
     // https://github.com/gradle/gradle/issues/26006
@@ -55,15 +55,15 @@ tasks.compileJava {
 PatchPluginXmlTask.register(project)
 val patchPluginXml = tasks.named<PatchPluginXmlTask>("patchPluginXml")
 patchPluginXml.configure {
-    val buildSuffix = if (!project.isCi()) "+${buildMetadata()}" else ""
-    pluginVersion.set("$toolkitVersion.${ideProfile.shortName}$buildSuffix")
+    val buildSuffix = buildMetadata().map { if (!project.isCi()) "+${it}" else "" }
+    pluginVersion.set(buildSuffix.map { "$toolkitVersion.${ideProfile.shortName}$it" })
 }
 
 tasks.jar {
-    dependsOn(patchPluginXml, changelog)
-    from(changelog) {
-        into("META-INF")
-    }
+//    dependsOn(patchPluginXml, changelog)
+//    from(changelog) {
+//        into("META-INF")
+//    }
 
     from(patchPluginXml) {
         duplicatesStrategy = DuplicatesStrategy.INCLUDE
@@ -77,8 +77,8 @@ tasks.integrationTest {
 }
 
 val gatewayPluginXml = tasks.register<PatchPluginXmlTask>("pluginXmlForGateway") {
-    val buildSuffix = if (!project.isCi()) "+${buildMetadata()}" else ""
-    pluginVersion.set("GW-$toolkitVersion-${ideProfile.shortName}$buildSuffix")
+    val buildSuffix = buildMetadata().map { if (!project.isCi()) "+${it}" else "" }
+    pluginVersion.set(buildSuffix.map { "GW-$toolkitVersion-${ideProfile.shortName}$it" })
 }
 
 val patchGatewayPluginXml by tasks.registering {
@@ -113,7 +113,7 @@ val gatewayArtifacts by configurations.creating {
     extendsFrom(configurations["implementation"], configurations["runtimeOnly"])
 }
 
-val gatewayJar = tasks.create<Jar>("gatewayJar") {
+val gatewayJar = tasks.register<Jar>("gatewayJar") {
     // META-INF/plugin.xml is a duplicate?
     // unclear why the exclude() statement didn't work
     duplicatesStrategy = DuplicatesStrategy.WARN

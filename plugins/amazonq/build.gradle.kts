@@ -21,16 +21,16 @@ buildscript {
     }
 }
 
-val changelog = tasks.register<GeneratePluginChangeLog>("pluginChangeLog") {
-    includeUnreleased.set(true)
-    changeLogFile.value(layout.buildDirectory.file("changelog/change-notes.xml"))
-}
+//val changelog = tasks.register<GeneratePluginChangeLog>("pluginChangeLog") {
+//    includeUnreleased.set(true)
+//    changeLogFile.value(layout.buildDirectory.file("changelog/change-notes.xml"))
+//}
 
 tasks.jar {
-    dependsOn(changelog)
-    from(changelog) {
-        into("META-INF")
-    }
+//    dependsOn(changelog)
+//    from(changelog) {
+//        into("META-INF")
+//    }
 }
 
 dependencies {
@@ -110,6 +110,8 @@ val downloadFlareArtifacts by tasks.registering(Download::class) {
 }
 
 val prepareBundledFlare by tasks.registering(Copy::class) {
+    // TODO: https://docs.gradle.org/current/userguide/configuration_cache.html#config_cache:requirements:use_project_during_execution
+    notCompatibleWithConfigurationCache("requires some untangling")
     dependsOn(downloadFlareArtifacts)
     inputs.files(downloadFlareArtifacts)
 

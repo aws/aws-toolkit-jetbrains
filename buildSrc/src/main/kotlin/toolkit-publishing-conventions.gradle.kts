@@ -22,7 +22,7 @@ version = "$toolkitVersion.${ideProfile.shortName}"
 if (!project.isCi()) {
     val buildMetadata = buildMetadata()
     tasks.withType<PatchPluginXmlTask>().configureEach {
-        pluginVersion.set("${project.version}+$buildMetadata")
+        pluginVersion.set(buildMetadata.map { "${project.version}+$it" })
     }
 
     tasks.named<BuildPluginTask>("buildPlugin") {
