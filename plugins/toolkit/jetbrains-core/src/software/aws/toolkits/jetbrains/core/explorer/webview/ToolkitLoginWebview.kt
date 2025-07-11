@@ -208,6 +208,10 @@ class ToolkitWebviewBrowser(val project: Project, private val parentDisposable: 
                 loginIdC(message.url, awsRegion, scopes)
             }
 
+            is BrowserMessage.LoginExtIdP -> {
+                loginExternalIdC(message.email, scopes)
+            }
+
             is BrowserMessage.LoginIAM -> {
                 loginIAM(message.profileName, message.accessKey, message.secretKey)
             }

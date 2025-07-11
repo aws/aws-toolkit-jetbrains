@@ -72,6 +72,17 @@ data class UserConfigSsoSessionProfile(
         get() = "$SSO_SESSION_SECTION_NAME:$configSessionName"
 }
 
+data class ExternalOidcProfile(
+    var configSessionName: String = "",
+    var startUrl: String = "",
+    var clientId: String = "",
+    var scopes: List<String> = emptyList(),
+) : AuthProfile {
+    val id
+        get() = "$SSO_SESSION_SECTION_NAME:$configSessionName"
+}
+
+
 data class DetectedDiskSsoSessionProfile(
     var profileName: String = "",
     var startUrl: String = "",

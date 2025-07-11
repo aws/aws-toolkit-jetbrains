@@ -252,6 +252,15 @@ abstract class LoginBrowser(
         }
     }
 
+    open fun loginExternalIdC(email: String, scopes: List<String>) {
+        // assumes scopes contains either Q or non-Q permissions but not both
+        val (onError: (Exception) -> Unit, onSuccess: () -> Unit) = getSuccessAndErrorActionsForIdcLogin(scopes, url, region)
+        loginWithBackgroundContext {
+            Login
+                .ExternalIdC(email, scopes, onPendingToken, onSuccess, onError)
+                .login(project)
+        }
+    }
     fun getSuccessAndErrorActionsForIdcLogin(
         scopes: List<String>,
         url: String,

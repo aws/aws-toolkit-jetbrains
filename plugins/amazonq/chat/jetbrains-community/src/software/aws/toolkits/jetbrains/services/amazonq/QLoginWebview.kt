@@ -191,7 +191,7 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
             }
 
             is BrowserMessage.LoginExtIdP -> {
-                // TODO: FILL OUT
+                loginExternalIdC(message.email, Q_SCOPES)
             }
 
             is BrowserMessage.CancelLogin -> {
