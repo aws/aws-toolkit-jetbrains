@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo
     JsonSubTypes.Type(value = BrowserMessage.SelectConnection::class, name = "selectConnection"),
     JsonSubTypes.Type(value = BrowserMessage.LoginBuilderId::class, name = "loginBuilderId"),
     JsonSubTypes.Type(value = BrowserMessage.LoginIdC::class, name = "loginIdC"),
+    JsonSubTypes.Type(value = BrowserMessage.LoginExtIdP::class, name = "loginExtIdP"),
     JsonSubTypes.Type(value = BrowserMessage.LoginIAM::class, name = "loginIAM"),
     JsonSubTypes.Type(value = BrowserMessage.CancelLogin::class, name = "cancelLogin"),
     JsonSubTypes.Type(value = BrowserMessage.Signout::class, name = "signout"),
@@ -53,6 +54,10 @@ sealed interface BrowserMessage {
         val profileName: String,
         val accessKey: String,
         val secretKey: String,
+    ) : BrowserMessage
+
+    data class LoginExtIdP(
+        val email: String,
     ) : BrowserMessage
 
     object CancelLogin : BrowserMessage

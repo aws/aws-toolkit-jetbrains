@@ -8,7 +8,7 @@ import {
     AuthSetupMessageFromIde,
     ListProfileResult,
     ListProfileSuccessResult,
-    ListProfileFailureResult, ListProfilePendingResult, ListProfilesMessageFromIde
+    ListProfileFailureResult, ListProfilePendingResult, ListProfilesMessageFromIde, ExtIdcInfo
 } from "./model";
 import {WebviewTelemetry} from './webviewTelemetry'
 
@@ -78,6 +78,10 @@ export class IdeClient {
 
     updateLastLoginIdcInfo(idcInfo: IdcInfo) {
         this.store.commit('setLastLoginIdcInfo', idcInfo)
+    }
+
+    updateLastLoginExtIdcInfo(idcInfo: ExtIdcInfo) {
+        this.store.commit('setLastLoginExtIdcInfo', idcInfo)
     }
 
     reset() {

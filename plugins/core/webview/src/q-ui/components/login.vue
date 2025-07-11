@@ -13,7 +13,8 @@
         </button>
 
         <LoginOptions :app="app" v-if="stage === 'START'" @backToMenu="handleBackButtonClick" @stageChanged="mutateStage" @login="login"  @emitUiClickTelemetry="sendUiClickTelemetry"/>
-        <SsoLoginForm :app="app" v-if="stage === 'SSO_FORM'" @backToMenu="handleBackButtonClick" @stageChanged="mutateStage" @login="login"  @emitUiClickTelemetry="sendUiClickTelemetry"/>
+<!--        <SsoLoginForm :app="app" v-if="stage === 'SSO_FORM'" @backToMenu="handleBackButtonClick" @stageChanged="mutateStage" @login="login"  @emitUiClickTelemetry="sendUiClickTelemetry"/>-->
+        <OidcLoginForm :app="app" v-if="stage === 'SSO_FORM'" @backToMenu="handleBackButtonClick" @stageChanged="mutateStage" @login="login"  @emitUiClickTelemetry="sendUiClickTelemetry"/>
         <AwsProfileForm v-if="stage === 'AWS_PROFILE'" @backToMenu="handleBackButtonClick" @stageChanged="mutateStage" @login="login" @emitUiClickTelemetry="sendUiClickTelemetry"/>
         <Authenticating v-if="stage === 'AUTHENTICATING'" :selected-login-option="this.selectedLoginOption" @cancel="handleCancelButton"/>
         <ProfileSelection v-if="stage === 'PROFILE_SELECT' && app === 'AMAZONQ'" @stageChanged="mutateStage"/>
@@ -24,10 +25,11 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
 import SsoLoginForm from "./ssoLoginForm.vue";
+import OidcLoginForm from "./oidcLoginForm.vue";
 import LoginOptions from "./loginOptions.vue";
 import AwsProfileForm from "./awsProfileForm.vue";
 import Authenticating from "./authenticating.vue";
-import {BuilderId, ExistConnection, Feature, IdC, LoginIdentifier, LoginOption, LongLivedIAM, Stage} from "../../model";
+import {BuilderId, ExistConnection, ExternalIdC, Feature, IdC, LoginIdentifier, LoginOption, LongLivedIAM, Stage} from "../../model";
 import ProfileSelection from "@/q-ui/components/profileSelection.vue";
 
 const authUiClickOptionMap = {
@@ -35,6 +37,7 @@ const authUiClickOptionMap = {
     [LoginIdentifier.ENTERPRISE_SSO]: 'auth_idcOption',
     [LoginIdentifier.IAM_CREDENTIAL]: 'auth_credentialsOption',
     [LoginIdentifier.EXISTING_LOGINS]: 'auth_existingAuthOption',
+    [LoginIdentifier.EXTERNAL_IDC]: 'auth_idcOption',
     [LoginIdentifier.NONE]: "Unknown"
 }
 
@@ -49,6 +52,7 @@ export default defineComponent({
     name: 'Login',
     components: {
         SsoLoginForm,
+        OidcLoginForm,
         LoginOptions,
         AwsProfileForm,
         Authenticating,
@@ -120,6 +124,8 @@ export default defineComponent({
                 })
             } else if (type instanceof ExistConnection) {
                 window.ideApi.postMessage({ command: 'selectConnection', connectionId:  type.pluginConnectionId})
+            } else if (type instanceof ExternalIdC) {
+                window.ideApi.postMessage({ command: 'loginExtIdP', email: type.oidcEmail})
             }
         },
         sendUiClickTelemetry(element: LoginIdentifier) {

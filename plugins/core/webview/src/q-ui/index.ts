@@ -5,7 +5,7 @@
 import { createApp } from 'vue'
 import {createStore, Store} from 'vuex'
 import HelloWorld from './components/root.vue'
-import {AwsBearerTokenConnection, Feature, IdcInfo, ListProfileResult, Profile, Region, Stage, State} from "../model";
+import {AwsBearerTokenConnection, ExtIdcInfo, Feature, IdcInfo, ListProfileResult, Profile, Region, Stage, State} from "../model";
 import {IdeClient} from "../ideClient";
 import './assets/common.scss'
 
@@ -18,6 +18,9 @@ const store = createStore<State>({
         lastLoginIdcInfo: {
             startUrl: '',
             region: '',
+        },
+        lastLoginExtIdcInfo: {
+            oidcEmail: '',
         },
         feature: 'Q',
         cancellable: false,
@@ -46,6 +49,9 @@ const store = createStore<State>({
             console.log('state idc info is updated')
             state.lastLoginIdcInfo.startUrl = idcInfo.startUrl
             state.lastLoginIdcInfo.region = idcInfo.region
+        },
+        setLastLoginExtIdcInfo(state: State, extIdcInfo: ExtIdcInfo) {
+            state.lastLoginExtIdcInfo.oidcEmail = extIdcInfo.oidcEmail
         },
         setExistingConnections(state: State, connections: AwsBearerTokenConnection[]) {
             state.existingConnections = connections

@@ -190,6 +190,10 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
                 loginIdC(message.url, awsRegion, Q_SCOPES)
             }
 
+            is BrowserMessage.LoginExtIdP -> {
+                // TODO: FILL OUT
+            }
+
             is BrowserMessage.CancelLogin -> {
                 cancelLogin()
             }

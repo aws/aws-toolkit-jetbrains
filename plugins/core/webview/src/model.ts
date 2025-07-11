@@ -53,11 +53,16 @@ export interface IdcInfo {
     region: string,
 }
 
+export interface ExtIdcInfo {
+    oidcEmail: string,
+}
+
 export interface State {
     stage: Stage,
     ssoRegions: Region[],
     authorizationCode: string | undefined,
     lastLoginIdcInfo: IdcInfo,
+    lastLoginExtIdcInfo: ExtIdcInfo,
     feature: Feature,
     cancellable: boolean,
     existingConnections: AwsBearerTokenConnection[],
@@ -88,6 +93,7 @@ export enum LoginIdentifier {
     NONE = 'none',
     BUILDER_ID = 'builderId',
     ENTERPRISE_SSO = 'idc',
+    EXTERNAL_IDC = 'eidc',
     IAM_CREDENTIAL = 'iam',
     EXISTING_LOGINS = 'existing',
 }
@@ -122,6 +128,17 @@ export class IdC implements LoginOption {
     id: LoginIdentifier = LoginIdentifier.ENTERPRISE_SSO
 
     constructor(readonly url: string, readonly region: string) {
+    }
+
+    requiresBrowser(): boolean {
+        return true
+    }
+}
+
+export class ExternalIdC implements LoginOption {
+    id: LoginIdentifier = LoginIdentifier.EXTERNAL_IDC
+
+    constructor(readonly oidcEmail: string) {
     }
 
     requiresBrowser(): boolean {

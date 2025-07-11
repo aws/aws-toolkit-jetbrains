@@ -5,7 +5,7 @@
 import {createApp} from 'vue'
 import {createStore, Store} from 'vuex'
 import root from './components/root.vue'
-import {AwsBearerTokenConnection, Feature, IdcInfo, Region, Stage, State} from "../model";
+import {AwsBearerTokenConnection, ExtIdcInfo, Feature, IdcInfo, Region, Stage, State} from "../model";
 import {IdeClient} from "../ideClient";
 import './assets/common.scss'
 
@@ -19,6 +19,9 @@ const store = createStore<State>({
         lastLoginIdcInfo: {
             startUrl: '',
             region: '',
+        },
+        lastLoginExtIdcInfo: {
+            oidcEmail: '',
         },
         feature: 'awsExplorer',
         cancellable: false,
@@ -43,6 +46,9 @@ const store = createStore<State>({
         setLastLoginIdcInfo(state: State, idcInfo: IdcInfo) {
             state.lastLoginIdcInfo.startUrl = idcInfo.startUrl
             state.lastLoginIdcInfo.region = idcInfo.region
+        },
+        setLastLoginExtIdcInfo(state: State, extIdcInfo: ExtIdcInfo) {
+            state.lastLoginExtIdcInfo.oidcEmail = extIdcInfo.oidcEmail
         },
         setCancellable(state: State, cancellable: boolean) {
             state.cancellable = cancellable
