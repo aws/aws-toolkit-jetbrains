@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Fix the issue that sometime image added via drag & drop are incorrectly routing to pinned contexts and drag overlay is not rendered"
+}
