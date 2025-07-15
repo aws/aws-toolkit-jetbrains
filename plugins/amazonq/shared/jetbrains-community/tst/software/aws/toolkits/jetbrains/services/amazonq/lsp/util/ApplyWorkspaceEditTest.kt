@@ -195,7 +195,6 @@ class ApplyWorkspaceEditTest {
         // No verification needed - just ensuring no exceptions
     }
 
-
     @Test
     fun `test applyWorkspaceEdit with invalid file`() {
         val uri = "file:///nonexistent.kt"

@@ -115,11 +115,7 @@ object LspEditorUtil {
     }
 
     private fun calculateOffset(editor: Editor?, document: Document, position: Position): Int =
-        if (editor != null) {
-            editor.logicalPositionToOffset(LogicalPosition(position.line, position.character))
-        } else {
-            document.getLineStartOffset(position.line) + position.character
-        }
+        editor?.logicalPositionToOffset(LogicalPosition(position.line, position.character)) ?: (document.getLineStartOffset(position.line) + position.character)
 
     private val LOG = getLogger<LspEditorUtil>()
 }
