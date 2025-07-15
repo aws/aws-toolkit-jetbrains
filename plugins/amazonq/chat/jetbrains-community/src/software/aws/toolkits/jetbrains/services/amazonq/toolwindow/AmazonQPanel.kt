@@ -49,7 +49,9 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isCodeTrans
 import software.aws.toolkits.resources.message
 import java.awt.datatransfer.DataFlavor
 import java.awt.dnd.DropTarget
+import java.awt.dnd.DropTargetDragEvent
 import java.awt.dnd.DropTargetDropEvent
+import java.awt.dnd.DropTargetEvent
 import java.io.File
 import java.util.concurrent.CompletableFuture
 import javax.imageio.ImageIO.read
@@ -138,6 +140,39 @@ class AmazonQPanel(val project: Project, private val scope: CoroutineScope) : Di
                             // As an alternative, enabling the native drag in JCEF,
                             // and let the native handling the drop event, and update the UI through JS bridge.
                             val dropTarget = object : DropTarget() {
+                                override fun dragEnter(dtde: DropTargetDragEvent) {
+                                    try {
+                                        browserInstance.jcefBrowser.cefBrowser.executeJavaScript(
+                                            "window.setDragAndDropVisible('true')",
+                                            browserInstance.jcefBrowser.cefBrowser.url,
+                                            0
+                                        )
+                                    } catch (e: Exception) {
+                                        LOG.error { "Failed to handle dragEnter: ${e.message}" }
+                                    }
+                                }
+                                override fun dragOver(dtde: DropTargetDragEvent) {
+                                    try {
+                                        browserInstance.jcefBrowser.cefBrowser.executeJavaScript(
+                                            "window.setDragAndDropVisible('true')",
+                                            browserInstance.jcefBrowser.cefBrowser.url,
+                                            0
+                                        )
+                                    } catch (e: Exception) {
+                                        LOG.error { "Failed to handle dragOver: ${e.message}" }
+                                    }
+                                }
+                                override fun dragExit(dte: DropTargetEvent) {
+                                    try {
+                                        browserInstance.jcefBrowser.cefBrowser.executeJavaScript(
+                                            "window.setDragAndDropVisible('false')",
+                                            browserInstance.jcefBrowser.cefBrowser.url,
+                                            0
+                                        )
+                                    } catch (e: Exception) {
+                                        LOG.error { "Failed to handle dragExit: ${e.message}" }
+                                    }
+                                }
                                 override fun drop(dtde: DropTargetDropEvent) {
                                     try {
                                         dtde.acceptDrop(dtde.dropAction)
@@ -165,6 +200,18 @@ class AmazonQPanel(val project: Project, private val scope: CoroutineScope) : Di
                                                 errorMessages.add("A maximum of 20 images can be added to a single message.")
                                                 validImages.subList(20, validImages.size).clear()
                                             }
+
+                                            browserInstance.jcefBrowser.cefBrowser.executeJavaScript(
+                                                "window.resetTopBarClicked()",
+                                                browserInstance.jcefBrowser.cefBrowser.url,
+                                                0
+                                            )
+
+                                            browserInstance.jcefBrowser.cefBrowser.executeJavaScript(
+                                                "window.setDragAndDropVisible('false')",
+                                                browserInstance.jcefBrowser.cefBrowser.url,
+                                                0
+                                            )
 
                                             val json = OBJECT_MAPPER.writeValueAsString(validImages)
                                             browserInstance.jcefBrowser.cefBrowser.executeJavaScript(

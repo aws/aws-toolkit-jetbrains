@@ -181,6 +181,15 @@ class Browser(parent: Disposable, private val webUri: URI, val project: Project)
                             })
                         });
                     };
+                    
+                    window.setDragAndDropVisible = function(visibility) {
+                        const parsedVisibility = JSON.parse(visibility);
+                        qChat.setDragOverlayVisible(qChat.getSelectedTabId(), parsedVisibility)
+                    };
+                    
+                    window.resetTopBarClicked = function() {
+                        qChat.resetTopBarClicked(qChat.getSelectedTabId())
+                    };
                 }
             </script>        
         """.trimIndent()
