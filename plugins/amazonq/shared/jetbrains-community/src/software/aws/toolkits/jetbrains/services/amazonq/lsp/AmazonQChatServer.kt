@@ -40,9 +40,12 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSe
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.InfoLinkClickParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.InsertToCursorPositionParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.LIST_AVAILABLE_MODELS
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.LIST_MCP_SERVERS_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.LIST_RULES_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.LinkClickParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ListAvailableModelsParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ListAvailableModelsResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ListConversationsParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.MCP_SERVER_CLICK_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OPEN_FILE_DIALOG_REQUEST_METHOD
@@ -254,5 +257,11 @@ object AmazonQChatServer : JsonRpcMethodProvider {
         OPEN_FILE_DIALOG_REQUEST_METHOD,
         Any::class.java,
         LSPAny::class.java
+    )
+
+    val listAvailableModels = JsonRpcRequest(
+        LIST_AVAILABLE_MODELS,
+        ListAvailableModelsParams::class.java,
+        ListAvailableModelsResult::class.java
     )
 }
