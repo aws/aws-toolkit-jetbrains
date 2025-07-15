@@ -64,3 +64,5 @@ const val MCP_SERVER_CLICK_REQUEST_METHOD = "aws/chat/mcpServerClick"
 const val OPEN_FILE_DIALOG_REQUEST_METHOD = "aws/chat/openFileDialog"
 const val LIST_RULES_REQUEST_METHOD = "aws/chat/listRules"
 const val RULE_CLICK_REQUEST_METHOD = "aws/chat/ruleClick"
+
+const val LIST_AVAILABLE_MODELS = "aws/chat/listAvailableModels"
