@@ -75,6 +75,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.Encry
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedQuickActionChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GET_SERIALIZED_CHAT_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatResponse
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.LIST_AVAILABLE_MODELS
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.LIST_MCP_SERVERS_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.LIST_RULES_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.MCP_SERVER_CLICK_REQUEST_METHOD
@@ -533,6 +534,17 @@ class BrowserConnector(
             }
             CHAT_PINNED_CONTEXT_REMOVE -> {
                 handleChat(AmazonQChatServer.pinnedContextRemove, node)
+            }
+            LIST_AVAILABLE_MODELS -> {
+                handleChat(AmazonQChatServer.listAvailableModels, node)
+                    .whenComplete { response, _ ->
+                        browser.postChat(
+                            FlareUiMessage(
+                                command = LIST_AVAILABLE_MODELS,
+                                params = response
+                            )
+                        )
+                    }
             }
         }
     }
