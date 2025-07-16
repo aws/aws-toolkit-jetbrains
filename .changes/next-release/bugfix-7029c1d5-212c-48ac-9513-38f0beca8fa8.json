@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "change to use withExtensionFilter to hide unallowed files when selecting image"
+}
