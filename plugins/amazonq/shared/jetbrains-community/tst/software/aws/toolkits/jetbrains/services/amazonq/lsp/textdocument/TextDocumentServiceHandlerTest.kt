@@ -189,6 +189,19 @@ class TextDocumentServiceHandlerTest {
     }
 
     @Test
+    fun `fileOpened suppreses document read failure`() = runTest {
+        sut = TextDocumentServiceHandler(projectRule.project, this)
+        advanceUntilIdle()
+
+        val document = mockk<VirtualFile> {
+            every { inputStream } throws RuntimeException("read failure")
+        }
+        sut.fileOpened(mockk(), document)
+
+        verify(exactly = 0) { mockTextDocumentService.didOpen(any()) }
+    }
+
+    @Test
     fun `didClose runs on fileClosed`() = runTest {
         sut = TextDocumentServiceHandler(projectRule.project, this)
         val file = withContext(EDT) {
