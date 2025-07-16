@@ -1,4 +1,0 @@
-{
-  "type" : "bugfix",
-  "description" : "- Fixed \"Insert to Cursor\" button to correctly insert code blocks at the current cursor position in the active file"
-}
