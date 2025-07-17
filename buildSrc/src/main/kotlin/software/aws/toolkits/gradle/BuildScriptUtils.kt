@@ -31,6 +31,7 @@ fun Project.kotlinTarget(): Provider<String> = withCurrentProfileName {
         "2024.2" -> KotlinVersionEnum.KOTLIN_1_9
         "2024.3" -> KotlinVersionEnum.KOTLIN_2_0
         "2025.1" -> KotlinVersionEnum.KOTLIN_2_1
+        "2025.2" -> KotlinVersionEnum.KOTLIN_2_2
         else -> error("not set")
     }.version
 }
