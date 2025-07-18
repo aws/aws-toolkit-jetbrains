@@ -175,7 +175,7 @@ object IdeVersions {
                 bundledPlugins = commonPlugins,
                 netFrameworkTarget = "net472",
                 rdGenVersion = "2025.2.2",
-                nugetVersion = "2025.2.0"
+                nugetVersion = "2025.2.0-eap06"
             )
         )
     ).associateBy { it.name }
