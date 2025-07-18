@@ -66,7 +66,7 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
                     ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())?.let { qConn ->
                         openMeetQPage(project)
                     }
-                    prepareChatContent(project, qPanel)
+                    preparePanelContent(project, qPanel)
                 }
             }
         )
@@ -75,7 +75,7 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
             RefreshQChatPanelButtonPressedListener.TOPIC,
             object : RefreshQChatPanelButtonPressedListener {
                 override fun onRefresh() {
-                    prepareChatContent(project, qPanel)
+                    preparePanelContent(project, qPanel)
                 }
             }
         )
@@ -83,10 +83,9 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
         project.messageBus.connect(toolWindow.disposable).subscribe(
             BearerTokenProviderListener.TOPIC,
             object : BearerTokenProviderListener {
-                override fun onChange(providerId: String, newScopes: List<String>?) {
+                override fun onProviderChange(providerId: String, newScopes: List<String>?) {
                     if (ToolkitConnectionManager.getInstance(project).connectionStateForFeature(QConnection.getInstance()) == BearerTokenAuthState.AUTHORIZED) {
-                        AmazonQToolWindow.getInstance(project).disposeAndRecreate()
-                        prepareChatContent(project, qPanel)
+                        preparePanelContent(project, qPanel)
                     }
                 }
             }
@@ -98,13 +97,12 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
                 // note we name myProject intentionally ow it will shadow the "project" provided by the IDE
                 override fun onProfileSelected(myProject: Project, profile: QRegionProfile?) {
                     if (project.isDisposed) return
-                    AmazonQToolWindow.getInstance(project).disposeAndRecreate()
-                    prepareChatContent(project, qPanel)
+                    preparePanelContent(project, qPanel)
                 }
             }
         )
 
-        prepareChatContent(project, qPanel)
+        preparePanelContent(project, qPanel)
 
         val content = contentManager.factory.createContent(mainPanel, null, false).also {
             it.isCloseable = true
@@ -114,7 +112,7 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
         contentManager.addContent(content)
     }
 
-    private fun prepareChatContent(
+    private fun preparePanelContent(
         project: Project,
         qPanel: Wrapper,
     ) {

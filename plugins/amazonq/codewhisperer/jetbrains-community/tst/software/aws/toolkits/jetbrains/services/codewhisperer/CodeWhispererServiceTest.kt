@@ -4,104 +4,63 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer
 
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.ui.popup.JBPopup
+import com.intellij.openapi.application.runReadAction
 import com.intellij.psi.PsiFile
-import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.replaceService
 import com.intellij.testFramework.runInEdtAndWait
-import kotlinx.coroutines.async
 import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
-import org.junit.Ignore
-import org.junit.Rule
 import org.junit.Test
 import org.mockito.kotlin.any
-import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.doCallRealMethod
 import org.mockito.kotlin.doReturn
-import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
-import org.mockito.kotlin.times
-import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import software.amazon.awssdk.services.codewhispererruntime.model.FileContext
-import software.amazon.awssdk.services.codewhispererruntime.model.GenerateCompletionsRequest
-import software.amazon.awssdk.services.codewhispererruntime.model.ProgrammingLanguage
-import software.amazon.awssdk.services.codewhispererruntime.model.SupplementalContext
-import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
-import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
+import org.mockito.kotlin.wheneverBlocking
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionTriggerKind
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.LspEditorUtil.toUriString
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
-import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJava
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretContext
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretPosition
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.Chunk
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.FileContextInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.LatencyContext
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.SupplementalContextInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.TriggerTypeInfo
-import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutomatedTriggerType
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.FileContextProvider
-import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import software.aws.toolkits.telemetry.CodewhispererTriggerType
 
-class CodeWhispererServiceTest {
-    @Rule
-    @JvmField
-    val projectRule = JavaCodeInsightTestFixtureRule()
+class CodeWhispererServiceTest : CodeWhispererTestBase() {
 
-    @Rule
-    @JvmField
-    val disposableRule = DisposableRule()
-
-    private lateinit var sut: CodeWhispererService
     private lateinit var customizationConfig: CodeWhispererModelConfigurator
-    private lateinit var clientFacade: CodeWhispererClientAdaptor
-    private lateinit var popupManager: CodeWhispererPopupManager
-    private lateinit var telemetryService: CodeWhispererTelemetryService
-    private lateinit var mockPopup: JBPopup
     private lateinit var file: PsiFile
 
     @Before
-    fun setUp() {
-        sut = CodeWhispererService.getInstance()
+    override fun setUp() {
+        super.setUp()
 
         customizationConfig = mock()
-        clientFacade = mock()
-        mockPopup = mock<JBPopup>()
-        popupManager = mock {
-            on { initPopup() } doReturn mockPopup
-        }
-
-        telemetryService = mock()
-
         file = projectRule.fixture.addFileToProject("main.java", "public class Main {}")
         runInEdtAndWait {
             projectRule.fixture.openFileInEditor(file.virtualFile)
         }
 
         ApplicationManager.getApplication().replaceService(CodeWhispererModelConfigurator::class.java, customizationConfig, disposableRule.disposable)
-        ApplicationManager.getApplication().replaceService(CodeWhispererTelemetryService::class.java, telemetryService, disposableRule.disposable)
-        ApplicationManager.getApplication().replaceService(CodeWhispererPopupManager::class.java, popupManager, disposableRule.disposable)
-
-        projectRule.project.replaceService(CodeWhispererClientAdaptor::class.java, clientFacade, disposableRule.disposable)
-        projectRule.project.replaceService(AwsConnectionManager::class.java, mock(), disposableRule.disposable)
     }
 
     @Test
-    fun `getRequestContext should use correct fileContext and timeout to fetch supplementalContext`() = runTest {
+    fun `getRequestContext should use correct fileContext`() = runTest {
         val fileContextProvider = FileContextProvider.getInstance(projectRule.project)
         val fileContextProviderSpy = spy(fileContextProvider)
         projectRule.project.replaceService(FileContextProvider::class.java, fileContextProviderSpy, disposableRule.disposable)
 
-        val requestContext = sut.getRequestContext(
+        doCallRealMethod().wheneverBlocking(codewhispererService) {
+            getRequestContext(any(), any(), any(), any(), any())
+        }
+
+        val requestContext = codewhispererService.getRequestContext(
             TriggerTypeInfo(CodewhispererTriggerType.AutoTrigger, CodeWhispererAutomatedTriggerType.Enter()),
             editor = projectRule.fixture.editor,
             project = projectRule.project,
@@ -109,22 +68,19 @@ class CodeWhispererServiceTest {
             LatencyContext()
         )
 
-        requestContext.awaitSupplementalContext()
-        val fileContextCaptor = argumentCaptor<FileContextInfo>()
-        verify(fileContextProviderSpy, times(1)).extractSupplementalFileContext(eq(file), fileContextCaptor.capture(), eq(100))
-        assertThat(fileContextCaptor.firstValue).isEqualTo(
+        assertThat(requestContext.fileContextInfo).isEqualTo(
             FileContextInfo(
                 CaretContext(leftFileContext = "", rightFileContext = "public class Main {}", leftContextOnCurrentLine = ""),
                 "main.java",
                 CodeWhispererJava.INSTANCE,
                 "main.java",
-                "temp:///src/main.java"
+                file.virtualFile.url
             )
         )
     }
 
     @Test
-    fun `getRequestContext should have supplementalContext and customizatioArn if they're present`() {
+    fun `getRequestContext should have customizationArn if it's present`() = runTest {
         whenever(customizationConfig.activeCustomization(projectRule.project)).thenReturn(
             CodeWhispererCustomization(
                 "fake-arn",
@@ -133,123 +89,41 @@ class CodeWhispererServiceTest {
             )
         )
 
-        val mockSupplementalContext = aSupplementalContextInfo(
-            myContents = listOf(
-                Chunk(content = "foo", path = "/foo.java"),
-                Chunk(content = "bar", path = "/bar.java"),
-                Chunk(content = "baz", path = "/baz.java")
-            ),
-            myIsUtg = false,
-            myLatency = 50L
-        )
-
         val mockFileContextProvider = mock<FileContextProvider> {
             on { this.extractFileContext(any(), any()) } doReturn aFileContextInfo()
-            onBlocking { this.extractSupplementalFileContext(any(), any(), any()) } doReturn mockSupplementalContext
         }
 
         projectRule.project.replaceService(FileContextProvider::class.java, mockFileContextProvider, disposableRule.disposable)
+        doCallRealMethod().wheneverBlocking(codewhispererService) {
+            getRequestContext(any(), any(), any(), any(), any())
+        }
 
-        val actual = sut.getRequestContext(
+        val actual = codewhispererService.getRequestContext(
             TriggerTypeInfo(CodewhispererTriggerType.OnDemand, CodeWhispererAutomatedTriggerType.Unknown()),
             projectRule.fixture.editor,
             projectRule.project,
             file,
             LatencyContext()
         )
-
-        runTest {
-            actual.awaitSupplementalContext()
-        }
 
         assertThat(actual.customizationArn).isEqualTo("fake-arn")
-        assertThat(actual.supplementalContext).isEqualTo(mockSupplementalContext)
     }
 
-    @Ignore("need update language type since Java is fully supported")
     @Test
-    fun `getRequestContext - cross file context should be empty for non-cross-file user group`() {
-        val file = projectRule.fixture.addFileToProject("main.java", "public class Main {}")
+    fun `test handleInlineCompletion creates correct params and sends to server`() = runTest {
+        val mockEditor = projectRule.fixture.editor
 
-        runInEdtAndWait {
-            projectRule.fixture.openFileInEditor(file.virtualFile)
-        }
-
-        val actual = sut.getRequestContext(
+        val capturedParams = codewhispererService.createInlineCompletionParams(
+            mockEditor,
             TriggerTypeInfo(CodewhispererTriggerType.OnDemand, CodeWhispererAutomatedTriggerType.Unknown()),
-            projectRule.fixture.editor,
-            projectRule.project,
-            file,
-            LatencyContext()
+            null
         )
 
-        assertThat(actual.supplementalContext).isNotNull
-        assertThat(actual.supplementalContext?.contents).isEmpty()
-        assertThat(actual.supplementalContext?.contentLength).isEqualTo(0)
-    }
-
-    @Test
-    fun `given request context, should invoke service API with correct args and await supplemental context deferred`() = runTest {
-        val mockFileContext = aFileContextInfo(CodeWhispererJava.INSTANCE)
-        val mockSupContext = spy(
-            aSupplementalContextInfo(
-                myContents = listOf(
-                    Chunk(content = "foo", path = "/foo.java"),
-                    Chunk(content = "bar", path = "/bar.java"),
-                    Chunk(content = "baz", path = "/baz.java")
-                ),
-                myIsUtg = false,
-                myLatency = 50L
-            )
-        )
-
-        val mockRequestContext = spy(
-            RequestContext(
-                project = projectRule.project,
-                editor = projectRule.fixture.editor,
-                triggerTypeInfo = TriggerTypeInfo(CodewhispererTriggerType.AutoTrigger, CodeWhispererAutomatedTriggerType.Enter()),
-                caretPosition = CaretPosition(0, 0),
-                fileContextInfo = mockFileContext,
-                supplementalContextDeferred = async { mockSupContext },
-                connection = ToolkitConnectionManager.getInstance(projectRule.project).activeConnection(),
-                latencyContext = LatencyContext(),
-                customizationArn = "fake-arn",
-                profileArn = "fake-arn",
-                workspaceId = null,
-                diagnostics = emptyList()
-            )
-        )
-
-        sut.invokeCodeWhispererInBackground(mockRequestContext).join()
-
-        verify(mockRequestContext, times(1)).awaitSupplementalContext()
-        verify(clientFacade).generateCompletionsPaginator(any())
-
-        argumentCaptor<GenerateCompletionsRequest> {
-            verify(clientFacade).generateCompletionsPaginator(capture())
-            assertThat(firstValue.customizationArn()).isEqualTo("fake-arn")
-            assertThat(firstValue.fileContext()).isEqualTo(mockFileContext.toSdkModel())
-            assertThat(firstValue.supplementalContexts()).hasSameSizeAs(mockSupContext.contents)
-            assertThat(firstValue.supplementalContexts()).isEqualTo(mockSupContext.toSdkModel())
+        runReadAction {
+            assertThat(capturedParams.textDocument.uri).isEqualTo(toUriString(file.virtualFile))
+            assertThat(capturedParams.position.line).isEqualTo(mockEditor.caretModel.primaryCaret.visualPosition.line)
+            assertThat(capturedParams.position.character).isEqualTo(mockEditor.caretModel.primaryCaret.offset)
+            assertThat(capturedParams.context.triggerKind).isEqualTo(InlineCompletionTriggerKind.Invoke)
         }
     }
-}
-
-private fun CodeWhispererProgrammingLanguage.toSdkModel(): ProgrammingLanguage = ProgrammingLanguage.builder()
-    .languageName(toCodeWhispererRuntimeLanguage().languageId)
-    .build()
-
-private fun FileContextInfo.toSdkModel(): FileContext = FileContext.builder()
-    .filename(fileRelativePath)
-    .fileUri(fileUri)
-    .programmingLanguage(programmingLanguage.toCodeWhispererRuntimeLanguage().toSdkModel())
-    .leftFileContent(caretContext.leftFileContext)
-    .rightFileContent(caretContext.rightFileContext)
-    .build()
-
-private fun SupplementalContextInfo.toSdkModel(): List<SupplementalContext> = contents.map {
-    SupplementalContext.builder()
-        .content(it.content)
-        .filePath(it.path)
-        .build()
 }

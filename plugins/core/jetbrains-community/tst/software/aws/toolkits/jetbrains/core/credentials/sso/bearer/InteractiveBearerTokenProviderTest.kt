@@ -13,11 +13,10 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.jupiter.api.assertThrows
-import org.mockito.Mockito
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argThat
-import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.reset
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
@@ -49,6 +48,7 @@ import software.aws.toolkits.jetbrains.core.credentials.sso.DeviceAuthorizationG
 import software.aws.toolkits.jetbrains.core.credentials.sso.DeviceGrantAccessTokenCacheKey
 import software.aws.toolkits.jetbrains.core.credentials.sso.DiskCache
 import software.aws.toolkits.jetbrains.core.credentials.sso.PKCEAccessTokenCacheKey
+import java.time.Clock
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
@@ -84,16 +84,14 @@ class InteractiveBearerTokenProviderTest {
     }
 
     @Test
-    fun `oidcClient retries twice on InvalidGrantException failure`() {
+    fun `oidcClient does not retry on InvalidGrantException failure`() {
         fun verifyRetryAttempts(configuration: ClientOverrideConfiguration.Builder) {
             configuration.addExecutionInterceptor(
                 object : ExecutionInterceptor {
                     override fun onExecutionFailure(context: Context.FailedExecution?, executionAttributes: ExecutionAttributes?) {
                         super.onExecutionFailure(context, executionAttributes)
 
-                        // 3 total network calls, showing 4 since the sdk increments the attempt count at the beginning
-                        // of the loop before it checks whether it's allowed to retry.
-                        assertThat(executionAttributes?.getAttribute(InternalCoreExecutionAttribute.EXECUTION_ATTEMPT)).isEqualTo(4)
+                        assertThat(executionAttributes?.getAttribute(InternalCoreExecutionAttribute.EXECUTION_ATTEMPT)).isEqualTo(1)
                     }
                 }
             )
@@ -160,7 +158,7 @@ class InteractiveBearerTokenProviderTest {
     }
 
     @Test
-    fun `resolveToken does't refresh if token was retrieved recently`() {
+    fun `resolveToken doesn't refresh if token was retrieved recently`() {
         stubClientRegistration()
         whenever(diskCache.loadAccessToken(any<DeviceGrantAccessTokenCacheKey>())).thenReturn(
             DeviceAuthorizationGrantToken(
@@ -176,10 +174,55 @@ class InteractiveBearerTokenProviderTest {
     }
 
     @Test
+    fun `resolveToken attempts to refresh token on first invoke if expired`() {
+        stubClientRegistration()
+        stubAccessToken()
+        whenever(diskCache.loadAccessToken(any<DeviceGrantAccessTokenCacheKey>())).thenReturn(
+            DeviceAuthorizationGrantToken(
+                startUrl = startUrl,
+                region = region,
+                accessToken = "accessToken",
+                refreshToken = "refreshToken",
+                expiresAt = Instant.now()
+            )
+        )
+        val sut = buildSut()
+        sut.resolveToken()
+
+        verify(oidcClient).createToken(any<CreateTokenRequest>())
+    }
+
+    @Test
+    fun `resolveToken refreshes on subsequent invokes if expired`() {
+        val mockClock = mock<Clock>()
+        whenever(mockClock.instant()).thenReturn(Instant.now())
+        stubClientRegistration()
+        stubAccessToken()
+        whenever(diskCache.loadAccessToken(any<DeviceGrantAccessTokenCacheKey>())).thenReturn(
+            DeviceAuthorizationGrantToken(
+                startUrl = startUrl,
+                region = region,
+                accessToken = "accessToken",
+                refreshToken = "refreshToken",
+                expiresAt = Instant.now().plus(1, ChronoUnit.HOURS)
+            )
+        )
+        val sut = buildSut(mockClock)
+        // current token should be valid
+        assertThat(sut.resolveToken().accessToken).isEqualTo("accessToken")
+        verify(oidcClient, times(0)).createToken(any<CreateTokenRequest>())
+
+        // then if we advance the clock it should refresh
+        whenever(mockClock.instant()).thenReturn(Instant.now().plus(100, ChronoUnit.DAYS))
+        assertThat(sut.resolveToken().accessToken).isEqualTo("access1")
+        verify(oidcClient, times(1)).createToken(any<CreateTokenRequest>())
+    }
+
+    @Test
     fun `resolveToken throws if reauthentication is needed`() {
         stubClientRegistration()
         stubAccessToken()
-        Mockito.reset(oidcClient)
+        reset(oidcClient)
         whenever(oidcClient.createToken(any<CreateTokenRequest>())).thenThrow(AccessDeniedException.create("denied", null))
 
         val sut = buildSut()
@@ -197,7 +240,7 @@ class InteractiveBearerTokenProviderTest {
         val sut = buildSut()
         sut.invalidate()
 
-        verify(mockListener).onChange(sut.id)
+        verify(mockListener).onProviderChange(sut.id)
     }
 
     @Test
@@ -205,10 +248,13 @@ class InteractiveBearerTokenProviderTest {
         stubClientRegistration()
         stubAccessToken()
         val sut = buildSut()
+        whenever(diskCache.loadAccessToken(any<DeviceGrantAccessTokenCacheKey>())).thenReturn(null)
         sut.invalidate()
 
         // initial load
-        verify(diskCache).loadAccessToken(any<DeviceGrantAccessTokenCacheKey>())
+        // invalidate attempts to reload token from disk
+        verify(diskCache, times(2)).loadAccessToken(any<DeviceGrantAccessTokenCacheKey>())
+        verify(diskCache).loadAccessToken(any<PKCEAccessTokenCacheKey>())
         verify(diskCache).invalidateClientRegistration(region)
         verify(diskCache).invalidateAccessToken(startUrl)
 
@@ -224,6 +270,10 @@ class InteractiveBearerTokenProviderTest {
 
         // nothing else
         verifyNoMoreInteractions(diskCache)
+
+        // should not have a token now
+        assertThat(sut.currentToken()?.accessToken).isNull()
+        assertThrows<NoTokenInitializedException> { sut.resolveToken() }
     }
 
     @Test
@@ -232,22 +282,22 @@ class InteractiveBearerTokenProviderTest {
         stubAccessToken()
         val sut = buildSut()
 
-        assertThat(sut.currentToken()?.accessToken).isEqualTo("accessToken")
+        assertThat(sut.resolveToken().accessToken).isEqualTo("access1")
 
         // and now instead of trying to stub out the entire OIDC device flow, abuse the fact that we short-circuit and read from disk if available
-        Mockito.reset(diskCache)
+        reset(diskCache)
         whenever(diskCache.loadAccessToken(any<DeviceGrantAccessTokenCacheKey>())).thenReturn(
             DeviceAuthorizationGrantToken(
                 startUrl = startUrl,
                 region = region,
-                accessToken = "access1",
-                refreshToken = "refresh1",
+                accessToken = "access1234",
+                refreshToken = "refresh1234",
                 expiresAt = Instant.MAX
             )
         )
         sut.reauthenticate()
 
-        assertThat(sut.currentToken()?.accessToken).isEqualTo("access1")
+        assertThat(sut.resolveToken().accessToken).isEqualTo("access1234")
     }
 
     @Test
@@ -262,19 +312,20 @@ class InteractiveBearerTokenProviderTest {
         sut.reauthenticate()
 
         // once for invalidate, once after the token has been retrieved
-        verify(mockListener, times(2)).onChange(sut.id)
+        verify(mockListener, times(2)).onProviderChange(sut.id)
     }
 
-    private fun buildSut() = InteractiveBearerTokenProvider(
+    private fun buildSut(clock: Clock = Clock.systemUTC()) = InteractiveBearerTokenProvider(
         startUrl = startUrl,
         region = region,
         scopes = scopes,
         cache = diskCache,
-        id = "test"
+        id = "test",
+        clock = clock,
     )
 
     private fun stubClientRegistration() {
-        whenever(diskCache.loadClientRegistration(any<DeviceAuthorizationClientRegistrationCacheKey>(), eq("testSource"))).thenReturn(
+        whenever(diskCache.loadClientRegistration(any<DeviceAuthorizationClientRegistrationCacheKey>(), any())).thenReturn(
             DeviceAuthorizationClientRegistration(
                 "",
                 "",
@@ -290,7 +341,7 @@ class InteractiveBearerTokenProviderTest {
                 region = region,
                 accessToken = "accessToken",
                 refreshToken = "refreshToken",
-                expiresAt = Instant.MIN
+                expiresAt = Instant.now().minus(100, ChronoUnit.DAYS),
             )
         )
         whenever(oidcClient.createToken(any<CreateTokenRequest>())).thenReturn(

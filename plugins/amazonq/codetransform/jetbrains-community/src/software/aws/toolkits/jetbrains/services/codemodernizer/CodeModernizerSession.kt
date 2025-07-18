@@ -72,7 +72,6 @@ import java.util.concurrent.atomic.AtomicBoolean
 import javax.net.ssl.SSLHandshakeException
 
 const val MAX_ZIP_SIZE = 2000000000 // 2GB
-const val EXPLAINABILITY_V1 = "EXPLAINABILITY_V1"
 
 // constants for handling SDKClientException
 const val CONNECTION_REFUSED_ERROR: String = "Connection refused"
@@ -553,6 +552,8 @@ class CodeModernizerSession(
 
                 else -> {
                     LOG.error(e) { e.message.toString() }
+                    LOG.info { "Stopping transformation job [$jobId] due to unexpected error." }
+                    stopTransformation(jobId.id)
                     CodeModernizerJobCompletedResult.RetryableFailure(
                         jobId,
                         message("codemodernizer.notification.info.modernize_failed.connection_failed", e.message.orEmpty()),

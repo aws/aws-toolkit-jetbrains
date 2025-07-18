@@ -21,7 +21,6 @@ import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.AwsToolkit
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.services.amazonq.QConstants
 import software.aws.toolkits.jetbrains.settings.AwsSettings
@@ -50,9 +49,8 @@ class QMigrationActivity : StartupActivity.DumbAware {
     private fun displayQMigrationInfo(project: Project) {
         if (AwsSettings.getInstance().isQMigrationNotificationShownOnce) return
 
-        val hasUsedCodeWhisperer = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance()) != null
         val hasUsedQ = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance()) != null
-        if (hasUsedCodeWhisperer || hasUsedQ) {
+        if (hasUsedQ) {
             // do auto-install
             installQPlugin(project, autoInstall = true)
         } else if (!PluginManager.isPluginInstalled(PluginId.getId(AwsToolkit.Q_PLUGIN_ID))) {

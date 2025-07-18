@@ -38,7 +38,6 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getTableMap
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isPlanComplete
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.parseBuildFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.pollTransformationStatusAndPlan
-import software.aws.toolkits.jetbrains.services.codemodernizer.utils.refreshToken
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.validateCustomVersionsFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.validateSctMetadata
 import software.aws.toolkits.jetbrains.utils.notifyStickyWarn
@@ -90,18 +89,18 @@ class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase
     }
 
     @Test
-    fun `refresh on access denied`() {
+    fun `show re-auth notification on access denied`() {
         val mockAccessDeniedException = Mockito.mock(AccessDeniedException::class.java)
 
-        mockkStatic(::refreshToken)
-        every { refreshToken(any()) } just runs
+        mockkStatic(::notifyStickyWarn)
+        every { notifyStickyWarn(any(), any(), any(), any(), any()) } just runs
 
         Mockito.doThrow(
             mockAccessDeniedException
         ).doReturn(
             exampleGetCodeMigrationResponse,
             exampleGetCodeMigrationResponse.replace(TransformationStatus.STARTED),
-            exampleGetCodeMigrationResponse.replace(TransformationStatus.COMPLETED), // Should stop before this point
+            exampleGetCodeMigrationResponse.replace(TransformationStatus.COMPLETED),
         ).whenever(clientAdaptorSpy).getCodeModernizationJob(any())
 
         Mockito.doReturn(exampleGetCodeMigrationPlanResponse)
@@ -128,7 +127,7 @@ class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase
                 TransformationStatus.STARTED,
             )
         assertThat(expected).isEqualTo(mutableList)
-        io.mockk.verify { refreshToken(any()) }
+        verify { notifyStickyWarn(message("codemodernizer.notification.warn.expired_credentials.title"), any(), any(), any(), any()) }
     }
 
     @Test
@@ -397,7 +396,7 @@ class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase
 
     @Test
     fun `WHEN validateCustomVersionsFile on fully valid yaml file THEN passes validation`() {
-        val sampleFileContents = """name: "custom-dependency-management"
+        val sampleFileContents = """name: "dependency-upgrade"
 description: "Custom dependency version management for Java migration from JDK 8/11/17 to JDK 17/21"
 dependencyManagement:
   dependencies:
@@ -406,7 +405,7 @@ dependencyManagement:
         versionProperty: "library1.version"
         originType: "FIRST_PARTY"
   plugins:
-    - identifier: "com.example.plugin"
+    - identifier: "com.example:plugin"
         targetVersion: "1.2.0"
         versionProperty: "plugin.version"
         """.trimIndent()
@@ -418,7 +417,7 @@ dependencyManagement:
 
     @Test
     fun `WHEN validateCustomVersionsFile on invalid yaml file THEN fails validation`() {
-        val sampleFileContents = """name: "custom-dependency-management"
+        val sampleFileContents = """name: "dependency-upgrade"
 description: "Custom dependency version management for Java migration from JDK 8/11/17 to JDK 17/21"
 invalidKey:
   dependencies:
@@ -427,7 +426,7 @@ invalidKey:
         versionProperty: "library1.version"
         originType: "FIRST_PARTY"
   plugins:
-    - identifier: "com.example.plugin"
+    - identifier: "com.example:plugin"
         targetVersion: "1.2.0"
         versionProperty: "plugin.version"
         """.trimIndent()
@@ -439,7 +438,7 @@ invalidKey:
 
     @Test
     fun `WHEN validateCustomVersionsFile on non-yaml file THEN fails validation`() {
-        val sampleFileContents = """name: "custom-dependency-management"
+        val sampleFileContents = """name: "dependency-upgrade"
 description: "Custom dependency version management for Java migration from JDK 8/11/17 to JDK 17/21"
 dependencyManagement:
   dependencies:
@@ -448,7 +447,7 @@ dependencyManagement:
         versionProperty: "library1.version"
         originType: "FIRST_PARTY"
   plugins:
-    - identifier: "com.example.plugin"
+    - identifier: "com.example:plugin"
         targetVersion: "1.2.0"
         versionProperty: "plugin.version"
         """.trimIndent()

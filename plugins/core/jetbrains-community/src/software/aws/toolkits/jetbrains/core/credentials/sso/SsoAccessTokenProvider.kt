@@ -194,7 +194,7 @@ class SsoAccessTokenProvider(
 
     @Deprecated("Device authorization grant flow is deprecated")
     private fun registerDAGClient(): ClientRegistration {
-        loadDagClientRegistration(SourceOfLoadRegistration.REGISTER_CLIENT.toString())?.let {
+        loadDagClientRegistration(SourceOfLoadRegistration.REGISTER_CLIENT)?.let {
             return it
         }
 
@@ -235,7 +235,7 @@ class SsoAccessTokenProvider(
     }
 
     private fun registerPkceClient(): PKCEClientRegistration {
-        loadPkceClientRegistration(SourceOfLoadRegistration.REGISTER_CLIENT.toString())?.let {
+        loadPkceClientRegistration(SourceOfLoadRegistration.REGISTER_CLIENT)?.let {
             return it
         }
 
@@ -431,8 +431,8 @@ class SsoAccessTokenProvider(
         stageName = RefreshCredentialStage.LOAD_REGISTRATION
         val registration = try {
             when (currentToken) {
-                is DeviceAuthorizationGrantToken -> loadDagClientRegistration(SourceOfLoadRegistration.REFRESH_TOKEN.toString())
-                is PKCEAuthorizationGrantToken -> loadPkceClientRegistration(SourceOfLoadRegistration.REFRESH_TOKEN.toString())
+                is DeviceAuthorizationGrantToken -> loadDagClientRegistration(SourceOfLoadRegistration.REFRESH_TOKEN)
+                is PKCEAuthorizationGrantToken -> loadPkceClientRegistration(SourceOfLoadRegistration.REFRESH_TOKEN)
             }
         } catch (e: Exception) {
             val message = e.message ?: "$stageName: ${e::class.java.name}"
@@ -519,13 +519,13 @@ class SsoAccessTokenProvider(
         SAVE_TOKEN,
     }
 
-    private fun loadDagClientRegistration(source: String): ClientRegistration? =
-        cache.loadClientRegistration(dagClientRegistrationCacheKey, source)?.let {
+    private fun loadDagClientRegistration(source: SourceOfLoadRegistration): ClientRegistration? =
+        cache.loadClientRegistration(dagClientRegistrationCacheKey, source.toString())?.let {
             return it
         }
 
-    private fun loadPkceClientRegistration(source: String): PKCEClientRegistration? =
-        cache.loadClientRegistration(pkceClientRegistrationCacheKey, source)?.let {
+    private fun loadPkceClientRegistration(source: SourceOfLoadRegistration): PKCEClientRegistration? =
+        cache.loadClientRegistration(pkceClientRegistrationCacheKey, source.toString())?.let {
             return it as PKCEClientRegistration
         }
 

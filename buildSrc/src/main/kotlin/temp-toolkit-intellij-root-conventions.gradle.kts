@@ -35,7 +35,7 @@ val toolkitVersion: String by project
 
 // please check changelog generation logic if this format is changed
 // also sync with gateway version
-version = "$toolkitVersion-${ideProfile.shortName}"
+version = "$toolkitVersion.${ideProfile.shortName}"
 
 val resharperDlls = configurations.register("resharperDlls") {
     isCanBeConsumed = false

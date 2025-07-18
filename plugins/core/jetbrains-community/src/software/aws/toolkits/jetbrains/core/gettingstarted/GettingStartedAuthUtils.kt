@@ -11,7 +11,6 @@ import software.aws.toolkits.jetbrains.core.credentials.ProfileSsoManagedBearerS
 import software.aws.toolkits.jetbrains.core.credentials.ReauthSource
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.loginSso
-import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.reauthConnectionIfNeeded
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
@@ -131,9 +130,9 @@ fun requestCredentialsForQ(
     isReauth: Boolean,
 ): Boolean {
     // try to scope upgrade if we have a codewhisperer connection
-    val codeWhispererConnection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())
-    if (codeWhispererConnection is LegacyManagedBearerSsoConnection) {
-        codeWhispererConnection.let {
+    val qConnection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
+    if (qConnection is LegacyManagedBearerSsoConnection) {
+        qConnection.let {
             return tryOrNull {
                 loginSso(project, it.startUrl, it.region, Q_SCOPES)
             } != null
@@ -141,7 +140,7 @@ fun requestCredentialsForQ(
     }
 
     val dialogState = SetupAuthenticationDialogState().apply {
-        (codeWhispererConnection as? ProfileSsoManagedBearerSsoConnection)?.let { connection ->
+        (qConnection as? ProfileSsoManagedBearerSsoConnection)?.let { connection ->
             idcTabState.apply {
                 profileName = connection.configSessionName
                 startUrl = connection.startUrl

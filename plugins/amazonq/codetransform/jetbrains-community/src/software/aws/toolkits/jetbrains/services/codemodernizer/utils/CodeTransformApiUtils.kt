@@ -66,8 +66,6 @@ data class PollingResult(
     val transformationPlan: TransformationPlan?,
 )
 
-private const val IS_CLIENT_SIDE_BUILD_ENABLED = false
-
 /**
  * Wrapper around [waitUntil] that polls the API DescribeMigrationJob to check the migration job status.
  */
@@ -88,11 +86,7 @@ suspend fun JobId.pollTransformationStatusAndPlan(
     var transformationResponse: GetTransformationResponse? = null
     var transformationPlan: TransformationPlan? = null
     var didSleepOnce = false
-    val maxRefreshes = 10
-    var numRefreshes = 0
-
-    // refresh token at start of polling since local build just prior can take a long time
-    refreshToken(project)
+    var hasSeenTransforming = false
 
     try {
         waitUntil(
@@ -116,13 +110,16 @@ suspend fun JobId.pollTransformationStatusAndPlan(
                 if (isDisposed.get()) throw AlreadyDisposedException("The invoker is disposed.")
                 transformationResponse = clientAdaptor.getCodeModernizationJob(this.id)
                 val newStatus = transformationResponse?.transformationJob()?.status() ?: throw RuntimeException("Unable to get job status")
+                if (newStatus == TransformationStatus.TRANSFORMING) {
+                    hasSeenTransforming = true
+                }
                 var newPlan: TransformationPlan? = null
-                if (newStatus in STATES_WHERE_PLAN_EXIST && transformType != CodeTransformType.SQL_CONVERSION) { // no plan for SQL conversions
+                if (hasSeenTransforming && transformType != CodeTransformType.SQL_CONVERSION) { // no plan for SQL conversions
                     delay(sleepDurationMillis)
                     newPlan = clientAdaptor.getCodeModernizationPlan(this).transformationPlan()
                 }
-                // TODO: remove flag when releasing CSB
-                if (IS_CLIENT_SIDE_BUILD_ENABLED && newStatus == TransformationStatus.TRANSFORMING && newPlan != null) {
+                // TODO: handle case where PlannerAgent may request mvn dependency:tree; not needed for now
+                if (hasSeenTransforming && newPlan != null) {
                     attemptLocalBuild(newPlan, this, project)
                 }
                 if (newStatus != state) {
@@ -136,13 +133,10 @@ suspend fun JobId.pollTransformationStatusAndPlan(
                     onStateChange(state, newStatus, transformationPlan)
                 }
                 state = newStatus
-                numRefreshes = 0
                 return@waitUntil state
-            } catch (e: AccessDeniedException) {
-                if (numRefreshes++ > maxRefreshes) throw e
-                refreshToken(project)
-                return@waitUntil state
-            } catch (e: InvalidGrantException) {
+            } catch (e: Exception) {
+                if (e !is AccessDeniedException && e !is InvalidGrantException) throw e
+
                 CodeTransformMessageListener.instance.onReauthStarted()
                 notifyStickyWarn(
                     message("codemodernizer.notification.warn.expired_credentials.title"),
@@ -189,44 +183,47 @@ suspend fun processClientInstructions(clientInstructionsPath: Path, jobId: JobId
     val targetDir = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(copyOfProjectSources.toFile())
         ?: throw RuntimeException("Cannot find copy of project sources directory")
 
-    withContext(EDT) {
-        runWriteAction {
-            // create temp module with project copy so that we can apply diff.patch
-            val modifiableModel = ModuleManager.getInstance(project).getModifiableModel()
-            val tempModule = modifiableModel.newModule(
-                Paths.get(targetDir.path).resolve("temp.iml").toString(),
-                JavaModuleType.getModuleType().id
-            )
+    if (clientInstructionsPath.toFile().readText().trim().isNotEmpty()) {
+        withContext(EDT) {
+            runWriteAction {
+                // create temp module with project copy so that we can apply diff.patch
+                val modifiableModel = ModuleManager.getInstance(project).getModifiableModel()
+                val tempModule = modifiableModel.newModule(
+                    Paths.get(targetDir.path).resolve("temp.iml").toString(),
+                    JavaModuleType.getModuleType().id
+                )
 
-            try {
-                val moduleModel = ModuleRootManager.getInstance(tempModule).modifiableModel
-                moduleModel.addContentEntry(targetDir.url)
-                moduleModel.commit()
-                modifiableModel.commit()
+                try {
+                    val moduleModel = ModuleRootManager.getInstance(tempModule).modifiableModel
+                    moduleModel.addContentEntry(targetDir.url)
+                    moduleModel.commit()
+                    modifiableModel.commit()
 
-                // apply diff.patch
-                val patchReader = PatchReader(clientInstructionsPath)
-                patchReader.parseAllPatches()
-                PatchApplier(
-                    project,
-                    targetDir,
-                    patchReader.allPatches,
-                    null,
-                    null
-                ).execute()
-                getLogger<CodeModernizerManager>().info { "Successfully applied patch file at $clientInstructionsPath" }
+                    // apply diff.patch
+                    val patchReader = PatchReader(clientInstructionsPath)
+                    patchReader.parseAllPatches()
+                    PatchApplier(
+                        project,
+                        targetDir,
+                        patchReader.allPatches,
+                        null,
+                        null
+                    ).execute()
+                    getLogger<CodeModernizerManager>().info { "Successfully applied patch file at $clientInstructionsPath" }
 
-                val virtualFile = LocalFileSystem.getInstance().findFileByIoFile(clientInstructionsPath.toFile())
-                    ?: throw RuntimeException("Cannot find patch file at $clientInstructionsPath")
-                FileEditorManager.getInstance(project).openFile(virtualFile, true)
-            } catch (e: Exception) {
-                getLogger<CodeModernizerManager>().error {
-                    "Error applying intermediate diff.patch for job ${jobId.id} and artifact $artifactId located at " +
-                        "$clientInstructionsPath: $e"
-                }
-            } finally {
-                runWriteAction {
-                    ModuleManager.getInstance(project).disposeModule(tempModule)
+                    val virtualFile = LocalFileSystem.getInstance().findFileByIoFile(clientInstructionsPath.toFile())
+                        ?: throw RuntimeException("Cannot find patch file at $clientInstructionsPath")
+                    FileEditorManager.getInstance(project).openFile(virtualFile, true)
+                } catch (e: Exception) {
+                    getLogger<CodeModernizerManager>().error {
+                        "Error applying intermediate diff.patch for job ${jobId.id} and artifact $artifactId located at " +
+                            "$clientInstructionsPath: $e"
+                    }
+                    throw e
+                } finally {
+                    runWriteAction {
+                        ModuleManager.getInstance(project).disposeModule(tempModule)
+                    }
                 }
             }
         }
@@ -244,10 +241,19 @@ suspend fun processClientInstructions(clientInstructionsPath: Path, jobId: JobId
         CodeModernizerManager.getInstance(project).codeTransformationSession?.uploadPayload(uploadZip, uploadContext)
         getLogger<CodeModernizerManager>().info { "Upload succeeded; about to call ResumeTransformation for job ${jobId.id} and artifact $artifactId now" }
         CodeModernizerManager.getInstance(project).codeTransformationSession?.resumeTransformation()
+        getLogger<CodeModernizerManager>().info { "ResumeTransformation succeeded for job ${jobId.id}" }
+    } catch (e: Exception) {
+        getLogger<CodeModernizerManager>().error { "Upload / resume job failed for job ${jobId.id} and artifact $artifactId: $e" }
+        if (e.message?.contains("find a step in desired state:AWAITING_CLIENT_ACTION") == true) {
+            getLogger<CodeModernizerManager>().info { "Resuming job after server-side timeout" }
+            CodeModernizerManager.getInstance(project).codeTransformationSession?.resumeTransformation()
+        } else {
+            throw e
+        }
     } finally {
         uploadZip.deleteRecursively()
         copyOfProjectSources.toFile().deleteRecursively()
-        getLogger<CodeModernizerManager>().info { "Deleted copy of project sources and client-side build upload ZIP" }
+        getLogger<CodeModernizerManager>().info { "Deleted uploadZip and copyOfProjectSources" }
     }
     // switch back to Transformation Hub view
     runInEdt {
@@ -262,6 +268,7 @@ suspend fun downloadClientInstructions(jobId: JobId, artifactId: String, project
     val downloadBytes = client.downloadExportResultArchive(jobId, artifactId)
     val downloadZipPath = zipToPath(downloadBytes, exportZipPath.toPath()).first.toAbsolutePath()
     unzipFile(downloadZipPath, exportZipPath.toPath())
+    downloadZipPath.toFile().deleteRecursively()
     return exportZipPath.toPath().resolve("diff.patch")
 }
 

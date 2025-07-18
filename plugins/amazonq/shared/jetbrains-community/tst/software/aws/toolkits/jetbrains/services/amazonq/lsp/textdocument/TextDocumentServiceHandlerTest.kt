@@ -6,21 +6,27 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp.textdocument
 import com.intellij.openapi.application.writeAction
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.fileEditor.FileDocumentManager
+import com.intellij.openapi.fileEditor.ex.FileEditorManagerEx
 import com.intellij.openapi.fileTypes.FileType
+import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.newvfs.events.VFileContentChangeEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import com.intellij.openapi.vfs.writeText
 import com.intellij.testFramework.DisposableRule
+import com.intellij.testFramework.LightVirtualFile
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory
 import com.intellij.testFramework.replaceService
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.mockkStatic
 import io.mockk.slot
+import io.mockk.spyk
 import io.mockk.verify
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import org.assertj.core.api.Assertions.assertThat
@@ -30,13 +36,15 @@ import org.eclipse.lsp4j.DidOpenTextDocumentParams
 import org.eclipse.lsp4j.DidSaveTextDocumentParams
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseMessage
 import org.eclipse.lsp4j.services.TextDocumentService
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TestName
 import software.aws.toolkits.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLanguageServer
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.FileUriUtil
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.LspEditorUtil
 import software.aws.toolkits.jetbrains.utils.rules.CodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.satisfiesKt
 import java.net.URI
@@ -66,6 +74,9 @@ class TextDocumentServiceHandlerTest {
     @get:Rule
     val disposableRule = DisposableRule()
 
+    @get:Rule
+    val testName = TestName()
+
     @Before
     fun setup() {
         mockTextDocumentService = mockk<TextDocumentService>()
@@ -78,8 +89,8 @@ class TextDocumentServiceHandlerTest {
         projectRule.project.replaceService(AmazonQLspService::class.java, mockLspService, disposableRule.disposable)
 
         // Mock the LSP service's executeSync method as a suspend function
-        every {
-            mockLspService.executeSync<CompletableFuture<ResponseMessage>>(any())
+        coEvery {
+            mockLspService.executeIfRunning<CompletableFuture<ResponseMessage>>(any())
         } coAnswers {
             val func = firstArg<suspend AmazonQLspService.(AmazonQLanguageServer) -> CompletableFuture<ResponseMessage>>()
             func.invoke(mockLspService, mockLanguageServer)
@@ -91,12 +102,20 @@ class TextDocumentServiceHandlerTest {
         every { mockTextDocumentService.didSave(any()) } returns Unit
         every { mockTextDocumentService.didOpen(any()) } returns Unit
         every { mockTextDocumentService.didClose(any()) } returns Unit
+    }
 
-        sut = TextDocumentServiceHandler(projectRule.project, mockk())
+    @After
+    fun tearDown() {
+        try {
+            Disposer.dispose(sut)
+        } catch (_: Exception) {
+        }
     }
 
     @Test
     fun `didSave runs on beforeDocumentSaving`() = runTest {
+        sut = TextDocumentServiceHandler(projectRule.project, this)
+
         // Create test document and file
         val uri = URI.create("file:///test/path/file.txt")
         val document = mockk<Document> {
@@ -118,6 +137,7 @@ class TextDocumentServiceHandlerTest {
             sut.beforeDocumentSaving(document)
 
             // Verify the correct LSP method was called with matching parameters
+            advanceUntilIdle()
             val paramsSlot = slot<DidSaveTextDocumentParams>()
             verify { mockTextDocumentService.didSave(capture(paramsSlot)) }
 
@@ -132,10 +152,11 @@ class TextDocumentServiceHandlerTest {
     fun `didOpen runs on service init`() = runTest {
         val content = "test content"
         val file = withContext(EDT) {
-            projectRule.fixture.createFile("name", content).also { projectRule.fixture.openFileInEditor(it) }
+            projectRule.fixture.createFile(testName.methodName, content).also { projectRule.fixture.openFileInEditor(it) }
         }
-
-        sut = TextDocumentServiceHandler(projectRule.project, mockk())
+        advanceUntilIdle()
+        sut = TextDocumentServiceHandler(projectRule.project, this)
+        advanceUntilIdle()
 
         val paramsSlot = mutableListOf<DidOpenTextDocumentParams>()
         verify { mockTextDocumentService.didOpen(capture(paramsSlot)) }
@@ -149,12 +170,13 @@ class TextDocumentServiceHandlerTest {
 
     @Test
     fun `didOpen runs on fileOpened`() = runTest {
+        sut = TextDocumentServiceHandler(projectRule.project, this)
+        advanceUntilIdle()
         val content = "test content"
         val file = withContext(EDT) {
-            projectRule.fixture.createFile("name", content).also { projectRule.fixture.openFileInEditor(it) }
+            projectRule.fixture.createFile(testName.methodName, content).also { projectRule.fixture.openFileInEditor(it) }
         }
-
-        sut.fileOpened(mockk(), file)
+        advanceUntilIdle()
 
         val paramsSlot = mutableListOf<DidOpenTextDocumentParams>()
         verify { mockTextDocumentService.didOpen(capture(paramsSlot)) }
@@ -168,21 +190,26 @@ class TextDocumentServiceHandlerTest {
 
     @Test
     fun `didClose runs on fileClosed`() = runTest {
-        val uri = URI.create("file:///test/path/file.txt")
-        val file = createMockVirtualFile(uri)
+        sut = TextDocumentServiceHandler(projectRule.project, this)
+        val file = withContext(EDT) {
+            projectRule.fixture.createFile(testName.methodName, "").also {
+                projectRule.fixture.openFileInEditor(it)
+                FileEditorManagerEx.getInstanceEx(projectRule.project).closeAllFiles()
+            }
+        }
 
-        sut.fileClosed(mockk(), file)
-
+        advanceUntilIdle()
         val paramsSlot = slot<DidCloseTextDocumentParams>()
         verify { mockTextDocumentService.didClose(capture(paramsSlot)) }
 
-        assertThat(paramsSlot.captured.textDocument.uri).isEqualTo(normalizeFileUri(uri.toString()))
+        assertThat(paramsSlot.captured.textDocument.uri).isEqualTo(file.toNioPath().toUri().toString())
     }
 
     @Test
     fun `didChange runs on content change events`() = runTest {
+        sut = TextDocumentServiceHandler(projectRule.project, this)
         val file = withContext(EDT) {
-            projectRule.fixture.createFile("name", "").also {
+            projectRule.fixture.createFile(testName.methodName, "").also {
                 projectRule.fixture.openFileInEditor(it)
 
                 writeAction {
@@ -192,6 +219,7 @@ class TextDocumentServiceHandlerTest {
         }
 
         // Verify the correct LSP method was called with matching parameters
+        advanceUntilIdle()
         val paramsSlot = mutableListOf<DidChangeTextDocumentParams>()
         verify { mockTextDocumentService.didChange(capture(paramsSlot)) }
 
@@ -203,11 +231,12 @@ class TextDocumentServiceHandlerTest {
 
     @Test
     fun `didSave does not run when URI is empty`() = runTest {
+        sut = TextDocumentServiceHandler(projectRule.project, this)
         val document = mockk<Document>()
         val file = createMockVirtualFile(URI.create(""))
 
-        mockkObject(FileUriUtil) {
-            every { FileUriUtil.toUriString(file) } returns null
+        mockkObject(LspEditorUtil) {
+            every { LspEditorUtil.toUriString(file) } returns null
 
             val fileDocumentManager = mockk<FileDocumentManager> {
                 every { getFile(document) } returns file
@@ -218,6 +247,7 @@ class TextDocumentServiceHandlerTest {
 
                 sut.beforeDocumentSaving(document)
 
+                advanceUntilIdle()
                 verify(exactly = 0) { mockTextDocumentService.didSave(any()) }
             }
         }
@@ -225,6 +255,7 @@ class TextDocumentServiceHandlerTest {
 
     @Test
     fun `didSave does not run when file is null`() = runTest {
+        sut = TextDocumentServiceHandler(projectRule.project, this)
         val document = mockk<Document>()
 
         val fileDocumentManager = mockk<FileDocumentManager> {
@@ -236,21 +267,25 @@ class TextDocumentServiceHandlerTest {
 
             sut.beforeDocumentSaving(document)
 
+            advanceUntilIdle()
             verify(exactly = 0) { mockTextDocumentService.didSave(any()) }
         }
     }
 
     @Test
     fun `didChange ignores non-content change events`() = runTest {
+        sut = TextDocumentServiceHandler(projectRule.project, this)
         val nonContentEvent = mockk<VFileEvent>() // Some other type of VFileEvent
 
         sut.after(mutableListOf(nonContentEvent))
 
+        advanceUntilIdle()
         verify(exactly = 0) { mockTextDocumentService.didChange(any()) }
     }
 
     @Test
     fun `didChange skips files without cached documents`() = runTest {
+        sut = TextDocumentServiceHandler(projectRule.project, this)
         val uri = URI.create("file:///test/path/file.txt")
         val path = mockk<Path> {
             every { toUri() } returns uri
@@ -271,6 +306,7 @@ class TextDocumentServiceHandlerTest {
 
             sut.after(mutableListOf(changeEvent))
 
+            advanceUntilIdle()
             verify(exactly = 0) { mockTextDocumentService.didChange(any()) }
         }
     }
@@ -288,18 +324,19 @@ class TextDocumentServiceHandlerTest {
 
         val mockFileType = mockk<FileType> {
             every { name } returns fileTypeName
+            every { isBinary } returns false
         }
 
-        return mockk<VirtualFile> {
+        return spyk<VirtualFile>(LightVirtualFile("test.java")) {
             every { url } returns uri.path
             every { toNioPath() } returns path
             every { isDirectory } returns false
             every { fileSystem } returns mockk {
                 every { protocol } returns "file"
             }
-            every { this@mockk.inputStream } returns inputStream
+            every { this@spyk.inputStream } returns inputStream
             every { fileType } returns mockFileType
-            every { this@mockk.modificationStamp } returns modificationStamp
+            every { this@spyk.modificationStamp } returns modificationStamp
         }
     }
 

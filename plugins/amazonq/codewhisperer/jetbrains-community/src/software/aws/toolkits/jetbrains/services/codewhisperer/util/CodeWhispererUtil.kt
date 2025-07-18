@@ -25,7 +25,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
-import software.amazon.awssdk.services.codewhispererruntime.model.Completion
+import software.amazon.awssdk.services.codewhispererruntime.model.DiagnosticSeverity
 import software.amazon.awssdk.services.codewhispererruntime.model.IdeDiagnostic
 import software.amazon.awssdk.services.codewhispererruntime.model.OptOutPreference
 import software.amazon.awssdk.services.codewhispererruntime.model.Position
@@ -38,7 +38,7 @@ import software.aws.toolkits.jetbrains.core.credentials.ReauthSource
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.maybeReauthProviderIfNeeded
-import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
+import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.reauthConnectionIfNeeded
 import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
@@ -46,11 +46,11 @@ import software.aws.toolkits.jetbrains.core.gettingstarted.editor.ActiveConnecti
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.ActiveConnectionType
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.BearerTokenFeatureSet
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.checkBearerConnectionValidity
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionItem
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.learn.LearnCodeWhispererManager.Companion.taskTypeToFilename
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.Chunk
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererCodeCoverageTracker.Companion.levenshteinChecker
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.isTelemetryEnabled
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CrossFile.NUMBER_OF_CHUNK_TO_FETCH
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CrossFile.NUMBER_OF_LINE_IN_CHUNK
@@ -70,7 +70,7 @@ import java.nio.file.Paths
 // 1. It will be sent for Builder ID users, only if they have optin telemetry sharing.
 // 2. It will be sent for IdC users, regardless of telemetry optout status.
 fun runIfIdcConnectionOrTelemetryEnabled(project: Project, callback: (connection: ToolkitConnection) -> Unit) =
-    ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())?.let {
+    ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())?.let {
         runIfIdcConnectionOrTelemetryEnabled(it, callback)
     }
 
@@ -187,8 +187,8 @@ fun VirtualFile.toCodeChunk(path: String): Sequence<Chunk> = sequence {
 fun VirtualFile.isWithin(ancestor: VirtualFile): Boolean = VfsUtilCore.isAncestor(ancestor, this, false)
 
 object CodeWhispererUtil {
-    fun getCompletionType(completion: Completion): CodewhispererCompletionType {
-        val content = completion.content()
+    fun getCompletionType(completion: InlineCompletionItem): CodewhispererCompletionType {
+        val content = completion.insertText
         val nonBlankLines = content.split("\n").count { it.isNotBlank() }
 
         return when {
@@ -287,14 +287,14 @@ object CodeWhispererUtil {
     fun getCodeWhispererStartUrl(project: Project): String? {
         val connection = ToolkitConnectionManager.getInstance(
             project
-        ).activeConnectionForFeature(CodeWhispererConnection.getInstance()) as? AwsBearerTokenConnection?
+        ).activeConnectionForFeature(QConnection.getInstance()) as? AwsBearerTokenConnection?
         return connection?.startUrl
     }
 
     private fun tokenConnection(project: Project) = (
         ToolkitConnectionManager
             .getInstance(project)
-            .activeConnectionForFeature(CodeWhispererConnection.getInstance()) as? AwsBearerTokenConnection
+            .activeConnectionForFeature(QConnection.getInstance()) as? AwsBearerTokenConnection
         )
 
     private fun tokenProvider(project: Project) =
@@ -304,7 +304,7 @@ object CodeWhispererUtil {
             ?.delegate as? BearerTokenProvider
 
     fun reconnectCodeWhisperer(project: Project) {
-        val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())
+        val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
         if (connection !is ManagedBearerSsoConnection) return
         pluginAwareExecuteOnPooledThread {
             reauthConnectionIfNeeded(project, connection, isReAuth = true, reauthSource = ReauthSource.CODEWHISPERER)
@@ -342,19 +342,6 @@ object CodeWhispererUtil {
         }
     }
 
-    // With edit distance, complicate usermodification can be considered as simple edit(add, delete, replace),
-    // and thus the unmodified part of recommendation length can be deducted/approximated
-    // ex. (modified > original): originalRecom: foo -> modifiedRecom: fobarbarbaro, distance = 9, delta = 12 - 9 = 3
-    // ex. (modified == original): originalRecom: helloworld -> modifiedRecom: HelloWorld, distance = 2, delta = 10 - 2 = 8
-    // ex. (modified < original): originalRecom: CodeWhisperer -> modifiedRecom: CODE, distance = 12, delta = 13 - 12 = 1
-    fun getUnmodifiedAcceptedCharsCount(originalRecommendation: String, modifiedRecommendation: String): Int {
-        val editDistance = getEditDistance(modifiedRecommendation, originalRecommendation).toInt()
-        return maxOf(originalRecommendation.length, modifiedRecommendation.length) - editDistance
-    }
-
-    private fun getEditDistance(modifiedString: String, originalString: String): Double =
-        levenshteinChecker.distance(modifiedString, originalString)
-
     fun setIntelliSensePopupAlpha(editor: Editor, alpha: Float) {
         ComponentUtil.getWindow(LookupManager.getActiveLookup(editor)?.component)?.let {
             WindowManager.getInstance().setAlphaModeRatio(it, alpha)
@@ -369,17 +356,16 @@ enum class CaretMovement {
     NO_CHANGE, MOVE_FORWARD, MOVE_BACKWARD
 }
 
+val diagnosticPatterns = mapOf(
+    "TYPE_ERROR" to listOf("type", "cast"),
+    "SYNTAX_ERROR" to listOf("expected", "indent", "syntax"),
+    "REFERENCE_ERROR" to listOf("undefined", "not defined", "undeclared", "reference", "symbol"),
+    "BEST_PRACTICE" to listOf("deprecated", "unused", "uninitialized", "not initialized"),
+    "SECURITY" to listOf("security", "vulnerability")
+)
+
 fun getDiagnosticsType(message: String): String {
     val lowercaseMessage = message.lowercase()
-
-    val diagnosticPatterns = mapOf(
-        "TYPE_ERROR" to listOf("type", "cast"),
-        "SYNTAX_ERROR" to listOf("expected", "indent", "syntax"),
-        "REFERENCE_ERROR" to listOf("undefined", "not defined", "undeclared", "reference", "symbol"),
-        "BEST_PRACTICE" to listOf("deprecated", "unused", "uninitialized", "not initialized"),
-        "SECURITY" to listOf("security", "vulnerability")
-    )
-
     return diagnosticPatterns
         .entries
         .firstOrNull { (_, keywords) ->
@@ -388,19 +374,19 @@ fun getDiagnosticsType(message: String): String {
         ?.key ?: "OTHER"
 }
 
-fun convertSeverity(severity: HighlightSeverity): String = when {
-    severity == HighlightSeverity.ERROR -> "ERROR"
+fun convertSeverity(severity: HighlightSeverity): DiagnosticSeverity = when {
+    severity == HighlightSeverity.ERROR -> DiagnosticSeverity.ERROR
     severity == HighlightSeverity.WARNING ||
-        severity == HighlightSeverity.WEAK_WARNING -> "WARNING"
-    severity == HighlightSeverity.INFORMATION -> "INFORMATION"
-    severity.toString().contains("TEXT", ignoreCase = true) -> "HINT"
-    severity == HighlightSeverity.INFO -> "INFORMATION"
+        severity == HighlightSeverity.WEAK_WARNING -> DiagnosticSeverity.WARNING
+    severity == HighlightSeverity.INFORMATION -> DiagnosticSeverity.INFORMATION
+    severity == HighlightSeverity.TEXT_ATTRIBUTES -> DiagnosticSeverity.HINT
+    severity == HighlightSeverity.INFO -> DiagnosticSeverity.INFORMATION
     // For severities that might indicate performance issues
-    severity.toString().contains("PERFORMANCE", ignoreCase = true) -> "WARNING"
+    severity.toString().contains("PERFORMANCE", ignoreCase = true) -> DiagnosticSeverity.WARNING
     // For deprecation warnings
-    severity.toString().contains("DEPRECATED", ignoreCase = true) -> "WARNING"
+    severity.toString().contains("DEPRECATED", ignoreCase = true) -> DiagnosticSeverity.WARNING
     // Default case
-    else -> "INFORMATION"
+    else -> DiagnosticSeverity.INFORMATION
 }
 
 fun getDocumentDiagnostics(document: Document, project: Project): List<IdeDiagnostic> = runCatching {

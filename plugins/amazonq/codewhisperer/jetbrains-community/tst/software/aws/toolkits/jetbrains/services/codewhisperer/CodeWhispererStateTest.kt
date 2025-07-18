@@ -5,14 +5,15 @@ package software.aws.toolkits.jetbrains.services.codewhisperer
 
 import com.intellij.openapi.util.TextRange
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.Ignore
 import org.junit.Test
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonFileName
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonResponse
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutomatedTriggerType
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 import software.aws.toolkits.telemetry.CodewhispererTriggerType
 
+@Ignore("This test suite needs a rewrite for JB inline completion API")
 class CodeWhispererStateTest : CodeWhispererTestBase() {
 
     @Test
@@ -45,28 +46,18 @@ class CodeWhispererStateTest : CodeWhispererTestBase() {
     }
 
     @Test
-    fun `test CodeWhisperer invocation sets response metadata correctly`() {
-        withCodeWhispererServiceInvokedAndWait { states ->
-            val actualResponseContext = states.responseContext
-            assertThat(listOf(actualResponseContext.sessionId)).isEqualTo(
-                pythonResponse.sdkHttpResponse().headers()[CodeWhispererService.KET_SESSION_ID]
-            )
-        }
-    }
-
-    @Test
     fun `test CodeWhisperer invocation sets recommendation metadata correctly`() {
         withCodeWhispererServiceInvokedAndWait { states ->
             val actualRecommendationContext = states.recommendationContext
             val (actualDetailContexts, actualUserInput) = actualRecommendationContext
 
             assertThat(actualUserInput).isEqualTo("")
-            val expectedCount = pythonResponse.completions().size
+            val expectedCount = pythonResponse.items.size
             assertThat(actualDetailContexts.size).isEqualTo(expectedCount)
             actualDetailContexts.forEachIndexed { i, actualDetailContext ->
-                val (actualRequestId, actualRecommendationDetail, _, actualIsDiscarded) = actualDetailContext
-                assertThat(actualRecommendationDetail.content()).isEqualTo(pythonResponse.completions()[i].content())
-                assertThat(actualRequestId).isEqualTo(pythonResponse.responseMetadata().requestId())
+                val (actualItemId, actualCompletion, actualIsDiscarded) = actualDetailContext
+                assertThat(actualCompletion.insertText).isEqualTo(pythonResponse.items[i].insertText)
+                assertThat(actualItemId).isEqualTo(pythonResponse.items[i].itemId)
                 assertThat(actualIsDiscarded).isEqualTo(false)
             }
         }

@@ -60,6 +60,7 @@ open class CodeInsightTestFixtureRule(protected val testDescription: LightProjec
         this.description = description
         // This timer is cancelled but it still continues running when the test is over since it cancels lazily. This is fine, so suppress the leak
         ThreadLeakTracker.longRunningThreadCreated(ApplicationManager.getApplication(), "Debugger Worker launch timer")
+        ThreadLeakTracker.longRunningThreadCreated(ApplicationManager.getApplication(), "Test worker")
     }
 
     override fun after() {

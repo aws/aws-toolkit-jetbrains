@@ -12,15 +12,12 @@ import com.intellij.openapi.project.Project
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.actions.SsoLogoutAction
-import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
-import software.aws.toolkits.jetbrains.services.amazonq.actions.QSwitchProfilesAction
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererConnectOnGithubAction
 import software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererLearnMoreAction
 import software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererProvideFeedbackAction
-import software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererShowSettingsAction
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.actions.CodeWhispererCodeScanRunAction
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.actions.ActionProvider
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.actions.Customize
@@ -54,6 +51,7 @@ class QStatusBarLoggedInActionGroup : DefaultActionGroup() {
 
     override fun getChildren(e: AnActionEvent?) = e?.project?.let {
         val isPendingActiveProfile = QRegionProfileManager.getInstance().hasValidConnectionButNoActiveProfile(it)
+        val actionManager = ActionManager.getInstance()
         buildList {
             if (!isPendingActiveProfile) {
                 addAll(buildActionListForActiveProfileSelected(it, actionProvider))
@@ -64,15 +62,18 @@ class QStatusBarLoggedInActionGroup : DefaultActionGroup() {
             addAll(buildActionListForConnectHelp(actionProvider))
 
             add(Separator.create())
-            add(CodeWhispererShowSettingsAction())
-            (
-                ToolkitConnectionManager.getInstance(it).activeConnectionForFeature(QConnection.getInstance()) as? AwsBearerTokenConnection
-                )?.takeIf { !it.isSono() }
-                ?.let { add(QSwitchProfilesAction()) }
-            ToolkitConnectionManager.getInstance(it).activeConnectionForFeature(CodeWhispererConnection.getInstance())?.let { c ->
-                (c as? AwsBearerTokenConnection)?.let { connection ->
-                    add(SsoLogoutAction(connection))
+            add(actionManager.getAction("codewhisperer.settings"))
+
+            val connection = ToolkitConnectionManager.getInstance(it).activeConnectionForFeature(QConnection.getInstance()) as? AwsBearerTokenConnection
+
+            if (connection != null) {
+                if (!connection.isSono()) {
+                    add(actionManager.getAction("codewhisperer.switchProfiles"))
+                } else {
+                    add(actionManager.getAction("q.manage.subscription"))
                 }
+
+                add(SsoLogoutAction(connection))
             }
         }.toTypedArray()
     }.orEmpty()

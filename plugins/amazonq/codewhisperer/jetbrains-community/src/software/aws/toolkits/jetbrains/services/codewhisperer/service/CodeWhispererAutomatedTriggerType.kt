@@ -7,7 +7,6 @@ import software.aws.toolkits.telemetry.CodewhispererAutomatedTriggerType
 
 sealed class CodeWhispererAutomatedTriggerType(
     val telemetryType: CodewhispererAutomatedTriggerType,
-    var calculationResult: Double? = null,
 ) {
     class Classifier : CodeWhispererAutomatedTriggerType(CodewhispererAutomatedTriggerType.Classifier)
     class SpecialChar(val specialChar: Char) :
@@ -21,4 +20,12 @@ sealed class CodeWhispererAutomatedTriggerType(
     class IdleTime : CodeWhispererAutomatedTriggerType(CodewhispererAutomatedTriggerType.IdleTime)
 
     class Unknown : CodeWhispererAutomatedTriggerType(CodewhispererAutomatedTriggerType.Unknown)
+
+    override fun toString(): String {
+        val toString = when (this) {
+            is SpecialChar -> "SpecialChar($specialChar)"
+            else -> telemetryType.toString()
+        }
+        return toString
+    }
 }

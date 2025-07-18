@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.model
 
+import com.intellij.codeInsight.inline.completion.elements.InlineCompletionElement
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.VisualPosition
@@ -10,12 +11,13 @@ import com.intellij.openapi.editor.markup.RangeHighlighter
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.JBPopup
 import com.intellij.openapi.util.Disposer
-import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.util.UserDataHolderBase
 import com.intellij.util.concurrency.annotations.RequiresEdt
-import software.amazon.awssdk.services.codewhispererruntime.model.Completion
-import software.amazon.awssdk.services.codewhispererruntime.model.GenerateCompletionsResponse
+import kotlinx.coroutines.channels.Channel
+import software.amazon.awssdk.services.codewhispererruntime.model.IdeDiagnostic
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
-import software.aws.toolkits.jetbrains.services.amazonq.SUPPLEMENTAL_CONTEXT_TIMEOUT
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionItem
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionListWithReferences
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.PayloadContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManagerNew
@@ -30,14 +32,9 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseCo
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryServiceNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.setIntelliSensePopupAlpha
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CrossFileStrategy
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.SupplementalContextStrategy
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.UtgStrategy
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererTriggerType
 import software.aws.toolkits.telemetry.Result
-import java.time.Duration
-import java.time.Instant
 import java.util.concurrent.TimeUnit
 
 data class Chunk(
@@ -45,11 +42,6 @@ data class Chunk(
     val path: String,
     val nextChunk: String = "",
     val score: Double = 0.0,
-)
-
-data class ListUtgCandidateResult(
-    val vfile: VirtualFile?,
-    val strategy: UtgStrategy,
 )
 
 data class CaretContext(val leftFileContext: String, val rightFileContext: String, val leftContextOnCurrentLine: String = "")
@@ -62,51 +54,15 @@ data class FileContextInfo(
     val fileUri: String?,
 )
 
-data class SupplementalContextInfo(
-    val isUtg: Boolean,
-    val contents: List<Chunk>,
-    val targetFileName: String,
-    val strategy: SupplementalContextStrategy,
-    val latency: Long = 0L,
-) {
-    val contentLength: Int
-        get() = contents.fold(0) { acc, chunk ->
-            acc + chunk.content.length
-        }
-
-    val isProcessTimeout: Boolean
-        get() = latency > SUPPLEMENTAL_CONTEXT_TIMEOUT
-
-    companion object {
-        fun emptyCrossFileContextInfo(targetFileName: String): SupplementalContextInfo = SupplementalContextInfo(
-            isUtg = false,
-            contents = emptyList(),
-            targetFileName = targetFileName,
-            strategy = CrossFileStrategy.Empty,
-            latency = 0L
-        )
-
-        fun emptyUtgFileContextInfo(targetFileName: String): SupplementalContextInfo = SupplementalContextInfo(
-            isUtg = true,
-            contents = emptyList(),
-            targetFileName = targetFileName,
-            strategy = UtgStrategy.Empty,
-            latency = 0L
-        )
-    }
-}
-
 data class RecommendationContext(
     val details: List<DetailContext>,
-    val userInputOriginal: String,
-    val userInputSinceInvocation: String,
+    val userInput: String,
     val position: VisualPosition,
 )
 
 data class RecommendationContextNew(
-    val details: MutableList<DetailContextNew>,
-    val userInputOriginal: String,
-    val userInputSinceInvocation: String,
+    val details: MutableList<DetailContext>,
+    val userInput: String,
     val position: VisualPosition,
     val jobId: Int,
     var typeahead: String = "",
@@ -114,28 +70,15 @@ data class RecommendationContextNew(
 
 data class PreviewContext(
     val jobId: Int,
-    val detail: DetailContextNew,
+    val detail: DetailContext,
     val userInput: String,
     val typeahead: String,
 )
 
 data class DetailContext(
-    val requestId: String,
-    val recommendation: Completion,
-    val reformatted: Completion,
+    val itemId: String,
+    val completion: InlineCompletionItem,
     val isDiscarded: Boolean,
-    val isTruncatedOnRight: Boolean,
-    val rightOverlap: String = "",
-    val completionType: CodewhispererCompletionType,
-)
-
-data class DetailContextNew(
-    val requestId: String,
-    val recommendation: Completion,
-    val reformatted: Completion,
-    val isDiscarded: Boolean,
-    val isTruncatedOnRight: Boolean,
-    val rightOverlap: String = "",
     val completionType: CodewhispererCompletionType,
     var hasSeen: Boolean = false,
     var isAccepted: Boolean = false,
@@ -149,7 +92,6 @@ data class SessionContext(
     var toBeRemovedHighlighter: RangeHighlighter? = null,
     var insertEndOffset: Int = -1,
     var isPopupShowing: Boolean = false,
-    var perceivedLatency: Double = -1.0,
 )
 
 data class SessionContextNew(
@@ -178,11 +120,7 @@ data class SessionContextNew(
 
     @RequiresEdt
     override fun dispose() {
-        CodeWhispererTelemetryServiceNew.getInstance().sendUserDecisionEventForAll(
-            this,
-            hasAccepted,
-            CodeWhispererInvocationStatusNew.getInstance().popupStartTimestamp?.let { Duration.between(it, Instant.now()) }
-        )
+        CodeWhispererTelemetryServiceNew.getInstance().sendUserTriggerDecisionEvent(this.project, this.latencyContext)
         setIntelliSensePopupAlpha(editor, 0f)
         CodeWhispererInvocationStatusNew.getInstance().setDisplaySessionActive(false)
 
@@ -239,14 +177,14 @@ data class InvocationContextNew(
 data class WorkerContext(
     val requestContext: RequestContext,
     val responseContext: ResponseContext,
-    val response: GenerateCompletionsResponse,
+    val completions: InlineCompletionListWithReferences,
     val popup: JBPopup,
 )
 
 data class WorkerContextNew(
     val requestContext: RequestContextNew,
     val responseContext: ResponseContext,
-    val response: GenerateCompletionsResponse,
+    val completions: InlineCompletionListWithReferences,
 )
 
 data class CodeScanTelemetryEvent(
@@ -274,44 +212,15 @@ data class CodeScanResponseContext(
 )
 
 data class LatencyContext(
-    var credentialFetchingStart: Long = 0L,
-    var credentialFetchingEnd: Long = 0L,
-
-    var codewhispererPreprocessingStart: Long = 0L,
-    var codewhispererPreprocessingEnd: Long = 0L,
-
-    var paginationFirstCompletionTime: Double = 0.0,
     var perceivedLatency: Double = 0.0,
-
-    var codewhispererPostprocessingStart: Long = 0L,
-    var codewhispererPostprocessingEnd: Long = 0L,
 
     var codewhispererEndToEndStart: Long = 0L,
     var codewhispererEndToEndEnd: Long = 0L,
-
-    var paginationAllCompletionsStart: Long = 0L,
-    var paginationAllCompletionsEnd: Long = 0L,
 
     var firstRequestId: String = "",
 ) {
     fun getCodeWhispererEndToEndLatency() = TimeUnit.NANOSECONDS.toMillis(
         codewhispererEndToEndEnd - codewhispererEndToEndStart
-    ).toDouble()
-
-    fun getCodeWhispererAllCompletionsLatency() = TimeUnit.NANOSECONDS.toMillis(
-        paginationAllCompletionsEnd - paginationAllCompletionsStart
-    ).toDouble()
-
-    fun getCodeWhispererPostprocessingLatency() = TimeUnit.NANOSECONDS.toMillis(
-        codewhispererPostprocessingEnd - codewhispererPostprocessingStart
-    ).toDouble()
-
-    fun getCodeWhispererCredentialFetchingLatency() = TimeUnit.NANOSECONDS.toMillis(
-        credentialFetchingEnd - credentialFetchingStart
-    ).toDouble()
-
-    fun getCodeWhispererPreprocessingLatency() = TimeUnit.NANOSECONDS.toMillis(
-        codewhispererPreprocessingEnd - codewhispererPreprocessingStart
     ).toDouble()
 
     // For auto-trigger it's from the time when last char typed
@@ -329,4 +238,23 @@ data class LatencyContext(
 data class TryExampleRowContext(
     val description: String,
     val filename: String?,
+)
+
+data class InlineCompletionSessionContext(
+    val itemContexts: MutableList<InlineCompletionItemContext> = mutableListOf(),
+    var sessionId: String = "",
+    val triggerOffset: Int,
+    var counter: Int = 0,
+    val diagnostics: List<IdeDiagnostic>? = emptyList(),
+)
+
+data class InlineCompletionItemContext(
+    val project: Project,
+    var item: InlineCompletionItem?,
+    val channel: Channel<InlineCompletionElement>,
+    val data: UserDataHolderBase = UserDataHolderBase(),
+    var hasSeen: Boolean = false,
+    var isAccepted: Boolean = false,
+    var isDiscarded: Boolean = false,
+    var isEmpty: Boolean = false,
 )

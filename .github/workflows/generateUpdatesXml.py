@@ -15,7 +15,10 @@ if __name__ == '__main__':
     buildRegex = r'.*(\d{3}).zip'
     # given plugin-amazonq-3.39-SNAPSHOT-1731096007-241.zip,
     # capture 3.39-SNAPSHOT-1731096007-241 in group 1
-    versionRegex = r'.*?\-(\d.*-\d{3})\.zip'
+    # or
+    # given plugin-amazonq-3.39-SNAPSHOT-1731096007.241.zip,
+    # capture 3.39-SNAPSHOT-1731096007.241 in group 1
+    versionRegex = r'.*?\-(\d.*[.-]\d{3})\.zip$'
     for asset in data['assets']:
         name = asset['name']
         if ('plugin-amazonq' in name):

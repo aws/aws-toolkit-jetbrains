@@ -38,15 +38,15 @@ import com.intellij.ui.popup.AbstractPopup
 import com.intellij.ui.popup.PopupFactoryImpl
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.ui.UIUtil
-import software.amazon.awssdk.services.codewhispererruntime.model.Import
-import software.amazon.awssdk.services.codewhispererruntime.model.Reference
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionImports
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionReference
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorManagerNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.layout.CodeWhispererLayoutConfig.addHorizontalGlue
 import software.aws.toolkits.jetbrains.services.codewhisperer.layout.CodeWhispererLayoutConfig.horizontalPanelConstraints
 import software.aws.toolkits.jetbrains.services.codewhisperer.layout.CodeWhispererLayoutConfig.inlineLabelConstraints
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.DetailContextNew
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.DetailContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContextNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.PreviewContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContextNew
@@ -203,8 +203,8 @@ class CodeWhispererPopupManagerNew {
         val validSelectedIndex = getValidSelectedIndex(selectedIndex)
         updateSelectedRecommendationLabelText(validSelectedIndex, validCount)
         updateNavigationPanel(validSelectedIndex, validCount)
-        updateImportPanel(previews[selectedIndex].detail.recommendation.mostRelevantMissingImports())
-        updateCodeReferencePanel(sessionContext.project, previews[selectedIndex].detail.recommendation.references())
+        updateImportPanel(previews[selectedIndex].detail.completion.mostRelevantMissingImports)
+        updateCodeReferencePanel(sessionContext.project, previews[selectedIndex].detail.completion.references)
     }
 
     fun render(sessionContext: SessionContextNew, isRecommendationAdded: Boolean) {
@@ -220,7 +220,6 @@ class CodeWhispererPopupManagerNew {
         // 4. User navigating through the completions or typing as the completion shows. We should not update the latency
         // end time and should not emit any events in this case.
         if (!CodeWhispererInvocationStatusNew.getInstance().isDisplaySessionActive()) {
-            sessionContext.latencyContext.codewhispererPostprocessingEnd = System.nanoTime()
             sessionContext.latencyContext.codewhispererEndToEndEnd = System.nanoTime()
             val triggerTypeOfLastTrigger = CodeWhispererServiceNew.getInstance().getAllPaginationSessions()
                 .values.filterNotNull().last().requestContext.triggerTypeInfo.triggerType
@@ -253,8 +252,8 @@ class CodeWhispererPopupManagerNew {
         }
         val editor = sessionContext.editor
         val previews = CodeWhispererServiceNew.getInstance().getAllSuggestionsPreviewInfo()
-        val userInputOriginal = previews[sessionContext.selectedIndex].userInput
-        val userInputLines = userInputOriginal.split("\n").size - 1
+        val userInput = previews[sessionContext.selectedIndex].userInput
+        val userInputLines = userInput.split("\n").size - 1
         val popupSize = (popup as AbstractPopup).preferredContentSize
         val yAboveFirstLine = p.y - popupSize.height + userInputLines * editor.lineHeight
         val popupRect = Rectangle(p.x, yAboveFirstLine, popupSize.width, popupSize.height)
@@ -325,8 +324,8 @@ class CodeWhispererPopupManagerNew {
         .setCancelOnWindowDeactivation(true)
         .createPopup()
 
-    fun getReformattedRecommendation(detailContext: DetailContextNew, userInput: String) =
-        detailContext.reformatted.content().substring(userInput.length)
+    fun getReformattedRecommendation(detailContext: DetailContext, userInput: String) =
+        detailContext.completion.insertText.substring(userInput.length)
 
     private fun initPopupListener(sessionContext: SessionContextNew, popup: JBPopup) {
         addPopupListener(popup)
@@ -530,31 +529,31 @@ class CodeWhispererPopupManagerNew {
         popupComponents.nextButton.isEnabled = multipleRecommendation && validSelectedIndex != validCount - 1
     }
 
-    private fun updateImportPanel(imports: List<Import>) {
+    private fun updateImportPanel(imports: List<InlineCompletionImports>?) {
         popupComponents.panel.apply {
             if (components.contains(popupComponents.importPanel)) {
                 remove(popupComponents.importPanel)
             }
         }
-        if (imports.isEmpty()) return
+        if (imports.isNullOrEmpty()) return
 
         val firstImport = imports.first()
         val choice = if (imports.size > 2) 2 else imports.size - 1
-        val message = message("codewhisperer.popup.import_info", firstImport.statement(), imports.size - 1, choice)
+        val message = message("codewhisperer.popup.import_info", firstImport.statement, imports.size - 1, choice)
         popupComponents.panel.add(popupComponents.importPanel, horizontalPanelConstraints)
         popupComponents.importLabel.text = message
     }
 
-    private fun updateCodeReferencePanel(project: Project, references: List<Reference>) {
+    private fun updateCodeReferencePanel(project: Project, references: List<InlineCompletionReference>?) {
         popupComponents.panel.apply {
             if (components.contains(popupComponents.codeReferencePanel)) {
                 remove(popupComponents.codeReferencePanel)
             }
         }
-        if (references.isEmpty()) return
+        if (references.isNullOrEmpty()) return
 
         popupComponents.panel.add(popupComponents.codeReferencePanel, horizontalPanelConstraints)
-        val licenses = references.map { it.licenseName() }.toSet()
+        val licenses = references.map { it.licenseName }.toSet()
         popupComponents.codeReferencePanelLink.apply {
             actionListeners.toList().forEach {
                 removeActionListener(it)
@@ -620,7 +619,7 @@ class CodeWhispererPopupManagerNew {
 
     private fun isValidRecommendation(preview: PreviewContext): Boolean {
         if (preview.detail.isDiscarded) return false
-        return preview.detail.recommendation.content().startsWith(preview.userInput + preview.typeahead)
+        return preview.detail.completion.insertText.startsWith(preview.userInput + preview.typeahead)
     }
 
     companion object {

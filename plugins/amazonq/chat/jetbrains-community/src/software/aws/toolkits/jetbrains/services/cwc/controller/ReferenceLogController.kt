@@ -5,8 +5,8 @@ package software.aws.toolkits.jetbrains.services.cwc.controller
 
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
-import software.amazon.awssdk.services.codewhispererruntime.model.Reference
-import software.amazon.awssdk.services.codewhispererruntime.model.Span
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionReference
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionReferencePosition
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.CodeReferenceGenerated
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretPosition
@@ -15,21 +15,18 @@ import software.aws.toolkits.jetbrains.services.cwc.messages.CodeReference
 
 object ReferenceLogController {
     fun addReferenceLog(originalCode: String, codeReferences: List<CodeReference>?, editor: Editor, project: Project, inlineChatStartPosition: CaretPosition?) {
+        // TODO flare: hook /dev references with flare correctly, this is only a compile error fix which is not tested
         codeReferences?.let { references ->
             val cwReferences = references.map { reference ->
-                Reference.builder()
-                    .licenseName(reference.licenseName)
-                    .repository(reference.repository)
-                    .url(reference.url)
-                    .recommendationContentSpan(
-                        reference.recommendationContentSpan?.let { span ->
-                            Span.builder()
-                                .start(span.start)
-                                .end(span.end)
-                                .build()
-                        }
+                InlineCompletionReference(
+                    referenceName = reference.repository.orEmpty(),
+                    referenceUrl = reference.url.orEmpty(),
+                    licenseName = reference.licenseName.orEmpty(),
+                    position = InlineCompletionReferencePosition(
+                        startCharacter = reference.recommendationContentSpan?.start ?: 0,
+                        endCharacter = reference.recommendationContentSpan?.end ?: 0,
                     )
-                    .build()
+                )
             }
             val manager = CodeWhispererCodeReferenceManager.getInstance(project)
 
@@ -38,7 +35,6 @@ object ReferenceLogController {
                 cwReferences,
                 editor,
                 inlineChatStartPosition ?: CodeWhispererEditorUtil.getCaretPosition(editor),
-                null,
             )
         }
     }
@@ -46,21 +42,17 @@ object ReferenceLogController {
     fun addReferenceLog(codeReferences: List<CodeReferenceGenerated>?, project: Project) {
         val manager = CodeWhispererCodeReferenceManager.getInstance(project)
 
+        // TODO flare: hook /dev references with flare correctly, this is only a compile error fix which is not tested
         codeReferences?.forEach { reference ->
-            val cwReferences = Reference.builder()
-                .licenseName(reference.licenseName)
-                .repository(reference.repository)
-                .url(reference.url)
-                .recommendationContentSpan(
-                    reference.recommendationContentSpan?.let { span ->
-                        Span.builder()
-                            .start(span.start)
-                            .end(span.end)
-                            .build()
-                    }
+            val cwReferences = InlineCompletionReference(
+                referenceName = reference.repository.orEmpty(),
+                referenceUrl = reference.url.orEmpty(),
+                licenseName = reference.licenseName.orEmpty(),
+                position = InlineCompletionReferencePosition(
+                    startCharacter = reference.recommendationContentSpan?.start ?: 0,
+                    endCharacter = reference.recommendationContentSpan?.end ?: 0,
                 )
-                .build()
-
+            )
             manager.addReferenceLogPanelEntry(reference = cwReferences, null, null, null)
         }
     }

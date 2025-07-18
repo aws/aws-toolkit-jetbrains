@@ -18,10 +18,20 @@ data class AwsMetadata(
 
 data class AwsClientCapabilities(
     val q: DeveloperProfiles,
+    val window: WindowSettings,
 )
 
 data class DeveloperProfiles(
     val developerProfiles: Boolean,
+    val mcp: Boolean,
+    val pinnedContextEnabled: Boolean,
+    val imageContextEnabled: Boolean,
+    val reroute: Boolean,
+    val workspaceFilePath: String?,
+)
+
+data class WindowSettings(
+    val showSaveFileDialog: Boolean,
 )
 
 data class ClientInfoMetadata(
@@ -55,7 +65,15 @@ fun createExtendedClientMetadata(project: Project): ExtendedClientMetadata {
             ),
             awsClientCapabilities = AwsClientCapabilities(
                 q = DeveloperProfiles(
-                    developerProfiles = true
+                    developerProfiles = true,
+                    mcp = true,
+                    pinnedContextEnabled = true,
+                    imageContextEnabled = true,
+                    reroute = true,
+                    workspaceFilePath = project.workspaceFile?.path,
+                ),
+                window = WindowSettings(
+                    showSaveFileDialog = true
                 )
             ),
             contextConfiguration = ContextConfiguration(
