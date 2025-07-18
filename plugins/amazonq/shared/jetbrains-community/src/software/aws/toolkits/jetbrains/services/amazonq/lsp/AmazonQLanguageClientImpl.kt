@@ -84,7 +84,7 @@ import java.util.concurrent.TimeUnit
 /**
  * Concrete implementation of [AmazonQLanguageClient] to handle messages sent from server
  */
-class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageClient {
+class AmazonQLanguageClientImpl(private val project: Project, private val instanceFacade: AmazonQServerInstanceFacade) : AmazonQLanguageClient {
     private val chatManager
         get() = ChatCommunicationManager.getInstance(project)
     private fun handleTelemetryMap(telemetryMap: Map<*, *>) {
@@ -399,7 +399,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
     override fun notifyProgress(params: ProgressParams?) {
         if (params == null) return
         try {
-            chatManager.handlePartialResultProgressNotification(project, params)
+            chatManager.handlePartialResultProgressNotification(instanceFacade.encryptionManager, params)
         } catch (e: Exception) {
             LOG.error(e) { "Cannot handle partial chat" }
         }

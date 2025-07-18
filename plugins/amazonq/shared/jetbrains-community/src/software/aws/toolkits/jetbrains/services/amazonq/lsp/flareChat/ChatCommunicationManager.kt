@@ -19,7 +19,7 @@ import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.reauthConnectionIfNeeded
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ProgressNotificationUtils.getObject
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LSPAny
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.AuthFollowUpClickedParams
@@ -132,7 +132,7 @@ class ChatCommunicationManager(private val project: Project, private val cs: Cor
         finalResultProcessed[partialResultToken] = false
     }
 
-    fun handlePartialResultProgressNotification(project: Project, params: ProgressParams) {
+    fun handlePartialResultProgressNotification(encryptionManager: JwtEncryptionManager, params: ProgressParams) {
         val token = ProgressNotificationUtils.getToken(params)
         val tabId = getPartialChatMessage(token)
         if (tabId.isNullOrEmpty()) {
@@ -146,7 +146,7 @@ class ChatCommunicationManager(private val project: Project, private val cs: Cor
 
         val encryptedPartialChatResult = getObject(params, String::class.java)
         if (encryptedPartialChatResult != null) {
-            val partialChatResult = AmazonQLspService.getInstance(project).encryptionManager.decrypt(encryptedPartialChatResult)
+            val partialChatResult = encryptionManager.decrypt(encryptedPartialChatResult)
 
             // Special case: check for stop message before proceeding
             val partialResultMap = tryOrNull {
@@ -234,7 +234,7 @@ class ChatCommunicationManager(private val project: Project, private val cs: Cor
         """.trimIndent()
     }
 
-    fun handleAuthFollowUpClicked(project: Project, params: AuthFollowUpClickedParams) {
+    fun handleAuthFollowUpClicked(params: AuthFollowUpClickedParams) {
         val incomingType = params.authFollowupType
         val connectionManager = ToolkitConnectionManager.getInstance(project)
         try {
