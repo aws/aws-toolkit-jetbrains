@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onEach
@@ -568,12 +569,12 @@ class BrowserConnector(
                         // the flow buffer will never complete so insert some arbitrary timeout until we figure out how to end the flow
                         // after the error stream is closed and drained
                         val errorStream = runBlocking { this@executeAsyncIfRunning.errorStream.timeout(500.milliseconds).catch { }.toList() }
-                        throw RuntimeException("LSP execution error. See logs for more details: ${errorStream.joinToString(separator = "")}", ex.cause)
+                        throw IllegalStateException("LSP execution error. See logs for more details: ${errorStream.joinToString(separator = "")}", ex.cause)
                     }
 
                     throw ex
                 }
-        } ?: (CompletableFuture.failedFuture(IllegalStateException("LSP Server not running")))
+        } ?: (CompletableFuture.failedFuture(IllegalStateException("LSP failed to start. See logs for more details: ${AmazonQLspService.getInstance(project).instanceFlow.first().errorStream.timeout(500.milliseconds).catch { }.toList().joinToString(separator = "")}")))
 
         // We assume there is only one outgoing request per tab because the input is
         // blocked when there is an outgoing request

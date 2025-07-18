@@ -31,18 +31,23 @@ import com.intellij.util.net.ssl.CertificateManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.timeout
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.selects.select
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -103,6 +108,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 // https://github.com/redhat-developer/lsp4ij/blob/main/src/main/java/com/redhat/devtools/lsp4ij/server/LSPProcessListener.java
@@ -160,7 +166,7 @@ class AmazonQLspService @VisibleForTesting constructor(
     constructor(project: Project, cs: CoroutineScope) : this(DefaultAmazonQServerInstanceStarter, project, cs)
 
     private val _flowInstance = MutableSharedFlow<AmazonQServerInstanceFacade>(replay = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
-    val instanceFlow = _flowInstance.asSharedFlow().map { it.languageServer }
+    val instanceFlow = _flowInstance.asSharedFlow()
 
     private var instance: Deferred<AmazonQServerInstanceFacade>
     private val heartbeatJob: Job
@@ -174,20 +180,17 @@ class AmazonQLspService @VisibleForTesting constructor(
         // manage lifecycle RAII-like so we can restart at arbitrary time
         // and suppress IDE error if server fails to start
         var attempts = 0
+        var lastInstance: AmazonQServerInstanceFacade? = null
         while (isActive && attempts < 3 && checkForRemainingRestartAttempts()) {
             try {
                 // no timeout; start() can download which may take long time
-                val instance = starter.start(project, cs).also {
+                lastInstance = starter.start(project, cs).also {
                     Disposer.register(this@AmazonQLspService, it)
                 }
 
-                // no reason this should take long to process after init key sent
-                withTimeout(5.seconds) {
-                    // wait for handshake to complete
-                    instance.initializeResult.await()
-                }
+                lastInstance.waitForInitializeOrThrow(this)
 
-                return@async instance.also {
+                return@async lastInstance.also {
                     _flowInstance.emit(it)
                 }
             } catch (e: Exception) {
@@ -196,7 +199,12 @@ class AmazonQLspService @VisibleForTesting constructor(
             attempts++
         }
 
-        error("Failed to start LSP server in 3 attempts")
+        // does not capture all failure
+        lastInstance?.let {
+            _flowInstance.tryEmit(it)
+        }
+
+        lastInstance ?: error("LSP failed all attempts to start")
     }
 
     init {
@@ -296,7 +304,7 @@ class AmazonQLspService @VisibleForTesting constructor(
     suspend fun<T> execute(runnable: suspend AmazonQLspService.(AmazonQLanguageServer) -> T): T {
         val lsp = withTimeout(5.seconds) {
             val holder = mutex.withLock { instance }.await()
-            holder.initializeResult.await()
+            holder.waitForInitializeOrThrow(this)
 
             holder.languageServer
         }
@@ -307,7 +315,7 @@ class AmazonQLspService @VisibleForTesting constructor(
         val lsp = try {
             withTimeout(5.seconds) {
                 val holder = mutex.withLock { instance }.await()
-                holder.initializeResult.await()
+                holder.waitForInitializeOrThrow(this)
 
                 holder
             }
@@ -352,6 +360,12 @@ interface AmazonQServerInstanceFacade : Disposable {
 
     val rawEndpoint: RemoteEndpoint
         get() = launcher.remoteEndpoint
+
+    suspend fun waitForInitializeOrThrow(scope: CoroutineScope) =
+        select {
+            initializeResult.onAwait { it }
+            scope.async { launcherFuture.get() }.onAwait { error(errorStream.timeout(500.milliseconds).catch { }.toList().joinToString(separator = "")) }
+        }
 }
 
 private class AmazonQServerInstance(private val project: Project, private val cs: CoroutineScope) : Disposable, AmazonQServerInstanceFacade {
