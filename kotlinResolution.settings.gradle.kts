@@ -14,6 +14,10 @@ dependencyResolutionManagement {
                     "1.8.0-intellij-11"
                 }
 
+                "2025.2" -> {
+                    "1.10.1-intellij-4"
+                }
+
                 else -> { error("not set") }
             }
 
