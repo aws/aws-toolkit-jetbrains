@@ -167,7 +167,7 @@ object IdeVersions {
                 ),
                 marketplacePlugins = listOf(
                     "Pythonid:252.23309.22",
-                    "org.jetbrains.plugins.go:252.23309.5",
+                    "org.jetbrains.plugins.go:252.23309.22",
                 )
             ),
             rider = RiderProfile(
