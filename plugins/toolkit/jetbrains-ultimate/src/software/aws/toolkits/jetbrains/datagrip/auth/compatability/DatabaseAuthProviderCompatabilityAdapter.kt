@@ -16,7 +16,7 @@ import com.intellij.openapi.project.Project
 interface DatabaseAuthProviderCompatabilityAdapter : DatabaseAuthProvider {
     override fun getApplicability(
         point: DatabaseConnectionPoint,
-        level: ApplicabilityLevel
+        level: ApplicabilityLevel,
     ): ApplicabilityLevel.Result {
         if (!isApplicable(point.dataSource)) return ApplicabilityLevel.Result.NOT_APPLICABLE
         return super.getApplicability(point, level)
@@ -25,10 +25,9 @@ interface DatabaseAuthProviderCompatabilityAdapter : DatabaseAuthProvider {
     override fun createWidget(
         project: Project?,
         credentials: DatabaseCredentials,
-        config: DatabaseConnectionConfig
-    ): DatabaseAuthProvider.AuthWidget? {
-        return createWidget()
-    }
+        config: DatabaseConnectionConfig,
+    ): DatabaseAuthProvider.AuthWidget? =
+        createWidget()
 
     fun isApplicable(dataSource: LocalDataSource): Boolean
     fun createWidget(): DatabaseAuthProvider.AuthWidget?
