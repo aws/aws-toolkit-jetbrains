@@ -71,7 +71,6 @@ interface MetricEvent {
 
 fun String.replaceIllegal(replacement: String = "") = this.replace(illegalCharsRegex, replacement)
 
-@ConsistentCopyVisibility
 data class DefaultMetricEvent internal constructor(
     override val createTime: Instant,
     override val awsAccount: String,

@@ -6,7 +6,6 @@ package software.aws.toolkits.core.utils
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 
-@ConsistentCopyVisibility
 data class AttributeBagKey<T> private constructor(val key: String) {
     companion object {
         private val map: ConcurrentMap<String, AttributeBagKey<*>> = ConcurrentHashMap()
