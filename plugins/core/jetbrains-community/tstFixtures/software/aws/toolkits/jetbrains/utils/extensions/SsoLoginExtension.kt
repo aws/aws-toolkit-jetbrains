@@ -1,6 +1,5 @@
 // Copyright 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-@file:TestOnly
 
 package software.aws.toolkits.jetbrains.utils.extensions
 
@@ -45,4 +44,4 @@ class SsoLoginExtension : DisposableRule(), BeforeEachCallback, AfterEachCallbac
 
 @Target(AnnotationTarget.FUNCTION, AnnotationTarget.CLASS)
 @ExtendWith(SsoLoginExtension::class)
-annotation class SsoLogin(val secretName: String)
+annotation class SsoLogin(@TestOnly val secretName: String)

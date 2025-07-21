@@ -1,5 +1,4 @@
 @file:Suppress("all")
-@file:TestOnly
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.testFramework.junit5.impl
 
@@ -24,6 +23,7 @@ internal class TestDisposableExtension :
     AfterEachCallback,
     ParameterResolver {
 
+    @TestOnly
     override fun beforeEach(context: ExtensionContext) {
         val instance = context.requiredTestInstance
         for (field in findAnnotatedFields(instance.javaClass, TestDisposable::class.java, ReflectionUtils::isNotStatic)) {
@@ -31,6 +31,7 @@ internal class TestDisposableExtension :
         }
     }
 
+    @TestOnly
     override fun afterEach(context: ExtensionContext) {
         context.testDisposableIfRequested()?.let { disposable ->
             Assertions.assertFalse(disposable.isDisposed)
@@ -38,10 +39,12 @@ internal class TestDisposableExtension :
         }
     }
 
+    @TestOnly
     override fun supportsParameter(parameterContext: ParameterContext, extensionContext: ExtensionContext): Boolean {
         return parameterContext.parameter.type === Disposable::class.java && parameterContext.isAnnotated(TestDisposable::class.java)
     }
 
+    @TestOnly
     override fun resolveParameter(parameterContext: ParameterContext, extensionContext: ExtensionContext): Any {
         return extensionContext.testDisposable()
     }
