@@ -1,3 +1,4 @@
+@file:TestOnly
 // Copyright 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
@@ -42,7 +43,6 @@ class SsoLoginExtension : DisposableRule(), BeforeEachCallback, AfterEachCallbac
     }
 }
 
-@TestOnly
 @Target(AnnotationTarget.FUNCTION, AnnotationTarget.CLASS)
 @ExtendWith(SsoLoginExtension::class)
 annotation class SsoLogin(val secretName: String)

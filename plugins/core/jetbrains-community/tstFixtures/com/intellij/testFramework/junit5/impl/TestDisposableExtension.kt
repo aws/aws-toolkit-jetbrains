@@ -1,4 +1,5 @@
 @file:Suppress("all")
+@file:TestOnly
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.testFramework.junit5.impl
 
@@ -18,7 +19,6 @@ import org.junit.platform.commons.util.ReflectionUtils
  * the binary method signature change of [ReflectionUtils.makeAccessible] caused by JUnit 5.11.0 in
  * https://github.com/junit-team/junit5/commit/abb5ed16be3a9ce552f4a45c11264ded608ae9da
  */
-@TestOnly
 internal class TestDisposableExtension :
     BeforeEachCallback,
     AfterEachCallback,
