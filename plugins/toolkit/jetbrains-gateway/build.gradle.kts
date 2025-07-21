@@ -137,7 +137,7 @@ val toolkitInstallationScripts = tasks.register<Tar>("generateTar") {
 
 val gatewayResourcesDir = tasks.register<Sync>("gatewayResourcesDir") {
     from("gateway-resources/caws-proxy-command.bat", toolkitInstallationScripts)
-    into("$buildDir/$name")
+    into(layout.buildDirectory.dir(name))
 
     includeEmptyDirs = false
 }

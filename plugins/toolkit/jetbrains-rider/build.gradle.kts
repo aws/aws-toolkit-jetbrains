@@ -94,7 +94,7 @@ apply<RdGenPlugin>()
 tasks.register<RdGenTask>("generateModels")
 
 val resharperPluginPath = File(projectDir, "ReSharper.AWS")
-val resharperBuildPath = File(project.buildDir, "dotnetBuild")
+val resharperBuildPath = layout.buildDirectory.dir("dotnetBuild").get().asFile
 
 val resharperParts = listOf(
     "AWS.Daemon",
@@ -257,7 +257,7 @@ val buildReSharperPlugin = tasks.register("buildReSharperPlugin") {
             "normal",
             "${resharperPluginPath.canonicalPath}/ReSharper.AWS.sln"
         )
-        exec {
+        project.providers.exec {
             executable = "dotnet"
             args = arguments
         }
