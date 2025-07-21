@@ -154,7 +154,8 @@ object IdeVersions {
                 ),
                 marketplacePlugins = listOf(
                     "PythonCore:252.23309.22",
-                    "Docker:252.23309.49"
+                    "Docker:252.23309.49",
+                    "com.intellij.modules.json:252.23309.22"
                 )
             ),
             ultimate = ProductProfile(
@@ -168,6 +169,7 @@ object IdeVersions {
                 marketplacePlugins = listOf(
                     "Pythonid:252.23309.22",
                     "org.jetbrains.plugins.go:252.23309.22",
+                    "com.intellij.modules.json:252.23309.22"
                 )
             ),
             rider = RiderProfile(
