@@ -25,7 +25,9 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GET_S
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OPEN_FILE_DIFF
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenFileDiffParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SHOW_OPEN_FILE_DIALOG_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SHOW_SAVE_FILE_DIALOG_REQUEST_METHOD
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowOpenFileDialogParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowSaveFileDialogParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowSaveFileDialogResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.ConnectionMetadata
@@ -45,17 +47,20 @@ interface AmazonQLanguageClient : LanguageClient {
     @JsonRequest(SHOW_SAVE_FILE_DIALOG_REQUEST_METHOD)
     fun showSaveFileDialog(params: ShowSaveFileDialogParams): CompletableFuture<ShowSaveFileDialogResult>
 
+    @JsonRequest(SHOW_OPEN_FILE_DIALOG_REQUEST_METHOD)
+    fun showOpenFileDialog(params: ShowOpenFileDialogParams): CompletableFuture<LSPAny>
+
     @JsonRequest(GET_SERIALIZED_CHAT_REQUEST_METHOD)
     fun getSerializedChat(params: LSPAny): CompletableFuture<GetSerializedChatResult>
 
     @JsonNotification(CHAT_SEND_UPDATE)
-    fun sendChatUpdate(params: LSPAny): CompletableFuture<Unit>
+    fun sendChatUpdate(params: LSPAny)
 
     @JsonNotification(OPEN_FILE_DIFF)
-    fun openFileDiff(params: OpenFileDiffParams): CompletableFuture<Unit>
+    fun openFileDiff(params: OpenFileDiffParams)
 
     @JsonNotification(CHAT_SEND_CONTEXT_COMMANDS)
-    fun sendContextCommands(params: LSPAny): CompletableFuture<Unit>
+    fun sendContextCommands(params: LSPAny)
 
     @JsonNotification(CHAT_SEND_PINNED_CONTEXT)
     fun sendPinnedContext(params: LSPAny)

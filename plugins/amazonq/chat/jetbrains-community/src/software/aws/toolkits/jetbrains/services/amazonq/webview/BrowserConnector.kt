@@ -31,6 +31,7 @@ import org.eclipse.lsp4j.jsonrpc.ResponseErrorException
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseErrorCode
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AppConnection
 import software.aws.toolkits.jetbrains.services.amazonq.commands.MessageSerializer
@@ -74,9 +75,12 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.Encry
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedQuickActionChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GET_SERIALIZED_CHAT_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatResponse
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.LIST_AVAILABLE_MODELS
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.LIST_MCP_SERVERS_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.LIST_RULES_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.MCP_SERVER_CLICK_REQUEST_METHOD
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OPEN_FILE_DIALOG
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OPEN_FILE_DIALOG_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OPEN_SETTINGS
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OPEN_WORKSPACE_SETTINGS_KEY
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenSettingsNotification
@@ -116,7 +120,7 @@ class BrowserConnector(
     private val themeBrowserAdapter: ThemeBrowserAdapter = ThemeBrowserAdapter(),
     private val project: Project,
 ) {
-    var uiReady = CompletableDeferred<Boolean>()
+    val uiReady = CompletableDeferred<Boolean>()
     private val chatCommunicationManager = ChatCommunicationManager.getInstance(project)
     private val chatAsyncResultManager = ChatAsyncResultManager.getInstance(project)
 
@@ -216,7 +220,7 @@ class BrowserConnector(
         }
     }
 
-    private fun handleFlareChatMessages(browser: Browser, node: JsonNode) {
+    private suspend fun handleFlareChatMessages(browser: Browser, node: JsonNode) {
         when (node.command) {
             SEND_CHAT_COMMAND_PROMPT -> {
                 val requestFromUi = serializer.deserializeChatMessages<SendChatPromptRequest>(node)
@@ -238,7 +242,7 @@ class BrowserConnector(
                 chatCommunicationManager.registerPartialResultToken(partialResultToken)
 
                 var encryptionManager: JwtEncryptionManager? = null
-                val result = AmazonQLspService.executeIfRunning(project) { server ->
+                val result = AmazonQLspService.executeAsyncIfRunning(project) { server ->
                     encryptionManager = this.encryptionManager
 
                     val encryptedParams = EncryptedChatParams(this.encryptionManager.encrypt(chatParams), partialResultToken)
@@ -258,7 +262,7 @@ class BrowserConnector(
                 val partialResultToken = chatCommunicationManager.addPartialChatMessage(tabId)
                 chatCommunicationManager.registerPartialResultToken(partialResultToken)
                 var encryptionManager: JwtEncryptionManager? = null
-                val result = AmazonQLspService.executeIfRunning(project) { server ->
+                val result = AmazonQLspService.executeAsyncIfRunning(project) { server ->
                     encryptionManager = this.encryptionManager
 
                     val encryptedParams = EncryptedQuickActionChatParams(this.encryptionManager.encrypt(quickActionParams), partialResultToken)
@@ -301,6 +305,7 @@ class BrowserConnector(
             }
 
             CHAT_READY -> {
+                LOG.info { "Amazon Q Chat UI loaded and ready for input" }
                 handleChat(AmazonQChatServer.chatReady, node) { params, invoke ->
                     uiReady.complete(true)
                     chatCommunicationManager.setUiReady()
@@ -351,7 +356,22 @@ class BrowserConnector(
             }
 
             CHAT_INSERT_TO_CURSOR -> {
-                handleChat(AmazonQChatServer.insertToCursorPosition, node)
+                val editor = FileEditorManager.getInstance(project).selectedTextEditor
+                val textDocumentIdentifier = editor?.let { TextDocumentIdentifier(toUriString(it.virtualFile)) }
+                val cursorPosition = editor?.let { LspEditorUtil.getCursorPosition(it) }
+
+                val enrichmentParams = mapOf(
+                    "textDocument" to textDocumentIdentifier,
+                    "cursorPosition" to cursorPosition,
+                )
+
+                val insertToCursorPositionParams: ObjectNode = (node.params as ObjectNode)
+                    .setAll(serializer.objectMapper.valueToTree<ObjectNode>(enrichmentParams))
+                val enrichedNode = (node as ObjectNode).apply {
+                    set<JsonNode>("params", insertToCursorPositionParams)
+                }
+
+                handleChat(AmazonQChatServer.insertToCursorPosition, enrichedNode)
             }
 
             CHAT_LINK_CLICK -> {
@@ -489,6 +509,19 @@ class BrowserConnector(
                         )
                     }
             }
+
+            OPEN_FILE_DIALOG -> {
+                handleChat(AmazonQChatServer.showOpenFileDialog, node)
+                    .whenComplete { response, _ ->
+                        browser.postChat(
+                            FlareUiMessage(
+                                command = OPEN_FILE_DIALOG_REQUEST_METHOD,
+                                params = response
+                            )
+                        )
+                    }
+            }
+
             LIST_RULES_REQUEST_METHOD -> {
                 handleChat(AmazonQChatServer.listRules, node)
                     .whenComplete { response, _ ->
@@ -516,6 +549,17 @@ class BrowserConnector(
             }
             CHAT_PINNED_CONTEXT_REMOVE -> {
                 handleChat(AmazonQChatServer.pinnedContextRemove, node)
+            }
+            LIST_AVAILABLE_MODELS -> {
+                handleChat(AmazonQChatServer.listAvailableModels, node)
+                    .whenComplete { response, _ ->
+                        browser.postChat(
+                            FlareUiMessage(
+                                command = LIST_AVAILABLE_MODELS,
+                                params = response
+                            )
+                        )
+                    }
             }
         }
     }
@@ -613,7 +657,7 @@ class BrowserConnector(
         }
     }
 
-    private inline fun <reified Request, Response> handleChat(
+    private suspend inline fun <reified Request, Response> handleChat(
         lspMethod: JsonRpcMethod<Request, Response>,
         node: JsonNode,
         crossinline serverAction: (params: Request, invokeService: () -> CompletableFuture<Response>) -> CompletableFuture<Response>,
@@ -624,7 +668,7 @@ class BrowserConnector(
             serializer.deserializeChatMessages<Request>(node.params, lspMethod.params)
         }
 
-        return AmazonQLspService.executeIfRunning(project) { _ ->
+        return AmazonQLspService.executeAsyncIfRunning(project) { _ ->
             val invokeService = when (lspMethod) {
                 is JsonRpcNotification<Request> -> {
                     // notify is Unit
@@ -646,7 +690,7 @@ class BrowserConnector(
         } ?: CompletableFuture.failedFuture<Response>(IllegalStateException("LSP Server not running"))
     }
 
-    private inline fun <reified Request, Response> handleChat(
+    private suspend inline fun <reified Request, Response> handleChat(
         lspMethod: JsonRpcMethod<Request, Response>,
         node: JsonNode,
     ): CompletableFuture<Response> = handleChat(

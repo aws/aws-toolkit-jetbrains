@@ -20,4 +20,12 @@ sealed class CodeWhispererAutomatedTriggerType(
     class IdleTime : CodeWhispererAutomatedTriggerType(CodewhispererAutomatedTriggerType.IdleTime)
 
     class Unknown : CodeWhispererAutomatedTriggerType(CodewhispererAutomatedTriggerType.Unknown)
+
+    override fun toString(): String {
+        val toString = when (this) {
+            is SpecialChar -> "SpecialChar($specialChar)"
+            else -> telemetryType.toString()
+        }
+        return toString
+    }
 }

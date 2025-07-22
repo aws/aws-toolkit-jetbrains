@@ -6,6 +6,11 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp.auth
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
 import com.intellij.util.concurrency.AppExecutorUtil
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.future.asCompletableFuture
+import kotlinx.coroutines.future.await
+import kotlinx.coroutines.launch
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseMessage
 import software.aws.toolkits.core.TokenConnectionSettings
 import software.aws.toolkits.core.utils.getLogger
@@ -14,12 +19,10 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
-import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LspServerConfigurations
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.UpdateConfigurationParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.BearerCredentials
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.ConnectionMetadata
@@ -38,15 +41,15 @@ import java.util.concurrent.TimeUnit
 class DefaultAuthCredentialsService(
     private val project: Project,
     private val encryptionManager: JwtEncryptionManager,
-) : AuthCredentialsService,
-    BearerTokenProviderListener,
+    private val cs: CoroutineScope,
+) : BearerTokenProviderListener,
     ToolkitConnectionManagerListener,
     QRegionProfileSelectedListener,
     Disposable {
 
     private val scheduler: ScheduledExecutorService = AppExecutorUtil.getAppScheduledExecutorService()
-    private var tokenSyncTask: ScheduledFuture<*>? = null
-    private val tokenSyncIntervalMinutes = 5L
+    private var tokenRefreshTask: ScheduledFuture<*>? = null
+    private val tokenRefreshInterval = 5L
 
     init {
         project.messageBus.connect(this).apply {
@@ -62,75 +65,74 @@ class DefaultAuthCredentialsService(
                 }
         }
 
-        // Start periodic token sync
-        startPeriodicTokenSync()
+        // Start periodic token refresh
+        startPeriodicTokenRefresh()
     }
 
-    private fun startPeriodicTokenSync() {
-        tokenSyncTask = scheduler.scheduleWithFixedDelay(
+    // TODO: we really only need a single application-wide instance of this
+    private fun startPeriodicTokenRefresh() {
+        tokenRefreshTask = scheduler.scheduleWithFixedDelay(
             {
                 try {
                     if (isQConnected(project)) {
-                        if (isQExpired(project)) {
-                            val manager = ToolkitConnectionManager.getInstance(project)
-                            val connection = manager.activeConnectionForFeature(QConnection.getInstance()) ?: return@scheduleWithFixedDelay
+                        val manager = ToolkitConnectionManager.getInstance(project)
+                        val connection = manager.activeConnectionForFeature(QConnection.getInstance()) ?: return@scheduleWithFixedDelay
 
-                            // Try to refresh the token if it's in NEEDS_REFRESH state
-                            val tokenProvider = (connection.getConnectionSettings() as? TokenConnectionSettings)
-                                ?.tokenProvider
-                                ?.delegate
-                                ?.let { it as? BearerTokenProvider } ?: return@scheduleWithFixedDelay
-
-                            if (tokenProvider.state() == BearerTokenAuthState.NEEDS_REFRESH) {
-                                try {
-                                    tokenProvider.resolveToken()
-                                    // Now that the token is refreshed, update it in Flare
-                                    updateTokenFromActiveConnection()
-                                } catch (e: Exception) {
-                                    LOG.warn(e) { "Failed to refresh bearer token" }
-                                }
-                            }
-                        } else {
-                            updateTokenFromActiveConnection()
-                        }
+                        // periodically poll token to trigger a background refresh if needed
+                        val tokenProvider = (connection.getConnectionSettings() as? TokenConnectionSettings)
+                            ?.tokenProvider
+                            ?.delegate
+                            ?.let { it as? BearerTokenProvider } ?: return@scheduleWithFixedDelay
+                        tokenProvider.resolveToken()
                     }
                 } catch (e: Exception) {
-                    LOG.warn(e) { "Failed to sync bearer token to Flare" }
+                    LOG.warn(e) { "Failed to refresh bearer token" }
                 }
             },
-            tokenSyncIntervalMinutes,
-            tokenSyncIntervalMinutes,
+            tokenRefreshInterval,
+            tokenRefreshInterval,
             TimeUnit.MINUTES
         )
     }
 
-    override fun updateTokenCredentials(connection: ToolkitConnection, encrypted: Boolean): CompletableFuture<ResponseMessage> {
+    fun updateTokenCredentials(connection: ToolkitConnection, encrypted: Boolean): CompletableFuture<ResponseMessage> {
         val payload = try {
             createUpdateCredentialsPayload(connection, encrypted)
         } catch (e: Exception) {
             return CompletableFuture.failedFuture(e)
         }
 
-        val future = AmazonQLspService.executeIfRunning(project) { server ->
-            server.updateTokenCredentials(payload)
-        } ?: CompletableFuture.failedFuture(IllegalStateException("LSP Server not running"))
+        return cs.async {
+            val result = AmazonQLspService.executeAsyncIfRunning(project) { server ->
+                server.updateTokenCredentials(payload)
+            } ?: CompletableFuture.failedFuture(IllegalStateException("LSP Server not running"))
 
-        return future.thenApply { response ->
-            updateConfiguration()
-            response
+            result.thenApply { response ->
+                updateConfiguration()
+
+                response
+            }.await()
+        }.asCompletableFuture()
+    }
+
+    fun deleteTokenCredentials() {
+        cs.launch {
+            AmazonQLspService.executeAsyncIfRunning(project) { server ->
+                server.deleteTokenCredentials()
+            }
         }
     }
 
-    override fun deleteTokenCredentials(): CompletableFuture<Unit> =
-        CompletableFuture<Unit>().also { completableFuture ->
-            AmazonQLspService.executeIfRunning(project) { server ->
-                server.deleteTokenCredentials()
-                completableFuture.complete(null)
-            } ?: completableFuture.completeExceptionally(IllegalStateException("LSP Server not running"))
-        }
-
-    override fun onChange(providerId: String, newScopes: List<String>?) {
+    override fun onProviderChange(providerId: String, newScopes: List<String>?) {
         updateTokenFromActiveConnection()
+    }
+
+    override fun onTokenModified(providerId: String) {
+        updateTokenFromActiveConnection()
+    }
+
+    override fun invalidate(providerId: String) {
+        deleteTokenCredentials()
     }
 
     override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
@@ -152,10 +154,6 @@ class DefaultAuthCredentialsService(
 
     private fun updateTokenFromConnection(connection: ToolkitConnection): CompletableFuture<ResponseMessage> =
         updateTokenCredentials(connection, true)
-
-    override fun invalidate(providerId: String) {
-        deleteTokenCredentials()
-    }
 
     private fun createUpdateCredentialsPayload(connection: ToolkitConnection, encrypted: Boolean): UpdateCredentialsPayload {
         val token = (connection.getConnectionSettings() as? TokenConnectionSettings)
@@ -189,21 +187,23 @@ class DefaultAuthCredentialsService(
         updateConfiguration()
     }
 
-    private fun updateConfiguration(): CompletableFuture<LspServerConfigurations> {
-        val payload = UpdateConfigurationParams(
-            section = "aws.q",
-            settings = mapOf(
-                "profileArn" to QRegionProfileManager.getInstance().activeProfile(project)?.arn
+    private fun updateConfiguration() {
+        cs.launch {
+            val payload = UpdateConfigurationParams(
+                section = "aws.q",
+                settings = mapOf(
+                    "profileArn" to QRegionProfileManager.getInstance().activeProfile(project)?.arn
+                )
             )
-        )
-        return AmazonQLspService.executeIfRunning(project) { server ->
-            server.updateConfiguration(payload)
-        } ?: (CompletableFuture.failedFuture(IllegalStateException("LSP Server not running")))
+            AmazonQLspService.executeAsyncIfRunning(project) { server ->
+                server.updateConfiguration(payload)
+            }
+        }
     }
 
     override fun dispose() {
-        tokenSyncTask?.cancel(false)
-        tokenSyncTask = null
+        tokenRefreshTask?.cancel(false)
+        tokenRefreshTask = null
     }
 
     companion object {

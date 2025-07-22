@@ -6,6 +6,8 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.telemetry
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
@@ -29,7 +31,7 @@ import java.time.Duration
 import java.time.Instant
 
 @Service
-class CodeWhispererTelemetryServiceNew {
+class CodeWhispererTelemetryServiceNew(private val cs: CoroutineScope) {
 
     companion object {
         fun getInstance(): CodeWhispererTelemetryServiceNew = service()
@@ -109,24 +111,26 @@ class CodeWhispererTelemetryServiceNew {
     }
 
     fun sendUserTriggerDecisionEvent(project: Project, latencyContext: LatencyContext) {
-        AmazonQLspService.executeIfRunning(project) { server ->
-            CodeWhispererServiceNew.getInstance().getAllPaginationSessions().forEach { jobId, state ->
-                if (state == null) return@forEach
-                val params = LogInlineCompletionSessionResultsParams(
-                    sessionId = state.responseContext.sessionId,
-                    completionSessionResult = state.recommendationContext.details.associate {
-                        it.itemId to InlineCompletionStates(
-                            seen = it.hasSeen,
-                            accepted = it.isAccepted,
-                            discarded = it.isDiscarded
-                        )
-                    },
-                    firstCompletionDisplayLatency = latencyContext.perceivedLatency,
-                    totalSessionDisplayTime = CodeWhispererInvocationStatus.getInstance().completionShownTime?.let { Duration.between(it, Instant.now()) }
-                        ?.toMillis()?.toDouble(),
-                    typeaheadLength = state.recommendationContext.userInput.length.toLong()
-                )
-                server.logInlineCompletionSessionResults(params)
+        cs.launch {
+            AmazonQLspService.executeAsyncIfRunning(project) { server ->
+                CodeWhispererServiceNew.getInstance().getAllPaginationSessions().forEach { jobId, state ->
+                    if (state == null) return@forEach
+                    val params = LogInlineCompletionSessionResultsParams(
+                        sessionId = state.responseContext.sessionId,
+                        completionSessionResult = state.recommendationContext.details.associate {
+                            it.itemId to InlineCompletionStates(
+                                seen = it.hasSeen,
+                                accepted = it.isAccepted,
+                                discarded = it.isDiscarded
+                            )
+                        },
+                        firstCompletionDisplayLatency = latencyContext.perceivedLatency,
+                        totalSessionDisplayTime = CodeWhispererInvocationStatus.getInstance().completionShownTime?.let { Duration.between(it, Instant.now()) }
+                            ?.toMillis()?.toDouble(),
+                        typeaheadLength = state.recommendationContext.userInput.length.toLong()
+                    )
+                    server.logInlineCompletionSessionResults(params)
+                }
             }
         }
     }

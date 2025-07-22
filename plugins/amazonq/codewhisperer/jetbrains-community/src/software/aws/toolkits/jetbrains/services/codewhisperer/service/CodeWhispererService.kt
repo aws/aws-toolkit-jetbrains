@@ -38,7 +38,7 @@ import software.aws.toolkits.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
+import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.GetConfigurationFromServerParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LspServerConfigurations
@@ -187,11 +187,17 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                 CodeWhispererInvocationStatus.getInstance().setInvocationStart()
                 var nextToken: Either<String, Int>? = null
                 do {
-                    val result = AmazonQLspService.executeIfRunning(requestContext.project) { server ->
+                    val result = AmazonQLspService.executeAsyncIfRunning(requestContext.project) { server ->
                         val params = createInlineCompletionParams(requestContext.editor, requestContext.triggerTypeInfo, nextToken)
                         server.inlineCompletionWithReferences(params)
                     }
-                    val completion = result?.await() ?: break
+                    val completion = result?.await()
+                    if (completion == null) {
+                        // no result / not running
+                        CodeWhispererInvocationStatus.getInstance().finishInvocation()
+                        break
+                    }
+
                     nextToken = completion.partialResultToken
                     val endTime = System.nanoTime()
                     val latency = TimeUnit.NANOSECONDS.toMillis(endTime - startTime).toDouble()
@@ -426,7 +432,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         CodeWhispererTelemetryService.getInstance().sendUserTriggerDecisionEvent(project, latencyContext, sessionId, recommendationContext)
     }
 
-    fun getRequestContext(
+    suspend fun getRequestContext(
         triggerTypeInfo: TriggerTypeInfo,
         editor: Editor,
         project: Project,
@@ -440,7 +446,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         val caretPosition = runReadAction { getCaretPosition(editor) }
 
         // 4. connection
-        val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())
+        val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
 
         // 5. customization
         val customizationArn = CodeWhispererModelConfigurator.getInstance().activeCustomization(project)?.arn
@@ -472,11 +478,11 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         )
     }
 
-    fun getWorkspaceIds(project: Project): CompletableFuture<LspServerConfigurations> {
+    suspend fun getWorkspaceIds(project: Project): CompletableFuture<LspServerConfigurations> {
         val payload = GetConfigurationFromServerParams(
             section = "aws.q.workspaceContext"
         )
-        return AmazonQLspService.executeIfRunning(project) { server ->
+        return AmazonQLspService.executeAsyncIfRunning(project) { server ->
             server.getConfigurationFromServer(payload)
         } ?: (CompletableFuture.failedFuture(IllegalStateException("LSP Server not running")))
     }

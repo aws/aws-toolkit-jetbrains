@@ -8,7 +8,6 @@ import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFileManager
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationLanguage
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStatus
-import software.aws.toolkits.core.TokenConnectionSettings
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
@@ -42,12 +41,6 @@ val STATES_AFTER_STARTED = setOf(
     TransformationStatus.PREPARING,
     *STATES_AFTER_INITIAL_BUILD.toTypedArray(),
 )
-
-fun refreshToken(project: Project) {
-    val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
-    val provider = (connection?.getConnectionSettings() as TokenConnectionSettings).tokenProvider.delegate as BearerTokenProvider
-    provider.refresh()
-}
 
 fun getAuthType(project: Project): CredentialSourceId? {
     val connection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q)

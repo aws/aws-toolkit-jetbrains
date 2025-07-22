@@ -1,3 +1,30 @@
+# _3.86_ (2025-07-16)
+- **(Bug Fix)** - Fixed "Insert to Cursor" button to correctly insert code blocks at the current cursor position in the active file
+
+# _3.85_ (2025-07-10)
+- **(Feature)** Amazon Q /test, /doc, and /dev capabilities integrated into Agentic coding.
+- **(Feature)** Add image context support
+
+# _3.84_ (2025-07-09)
+
+# _3.83_ (2025-07-07)
+- **(Bug Fix)** Fix auto-suggestions being shown when suggestions are paused
+
+# _3.82_ (2025-07-03)
+- **(Bug Fix)** Skip inline completion when deleting characters
+
+# _3.81_ (2025-06-27)
+
+# _3.80_ (2025-06-26)
+- **(Feature)** Amazon Q inline: now display completions much more consistently at the user's current caret position
+- **(Feature)** Amazon Q inline: now Q completions can co-exist with JetBrains' native IntelliSense completions, when both are showing, press Tab or your customized key shortcuts to accept Q completions and press Enter to accept IntelliSense completions.
+- **(Feature)** Amazon Q inline: now shows in a JetBrains native UX of popup and inlay text style
+- **(Feature)** Amazon Q inline: The new UX allows configurable shortcuts for accepting completions and navigating through completions. *Caveat: for users using the previous versions, if you have configured your custom key shortcuts for the Q inline before, you will have to re-configure them again in Amazon Q settings due to a change in the keymap actions.
+
+# _3.79_ (2025-06-25)
+- **(Feature)** /transform: run all builds client-side
+- **(Feature)** Amazon Q Chat: Pin context items in chat and manage workspace rules
+
 # _3.78_ (2025-06-18)
 - **(Feature)** Add model selection feature
 

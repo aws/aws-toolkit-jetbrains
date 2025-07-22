@@ -3,12 +3,16 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.util
 
+import com.intellij.codeInsight.daemon.impl.HighlightInfo
 import com.intellij.codeInsight.lookup.LookupManager
 import com.intellij.ide.BrowserUtil
+import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.notification.NotificationAction
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
+import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.editor.impl.DocumentMarkupModel
 import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtil
@@ -21,7 +25,11 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
+import software.amazon.awssdk.services.codewhispererruntime.model.DiagnosticSeverity
+import software.amazon.awssdk.services.codewhispererruntime.model.IdeDiagnostic
 import software.amazon.awssdk.services.codewhispererruntime.model.OptOutPreference
+import software.amazon.awssdk.services.codewhispererruntime.model.Position
+import software.amazon.awssdk.services.codewhispererruntime.model.Range
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
@@ -30,7 +38,7 @@ import software.aws.toolkits.jetbrains.core.credentials.ReauthSource
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.maybeReauthProviderIfNeeded
-import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
+import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.reauthConnectionIfNeeded
 import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
@@ -62,7 +70,7 @@ import java.nio.file.Paths
 // 1. It will be sent for Builder ID users, only if they have optin telemetry sharing.
 // 2. It will be sent for IdC users, regardless of telemetry optout status.
 fun runIfIdcConnectionOrTelemetryEnabled(project: Project, callback: (connection: ToolkitConnection) -> Unit) =
-    ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())?.let {
+    ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())?.let {
         runIfIdcConnectionOrTelemetryEnabled(it, callback)
     }
 
@@ -279,14 +287,14 @@ object CodeWhispererUtil {
     fun getCodeWhispererStartUrl(project: Project): String? {
         val connection = ToolkitConnectionManager.getInstance(
             project
-        ).activeConnectionForFeature(CodeWhispererConnection.getInstance()) as? AwsBearerTokenConnection?
+        ).activeConnectionForFeature(QConnection.getInstance()) as? AwsBearerTokenConnection?
         return connection?.startUrl
     }
 
     private fun tokenConnection(project: Project) = (
         ToolkitConnectionManager
             .getInstance(project)
-            .activeConnectionForFeature(CodeWhispererConnection.getInstance()) as? AwsBearerTokenConnection
+            .activeConnectionForFeature(QConnection.getInstance()) as? AwsBearerTokenConnection
         )
 
     private fun tokenProvider(project: Project) =
@@ -296,7 +304,7 @@ object CodeWhispererUtil {
             ?.delegate as? BearerTokenProvider
 
     fun reconnectCodeWhisperer(project: Project) {
-        val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())
+        val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
         if (connection !is ManagedBearerSsoConnection) return
         pluginAwareExecuteOnPooledThread {
             reauthConnectionIfNeeded(project, connection, isReAuth = true, reauthSource = ReauthSource.CODEWHISPERER)
@@ -346,4 +354,88 @@ object CodeWhispererUtil {
 
 enum class CaretMovement {
     NO_CHANGE, MOVE_FORWARD, MOVE_BACKWARD
+}
+
+val diagnosticPatterns = mapOf(
+    "TYPE_ERROR" to listOf("type", "cast"),
+    "SYNTAX_ERROR" to listOf("expected", "indent", "syntax"),
+    "REFERENCE_ERROR" to listOf("undefined", "not defined", "undeclared", "reference", "symbol"),
+    "BEST_PRACTICE" to listOf("deprecated", "unused", "uninitialized", "not initialized"),
+    "SECURITY" to listOf("security", "vulnerability")
+)
+
+fun getDiagnosticsType(message: String): String {
+    val lowercaseMessage = message.lowercase()
+    return diagnosticPatterns
+        .entries
+        .firstOrNull { (_, keywords) ->
+            keywords.any { lowercaseMessage.contains(it) }
+        }
+        ?.key ?: "OTHER"
+}
+
+fun convertSeverity(severity: HighlightSeverity): DiagnosticSeverity = when {
+    severity == HighlightSeverity.ERROR -> DiagnosticSeverity.ERROR
+    severity == HighlightSeverity.WARNING ||
+        severity == HighlightSeverity.WEAK_WARNING -> DiagnosticSeverity.WARNING
+    severity == HighlightSeverity.INFORMATION -> DiagnosticSeverity.INFORMATION
+    severity == HighlightSeverity.TEXT_ATTRIBUTES -> DiagnosticSeverity.HINT
+    severity == HighlightSeverity.INFO -> DiagnosticSeverity.INFORMATION
+    // For severities that might indicate performance issues
+    severity.toString().contains("PERFORMANCE", ignoreCase = true) -> DiagnosticSeverity.WARNING
+    // For deprecation warnings
+    severity.toString().contains("DEPRECATED", ignoreCase = true) -> DiagnosticSeverity.WARNING
+    // Default case
+    else -> DiagnosticSeverity.INFORMATION
+}
+
+fun getDocumentDiagnostics(document: Document, project: Project): List<IdeDiagnostic> = runCatching {
+    DocumentMarkupModel.forDocument(document, project, true)
+        .allHighlighters
+        .mapNotNull { it.errorStripeTooltip as? HighlightInfo }
+        .filter { !it.description.isNullOrEmpty() }
+        .map { info ->
+            val startLine = document.getLineNumber(info.startOffset)
+            val endLine = document.getLineNumber(info.endOffset)
+
+            IdeDiagnostic.builder()
+                .ideDiagnosticType(getDiagnosticsType(info.description))
+                .severity(convertSeverity(info.severity))
+                .source(info.inspectionToolId)
+                .range(
+                    Range.builder()
+                        .start(
+                            Position.builder()
+                                .line(startLine)
+                                .character(document.getLineStartOffset(startLine))
+                                .build()
+                        )
+                        .end(
+                            Position.builder()
+                                .line(endLine)
+                                .character(document.getLineStartOffset(endLine))
+                                .build()
+                        )
+                        .build()
+                )
+                .build()
+        }
+}.getOrElse { e ->
+    getLogger<CodeWhispererUtil>().warn { "Failed to get document diagnostics ${e.message}" }
+    emptyList()
+}
+
+data class DiagnosticDifferences(
+    val added: List<IdeDiagnostic>,
+    val removed: List<IdeDiagnostic>,
+)
+
+fun serializeDiagnostics(diagnostic: IdeDiagnostic): String = "${diagnostic.source()}-${diagnostic.severity()}-${diagnostic.ideDiagnosticType()}"
+
+fun getDiagnosticDifferences(oldDiagnostic: List<IdeDiagnostic>, newDiagnostic: List<IdeDiagnostic>): DiagnosticDifferences {
+    val oldSet = oldDiagnostic.map { i -> serializeDiagnostics(i) }.toSet()
+    val newSet = newDiagnostic.map { i -> serializeDiagnostics(i) }.toSet()
+    val added = newDiagnostic.filter { i -> !oldSet.contains(serializeDiagnostics(i)) }.distinctBy { serializeDiagnostics(it) }
+    val removed = oldDiagnostic.filter { i -> !newSet.contains(serializeDiagnostics(i)) }.distinctBy { serializeDiagnostics(it) }
+    return DiagnosticDifferences(added, removed)
 }

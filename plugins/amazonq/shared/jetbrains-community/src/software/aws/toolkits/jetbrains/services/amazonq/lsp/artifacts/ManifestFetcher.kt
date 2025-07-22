@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.intellij.openapi.util.registry.Registry
 import org.jetbrains.annotations.VisibleForTesting
 import software.aws.toolkits.core.utils.deleteIfExists
 import software.aws.toolkits.core.utils.error
@@ -20,16 +21,15 @@ import software.aws.toolkits.jetbrains.core.getTextFromUrl
 import software.aws.toolkits.jetbrains.core.saveFileFromUrl
 import java.nio.file.Path
 
-class ManifestFetcher(
-    private val lspManifestUrl: String = DEFAULT_MANIFEST_URL,
-    private val manifestPath: Path = DEFAULT_MANIFEST_PATH,
-) {
+class ManifestFetcher {
     companion object {
         private val mapper = jacksonObjectMapper().apply { configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false) }
         private val logger = getLogger<ManifestFetcher>()
 
-        private const val DEFAULT_MANIFEST_URL =
-            "https://aws-toolkit-language-servers.amazonaws.com/qAgenticChatServer/0/manifest.json"
+        private fun getManifestEndpoint(): String {
+            val endpoint = Registry.get("amazon.q.flare.endpoint").asString()
+            return endpoint.ifBlank { "https://aws-toolkit-language-servers.amazonaws.com/qAgenticChatServer/0/manifest.json" }
+        }
 
         private val DEFAULT_MANIFEST_PATH: Path = getToolkitsCommonCacheRoot()
             .resolve("aws")
@@ -37,6 +37,10 @@ class ManifestFetcher(
             .resolve("language-servers")
             .resolve("jetbrains-lsp-manifest.json")
     }
+
+    private val lspManifestUrl
+        get() = getManifestEndpoint()
+    private val manifestPath: Path = DEFAULT_MANIFEST_PATH
 
     @get:VisibleForTesting
     internal val lspManifestFilePath: Path

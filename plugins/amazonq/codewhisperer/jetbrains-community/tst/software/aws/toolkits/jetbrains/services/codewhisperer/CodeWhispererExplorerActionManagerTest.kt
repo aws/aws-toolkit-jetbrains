@@ -22,8 +22,8 @@ import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.LegacyManagedBearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.MockToolkitAuthManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
 import software.aws.toolkits.jetbrains.core.credentials.pinning.ConnectionPinningManager
+import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.credentials.sso.DeviceAuthorizationGrantToken
@@ -114,7 +114,7 @@ class CodeWhispererExplorerActionManagerTest {
             expectedIsCwEnabled = true,
             expectedIsCwExpired = false
         )
-        assertThat(ConnectionPinningManager.getInstance().isFeaturePinned(CodeWhispererConnection.getInstance())).isFalse
+        assertThat(ConnectionPinningManager.getInstance().isFeaturePinned(QConnection.getInstance())).isFalse
 
         assertConnectionState(
             startUrl = SONO_URL,
@@ -125,7 +125,7 @@ class CodeWhispererExplorerActionManagerTest {
             expectedIsCwEnabled = true,
             expectedIsCwExpired = true
         )
-        assertThat(ConnectionPinningManager.getInstance().isFeaturePinned(CodeWhispererConnection.getInstance())).isFalse
+        assertThat(ConnectionPinningManager.getInstance().isFeaturePinned(QConnection.getInstance())).isFalse
 
         assertConnectionState(
             startUrl = SONO_URL,
@@ -136,7 +136,7 @@ class CodeWhispererExplorerActionManagerTest {
             expectedIsCwEnabled = false,
             expectedIsCwExpired = false
         )
-        assertThat(ConnectionPinningManager.getInstance().isFeaturePinned(CodeWhispererConnection.getInstance())).isFalse
+        assertThat(ConnectionPinningManager.getInstance().isFeaturePinned(QConnection.getInstance())).isFalse
 
         assertConnectionState(
             startUrl = aString(),
@@ -147,7 +147,7 @@ class CodeWhispererExplorerActionManagerTest {
             expectedIsCwEnabled = true,
             expectedIsCwExpired = false
         )
-        assertThat(ConnectionPinningManager.getInstance().isFeaturePinned(CodeWhispererConnection.getInstance())).isFalse
+        assertThat(ConnectionPinningManager.getInstance().isFeaturePinned(QConnection.getInstance())).isFalse
 
         assertConnectionState(
             startUrl = aString(),
@@ -158,7 +158,7 @@ class CodeWhispererExplorerActionManagerTest {
             expectedIsCwEnabled = true,
             expectedIsCwExpired = true
         )
-        assertThat(ConnectionPinningManager.getInstance().isFeaturePinned(CodeWhispererConnection.getInstance())).isFalse
+        assertThat(ConnectionPinningManager.getInstance().isFeaturePinned(QConnection.getInstance())).isFalse
 
         assertConnectionState(
             startUrl = aString(),
@@ -169,7 +169,7 @@ class CodeWhispererExplorerActionManagerTest {
             expectedIsCwEnabled = false,
             expectedIsCwExpired = false
         )
-        assertThat(ConnectionPinningManager.getInstance().isFeaturePinned(CodeWhispererConnection.getInstance())).isFalse
+        assertThat(ConnectionPinningManager.getInstance().isFeaturePinned(QConnection.getInstance())).isFalse
     }
 
     @SuppressWarnings("UnusedParameter")
@@ -205,10 +205,10 @@ class CodeWhispererExplorerActionManagerTest {
         )
 
         ToolkitConnectionManager.getInstance(project).switchConnection(myConnection)
-        val activeCwConn = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())
+        val activateQConn = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
         val myTokenProvider = myConnection.getConnectionSettings().tokenProvider.delegate as InteractiveBearerTokenProvider
 
-        assertThat(activeCwConn).isEqualTo(myConnection)
+        assertThat(activateQConn).isEqualTo(myConnection)
         assertThat(myTokenProvider.state()).isEqualTo(expectedState)
         assertThat(CodeWhispererExplorerActionManager.getInstance().checkActiveCodeWhispererConnectionType(project)).isEqualTo(expectedLoginType)
         assertThat(isCodeWhispererEnabled(project)).isEqualTo(expectedIsCwEnabled)

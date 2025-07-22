@@ -10,6 +10,8 @@ import com.intellij.ide.BrowserUtil
 import com.intellij.notification.NotificationAction
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.fileChooser.FileChooser
+import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.fileChooser.FileChooserFactory
 import com.intellij.openapi.fileChooser.FileSaverDescriptor
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -19,6 +21,8 @@ import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFileManager
 import migration.software.aws.toolkits.jetbrains.settings.AwsSettings
+import org.eclipse.lsp4j.ApplyWorkspaceEditParams
+import org.eclipse.lsp4j.ApplyWorkspaceEditResponse
 import org.eclipse.lsp4j.ConfigurationParams
 import org.eclipse.lsp4j.MessageActionItem
 import org.eclipse.lsp4j.MessageParams
@@ -56,9 +60,11 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FileP
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GET_SERIALIZED_CHAT_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenFileDiffParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowOpenFileDialogParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowSaveFileDialogParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowSaveFileDialogResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.ConnectionMetadata
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.LspEditorUtil
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.TelemetryParsingUtil
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
@@ -149,6 +155,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
             MessageType.Error -> Level.ERROR
             MessageType.Warning -> Level.WARN
             MessageType.Info, MessageType.Log -> Level.INFO
+            else -> Level.WARN
         }
 
         if (type == Level.ERROR &&
@@ -254,6 +261,76 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
         )
     }
 
+    override fun showOpenFileDialog(params: ShowOpenFileDialogParams): CompletableFuture<LSPAny> =
+        CompletableFuture.supplyAsync(
+            {
+                // Handle the case where both canSelectFiles and canSelectFolders are false (should never be sent from flare)
+                if (!params.canSelectFiles && !params.canSelectFolders) {
+                    return@supplyAsync mapOf("uris" to emptyList<String>()) as LSPAny
+                }
+
+                val descriptor = when {
+                    params.canSelectFolders && params.canSelectFiles -> {
+                        if (params.canSelectMany) {
+                            FileChooserDescriptorFactory.createAllButJarContentsDescriptor()
+                        } else {
+                            FileChooserDescriptorFactory.createSingleFileOrFolderDescriptor()
+                        }
+                    }
+                    params.canSelectFolders -> {
+                        if (params.canSelectMany) {
+                            FileChooserDescriptorFactory.createMultipleFoldersDescriptor()
+                        } else {
+                            FileChooserDescriptorFactory.createSingleFolderDescriptor()
+                        }
+                    }
+                    else -> {
+                        if (params.canSelectMany) {
+                            FileChooserDescriptorFactory.createMultipleFilesNoJarsDescriptor()
+                        } else {
+                            FileChooserDescriptorFactory.createSingleFileNoJarsDescriptor()
+                        }
+                    }
+                }.apply {
+                    withTitle(
+                        params.title ?: when {
+                            params.canSelectFolders && params.canSelectFiles -> "Select Files or Folders"
+                            params.canSelectFolders -> "Select Folders"
+                            else -> "Select Files"
+                        }
+                    )
+                    withDescription(
+                        when {
+                            params.canSelectFolders && params.canSelectFiles -> "Choose files or folders to open"
+                            params.canSelectFolders -> "Choose folders to open"
+                            else -> "Choose files to open"
+                        }
+                    )
+
+                    // Apply file filters if provided
+                    if (params.filters.isNotEmpty() && !params.canSelectFolders) {
+                        // Create a combined list of all allowed extensions
+                        val allowedExtensions = params.filters.values.flatten().toSet()
+
+                        withFileFilter { virtualFile ->
+                            if (virtualFile.isDirectory) {
+                                true // Always allow directories for navigation
+                            } else {
+                                val extension = virtualFile.extension?.lowercase()
+                                extension != null && allowedExtensions.contains(extension)
+                            }
+                        }
+                    }
+                }
+
+                val chosenFiles = FileChooser.chooseFiles(descriptor, project, null)
+                val uris = chosenFiles.map { it.path }
+
+                mapOf("uris" to uris) as LSPAny
+            },
+            ApplicationManager.getApplication()::invokeLater
+        )
+
     override fun getSerializedChat(params: LSPAny): CompletableFuture<GetSerializedChatResult> {
         val requestId = UUID.randomUUID().toString()
         val result = CompletableFuture<GetSerializedChatResult>()
@@ -328,7 +405,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
         }
     }
 
-    override fun sendChatUpdate(params: LSPAny): CompletableFuture<Unit> {
+    override fun sendChatUpdate(params: LSPAny) {
         AsyncChatUiListener.notifyPartialMessageUpdate(
             project,
             FlareUiMessage(
@@ -336,8 +413,6 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                 params = params,
             )
         )
-
-        return CompletableFuture.completedFuture(Unit)
     }
 
     private fun File.toVirtualFile() = LocalFileSystem.getInstance().findFileByIoFile(this)
@@ -348,83 +423,80 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
         MessageType.Info, MessageType.Log -> NotificationType.INFORMATION
     }
 
-    override fun openFileDiff(params: OpenFileDiffParams): CompletableFuture<Unit> =
-        CompletableFuture.supplyAsync(
-            {
-                var tempPath: java.nio.file.Path? = null
-                try {
-                    val fileName = Paths.get(params.originalFileUri).fileName.toString()
-                    // Create a temporary virtual file for syntax highlighting
-                    val fileExtension = fileName.substringAfterLast('.', "")
-                    tempPath = Files.createTempFile(null, ".$fileExtension")
-                    val virtualFile = tempPath.toFile()
-                        .also { it.setReadOnly() }
-                        .toVirtualFile()
+    override fun openFileDiff(params: OpenFileDiffParams) {
+        ApplicationManager.getApplication().invokeLater {
+            var tempPath: java.nio.file.Path? = null
+            try {
+                val fileName = Paths.get(params.originalFileUri).fileName.toString()
+                // Create a temporary virtual file for syntax highlighting
+                val fileExtension = fileName.substringAfterLast('.', "")
+                tempPath = Files.createTempFile(null, ".$fileExtension")
+                val virtualFile = tempPath.toFile()
+                    .also { it.setReadOnly() }
+                    .toVirtualFile()
 
-                    val originalContent = params.originalFileContent ?: run {
-                        val sourceFile = File(params.originalFileUri)
-                        if (sourceFile.exists()) sourceFile.readText() else ""
+                val originalContent = params.originalFileContent ?: run {
+                    val sourceFile = File(params.originalFileUri)
+                    if (sourceFile.exists()) sourceFile.readText() else ""
+                }
+
+                val contentFactory = DiffContentFactory.getInstance()
+                var isNewFile = false
+                val (leftContent, rightContent) = when {
+                    params.isDeleted -> {
+                        contentFactory.create(project, originalContent, virtualFile) to
+                            contentFactory.createEmpty()
                     }
 
-                    val contentFactory = DiffContentFactory.getInstance()
-                    var isNewFile = false
-                    val (leftContent, rightContent) = when {
-                        params.isDeleted -> {
-                            contentFactory.create(project, originalContent, virtualFile) to
-                                contentFactory.createEmpty()
-                        }
+                    else -> {
+                        val newContent = params.fileContent.orEmpty()
+                        isNewFile = newContent == originalContent
+                        when {
+                            isNewFile -> {
+                                contentFactory.createEmpty() to
+                                    contentFactory.create(project, newContent, virtualFile)
+                            }
 
-                        else -> {
-                            val newContent = params.fileContent.orEmpty()
-                            isNewFile = newContent == originalContent
-                            when {
-                                isNewFile -> {
-                                    contentFactory.createEmpty() to
-                                        contentFactory.create(project, newContent, virtualFile)
-                                }
-
-                                else -> {
-                                    contentFactory.create(project, originalContent, virtualFile) to
-                                        contentFactory.create(project, newContent, virtualFile)
-                                }
+                            else -> {
+                                contentFactory.create(project, originalContent, virtualFile) to
+                                    contentFactory.create(project, newContent, virtualFile)
                             }
                         }
                     }
-                    val diffRequest = SimpleDiffRequest(
-                        "$fileName ${message("aws.q.lsp.client.diff_message")}",
-                        leftContent,
-                        rightContent,
-                        "Original",
-                        when {
-                            params.isDeleted -> "Deleted"
-                            isNewFile -> "Created"
-                            else -> "Modified"
-                        }
-                    )
-
-                    AmazonQDiffVirtualFile.openDiff(project, diffRequest)
-                } catch (e: Exception) {
-                    LOG.warn { "Failed to open file diff: ${e.message}" }
-                } finally {
-                    // Clean up the temporary file used for syntax highlight
-                    try {
-                        tempPath?.let { Files.deleteIfExists(it) }
-                    } catch (e: Exception) {
-                        LOG.warn { "Failed to delete temporary file: ${e.message}" }
-                    }
                 }
-            },
-            ApplicationManager.getApplication()::invokeLater
-        )
+                val diffRequest = SimpleDiffRequest(
+                    "$fileName ${message("aws.q.lsp.client.diff_message")}",
+                    leftContent,
+                    rightContent,
+                    "Original",
+                    when {
+                        params.isDeleted -> "Deleted"
+                        isNewFile -> "Created"
+                        else -> "Modified"
+                    }
+                )
 
-    override fun sendContextCommands(params: LSPAny): CompletableFuture<Unit> {
+                AmazonQDiffVirtualFile.openDiff(project, diffRequest)
+            } catch (e: Exception) {
+                LOG.warn { "Failed to open file diff: ${e.message}" }
+            } finally {
+                // Clean up the temporary file used for syntax highlight
+                try {
+                    tempPath?.let { Files.deleteIfExists(it) }
+                } catch (e: Exception) {
+                    LOG.warn { "Failed to delete temporary file: ${e.message}" }
+                }
+            }
+        }
+    }
+
+    override fun sendContextCommands(params: LSPAny) {
         chatManager.notifyUi(
             FlareUiMessage(
                 command = CHAT_SEND_CONTEXT_COMMANDS,
                 params = params,
             )
         )
-        return CompletableFuture.completedFuture(Unit)
     }
 
     override fun sendPinnedContext(params: LSPAny) {
@@ -497,6 +569,20 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
             )
         )
     }
+
+    override fun applyEdit(params: ApplyWorkspaceEditParams): CompletableFuture<ApplyWorkspaceEditResponse> =
+        CompletableFuture.supplyAsync(
+            {
+                try {
+                    LspEditorUtil.applyWorkspaceEdit(project, params.edit)
+                    ApplyWorkspaceEditResponse(true)
+                } catch (e: Exception) {
+                    LOG.warn(e) { "Failed to apply workspace edit" }
+                    ApplyWorkspaceEditResponse(false)
+                }
+            },
+            ApplicationManager.getApplication()::invokeLater
+        )
 
     private fun refreshVfs(path: String) {
         val currPath = Paths.get(path)
