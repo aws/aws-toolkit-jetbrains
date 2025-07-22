@@ -33,24 +33,19 @@ jobs:
         with:
           tool-cache: false
           large-packages: false
-      - name: Test ls command
-        run: ls $GITHUB_WORKSPACE
-      - name: test more
-        run: ls $GITHUB_WORKSPACE/qodana-configs
-      - name: test more more
-        run: ls $GITHUB_WORKSPACE/qodana-configs/duplicated-code
-      - name: test more more more
-        run: cat  $GITHUB_WORKSPACE/qodana-configs/duplicated-code/qodana.yaml
-      - name: test more more more more
-        run: cd  $GITHUB_WORKSPACE/qodana-configs/duplicated-code && pwd
       - name: 'Qodana Scan'
         uses: JetBrains/qodana-action@v2024.2.3
         env:
           QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }}
         with:
+          # --config points to the DuplicatedCode-only Qodana config
+          # --baseline points to the DuplicatedCode baseline to ensure that only new DuplicatedCode changes are found
+          # --baseline-include-absent will make this test fail if duplicated code from the baseline is remediated, which calls for a rebaselining.
           args:
             --config,${{ github.workspace }}/qodana-configs/duplicated-code/qodana.yaml,--baseline,${{ github.workspace }}/qodana-configs/duplicated-code/qodana.sarif.json,--baseline-include-absent
           cache-default-branch-only: true
+          # pr-mode off means that the whole repo should be checked for duplicate code, instead of just copy/pastes within the PR
+          pr-mode: false
       - uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: ${{ runner.temp }}/qodana/results/qodana.sarif.json
