@@ -287,6 +287,18 @@ class DefaultToolkitAuthManager : ToolkitAuthManager, PersistentStateComponent<T
                 scopes = profile.scopes
             )
         }
+
+        // TODO: Rip out
+        is ExternalOidcProfile -> {
+            if (profile.startUrl != SONO_URL) {
+                state.lastLoginIdcInfo = LastLoginIdcInfo("", profile.startUrl, "global")
+            }
+            LegacyManagedBearerSsoConnection(
+                startUrl = profile.startUrl,
+                region = "global",
+                scopes = profile.scopes
+            )
+        }
     }
 
     companion object {

@@ -8,7 +8,7 @@ import {
     AuthSetupMessageFromIde,
     ListProfileResult,
     ListProfileSuccessResult,
-    ListProfileFailureResult, ListProfilePendingResult, ListProfilesMessageFromIde, ExtIdcInfo
+    ListProfileFailureResult, ListProfilePendingResult, ListProfilesMessageFromIde, ExtIdcInfo, GetLoginMetadataResponse
 } from "./model";
 import {WebviewTelemetry} from './webviewTelemetry'
 
@@ -92,5 +92,9 @@ export class IdeClient {
         // this.reset()
         this.store.commit('setStage', 'START')
         window.ideApi.postMessage({ command: 'cancelLogin' })
+    }
+
+    returnLoginMetadataResponse(response: GetLoginMetadataResponse): void {
+        this.store.commit('setLoginMetadataResponse', response)
     }
 }

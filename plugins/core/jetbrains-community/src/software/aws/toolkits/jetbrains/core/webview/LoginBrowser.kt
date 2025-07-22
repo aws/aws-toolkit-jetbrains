@@ -19,11 +19,20 @@ import kotlinx.coroutines.runBlocking
 import org.intellij.lang.annotations.Language
 import org.jetbrains.annotations.VisibleForTesting
 import org.slf4j.event.Level
+import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider
+import software.amazon.awssdk.awscore.exception.AwsErrorDetails
+import software.amazon.awssdk.awscore.exception.AwsServiceException
+import software.amazon.awssdk.regions.Region
+import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
+import software.amazon.awssdk.services.qdeveloperdiscovery.QDeveloperDiscoveryClient
+import software.amazon.awssdk.services.qdeveloperdiscovery.model.GetLoginMetadataRequest
+import software.amazon.awssdk.services.qdeveloperdiscovery.model.QDeveloperDiscoveryException
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.tryOrNull
+import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.Login
@@ -252,15 +261,66 @@ abstract class LoginBrowser(
         }
     }
 
-    open fun loginExternalIdC(email: String, scopes: List<String>) {
+    open fun loginExternalIdC(startUrl: String, clientId: String, scopes: List<String>) {
         // assumes scopes contains either Q or non-Q permissions but not both
-        val (onError: (Exception) -> Unit, onSuccess: () -> Unit) = getSuccessAndErrorActionsForIdcLogin(scopes, url, region)
-        loginWithBackgroundContext {
-            Login
-                .ExternalIdC(email, scopes, onPendingToken, onSuccess, onError)
-                .login(project)
+//        val (onError: (Exception) -> Unit, onSuccess: () -> Unit) = getSuccessAndErrorActionsForIdcLogin(scopes, startUrl, AwsRegion.GLOBAL)
+//        loginWithBackgroundContext {
+//            Login
+//                .ExternalIdC(startUrl, clientId, scopes, onPendingToken, onSuccess, onError)
+//                .login(project)
+//        }
+    }
+
+    open fun getLoginMetadata(email: String, uuid: String) {
+        try {
+            val qdClient = AwsClientManager.getInstance().createUnmanagedClient(
+                region = Region.US_EAST_1,
+                sdkClass = QDeveloperDiscoveryClient::class,
+                // TODO: !!! REMOVE OVERRIDE !!!
+                endpointOverride = "https://rts.gamma-us-east-1.codewhisperer.ai.aws.dev/",
+                credProvider = AnonymousCredentialsProvider.create()
+            )
+            val request = GetLoginMetadataRequest.builder()
+                .domainName(email.split("@").last()) // TODO: don't just assume one "@"?
+                .build()
+            val response = qdClient.getLoginMetadata(request)
+            val jsonData = """
+                    {
+                        issuerUrl: '${response.issuerUrl()}',
+                        clientId: '${response.clientId()}',
+                        uuid: '$uuid',
+                    }
+                """.trimIndent()
+
+            executeJS("window.ideClient.returnLoginMetadataResponse($jsonData)")
+        } catch (e: Exception) {
+            var jsonData: String
+            if (e is AwsServiceException) {
+                jsonData = """
+                    {
+                        error: {
+                            message: '${e.awsErrorDetails().errorMessage()}',
+                            type: '${e.awsErrorDetails().errorCode()}',
+                        },
+                        uuid: '$uuid',
+                    }
+                """.trimIndent()
+            } else {
+                jsonData = """
+                    {
+                        error: {
+                            message: '${e.message}',
+                            type: '${e.cause.toString()}',
+                        },
+                        uuid: '$uuid',
+                    }
+                """.trimIndent()
+            }
+
+            executeJS("window.ideClient.returnLoginMetadataResponse($jsonData)")
         }
     }
+
     fun getSuccessAndErrorActionsForIdcLogin(
         scopes: List<String>,
         url: String,

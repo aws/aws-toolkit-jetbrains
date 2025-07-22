@@ -5,7 +5,7 @@
 import {createApp} from 'vue'
 import {createStore, Store} from 'vuex'
 import root from './components/root.vue'
-import {AwsBearerTokenConnection, ExtIdcInfo, Feature, IdcInfo, Region, Stage, State} from "../model";
+import {AwsBearerTokenConnection, ExtIdcInfo, Feature, GetLoginMetadataResponse, IdcInfo, Region, Stage, State} from "../model";
 import {IdeClient} from "../ideClient";
 import './assets/common.scss'
 
@@ -28,6 +28,7 @@ const store = createStore<State>({
         existingConnections: [] as AwsBearerTokenConnection[],
         listProfilesResult : undefined,
         selectedProfile: undefined,
+        getLoginMetadataResponse: undefined,
     },
     getters: {},
     mutations: {
@@ -55,6 +56,9 @@ const store = createStore<State>({
         },
         setExistingConnections(state: State, connections: AwsBearerTokenConnection[]) {
             state.existingConnections = connections
+        },
+        setLoginMetadataResponse(state: State, response: GetLoginMetadataResponse) {
+            state.getLoginMetadataResponse = response
         },
         reset(state: State) {
             state.stage = 'START'

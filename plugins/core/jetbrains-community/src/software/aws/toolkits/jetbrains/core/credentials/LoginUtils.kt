@@ -112,66 +112,47 @@ sealed class Login<T> {
         }
     }
 
-    data class ExternalIdC(
-        val email: String,
-        val scopes: List<String>,
-        val onPendingToken: (InteractiveBearerTokenProvider) -> Unit,
-        val onSuccess: () -> Unit,
-        override val onError: (Exception) -> Unit,
-    ) : Login<AwsBearerTokenConnection?>() {
-        override val id: CredentialSourceId = CredentialSourceId.IamIdentityCenter
-        private val configFilesFacade = DefaultConfigFilesFacade()
-
-        override fun doLogin(project: Project): AwsBearerTokenConnection? {
-            // we have this check here so we blow up early if user has an invalid config file
-            try {
-                configFilesFacade.readSsoSessions()
-            } catch (e: Exception) {
-                onError(ConfigFacadeException(e))
-                return null
-            }
-
-            var startUrl = ""
-            var clientId = ""
-            try {
-                val qdClient = AwsClientManager.getInstance().createUnmanagedClient(
-                    region = Region.US_EAST_1,
-                    sdkClass = QDeveloperDiscoveryClient::class,
-                    endpointOverride = "https://rts.gamma-us-east-1.codewhisperer.ai.aws.dev/",
-                    credProvider = AnonymousCredentialsProvider.create()
-                )
-                val request = GetLoginMetadataRequest.builder()
-                    .domainName(email.split("@").last()) // TODO: don't just assume one "@"?
-                    .build()
-                val response = qdClient.getLoginMetadata(request)
-                startUrl = response.issuerUrl()
-                clientId = response.clientId()
-            } catch (e: Exception) {
-                // TODO: handle SDK error
-                return null
-            }
-
-            val profile = ExternalOidcProfile(
-                configSessionName = validatedSsoIdentifierFromUrl(startUrl),
-                startUrl = startUrl,
-                clientId = clientId,
-                scopes = scopes
-            )
-
-            // expect 'authAndUpdateConfig' to call onError on failure
-            val conn = authAndUpdateConfig(project, profile, configFilesFacade, onPendingToken, onSuccess, onError) ?: return null
-
-            // TODO: delta, make sure we are good to switch immediately
-//            if (!promptForIdcPermissionSet) {
-//                ToolkitConnectionManager.getInstance(project).switchConnection(connection)
-//                close(DialogWrapper.OK_EXIT_CODE)
-//                return
+//    data class ExternalIdC(
+//        val startUrl: String,
+//        val clientId: String,
+//        val scopes: List<String>,
+//        val onPendingToken: (InteractiveBearerTokenProvider) -> Unit,
+//        val onSuccess: () -> Unit,
+//        override val onError: (Exception) -> Unit,
+//    ) : Login<AwsBearerTokenConnection?>() {
+//        override val id: CredentialSourceId = CredentialSourceId.IamIdentityCenter
+//        private val configFilesFacade = DefaultConfigFilesFacade()
+//
+//        override fun doLogin(project: Project): AwsBearerTokenConnection? {
+//            // we have this check here so we blow up early if user has an invalid config file
+//            try {
+//                configFilesFacade.readSsoSessions()
+//            } catch (e: Exception) {
+//                onError(ConfigFacadeException(e))
+//                return null
 //            }
-            ToolkitConnectionManager.getInstance(project).switchConnection(conn)
-
-            return conn
-        }
-    }
+//
+//            val profile = ExternalOidcProfile(
+//                configSessionName = validatedSsoIdentifierFromUrl(startUrl),
+//                startUrl = startUrl,
+//                clientId = clientId,
+//                scopes = scopes
+//            )
+//
+//            // expect 'authAndUpdateConfig' to call onError on failure
+//            val conn = authAndUpdateConfig(project, profile, configFilesFacade, onPendingToken, onSuccess, onError) ?: return null
+//
+//            // TODO: delta, make sure we are good to switch immediately
+////            if (!promptForIdcPermissionSet) {
+////                ToolkitConnectionManager.getInstance(project).switchConnection(connection)
+////                close(DialogWrapper.OK_EXIT_CODE)
+////                return
+////            }
+//            ToolkitConnectionManager.getInstance(project).switchConnection(conn)
+//
+//            return conn
+//        }
+//    }
 
     data class LongLivedIAM(
         val profileName: String,

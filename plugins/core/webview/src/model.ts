@@ -56,6 +56,15 @@ export interface IdcInfo {
 export interface ExtIdcInfo {
     oidcEmail: string,
 }
+export interface GetLoginMetadataResponse {
+    uuid: string
+    issuerUrl?: string
+    clientId?: string
+    error?: {
+        type: string
+        message: string
+    } | undefined
+}
 
 export interface State {
     stage: Stage,
@@ -68,6 +77,7 @@ export interface State {
     existingConnections: AwsBearerTokenConnection[],
     listProfilesResult: ListProfileResult | undefined,
     selectedProfile: Profile | undefined
+    getLoginMetadataResponse: GetLoginMetadataResponse | undefined
 }
 
 export interface ListProfileResult {
@@ -138,7 +148,7 @@ export class IdC implements LoginOption {
 export class ExternalIdC implements LoginOption {
     id: LoginIdentifier = LoginIdentifier.EXTERNAL_IDC
 
-    constructor(readonly oidcEmail: string) {
+    constructor(readonly startUrl: string, readonly clientId: string) {
     }
 
     requiresBrowser(): boolean {

@@ -125,7 +125,7 @@ export default defineComponent({
             } else if (type instanceof ExistConnection) {
                 window.ideApi.postMessage({ command: 'selectConnection', connectionId:  type.pluginConnectionId})
             } else if (type instanceof ExternalIdC) {
-                window.ideApi.postMessage({ command: 'loginExtIdP', email: type.oidcEmail})
+                window.ideApi.postMessage({ command: 'loginExtIdP', clientId: type.clientId, startUrl: type.startUrl})
             }
         },
         sendUiClickTelemetry(element: LoginIdentifier) {

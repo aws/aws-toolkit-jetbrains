@@ -19,11 +19,14 @@
                 placeholder="Work email"
             />
         </div>
+        <div>
+            <div class="hint invalid-start-url" v-if="metadataCallErrorMessage !== ''">{{`${metadataCallErrorMessage}`}}</div>
+        </div>
         <br/>
         <br/><br/>
         <button
             class="login-flow-button continue-button font-amazon"
-            :disabled="!isInputValid"
+            :disabled="!isInputValid || isHandlingInput"
             v-on:click="handleContinueClick()"
             tabindex="-1"
         >
@@ -35,9 +38,16 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
 import {Feature, ExternalIdC} from "../../model";
+import * as crypto from "node:crypto";
 
 export default defineComponent({
     name: "oidcForm",
+    data() {
+        return {
+            metadataCallErrorMessage: '',
+            isHandlingInput: false
+        }
+    },
     computed: {
         feature(): Feature {
             return this.$store.state.feature
@@ -55,19 +65,65 @@ export default defineComponent({
         },
         isInputValid: {
             get() {
-                console.log(this.oidcEmail)
                 return /^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/.test(this.oidcEmail)
             },
             set() {}
         },
     },
     methods: {
+        resetResponse() {
+            this.$store.state.getLoginMetadataResponse = undefined
+        },
         async handleContinueClick() {
-            // if (!this.isInputValid) {
-            //     return
-            // }
-            this.$emit('login', new ExternalIdC(this.oidcEmail))
-        }
+            // disable button
+            this.$data.isHandlingInput = true
+            try {
+                await this.getLoginMetadata()
+                // reset fields here before redirection
+                this.$data.metadataCallErrorMessage = ''
+                this.$data.isHandlingInput = false
+                this.$emit('login', new ExternalIdC(
+                    this.$store.state.getLoginMetadataResponse?.issuerUrl ?? '',
+                    this.$store.state.getLoginMetadataResponse?.clientId ?? ''
+                ))
+            } catch (e: any) {
+                this.$data.isHandlingInput = false
+                this.$data.metadataCallErrorMessage = e
+            }
+        },
+        async getLoginMetadata() {
+            this.resetResponse()
+            // retry every 100ms: 10 seconds
+            const MAX_RETRIES = 100
+            // use a timestamp as uuid...crypto lib doesn't work with webpack
+            const uuid = Date.now().toString()
+            window.ideApi.postMessage({ command: 'getExtIdPMetadata', email: this.oidcEmail, uuid })
+            // poll state object to see if request was successful
+            await new Promise<void>(async (resolve, reject) => {
+                for (let i = 0; i < MAX_RETRIES; i++) {
+                    const response = this.$store.state.getLoginMetadataResponse
+                    // matches request uuid
+                    if (response && response.uuid === uuid) {
+                        if (response.error) {
+                            reject(`getLoginMetadata call failed: ${response.error.type} : ${response.error.message}`)
+                        } else {
+                            resolve()
+                        }
+                    }
+                    await new Promise(res => {
+                        setTimeout(res, 100)
+                    })
+                }
+                this.$store.state.getLoginMetadataResponse = {
+                    error: {
+                        type: 'Timeout',
+                        message: 'No response returned from getLoginMetadata API'
+                    },
+                    uuid,
+                }
+                reject("getLoginMetadata call did not return")
+            })
+        },
     },
     mounted() {
         document.getElementById("oidcEmail")?.focus()
