@@ -5,8 +5,8 @@ package software.aws.toolkits.jetbrains.services.dynamodb.editor.actions
 
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.actionSystem.DataContext
+import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.actionSystem.ToggleAction
 import com.intellij.openapi.project.DumbAware
@@ -15,7 +15,7 @@ import software.aws.toolkits.jetbrains.services.dynamodb.editor.DynamoDbTableEdi
 class ConfigureMaxResultsAction : DefaultActionGroup(), DumbAware {
     init {
         isPopup = true
-        DynamoDbTableEditor.MAX_RESULTS_OPTIONS.forEach { 
+        DynamoDbTableEditor.MAX_RESULTS_OPTIONS.forEach {
             add(ChangeMaxResults(it))
         }
     }
