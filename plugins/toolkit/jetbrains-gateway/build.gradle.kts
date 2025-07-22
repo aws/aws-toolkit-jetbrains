@@ -130,9 +130,9 @@ val toolkitInstallationScripts = tasks.register<Tar>("generateTar") {
     archiveFileName.set("scripts.tar.gz")
     compression = Compression.GZIP
     from("gateway-resources/remote")
-    // set all files as:
-    //           r-xr-xr-x
-    fileMode = 0b101101101
+    filePermissions {
+        unix("r-xr-xr-x")
+    }
 }
 
 val gatewayResourcesDir = tasks.register<Sync>("gatewayResourcesDir") {
