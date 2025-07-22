@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.utils.extensions
 
 import com.intellij.testFramework.DisposableRule
-import org.jetbrains.annotations.TestOnly
 import org.junit.jupiter.api.extension.AfterEachCallback
 import org.junit.jupiter.api.extension.BeforeEachCallback
 import org.junit.jupiter.api.extension.ExtendWith
@@ -44,4 +43,4 @@ class SsoLoginExtension : DisposableRule(), BeforeEachCallback, AfterEachCallbac
 
 @Target(AnnotationTarget.FUNCTION, AnnotationTarget.CLASS)
 @ExtendWith(SsoLoginExtension::class)
-annotation class SsoLogin(@TestOnly val secretName: String)
+annotation class SsoLogin(val secretName: String)
