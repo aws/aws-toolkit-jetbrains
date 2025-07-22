@@ -142,24 +142,24 @@ object IdeVersions {
         Profile(
             name = "2025.2",
             gateway = ProductProfile(
-                sdkVersion = "252.23309-EAP-CANDIDATE-SNAPSHOT",
+                sdkVersion = "252.23892.248-EAP-SNAPSHOT",
                 bundledPlugins = listOf("org.jetbrains.plugins.terminal")
             ),
             community = ProductProfile(
-                sdkVersion = "252.23309-EAP-CANDIDATE-SNAPSHOT",
+                sdkVersion = "252.23892.248-EAP-SNAPSHOT",
                 bundledPlugins = commonPlugins + listOf(
                     "com.intellij.java",
                     "com.intellij.gradle",
                     "org.jetbrains.idea.maven",
                 ),
                 marketplacePlugins = listOf(
-                    "PythonCore:252.23309.22",
-                    "Docker:252.23309.49",
-                    "com.intellij.modules.json:252.23309.22"
+                    "PythonCore:252.23892.248",
+                    "Docker:252.23892.248",
+                    "com.intellij.modules.json:252.23892.248"
                 )
             ),
             ultimate = ProductProfile(
-                sdkVersion = "252.23309-EAP-CANDIDATE-SNAPSHOT",
+                sdkVersion = "252.23892.248-EAP-SNAPSHOT",
                 bundledPlugins = commonPlugins + listOf(
                     "JavaScript",
                     "JavaScriptDebugger",
@@ -167,9 +167,9 @@ object IdeVersions {
                     "com.jetbrains.codeWithMe",
                 ),
                 marketplacePlugins = listOf(
-                    "Pythonid:252.23309.22",
-                    "org.jetbrains.plugins.go:252.23309.22",
-                    "com.intellij.modules.json:252.23309.22"
+                    "Pythonid:252.23892.248",
+                    "org.jetbrains.plugins.go:252.23892.248",
+                    "com.intellij.modules.json:252.23892.248"
                 )
             ),
             rider = RiderProfile(
