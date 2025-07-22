@@ -9,6 +9,7 @@ import com.intellij.diff.requests.SimpleDiffRequest
 import com.intellij.ide.BrowserUtil
 import com.intellij.notification.NotificationAction
 import com.intellij.notification.NotificationType
+import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileChooser.FileChooser
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
@@ -20,7 +21,6 @@ import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFileManager
-import com.intellij.openapi.application.ApplicationInfo
 import migration.software.aws.toolkits.jetbrains.settings.AwsSettings
 import org.eclipse.lsp4j.ApplyWorkspaceEditParams
 import org.eclipse.lsp4j.ApplyWorkspaceEditResponse
@@ -616,11 +616,11 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
 
     /**
      * Checks if the current JetBrains IDE version supports the withExtensionFilter API.
-     * 
+     *
      * The withExtensionFilter method was introduced in IntelliJ Platform 2024.3 (baseline version 243).
      * For older versions, we need to fall back to withFileFilter which provides similar functionality
      * but with different UI behavior (files are not visually filtered in the file chooser dialog).
-     * 
+     *
      * @return true if the IDE version supports withExtensionFilter (2024.3+), false otherwise
      */
     private fun isExtensionFilterSupported(): Boolean {
