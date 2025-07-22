@@ -200,7 +200,7 @@ class ChatCommunicationManager(private val project: Project, private val cs: Cor
         var errorMessage: String? = null
         if (exception is ResponseErrorException) {
             errorMessage = tryOrNull {
-                Gson().fromJson(exception.responseError.data as JsonObject, ChatMessage::class.java).body
+                "${exception.responseError.message}: ${Gson().fromJson(exception.responseError.data as JsonObject, ChatMessage::class.java).body}"
             } ?: exception.responseError.message
         }
 
