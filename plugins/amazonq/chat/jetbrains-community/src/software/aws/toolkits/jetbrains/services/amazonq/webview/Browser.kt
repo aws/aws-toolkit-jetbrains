@@ -89,7 +89,9 @@ class Browser(parent: Disposable, private val mynahAsset: Path, val project: Pro
         // setup empty state. The message request handlers use this for storing state
         // that's persistent between page loads.
         jcefBrowser.setProperty("state", "")
-
+        jcefBrowser.jbCefClient.addDragHandler({ browser, dragData, mask ->
+            true // Allow drag operations
+        }, jcefBrowser.cefBrowser)
         // load the web app
         jcefBrowser.loadURL(
             assetRequestHandler.createResource(
@@ -130,7 +132,7 @@ class Browser(parent: Disposable, private val mynahAsset: Path, val project: Pro
             <script type="text/javascript" charset="UTF-8" src="$connectorAdapterPath"></script>
             <script type="text/javascript" charset="UTF-8" src="$mynahResource" defer onload="init()"></script>
             <script type="text/javascript">
-            
+                
                 const init = () => {
                     const hybridChatConnector = connectorAdapter.initiateAdapter(
                      ${MeetQSettings.getInstance().reinvent2024OnboardingCount < MAX_ONBOARDING_PAGE_COUNT},
@@ -147,7 +149,7 @@ class Browser(parent: Disposable, private val mynahAsset: Path, val project: Pro
                         },
                     
                      "${activeProfile?.profileName.orEmpty()}")
-                    amazonQChat.createChat(
+                    const qChat = amazonQChat.createChat(
                         {
                             postMessage: message => {
                                 $postMessageToJavaJsCode
@@ -163,6 +165,29 @@ class Browser(parent: Disposable, private val mynahAsset: Path, val project: Pro
                         hybridChatConnector,
                         ${CodeWhispererFeatureConfigService.getInstance().getFeatureConfigJsonString()}                     
                     );
+                    
+                    window.handleNativeDrop = function(filePath) {
+                        const parsedFilePath = JSON.parse(filePath);
+                        const contextArray = parsedFilePath.map(fullPath => {
+                            const fileName = fullPath.split(/[\\/]/).pop();
+                            return {
+                                command: fileName,
+                                label: 'image',
+                                route: [fullPath],
+                                description: fullPath
+                            };
+                        });
+                        qChat.addCustomContextToPrompt(qChat.getSelectedTabId(), contextArray);
+                    };
+                      
+                    window.handleNativeNotify = function(errorMessages) {
+                        const messages = JSON.parse(errorMessages);
+                        messages.forEach(msg => {
+                            qChat.notify({
+                                content: msg
+                            })
+                        });
+                    };
                 }
             </script>        
         """.trimIndent()

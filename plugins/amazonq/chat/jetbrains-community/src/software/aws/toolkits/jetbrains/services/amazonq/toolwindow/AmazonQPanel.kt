@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.toolwindow
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
@@ -20,6 +21,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import software.aws.toolkits.core.utils.error
+import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
@@ -45,7 +48,12 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.auth.isFeature
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isCodeTransformAvailable
 import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.resources.message
+import java.awt.datatransfer.DataFlavor
+import java.awt.dnd.DropTarget
+import java.awt.dnd.DropTargetDropEvent
+import java.io.File
 import java.util.concurrent.CompletableFuture
+import javax.imageio.ImageIO.read
 import javax.swing.JButton
 
 class AmazonQPanel(val project: Project, private val scope: CoroutineScope) : Disposable {
@@ -130,12 +138,76 @@ class AmazonQPanel(val project: Project, private val scope: CoroutineScope) : Di
 
                 withContext(EDT) {
                     browser.complete(
-                        Browser(this@AmazonQPanel, mynahAsset, project).also {
-                            wrapper.setContent(it.component())
+                        Browser(this@AmazonQPanel, mynahAsset, project).also { browserInstance ->
+                            wrapper.setContent(browserInstance.component())
+
+                            // Add DropTarget to the browser component
+                            // JCEF does not propagate OS-level dragenter, dragOver and drop into DOM.
+                            // As an alternative, enabling the native drag in JCEF,
+                            // and let the native handling the drop event, and update the UI through JS bridge.
+                            val dropTarget = object : DropTarget() {
+                                override fun drop(dtde: DropTargetDropEvent) {
+                                    try {
+                                        dtde.acceptDrop(dtde.dropAction)
+                                        val transferable = dtde.transferable
+                                        if (transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
+                                            val fileList = transferable.getTransferData(DataFlavor.javaFileListFlavor) as List<*>
+
+                                            val errorMessages = mutableListOf<String>()
+                                            val validImages = mutableListOf<File>()
+                                            val allowedTypes = setOf("jpg", "jpeg", "png", "gif", "webp")
+                                            val maxFileSize = 3.75 * 1024 * 1024 // 3.75MB in bytes
+                                            val maxDimension = 8000
+
+                                            for (file in fileList as List<File>) {
+                                                val validationResult = validateImageFile(file, allowedTypes, maxFileSize, maxDimension)
+                                                if (validationResult != null) {
+                                                    errorMessages.add(validationResult)
+                                                } else {
+                                                    validImages.add(file)
+                                                }
+                                            }
+
+                                            // File count restriction
+                                            if (validImages.size > 20) {
+                                                errorMessages.add("A maximum of 20 images can be added to a single message.")
+                                                validImages.subList(20, validImages.size).clear()
+                                            }
+
+                                            val json = OBJECT_MAPPER.writeValueAsString(validImages)
+                                            browserInstance.jcefBrowser.cefBrowser.executeJavaScript(
+                                                "window.handleNativeDrop('$json')",
+                                                browserInstance.jcefBrowser.cefBrowser.url,
+                                                0
+                                            )
+
+                                            val errorJson = OBJECT_MAPPER.writeValueAsString(errorMessages)
+                                            browserInstance.jcefBrowser.cefBrowser.executeJavaScript(
+                                                "window.handleNativeNotify('$errorJson')",
+                                                browserInstance.jcefBrowser.cefBrowser.url,
+                                                0
+                                            )
+                                            dtde.dropComplete(true)
+                                        } else {
+                                            dtde.dropComplete(false)
+                                        }
+                                    } catch (e: Exception) {
+                                        LOG.error { "Failed to handle file drop operation: ${e.message}" }
+                                        dtde.dropComplete(false)
+                                    }
+                                }
+                            }
+
+                            // Set DropTarget on the browser component and its children
+                            browserInstance.component()?.let { component ->
+                                component.dropTarget = dropTarget
+                                // Also try setting on parent if needed
+                                component.parent?.dropTarget = dropTarget
+                            }
 
                             initConnections()
-                            connectUi(it)
-                            connectApps(it)
+                            connectUi(browserInstance)
+                            connectApps(browserInstance)
 
                             loadingPanel.stopLoading()
                         }
@@ -217,6 +289,36 @@ class AmazonQPanel(val project: Project, private val scope: CoroutineScope) : Di
                 themeSource = editorThemeAdapter.onThemeChange(),
             )
         }
+    }
+
+    private fun validateImageFile(file: File, allowedTypes: Set<String>, maxFileSize: Double, maxDimension: Int): String? {
+        val fileName = file.name
+        val ext = fileName.substringAfterLast('.', "").lowercase()
+
+        if (ext !in allowedTypes) {
+            return "$fileName: File must be an image in JPEG, PNG, GIF, or WebP format."
+        }
+
+        if (file.length() > maxFileSize) {
+            return "$fileName: Image must be no more than 3.75MB in size."
+        }
+
+        return try {
+            val img = read(file)
+            when {
+                img == null -> "$fileName: File could not be read as an image."
+                img.width > maxDimension -> "$fileName: Image must be no more than 8,000px in width."
+                img.height > maxDimension -> "$fileName: Image must be no more than 8,000px in height."
+                else -> null
+            }
+        } catch (e: Exception) {
+            "$fileName: File could not be read as an image."
+        }
+    }
+
+    companion object {
+        private val LOG = getLogger<AmazonQPanel>()
+        private val OBJECT_MAPPER = jacksonObjectMapper()
     }
 
     override fun dispose() {

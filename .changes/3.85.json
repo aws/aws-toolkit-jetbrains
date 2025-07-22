@@ -1,0 +1,11 @@
+{
+  "date" : "2025-07-10",
+  "version" : "3.85",
+  "entries" : [ {
+    "type" : "feature",
+    "description" : "Amazon Q /test, /doc, and /dev capabilities integrated into Agentic coding."
+  }, {
+    "type" : "feature",
+    "description" : "Add image context support"
+  } ]
+}

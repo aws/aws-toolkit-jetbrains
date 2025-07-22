@@ -4,11 +4,20 @@
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.util
 
 import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.command.WriteCommandAction
+import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.editor.LogicalPosition
+import com.intellij.openapi.fileEditor.FileDocumentManager
+import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.vfs.VirtualFileManager
 import org.eclipse.lsp4j.Position
 import org.eclipse.lsp4j.Range
+import org.eclipse.lsp4j.TextEdit
+import org.eclipse.lsp4j.WorkspaceEdit
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CursorPosition
@@ -63,13 +72,50 @@ object LspEditorUtil {
                 )
             } else {
                 return@runReadAction CursorPosition(
-                    Position(
-                        editor.caretModel.primaryCaret.logicalPosition.line,
-                        editor.caretModel.primaryCaret.logicalPosition.column
-                    )
+                    getCursorPosition(editor)
                 )
             }
         }
+
+    fun getCursorPosition(editor: Editor): Position =
+        runReadAction {
+            Position(
+                editor.caretModel.primaryCaret.logicalPosition.line,
+                editor.caretModel.primaryCaret.logicalPosition.column
+            )
+        }
+
+    fun applyWorkspaceEdit(project: Project, edit: WorkspaceEdit) {
+        WriteCommandAction.runWriteCommandAction(project) {
+            edit.documentChanges?.forEach { change ->
+                if (change.isLeft) {
+                    val textDocumentEdit = change.left
+                    applyEditsToFile(project, textDocumentEdit.textDocument.uri, textDocumentEdit.edits)
+                }
+            }
+
+            edit.changes?.forEach { (uri, textEdits) ->
+                applyEditsToFile(project, uri, textEdits)
+            }
+        }
+    }
+
+    private fun applyEditsToFile(project: Project, uri: String, textEdits: List<TextEdit>) {
+        val file = VirtualFileManager.getInstance().findFileByUrl(uri) ?: return
+        val document = FileDocumentManager.getInstance().getDocument(file) ?: return
+        val editor = FileEditorManager.getInstance(project).getSelectedEditor(file)?.let {
+            if (it is com.intellij.openapi.fileEditor.TextEditor) it.editor else null
+        }
+
+        textEdits.forEach { textEdit ->
+            val startOffset = calculateOffset(editor, document, textEdit.range.start)
+            val endOffset = calculateOffset(editor, document, textEdit.range.end)
+            document.replaceString(startOffset, endOffset, textEdit.newText)
+        }
+    }
+
+    private fun calculateOffset(editor: Editor?, document: Document, position: Position): Int =
+        editor?.logicalPositionToOffset(LogicalPosition(position.line, position.character)) ?: (document.getLineStartOffset(position.line) + position.character)
 
     private val LOG = getLogger<LspEditorUtil>()
 }

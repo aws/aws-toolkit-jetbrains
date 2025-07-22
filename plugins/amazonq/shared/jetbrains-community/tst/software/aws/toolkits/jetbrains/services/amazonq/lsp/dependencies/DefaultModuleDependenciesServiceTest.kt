@@ -187,6 +187,56 @@ class DefaultModuleDependenciesServiceTest {
         verify(exactly = 2) { mockLanguageServer.didChangeDependencyPaths(params) }
     }
 
+    @Test
+    fun `test deduplication of same moduleName and runtimeLanguage`() = runTest {
+        // Arrange
+        val module1 = mockk<Module>()
+        val module2 = mockk<Module>()
+        val params1 = DidChangeDependencyPathsParams(
+            moduleName = "sameModule",
+            runtimeLanguage = "java",
+            paths = listOf("/path/to/dep1.jar"),
+            includePatterns = listOf("*.java"),
+            excludePatterns = listOf("test/**")
+        )
+        val params2 = DidChangeDependencyPathsParams(
+            moduleName = "sameModule",
+            runtimeLanguage = "java",
+            paths = listOf("/path/to/dep2.jar"),
+            includePatterns = listOf("*.class"),
+            excludePatterns = listOf("build/**")
+        )
+
+        every { mockModuleManager.modules } returns arrayOf(module1, module2)
+        every { mockDependencyProvider.isApplicable(any()) } returns true
+        every { mockDependencyProvider.createParams(module1) } returns params1
+        every { mockDependencyProvider.createParams(module2) } returns params2
+
+        prepDependencyProvider(
+            listOf(
+                Pair(module1, params1),
+                Pair(module2, params2)
+            )
+        )
+
+        sut = DefaultModuleDependenciesService(project, this)
+
+        advanceUntilIdle()
+
+        // Verify only one call with merged paths
+        verify(exactly = 1) {
+            mockLanguageServer.didChangeDependencyPaths(
+                match {
+                    it.moduleName == "sameModule" &&
+                        it.runtimeLanguage == "java" &&
+                        it.paths.containsAll(listOf("/path/to/dep1.jar", "/path/to/dep2.jar")) &&
+                        it.includePatterns.containsAll(listOf("*.java", "*.class")) &&
+                        it.excludePatterns.containsAll(listOf("test/**", "build/**"))
+                }
+            )
+        }
+    }
+
     private fun prepDependencyProvider(moduleParamPairs: List<Pair<Module, DidChangeDependencyPathsParams>>) {
         every { mockModuleManager.modules } returns moduleParamPairs.map { it.first }.toTypedArray()
 

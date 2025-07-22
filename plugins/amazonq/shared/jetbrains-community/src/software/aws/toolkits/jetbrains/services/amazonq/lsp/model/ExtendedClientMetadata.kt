@@ -25,6 +25,7 @@ data class DeveloperProfiles(
     val developerProfiles: Boolean,
     val mcp: Boolean,
     val pinnedContextEnabled: Boolean,
+    val imageContextEnabled: Boolean,
     val reroute: Boolean,
     val workspaceFilePath: String?,
 )
@@ -67,6 +68,7 @@ fun createExtendedClientMetadata(project: Project): ExtendedClientMetadata {
                     developerProfiles = true,
                     mcp = true,
                     pinnedContextEnabled = true,
+                    imageContextEnabled = true,
                     reroute = true,
                     workspaceFilePath = project.workspaceFile?.path,
                 ),
