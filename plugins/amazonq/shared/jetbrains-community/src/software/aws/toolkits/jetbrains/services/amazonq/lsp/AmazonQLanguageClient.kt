@@ -31,6 +31,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowO
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowSaveFileDialogParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowSaveFileDialogResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.ConnectionMetadata
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SUBSCRIPTION_DETAILS
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -88,4 +89,7 @@ interface AmazonQLanguageClient : LanguageClient {
 
     @JsonNotification(CHAT_OPTIONS_UPDATE_NOTIFICATION)
     fun sendChatOptionsUpdate(params: LSPAny)
+
+    @JsonNotification(CHAT_SUBSCRIPTION_DETAILS)
+    fun sendSubscriptionDetails(params: LSPAny)
 }
