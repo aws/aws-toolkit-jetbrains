@@ -33,6 +33,7 @@
         <action id="aws.toolkit.open.q.window" class="software.aws.toolkits.jetbrains.services.amazonq.QRefreshPanelAction"/>
         <group id="aws.q.toolwindow.titleBar" popup="false" compact="true">
             <reference id="aws.toolkit.open.q.window"/>
+            <action class="software.aws.toolkits.jetbrains.services.amazonq.GetAmazonQLogsAction"/>
         </group>
         <!-- TODO: q.openchat will eventually be in amazonq, aws.toolkit.q.sign.in will eventually be in core. -->
         <action id="q.openchat" class="software.aws.toolkits.jetbrains.services.amazonq.QOpenPanelAction"/>

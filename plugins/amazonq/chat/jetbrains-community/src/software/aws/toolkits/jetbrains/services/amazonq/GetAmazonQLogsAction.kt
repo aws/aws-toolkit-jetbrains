@@ -1,0 +1,55 @@
+// Copyright 2025 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
+package software.aws.toolkits.jetbrains.services.amazonq
+
+import com.intellij.icons.AllIcons
+import com.intellij.ide.actions.RevealFileAction
+import com.intellij.ide.logsUploader.LogPacker
+import com.intellij.openapi.actionSystem.ActionUpdateThread
+import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.project.DumbAwareAction
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.Messages
+import com.intellij.openapi.util.IconLoader
+import kotlinx.coroutines.runBlocking
+import software.aws.toolkits.jetbrains.utils.notifyInfo
+import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
+import software.aws.toolkits.resources.AmazonQBundle
+import software.aws.toolkits.resources.AwsCoreBundle
+
+class GetAmazonQLogsAction : DumbAwareAction(
+    AmazonQBundle.message("amazonq.getLogs"),
+    null,
+    IconLoader.getIcon("/META-INF/file.svg", GetAmazonQLogsAction::class.java)
+) {
+
+    override fun getActionUpdateThread() = ActionUpdateThread.BGT
+    override fun actionPerformed(e: AnActionEvent) {
+        val project = e.project ?: return
+        showLogCollectionWarning(project)
+    }
+
+    companion object {
+        fun showLogCollectionWarning(project: Project) {
+            if (Messages.showOkCancelDialog(
+                    AmazonQBundle.message("amazonq.logs.warning"),
+                    AmazonQBundle.message("amazonq.getLogs"),
+                    AwsCoreBundle.message("general.ok"),
+                    AwsCoreBundle.message("general.cancel"),
+                    AllIcons.General.Warning
+                ) == 0
+            ) {
+                pluginAwareExecuteOnPooledThread {
+                    runBlocking {
+                        try {
+                            RevealFileAction.openFile(LogPacker.packLogs(project))
+                        } catch (_: Exception) {
+                            notifyInfo("Cannot retrieve logs. Please try Help-> Collect Logs and Diagnostic data")
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
