@@ -14,8 +14,6 @@ internal class FileChooserCompatImpl : FileChooserCompat {
     override fun applyExtensionFilter(
         descriptor: FileChooserDescriptor,
         filterName: String,
-        allowedExtensions: Set<String>
-    ): FileChooserDescriptor {
-        return descriptor.withExtensionFilter(filterName, *allowedExtensions.toTypedArray())
-    }
+        allowedExtensions: Set<String>,
+    ): FileChooserDescriptor = descriptor.withExtensionFilter(filterName, *allowedExtensions.toTypedArray())
 }

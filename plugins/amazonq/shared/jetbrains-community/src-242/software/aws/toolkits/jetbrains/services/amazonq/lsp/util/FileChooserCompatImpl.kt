@@ -14,15 +14,13 @@ internal class FileChooserCompatImpl : FileChooserCompat {
     override fun applyExtensionFilter(
         descriptor: FileChooserDescriptor,
         filterName: String,
-        allowedExtensions: Set<String>
-    ): FileChooserDescriptor {
-        return descriptor.withFileFilter { virtualFile ->
-            if (virtualFile.isDirectory) {
-                true // Always allow directories for navigation
-            } else {
-                val extension = virtualFile.extension?.lowercase()
-                extension != null && allowedExtensions.contains(extension)
-            }
+        allowedExtensions: Set<String>,
+    ): FileChooserDescriptor = descriptor.withFileFilter { virtualFile ->
+        if (virtualFile.isDirectory) {
+            true // Always allow directories for navigation
+        } else {
+            val extension = virtualFile.extension?.lowercase()
+            extension != null && allowedExtensions.contains(extension)
         }
     }
 }
