@@ -39,10 +39,8 @@ jobs:
           QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }}
         with:
           # --config points to the DuplicatedCode-only Qodana config
-          # --baseline points to the DuplicatedCode baseline to ensure that only new DuplicatedCode changes are found
-          # --baseline-include-absent will make this test fail if duplicated code from the baseline is remediated, which calls for a rebaselining.
           args:
-            --config,${{ github.workspace }}/qodana-configs/duplicated-code/qodana.yaml,--baseline,${{ github.workspace }}/qodana-configs/duplicated-code/qodana.sarif.json,--baseline-include-absent
+            --config,${{ github.workspace }}/qodana-configs/duplicated-code/qodana.yaml
           cache-default-branch-only: true
           # pr-mode off means that the whole repo should be checked for duplicate code, instead of just copy/pastes within the PR
           pr-mode: false
