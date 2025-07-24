@@ -173,12 +173,15 @@ class AmazonQPanel(val project: Project, private val scope: CoroutineScope) : Di
                                                 0
                                             )
 
-                                            val errorJson = OBJECT_MAPPER.writeValueAsString(errorMessages)
-                                            browserInstance.jcefBrowser.cefBrowser.executeJavaScript(
-                                                "window.handleNativeNotify('$errorJson')",
-                                                browserInstance.jcefBrowser.cefBrowser.url,
-                                                0
-                                            )
+                                            if (errorMessages.isNotEmpty()) {
+                                                val errorJson = OBJECT_MAPPER.writeValueAsString(errorMessages)
+                                                browserInstance.jcefBrowser.cefBrowser.executeJavaScript(
+                                                    "window.handleNativeNotify('$errorJson')",
+                                                    browserInstance.jcefBrowser.cefBrowser.url,
+                                                    0
+                                                )
+                                            }
+
                                             dtde.dropComplete(true)
                                         } else {
                                             dtde.dropComplete(false)
