@@ -1,0 +1,49 @@
+name: Qodana - Duplicated Code
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, feature/** ]
+  pull_request:
+    branches: [ '**' ]
+
+concurrency:
+  group: ${{ github.workflow }}${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  qodana:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # PR check
+      checks: write
+      # PR comments
+      pull-requests: write
+      # SARIF upload
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+      - name: Maximize Build Space
+        if: runner.os == 'Linux'
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+          large-packages: false
+      - name: 'Qodana Scan'
+        uses: JetBrains/qodana-action@v2024.2.3
+        env:
+          QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }}
+        with:
+          # --config points to the DuplicatedCode-only Qodana config
+          args:
+            --config,${{ github.workspace }}/qodana-configs/duplicated-code/qodana.yaml
+          cache-default-branch-only: true
+          # pr-mode off means that the whole repo should be checked for duplicate code, instead of just copy/pastes within the PR
+          pr-mode: false
+      - uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: ${{ runner.temp }}/qodana/results/qodana.sarif.json
