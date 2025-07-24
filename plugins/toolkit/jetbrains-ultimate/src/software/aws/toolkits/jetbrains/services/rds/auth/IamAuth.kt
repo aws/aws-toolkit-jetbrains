@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.rds.auth
 
 import com.intellij.credentialStore.Credentials
-import com.intellij.database.access.DatabaseCredentials
 import com.intellij.database.connection.throwable.KnownDatabaseException
 import com.intellij.database.connection.throwable.info.ErrorInfo
 import com.intellij.database.connection.throwable.info.SimpleErrorInfo
@@ -58,7 +57,7 @@ class IamAuth : DatabaseAuthProviderCompatabilityAdapter {
 
     override fun isApplicable(dataSource: LocalDataSource): Boolean = iamIsApplicable(dataSource)
 
-    override fun createWidget(project: Project?, credentials: DatabaseCredentials, dataSource: LocalDataSource): AuthWidget? = IamAuthWidget()
+    override fun createWidget(): AuthWidget? = IamAuthWidget()
 
     inner class SsoNoTokenFix(val project: Project, val connection: ProtoConnection) : ErrorInfo.Fix {
 

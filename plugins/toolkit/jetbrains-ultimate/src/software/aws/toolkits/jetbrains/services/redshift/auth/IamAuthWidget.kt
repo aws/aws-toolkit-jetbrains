@@ -4,7 +4,8 @@
 package software.aws.toolkits.jetbrains.services.redshift.auth
 
 import com.intellij.database.dataSource.DataSourceUiUtil
-import com.intellij.database.dataSource.LocalDataSource
+import com.intellij.database.dataSource.DatabaseConnectionConfig
+import com.intellij.database.dataSource.DatabaseConnectionPoint
 import com.intellij.database.dataSource.url.template.ParametersHolder
 import com.intellij.database.dataSource.url.template.UrlEditorModel
 import com.intellij.ui.components.JBLabel
@@ -34,19 +35,19 @@ class IamAuthWidget : AwsAuthWidget() {
         return panel
     }
 
-    override fun save(dataSource: LocalDataSource, copyCredentials: Boolean) {
-        super.save(dataSource, copyCredentials)
+    override fun save(config: DatabaseConnectionConfig, copyCredentials: Boolean) {
+        super.save(config, copyCredentials)
 
         DataSourceUiUtil.putOrRemove(
-            dataSource.additionalProperties,
+            config.additionalProperties,
             CLUSTER_ID_PROPERTY,
             clusterIdSelector.text
         )
     }
 
-    override fun reset(dataSource: LocalDataSource, resetCredentials: Boolean) {
-        super.reset(dataSource, resetCredentials)
-        clusterIdSelector.text = dataSource.additionalProperties[CLUSTER_ID_PROPERTY]
+    override fun reset(config: DatabaseConnectionPoint, resetCredentials: Boolean) {
+        super.reset(config, resetCredentials)
+        clusterIdSelector.text = config.additionalProperties[CLUSTER_ID_PROPERTY]
     }
 
     override fun updateFromUrl(holder: ParametersHolder) {
