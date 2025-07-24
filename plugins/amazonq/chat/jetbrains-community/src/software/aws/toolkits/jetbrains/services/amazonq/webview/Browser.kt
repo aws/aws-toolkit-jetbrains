@@ -175,11 +175,19 @@ class Browser(parent: Disposable, private val webUri: URI, val project: Project)
                       
                     window.handleNativeNotify = function(errorMessages) {
                         const messages = JSON.parse(errorMessages);
-                        messages.forEach(msg => {
-                            qChat.notify({
-                                content: msg
-                            })
-                        });
+                        let message = messages.join('\n');
+                        qChat.updateStore(qChat.getSelectedTabId(), {
+                            promptInputStickyCard: {
+                                messageId: 'image-verification-banner',
+                                header: {
+                                    icon: 'warning',
+                                    iconStatus: 'warning',
+                                    body: '### Invalid Image',
+                                },
+                                body: message,
+                                canBeDismissed: true,
+                            },
+                        })
                     };
                 }
             </script>        
