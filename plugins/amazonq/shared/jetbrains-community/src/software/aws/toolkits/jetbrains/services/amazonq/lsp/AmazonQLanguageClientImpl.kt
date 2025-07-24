@@ -9,7 +9,6 @@ import com.intellij.diff.requests.SimpleDiffRequest
 import com.intellij.ide.BrowserUtil
 import com.intellij.notification.NotificationAction
 import com.intellij.notification.NotificationType
-import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileChooser.FileChooser
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
@@ -65,6 +64,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowO
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowSaveFileDialogParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowSaveFileDialogResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.ConnectionMetadata
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.FileChooserCompat
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.LspEditorUtil
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.TelemetryParsingUtil
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
@@ -312,32 +312,8 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                     if (params.filters.isNotEmpty() && !params.canSelectFolders) {
                         // Create a combined list of all allowed extensions
                         val allowedExtensions = params.filters.values.flatten().toSet()
-                        if (isExtensionFilterSupported()) {
-                            // Use reflection to call withExtensionFilter which is only available in 2024.3+
-                            try {
-                                val method = this.javaClass.getMethod("withExtensionFilter", String::class.java, Array<String>::class.java)
-                                method.invoke(this, "Image", allowedExtensions.toTypedArray())
-                            } catch (e: Exception) {
-                                // Fallback to withFileFilter if reflection fails
-                                withFileFilter { virtualFile ->
-                                    if (virtualFile.isDirectory) {
-                                        true // Always allow directories for navigation
-                                    } else {
-                                        val extension = virtualFile.extension?.lowercase()
-                                        extension != null && allowedExtensions.contains(extension)
-                                    }
-                                }
-                            }
-                        } else {
-                            withFileFilter { virtualFile ->
-                                if (virtualFile.isDirectory) {
-                                    true // Always allow directories for navigation
-                                } else {
-                                    val extension = virtualFile.extension?.lowercase()
-                                    extension != null && allowedExtensions.contains(extension)
-                                }
-                            }
-                        }
+                        val fileChooserCompat = FileChooserCompat.getInstance()
+                        fileChooserCompat.applyExtensionFilter(this, "Images", allowedExtensions)
                     }
                 }
 
@@ -612,20 +588,6 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
         } catch (e: Exception) {
             LOG.warn(e) { "Could not refresh file" }
         }
-    }
-
-    /**
-     * Checks if the current JetBrains IDE version supports the withExtensionFilter API.
-     *
-     * The withExtensionFilter method was introduced in IntelliJ Platform 2024.3 (baseline version 243).
-     * For older versions, we need to fall back to withFileFilter which provides similar functionality
-     * but with different UI behavior (files are not visually filtered in the file chooser dialog).
-     *
-     * @return true if the IDE version supports withExtensionFilter (2024.3+), false otherwise
-     */
-    private fun isExtensionFilterSupported(): Boolean {
-        val baselineVersion = ApplicationInfo.getInstance().build.baselineVersion
-        return baselineVersion >= 243 // 2024.3 or later
     }
 
     companion object {

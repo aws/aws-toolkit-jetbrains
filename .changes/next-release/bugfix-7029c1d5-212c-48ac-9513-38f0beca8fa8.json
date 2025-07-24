@@ -1,4 +1,4 @@
 {
   "type" : "bugfix",
-  "description" : "change to use withExtensionFilter to hide unallowed files when selecting image"
+  "description" : "Fix unsupported files being shown in file picker when selecting images for adding image context in Windows"
 }
