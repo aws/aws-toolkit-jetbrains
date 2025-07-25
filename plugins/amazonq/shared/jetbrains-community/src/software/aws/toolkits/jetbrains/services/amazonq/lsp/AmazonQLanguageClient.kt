@@ -14,6 +14,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_CONTEXT_COMMANDS
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_PINNED_CONTEXT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_UPDATE
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SUBSCRIPTION_DETAILS
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CopyFileParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.DID_APPEND_FILE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.DID_COPY_FILE
@@ -31,7 +32,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowO
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowSaveFileDialogParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowSaveFileDialogResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.ConnectionMetadata
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SUBSCRIPTION_DETAILS
 import java.util.concurrent.CompletableFuture
 
 /**
