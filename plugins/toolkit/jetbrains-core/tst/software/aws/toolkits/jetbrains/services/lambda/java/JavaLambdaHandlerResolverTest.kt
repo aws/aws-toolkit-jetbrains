@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.lambda.java
 
 import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.DumbServiceImpl
+import com.intellij.openapi.project.runInDumbMode
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
 import com.intellij.testFramework.runInEdtAndWait
