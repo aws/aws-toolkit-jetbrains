@@ -20,7 +20,7 @@ import software.amazon.awssdk.core.SdkBytes
 import software.amazon.awssdk.services.lambda.LambdaClient
 import software.amazon.awssdk.services.lambda.model.LogType
 import software.aws.toolkits.jetbrains.core.AwsClientManager
-import software.aws.toolkits.jetbrains.utils.formatText
+import software.aws.toolkits.jetbrains.utils.formatText2
 import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.LambdaTelemetry
@@ -128,7 +128,7 @@ class RemoteLambdaState(
     }
 
     private fun formatJson(input: String) = if (input.isNotEmpty() && input.first() == '{' && input.last() == '}') {
-        formatText(environment.project, JsonLanguage.INSTANCE, input)
+        formatText2(environment.project, JsonLanguage.INSTANCE, input)
     } else {
         input
     }
