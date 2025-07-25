@@ -173,11 +173,11 @@ object IdeVersions {
                 )
             ),
             rider = RiderProfile(
-                sdkVersion = "2025.2-EAP6-SNAPSHOT",
+                sdkVersion = "2025.2-EAP8-SNAPSHOT",
                 bundledPlugins = commonPlugins,
                 netFrameworkTarget = "net472",
                 rdGenVersion = "2025.2.2",
-                nugetVersion = "2025.2.0-eap06"
+                nugetVersion = "2025.2.0-eap08"
             )
         )
     ).associateBy { it.name }

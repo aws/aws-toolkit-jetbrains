@@ -87,12 +87,11 @@ intellijPlatform {
 
 dependencies {
     intellijPlatform {
-        instrumentationTools()
+        val version = toolkitIntelliJ.version()
 
         // annoying resolution issue that we don't want to bother fixing
         if (!project.name.contains("jetbrains-gateway")) {
             val type = toolkitIntelliJ.ideFlavor.map { IntelliJPlatformType.fromCode(it.toString()) }
-            val version = toolkitIntelliJ.version()
 
             create(type, version, useInstaller = false)
         }

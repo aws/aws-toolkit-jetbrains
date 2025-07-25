@@ -67,6 +67,12 @@ if (providers.gradleProperty("ideProfileName").get() == "2024.3") {
     }
 }
 
+configurations {
+    all {
+        exclude(group = "com.jetbrains.intellij.spellchecker")
+    }
+}
+
 dependencies {
     intellijPlatform {
         localPlugin(project(":plugin-core"))
