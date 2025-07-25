@@ -39,8 +39,8 @@ jobs:
           QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }}
         with:
           # --config points to the DuplicatedCode-only Qodana config
-          args:
-            --config,${{ github.workspace }}/qodana-configs/duplicated-code/qodana.yaml
+          args: >
+            --config ${{ github.workspace }}/qodana-configs/duplicated-code/qodana.yaml
           cache-default-branch-only: true
           # pr-mode off means that the whole repo should be checked for duplicate code, instead of just copy/pastes within the PR
           pr-mode: false
