@@ -14,7 +14,7 @@ import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.util.IconLoader
 import kotlinx.coroutines.runBlocking
 import software.aws.toolkits.jetbrains.utils.notifyInfo
-import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
+import software.aws.toolkits.jetbrains.utils.runUnderProgressIfNeeded
 import software.aws.toolkits.resources.AmazonQBundle
 import software.aws.toolkits.resources.AwsCoreBundle
 
@@ -40,7 +40,7 @@ class GetAmazonQLogsAction : DumbAwareAction(
                     AllIcons.General.Warning
                 ) == 0
             ) {
-                pluginAwareExecuteOnPooledThread {
+                runUnderProgressIfNeeded(project, AmazonQBundle.message("amazonq.getLogs"), cancelable = true) {
                     runBlocking {
                         try {
                             RevealFileAction.openFile(LogPacker.packLogs(project))
