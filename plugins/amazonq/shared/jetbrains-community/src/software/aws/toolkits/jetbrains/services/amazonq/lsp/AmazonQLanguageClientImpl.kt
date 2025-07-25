@@ -66,6 +66,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowS
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.ConnectionMetadata
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.LspEditorUtil
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.TelemetryParsingUtil
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.applyExtensionFilter
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
@@ -311,15 +312,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                     if (params.filters.isNotEmpty() && !params.canSelectFolders) {
                         // Create a combined list of all allowed extensions
                         val allowedExtensions = params.filters.values.flatten().toSet()
-
-                        withFileFilter { virtualFile ->
-                            if (virtualFile.isDirectory) {
-                                true // Always allow directories for navigation
-                            } else {
-                                val extension = virtualFile.extension?.lowercase()
-                                extension != null && allowedExtensions.contains(extension)
-                            }
-                        }
+                        applyExtensionFilter(this, "Images", allowedExtensions)
                     }
                 }
 
