@@ -9,7 +9,7 @@ import com.intellij.testFramework.RuleChain
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Before
@@ -484,7 +484,7 @@ class AwsResourceCacheTest {
         whenever(mockResource.fetch(any())).then {
             latch.await()
             // exception gets thrown fast enough where the second fetchIfNeeded check occurs after the first call throws
-            runBlockingTest {
+            runTest {
                 delay(500)
             }
             throw RuntimeException("Boom")

@@ -7,7 +7,7 @@ plugins {
     alias(libs.plugins.node.gradle)
 }
 
-buildDir = file("gradle_build")
+layout.buildDirectory = file("gradle_build")
 
 val buildGetStartUI = tasks.register<NpmTask>("buildWebviewUI") {
     dependsOn(tasks.npmInstall)

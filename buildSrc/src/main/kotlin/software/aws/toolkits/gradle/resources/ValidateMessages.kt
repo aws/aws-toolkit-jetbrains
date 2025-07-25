@@ -21,9 +21,9 @@ open class ValidateMessages : DefaultTask() {
     val paths: ConfigurableFileCollection = project.objects.fileCollection()
 
     @OutputFile
-    val output: RegularFileProperty = project.objects.fileProperty().convention {
-        project.buildDir.resolve("validateMessages")
-    }
+    val output: RegularFileProperty = project.objects.fileProperty().convention(
+        project.layout.buildDirectory.file("validateMessages")
+    )
 
     init {
         group = VERIFICATION_GROUP

@@ -4,11 +4,9 @@
 package software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.actions
 
 import com.intellij.icons.AllIcons
-import com.intellij.openapi.actionSystem.ActionManager
-import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
-import com.intellij.openapi.actionSystem.ComputableActionGroup
+import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.Task
@@ -31,32 +29,34 @@ class CopyCawsRepositoryUrl : DumbAwareAction(AllIcons.Actions.Copy) {
         val project = e.getRequiredData(CommonDataKeys.PROJECT)
         val cawsConnectionSettings = CodeCatalystCredentialManager.getInstance(project).getConnectionSettings() ?: return
 
-        JBPopupFactory.getInstance().createActionGroupPopup(
-            message("caws.copy.url.select_repository"),
-            object : ComputableActionGroup.Simple() {
-                override fun computeChildren(manager: ActionManager): Array<AnAction> {
-                    val cache = AwsResourceCache.getInstance()
-                    return runBlocking {
-                        val projects = cache.getResource(CawsResources.ALL_PROJECTS, cawsConnectionSettings).await()
+        val cache = AwsResourceCache.getInstance()
+        val actions = runBlocking {
+            val projects = cache.getResource(CawsResources.ALL_PROJECTS, cawsConnectionSettings).await()
 
-                        projects.flatMap { cawsProject ->
-                            cache.getResource(CawsResources.codeRepositories(cawsProject), cawsConnectionSettings).await()
-                        }.map {
-                            object : DumbAwareAction(it.presentableString) {
-                                override fun actionPerformed(e: AnActionEvent) {
-                                    copyUrl(project, cawsConnectionSettings, it)
-                                }
-                            }
-                        }.toTypedArray()
+            projects.flatMap { cawsProject ->
+                cache.getResource(CawsResources.codeRepositories(cawsProject), cawsConnectionSettings).await()
+            }.map {
+                object : DumbAwareAction(it.presentableString) {
+                    override fun actionPerformed(e: AnActionEvent) {
+                        copyUrl(project, cawsConnectionSettings, it)
                     }
                 }
-            },
+            }.toList()
+        }
+
+        val actionGroup = DefaultActionGroup().apply {
+            actions.forEach { add(it) }
+        }
+
+        val popup = JBPopupFactory.getInstance().createActionGroupPopup(
+            message("caws.copy.url.select_repository"),
+            actionGroup,
             e.dataContext,
             false,
             null,
             5
         )
-            .showInBestPositionFor(e.dataContext)
+        popup.showCenteredInCurrentWindow(project)
     }
 
     private fun copyUrl(project: Project, cawsConnectionSettings: ClientConnectionSettings<*>, repository: CawsCodeRepository) {

@@ -7,7 +7,7 @@ plugins {
 
 sdkGenerator {
     c2jFolder.set(file("$projectDir/codegen-resources"))
-    outputDir.set(file("$buildDir/generated-sources"))
+    outputDir.set(layout.buildDirectory.dir("generated-sources").get().asFile)
 }
 
 dependencies {

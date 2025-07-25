@@ -138,7 +138,7 @@ class WorkspaceGroupsPanel(
             gbc.next().anchor(GridBag.WEST)
         )
 
-        val projectGroups = groupByRepo(workspaces, allRepos).sortedWith(compareBy(Comparator.nullsLast<String?>(Comparator.naturalOrder())) { it.repoName })
+        val projectGroups = groupByRepo(workspaces, allRepos).sortedWith(compareBy(Comparator.nullsLast<String>(Comparator.naturalOrder())) { it.repoName })
         projectGroups.forEachIndexed { index, group ->
             panel.createWorkspaceGroup(project, group, gbc)
 

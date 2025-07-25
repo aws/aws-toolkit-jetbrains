@@ -5,8 +5,7 @@ package software.aws.toolkits.jetbrains.utils
 
 import com.intellij.testFramework.ProjectRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.TestCoroutineScope
-import org.junit.After
+import kotlinx.coroutines.test.TestScope
 import org.junit.Rule
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 
@@ -29,10 +28,5 @@ abstract class BaseCoroutineTest(@Suppress("UnusedPrivateMember") timeoutSeconds
 //    @Rule
 //    val timeout = CoroutinesTimeout.seconds(timeoutSeconds)
 
-    val testCoroutineScope: TestCoroutineScope = TestCoroutineScope()
-
-    @After
-    fun after() {
-        testCoroutineScope.cleanupTestCoroutines()
-    }
+    val testCoroutineScope: TestScope = TestScope()
 }
