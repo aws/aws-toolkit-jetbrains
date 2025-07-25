@@ -11,13 +11,13 @@ import com.intellij.openapi.fileChooser.FileChooserDescriptor
  * files in the chooser dialog.
  *
  * @param descriptor The FileChooserDescriptor to apply filtering to
- * @param filterName The display name for the filter (e.g., "Images")
+ * @param filterName The display name for the filter (e.g., "Images") - unused in this version
  * @param allowedExtensions Set of allowed file extensions (e.g., "jpg", "png")
  * @return The modified FileChooserDescriptor
  */
 fun applyExtensionFilter(
     descriptor: FileChooserDescriptor,
-    filterName: String,
+    @Suppress("UNUSED_PARAMETER") filterName: String,
     allowedExtensions: Set<String>,
 ): FileChooserDescriptor = descriptor.withFileFilter { virtualFile ->
     if (virtualFile.isDirectory) {
