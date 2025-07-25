@@ -69,11 +69,10 @@ class QStatusBarLoggedInActionGroup : DefaultActionGroup() {
             if (connection != null) {
                 if (!connection.isSono()) {
                     add(actionManager.getAction("codewhisperer.switchProfiles"))
-                    add(actionManager.getAction("q.account.details"))
                 } else {
                     add(actionManager.getAction("q.manage.subscription"))
                 }
-
+                add(actionManager.getAction("q.account.details"))
                 add(SsoLogoutAction(connection))
             }
         }.toTypedArray()
