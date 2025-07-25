@@ -48,22 +48,6 @@ val gatewayOnlyResourcesJar by tasks.registering(Jar::class) {
     from(processGatewayOnlyResources)
 }
 
-listOf(
-    "intellijPlatformDependency",
-    "intellijPlatformDependency_integrationTest",
-    "intellijPluginVerifierIdesDependency",
-).forEach { configurationName ->
-    configurations[configurationName].dependencies.addLater(
-        toolkitIntelliJ.version().map {
-            dependencies.create(
-                group = "com.jetbrains.gateway",
-                name = "JetBrainsGateway",
-                version = it,
-            )
-        }
-    )
-}
-
 dependencies {
     intellijPlatform {
         pluginVerifier()
