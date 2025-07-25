@@ -7,7 +7,6 @@ import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import org.jetbrains.intellij.platform.gradle.tasks.PrepareSandboxTask
 import org.jetbrains.kotlin.gradle.internal.ensureParentDirsCreated
 import software.aws.toolkits.gradle.intellij.IdeFlavor
-import software.aws.toolkits.gradle.intellij.toolkitIntelliJ
 import kotlin.io.encoding.Base64
 
 plugins {

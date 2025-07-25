@@ -75,7 +75,8 @@ object IdeVersions {
                 marketplacePlugins = listOf(
                     "org.toml.lang:243.21565.122",
                     "PythonCore:243.21565.211",
-                    "Docker:243.21565.204"
+                    "Docker:243.21565.204",
+                    "com.intellij.modules.json:243.26574.91"
                 )
             ),
             ultimate = ProductProfile(
@@ -90,6 +91,7 @@ object IdeVersions {
                     "org.toml.lang:243.21565.122",
                     "Pythonid:243.21565.211",
                     "org.jetbrains.plugins.go:243.21565.211",
+                    "com.intellij.modules.json:243.26574.91"
                 )
             ),
             rider = RiderProfile(
@@ -115,7 +117,8 @@ object IdeVersions {
                 ),
                 marketplacePlugins = listOf(
                     "PythonCore:251.23774.460",
-                    "Docker:251.23774.466"
+                    "Docker:251.23774.466",
+                    "com.intellij.modules.json:251.27812.12"
                 )
             ),
             ultimate = ProductProfile(
@@ -129,6 +132,7 @@ object IdeVersions {
                 marketplacePlugins = listOf(
                     "Pythonid:251.23774.460",
                     "org.jetbrains.plugins.go:251.23774.435",
+                    "com.intellij.modules.json:251.27812.12"
                 )
             ),
             rider = RiderProfile(
