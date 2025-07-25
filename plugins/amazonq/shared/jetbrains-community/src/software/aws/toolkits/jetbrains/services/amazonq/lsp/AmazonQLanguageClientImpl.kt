@@ -64,7 +64,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowO
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowSaveFileDialogParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowSaveFileDialogResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.ConnectionMetadata
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.FileChooserCompat
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.applyExtensionFilter
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.LspEditorUtil
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.TelemetryParsingUtil
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
@@ -312,8 +312,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                     if (params.filters.isNotEmpty() && !params.canSelectFolders) {
                         // Create a combined list of all allowed extensions
                         val allowedExtensions = params.filters.values.flatten().toSet()
-                        val fileChooserCompat = FileChooserCompat.getInstance()
-                        fileChooserCompat.applyExtensionFilter(this, "Images", allowedExtensions)
+                        applyExtensionFilter(this, "Images", allowedExtensions)
                     }
                 }
 
