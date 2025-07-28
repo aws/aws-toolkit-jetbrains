@@ -32,7 +32,7 @@ class DotNetHandlerCompletionTest : BaseTestWithSolution() {
     @Test(description = "Check a single handler is shown in lookup when one is defined in a project.")
     @TestEnvironment
     @Solution("SamHelloWorldApp")
-    fun testDetermineHandlers_SingleHandler() {
+    fun testDetermineHandlersSingleHandler() {
         val handlers = DotNetHandlerCompletion().getHandlersFromBackend(project)
 
         assertThat(handlers.size).isEqualTo(1)
@@ -45,7 +45,7 @@ class DotNetHandlerCompletionTest : BaseTestWithSolution() {
     @Test(enabled = false, description = "Check all handlers are show in completion lookup when multiple handlers are defined in a project.")
     @TestEnvironment
     @Solution("SamMultipleHandlersApp")
-    fun testDetermineHandlers_MultipleHandlers() {
+    fun testDetermineHandlersMultipleHandlers() {
         val handlers = DotNetHandlerCompletion().getHandlersFromBackend(project).sortedBy { it.handler }
 
         assertThat(handlers.size).isEqualTo(3)
