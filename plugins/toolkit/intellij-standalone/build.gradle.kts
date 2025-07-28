@@ -16,6 +16,7 @@ sourceSets {
 
 intellijPlatform {
     projectName = "aws-toolkit-jetbrains-standalone"
+    buildSearchableOptions = false
 }
 
 dependencies {
@@ -33,8 +34,4 @@ tasks.check {
     serviceSubdirs.forEach {
         dependsOn(":plugin-toolkit:$it:check")
     }
-}
-
-tasks.prepareJarSearchableOptions {
-    enabled = false
 }
