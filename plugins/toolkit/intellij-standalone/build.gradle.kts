@@ -16,7 +16,6 @@ sourceSets {
 
 intellijPlatform {
     projectName = "aws-toolkit-jetbrains-standalone"
-    buildSearchableOptions = false
 }
 
 dependencies {
