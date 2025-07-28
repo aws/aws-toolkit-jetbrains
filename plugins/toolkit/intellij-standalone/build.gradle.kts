@@ -34,3 +34,7 @@ tasks.check {
         dependsOn(":plugin-toolkit:$it:check")
     }
 }
+
+tasks.prepareJarSearchableOptions {
+    enabled = false
+}
