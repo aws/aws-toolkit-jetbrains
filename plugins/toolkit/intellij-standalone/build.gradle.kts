@@ -27,11 +27,10 @@ dependencies {
     }
 }
 
-tasks.processResources {
-    from("resources/META-INF/plugin-shim.xml") {
-        rename("plugin-shim.xml", "plugin.xml")
-        into("META-INF")
-    }
+tasks.prepareJarSearchableOptions {
+    val pluginXmlJar = project(":plugin-core").tasks.jar
+    dependsOn(pluginXmlJar)
+    composedJarFile.set(pluginXmlJar.flatMap { it.archiveFile })
 }
 
 tasks.check {
