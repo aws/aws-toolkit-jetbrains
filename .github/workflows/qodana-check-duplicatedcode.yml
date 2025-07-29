@@ -34,13 +34,13 @@ jobs:
           tool-cache: false
           large-packages: false
       - name: 'Qodana Scan'
-        uses: JetBrains/qodana-action@v2024.2.3
+        uses: JetBrains/qodana-action@v2025.1.1
         env:
           QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }}
         with:
           # --config points to the DuplicatedCode-only Qodana config
           args:
-            --config,${{ github.workspace }}/qodana-configs/duplicated-code/qodana.yaml
+            --config,qodana-configs/duplicated-code/qodana.yaml
           cache-default-branch-only: true
           # pr-mode off means that the whole repo should be checked for duplicate code, instead of just copy/pastes within the PR
           pr-mode: false
