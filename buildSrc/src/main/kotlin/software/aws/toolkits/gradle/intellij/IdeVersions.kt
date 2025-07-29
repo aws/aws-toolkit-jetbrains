@@ -157,6 +157,7 @@ object IdeVersions {
                     "org.jetbrains.idea.maven",
                 ),
                 marketplacePlugins = listOf(
+                    "org.toml.lang:252.23892.361",
                     "PythonCore:252.23892.248",
                     "Docker:252.23892.248",
                     "com.intellij.modules.json:252.23892.248"
