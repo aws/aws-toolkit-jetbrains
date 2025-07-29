@@ -155,6 +155,7 @@ object IdeVersions {
                     "com.intellij.java",
                     "com.intellij.gradle",
                     "org.jetbrains.idea.maven",
+                    "com.intellij.properties"
                 ),
                 marketplacePlugins = listOf(
                     "org.toml.lang:252.23892.361",
