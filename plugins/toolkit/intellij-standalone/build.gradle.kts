@@ -27,6 +27,13 @@ dependencies {
     }
 }
 
+tasks.processResources {
+    from("resources/META-INF/plugin-shim.xml") {
+        rename("plugin-shim.xml", "plugin.xml")
+        into("META-INF")
+    }
+}
+
 tasks.check {
     val serviceSubdirs = project(":plugin-toolkit").subprojects
         .map { it.name }.filter { it != "intellij" }.filter { it != "intellij-standalone" }
