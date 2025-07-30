@@ -101,7 +101,7 @@ private data class OAuthError(
     val errorDescription: String?,
 )
 
-private class ToolkitOAuthRequest(internal val registration: PKCEClientRegistration) : OAuthRequest<AccessToken> {
+private class ToolkitOAuthRequest(internal val registration: PKCEClientRegistration, internal val overrideUrl: String? = null) : OAuthRequest<AccessToken> {
     private val port: Int get() = BuiltInServerManager.getInstance().port
     private val base64Encoder = Base64.getUrlEncoder().withoutPadding()
 
@@ -120,6 +120,11 @@ private class ToolkitOAuthRequest(internal val registration: PKCEClientRegistrat
         get() = authorizationCodeUrl.toExternalForm()
 
     private val serviceUri
+//        get() = if (this.overrideUrl != null) {
+//                this.overrideUrl
+//            } else {
+//                DefaultSsoOidcEndpointProvider().resolveEndpoint(SsoOidcEndpointParams.builder().region(Region.of(registration.region)).build()).get()
+//            }
         get() = DefaultSsoOidcEndpointProvider().resolveEndpoint(SsoOidcEndpointParams.builder().region(Region.of(registration.region)).build()).get()
 
     override val credentialsAcquirer: OAuthCredentialsAcquirer<AccessToken> = ToolkitOauthCredentialsAcquirer(registration, codeVerifier, redirectUri)

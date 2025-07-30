@@ -26,7 +26,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.CreateUploadUr
 import software.amazon.awssdk.services.codewhispererruntime.model.GetTaskAssistCodeGenerationResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.SendTelemetryEventResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.StartTaskAssistCodeGenerationResponse
-import software.aws.toolkits.core.TokenConnectionSettings
+import software.aws.toolkits.core.AwsTokenConnectionSettings
 import software.aws.toolkits.core.credentials.ToolkitBearerTokenProvider
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
@@ -167,7 +167,7 @@ open class FeatureDevTestBase(
                 doReturn(provider).whenever(it).delegate
             }
         val connectionSettingsMock =
-            mock<TokenConnectionSettings> {
+            mock<AwsTokenConnectionSettings> {
                 whenever(it.tokenProvider).thenReturn(mockBearerProvider)
             }
         val toolkitConnection =

@@ -17,6 +17,8 @@ import com.intellij.util.xmlb.annotations.MapAnnotation
 import com.intellij.util.xmlb.annotations.Property
 import software.amazon.awssdk.core.SdkClient
 import software.amazon.awssdk.services.codewhispererruntime.model.AccessDeniedException
+import software.aws.toolkits.core.AwsTokenConnectionSettings
+import software.aws.toolkits.core.ClientConnectionSettings
 import software.aws.toolkits.core.TokenConnectionSettings
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
@@ -186,7 +188,7 @@ class QRegionProfileManager : PersistentStateComponent<QProfileState>, Disposabl
         (connectionIdToProfileCount[conn.id] ?: 0) > 1
     } ?: false
 
-    fun getQClientSettings(project: Project, profile: QRegionProfile?): TokenConnectionSettings {
+    fun getQClientSettings(project: Project, profile: QRegionProfile?): ClientConnectionSettings<TokenConnectionSettings> {
         val conn = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
         if (conn !is AwsBearerTokenConnection) {
             error("not a bearer connection")

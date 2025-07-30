@@ -41,7 +41,7 @@ import software.amazon.awssdk.services.codewhispererstreaming.model.ExportIntent
 import software.amazon.awssdk.services.codewhispererstreaming.model.ExportResultArchiveRequest
 import software.amazon.awssdk.services.codewhispererstreaming.model.ExportResultArchiveResponseHandler
 import software.amazon.awssdk.services.ssooidc.SsoOidcClient
-import software.aws.toolkits.core.TokenConnectionSettings
+import software.aws.toolkits.core.AwsTokenConnectionSettings
 import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
@@ -97,7 +97,7 @@ class CodeWhispererCodeModernizerGumbyClientTest : CodeWhispererCodeModernizerTe
         projectRule.project.replaceService(AmazonQStreamingClient::class.java, amazonQStreamingClient, disposableRule.disposable)
 
         val mockConnection = mock<AwsBearerTokenConnection>()
-        whenever(mockConnection.getConnectionSettings()) doReturn mock<TokenConnectionSettings>()
+        whenever(mockConnection.getConnectionSettings()) doReturn mock<AwsTokenConnectionSettings>()
 
         connectionManager = mock {
             on {

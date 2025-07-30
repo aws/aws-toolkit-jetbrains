@@ -6,6 +6,8 @@ package software.aws.toolkits.jetbrains.core.credentials
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.util.Disposer
+import software.aws.toolkits.core.AwsTokenConnectionSettings
+import software.aws.toolkits.core.ExternalOidcTokenConnectionSettings
 import software.aws.toolkits.core.TokenConnectionSettings
 import software.aws.toolkits.core.credentials.ToolkitBearerTokenProvider
 import software.aws.toolkits.jetbrains.core.credentials.sso.DiskCache
@@ -63,7 +65,7 @@ sealed class ManagedBearerSsoConnection(
 ) : AwsBearerTokenConnection, Disposable {
 
     private val provider =
-        tokenConnection(
+        awsTokenConnection(
             InteractiveBearerTokenProvider(
                 startUrl,
                 region,
@@ -72,6 +74,36 @@ sealed class ManagedBearerSsoConnection(
                 cache
             ),
             region
+        )
+
+    @JsonIgnore
+    override fun getConnectionSettings(): TokenConnectionSettings = provider
+
+    override fun dispose() {
+        disposeProviderIfRequired(provider)
+    }
+}
+
+class ExternalOidcConnection(
+    override val sessionName: String,
+    override val startUrl: String,
+    override val region: String,
+    override val scopes: List<String>,
+    cache: DiskCache = diskCache,
+    override val id: String = "",
+    override val label: String = "",
+) : AwsBearerTokenConnection, Disposable {
+
+    // TODO: Rip out
+    private val provider =
+        externalOidcTokenConnection(
+            InteractiveBearerTokenProvider(
+                startUrl,
+                region,
+                scopes,
+                id,
+                cache
+            )
         )
 
     @JsonIgnore
@@ -93,7 +125,7 @@ class DetectedDiskSsoSessionConnection(
     override val label = displayNameOverride ?: ToolkitBearerTokenProvider.diskSessionDisplayName(sessionName)
 
     private val provider =
-        tokenConnection(
+        awsTokenConnection(
             ProfileSdkTokenProviderWrapper(
                 sessionName = sessionName,
                 region = region
@@ -102,17 +134,22 @@ class DetectedDiskSsoSessionConnection(
         )
 
     @JsonIgnore
-    override fun getConnectionSettings(): TokenConnectionSettings = provider
+    override fun getConnectionSettings(): AwsTokenConnectionSettings = provider
 
     override fun dispose() {
         disposeProviderIfRequired(provider)
     }
 }
 
-private fun tokenConnection(provider: BearerTokenProvider, region: String) =
-    TokenConnectionSettings(
+private fun awsTokenConnection(provider: BearerTokenProvider, region: String) =
+    AwsTokenConnectionSettings(
         ToolkitBearerTokenProvider(provider),
         AwsRegionProvider.getInstance().get(region) ?: error("Partition data is missing for $region")
+    )
+
+private fun externalOidcTokenConnection(provider: BearerTokenProvider) =
+    ExternalOidcTokenConnectionSettings(
+        ToolkitBearerTokenProvider(provider)
     )
 
 private fun disposeProviderIfRequired(settings: TokenConnectionSettings) {

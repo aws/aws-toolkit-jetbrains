@@ -15,7 +15,6 @@ import org.junit.Rule
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
-import org.mockito.kotlin.isNull
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
 import software.amazon.awssdk.services.codewhispererruntime.CodeWhispererRuntimeClient
@@ -27,7 +26,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.ListAvailableC
 import software.amazon.awssdk.services.codewhispererruntime.model.ListFeatureEvaluationsRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.ListFeatureEvaluationsResponse
 import software.amazon.awssdk.services.codewhispererruntime.paginators.ListAvailableCustomizationsIterable
-import software.aws.toolkits.core.TokenConnectionSettings
+import software.aws.toolkits.core.AwsTokenConnectionSettings
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.LegacyManagedBearerSsoConnection
@@ -83,7 +82,7 @@ class CodeWhispererFeatureConfigServiceTest {
             disposableRule.disposable
         )
 
-        val mockTokenSettings = mock<TokenConnectionSettings> {
+        val mockTokenSettings = mock<AwsTokenConnectionSettings> {
             on { providerId } doReturn "mock"
             on { region } doReturn AwsRegion.GLOBAL
             on { withRegion(any()) } doReturn this.mock

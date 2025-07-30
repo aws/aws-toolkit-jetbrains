@@ -112,47 +112,39 @@ sealed class Login<T> {
         }
     }
 
-//    data class ExternalIdC(
-//        val startUrl: String,
-//        val clientId: String,
-//        val scopes: List<String>,
-//        val onPendingToken: (InteractiveBearerTokenProvider) -> Unit,
-//        val onSuccess: () -> Unit,
-//        override val onError: (Exception) -> Unit,
-//    ) : Login<AwsBearerTokenConnection?>() {
-//        override val id: CredentialSourceId = CredentialSourceId.IamIdentityCenter
-//        private val configFilesFacade = DefaultConfigFilesFacade()
-//
-//        override fun doLogin(project: Project): AwsBearerTokenConnection? {
-//            // we have this check here so we blow up early if user has an invalid config file
-//            try {
-//                configFilesFacade.readSsoSessions()
-//            } catch (e: Exception) {
-//                onError(ConfigFacadeException(e))
-//                return null
+    data class ExternalIdC(
+        val startUrl: String,
+        val clientId: String,
+        val scopes: List<String>,
+        val onPendingToken: (InteractiveBearerTokenProvider) -> Unit,
+        val onSuccess: () -> Unit,
+        override val onError: (Exception) -> Unit,
+    ) : Login<AwsBearerTokenConnection?>() {
+        override val id: CredentialSourceId = CredentialSourceId.IamIdentityCenter
+        private val configFilesFacade = DefaultConfigFilesFacade()
+
+        override fun doLogin(project: Project): AwsBearerTokenConnection? {
+            val profile = ExternalOidcProfile(
+                configSessionName = validatedSsoIdentifierFromUrl(startUrl),
+                startUrl = startUrl,
+                clientId = clientId,
+                scopes = scopes
+            )
+
+            // expect 'authAndUpdateConfig' to call onError on failure
+            val conn = authAndUpdateConfig(project, profile, configFilesFacade, onPendingToken, onSuccess, onError) ?: return null
+
+            // TODO: delta, make sure we are good to switch immediately
+//            if (!promptForIdcPermissionSet) {
+//                ToolkitConnectionManager.getInstance(project).switchConnection(connection)
+//                close(DialogWrapper.OK_EXIT_CODE)
+//                return
 //            }
-//
-//            val profile = ExternalOidcProfile(
-//                configSessionName = validatedSsoIdentifierFromUrl(startUrl),
-//                startUrl = startUrl,
-//                clientId = clientId,
-//                scopes = scopes
-//            )
-//
-//            // expect 'authAndUpdateConfig' to call onError on failure
-//            val conn = authAndUpdateConfig(project, profile, configFilesFacade, onPendingToken, onSuccess, onError) ?: return null
-//
-//            // TODO: delta, make sure we are good to switch immediately
-////            if (!promptForIdcPermissionSet) {
-////                ToolkitConnectionManager.getInstance(project).switchConnection(connection)
-////                close(DialogWrapper.OK_EXIT_CODE)
-////                return
-////            }
-//            ToolkitConnectionManager.getInstance(project).switchConnection(conn)
-//
-//            return conn
-//        }
-//    }
+            ToolkitConnectionManager.getInstance(project).switchConnection(conn)
+
+            return conn
+        }
+    }
 
     data class LongLivedIAM(
         val profileName: String,
@@ -217,7 +209,7 @@ sealed class Login<T> {
 
 fun authAndUpdateConfig(
     project: Project?,
-    profile: UserConfigSsoSessionProfile,
+    profile: OidcProfile,
     configFilesFacade: ConfigFilesFacade,
     onPendingToken: (InteractiveBearerTokenProvider) -> Unit,
     onSuccess: () -> Unit,
@@ -239,30 +231,47 @@ fun authAndUpdateConfig(
         allScopes.addAll(oldScopeOrEmpty)
     }
 
-    val updatedProfile = profile.copy(scopes = allScopes.toList())
+    var connection: AwsBearerTokenConnection
+    when (profile) {
+        is UserConfigSsoSessionProfile -> {
+            val updatedProfile = profile.copy(scopes = allScopes.toList())
 
-    val connection = try {
-        ToolkitAuthManager.getInstance().tryCreateTransientSsoConnection(updatedProfile) { connection ->
-            reauthConnectionIfNeeded(project, connection, onPendingToken, reauthSource = ReauthSource.FRESH_AUTH)
+            connection = try {
+                ToolkitAuthManager.getInstance().tryCreateTransientSsoConnection(updatedProfile) { connection ->
+                    reauthConnectionIfNeeded(project, connection, onPendingToken, reauthSource = ReauthSource.FRESH_AUTH)
+                }
+            } catch (e: Exception) {
+                onError(e)
+                return null
+            }
+
+            configFilesFacade.updateSectionInConfig(
+                SsoSessionConstants.SSO_SESSION_SECTION_NAME,
+                Profile.builder()
+                    .name(updatedProfile.configSessionName)
+                    .properties(
+                        mapOf(
+                            ProfileProperty.SSO_START_URL to updatedProfile.startUrl,
+                            ProfileProperty.SSO_REGION to updatedProfile.ssoRegion,
+                            SsoSessionConstants.SSO_REGISTRATION_SCOPES to updatedProfile.scopes.joinToString(",")
+                        )
+                    ).build()
+            )
         }
-    } catch (e: Exception) {
-        onError(e)
-        return null
-    }
 
-    configFilesFacade.updateSectionInConfig(
-        SsoSessionConstants.SSO_SESSION_SECTION_NAME,
-        Profile.builder()
-            .name(updatedProfile.configSessionName)
-            .properties(
-                mapOf(
-                    ProfileProperty.SSO_START_URL to updatedProfile.startUrl,
-                    ProfileProperty.SSO_REGION to updatedProfile.ssoRegion,
-                    SsoSessionConstants.SSO_REGISTRATION_SCOPES to updatedProfile.scopes.joinToString(",")
-                )
-            ).build()
-    )
-    onSuccess()
+        is ExternalOidcProfile -> {
+            val updatedProfile = profile.copy(scopes = allScopes.toList())
+
+            connection = try {
+                ToolkitAuthManager.getInstance().tryCreateTransientSsoConnection(updatedProfile) { connection ->
+                    reauthConnectionIfNeeded(project, connection, onPendingToken, reauthSource = ReauthSource.FRESH_AUTH)
+                }
+            } catch (e: Exception) {
+                onError(e)
+                return null
+            }
+        }
+    }
 
     return connection
 }

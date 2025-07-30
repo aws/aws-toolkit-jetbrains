@@ -263,12 +263,12 @@ abstract class LoginBrowser(
 
     open fun loginExternalIdC(startUrl: String, clientId: String, scopes: List<String>) {
         // assumes scopes contains either Q or non-Q permissions but not both
-//        val (onError: (Exception) -> Unit, onSuccess: () -> Unit) = getSuccessAndErrorActionsForIdcLogin(scopes, startUrl, AwsRegion.GLOBAL)
-//        loginWithBackgroundContext {
-//            Login
-//                .ExternalIdC(startUrl, clientId, scopes, onPendingToken, onSuccess, onError)
-//                .login(project)
-//        }
+        val (onError: (Exception) -> Unit, onSuccess: () -> Unit) = getSuccessAndErrorActionsForIdcLogin(scopes, startUrl, AwsRegion.GLOBAL)
+        loginWithBackgroundContext {
+            Login
+                .ExternalIdC(startUrl, clientId, scopes, onPendingToken, onSuccess, onError)
+                .login(project)
+        }
     }
 
     open fun getLoginMetadata(email: String, uuid: String) {

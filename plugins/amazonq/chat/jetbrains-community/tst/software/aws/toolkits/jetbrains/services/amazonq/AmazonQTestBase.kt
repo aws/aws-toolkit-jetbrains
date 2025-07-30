@@ -15,7 +15,7 @@ import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.whenever
-import software.aws.toolkits.core.TokenConnectionSettings
+import software.aws.toolkits.core.AwsTokenConnectionSettings
 import software.aws.toolkits.core.credentials.ToolkitBearerTokenProvider
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
@@ -50,7 +50,7 @@ open class AmazonQTestBase(
             doReturn(provider).whenever(it).delegate
         }
 
-        val connectionSettingsMock = mock<TokenConnectionSettings> {
+        val connectionSettingsMock = mock<AwsTokenConnectionSettings> {
             whenever(it.tokenProvider).thenReturn(mockBearerProvider)
         }
 

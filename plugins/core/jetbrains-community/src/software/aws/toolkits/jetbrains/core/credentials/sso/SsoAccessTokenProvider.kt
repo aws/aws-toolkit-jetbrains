@@ -90,7 +90,7 @@ abstract class SsoAccessTokenCacheAccessor {
     protected val isNewAuthPkce: Boolean
         get() = !Registry.`is`("aws.dev.useDAG", false)
 
-    internal fun loadAccessToken(): AccessToken? {
+    fun loadAccessToken(): AccessToken? {
         // load DAG if exists, otherwise PKCE
         cache.loadAccessToken(dagAccessTokenCacheKey)?.let {
             return it
@@ -143,7 +143,7 @@ class SsoAccessTokenProvider(
     private val isAlwaysShowDeviceCode: Boolean = false,
     override val scopes: List<String> = emptyList(),
     private val clock: Clock = Clock.systemUTC(),
-) : SsoAccessTokenCacheAccessor(), SdkTokenProvider {
+) : SsoAccessTokenCacheAccessor(), SdkTokenProvider,InteractiveAccessTokenProvider {
     init {
         check(scopes.isNotEmpty()) { "Scopes should not be empty" }
         // identity does not want us to use the scope-less path
@@ -152,12 +152,12 @@ class SsoAccessTokenProvider(
     }
 
     private val _authorization = AtomicReference<PendingAuthorization?>()
-    val authorization: PendingAuthorization?
+    override val authorization: PendingAuthorization?
         get() = _authorization.get()
 
     override fun resolveToken() = accessToken()
 
-    fun accessToken(): AccessToken {
+    override fun accessToken(): AccessToken {
         assertIsNonDispatchThread()
 
         loadAccessToken()?.let {
@@ -415,7 +415,7 @@ class SsoAccessTokenProvider(
         }
     }
 
-    fun refreshToken(currentToken: AccessToken): AccessToken {
+    override fun refreshToken(currentToken: AccessToken): AccessToken {
         var stageName = RefreshCredentialStage.VALIDATE_REFRESH_TOKEN
         if (currentToken.refreshToken == null) {
             val message = "Requested token refresh, but refresh token was null"

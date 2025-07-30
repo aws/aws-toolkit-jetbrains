@@ -42,7 +42,7 @@ import software.amazon.awssdk.services.sso.model.GetRoleCredentialsResponse
 import software.amazon.awssdk.services.sso.model.RoleCredentials
 import software.amazon.awssdk.services.ssooidc.SsoOidcClient
 import software.amazon.awssdk.services.sts.StsClient
-import software.aws.toolkits.core.TokenConnectionSettings
+import software.aws.toolkits.core.AwsTokenConnectionSettings
 import software.aws.toolkits.core.credentials.CredentialIdentifier
 import software.aws.toolkits.core.credentials.CredentialsChangeEvent
 import software.aws.toolkits.core.credentials.CredentialsChangeListener
@@ -1033,7 +1033,7 @@ class ProfileCredentialProviderFactoryTest {
                 override fun expirationTime() = Optional.empty<Instant>()
             })
         }
-        val connectionSettingsMock = mock<TokenConnectionSettings> {
+        val connectionSettingsMock = mock<AwsTokenConnectionSettings> {
             whenever(it.tokenProvider).thenReturn(mockBearerProvider)
         }
         val connectionMock = mock<AwsBearerTokenConnection> {
@@ -1107,7 +1107,7 @@ class ProfileCredentialProviderFactoryTest {
                 override fun expirationTime() = Optional.empty<Instant>()
             })
         }
-        val connectionSettingsMock = mock<TokenConnectionSettings> {
+        val connectionSettingsMock = mock<AwsTokenConnectionSettings> {
             whenever(it.tokenProvider).thenReturn(mockBearerProvider)
         }
         val connectionMock = mock<AwsBearerTokenConnection> {

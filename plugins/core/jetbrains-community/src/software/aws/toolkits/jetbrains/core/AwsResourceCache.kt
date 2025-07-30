@@ -17,7 +17,7 @@ import org.jetbrains.annotations.VisibleForTesting
 import software.amazon.awssdk.core.SdkClient
 import software.aws.toolkits.core.ClientConnectionSettings
 import software.aws.toolkits.core.ConnectionSettings
-import software.aws.toolkits.core.TokenConnectionSettings
+import software.aws.toolkits.core.AwsTokenConnectionSettings
 import software.aws.toolkits.core.credentials.CredentialIdentifier
 import software.aws.toolkits.core.credentials.ToolkitBearerTokenProvider
 import software.aws.toolkits.core.credentials.ToolkitCredentialsChangeListener
@@ -207,7 +207,7 @@ class DefaultAwsResourceCache(
             useStale,
             forceFetch
         ).thenApply { resource.doMap(it as Any, region) }
-        is Resource.Cached<T> -> Context(resource, region, TokenConnectionSettings(tokenProvider, region), useStale, forceFetch)
+        is Resource.Cached<T> -> Context(resource, region, AwsTokenConnectionSettings(tokenProvider, region), useStale, forceFetch)
             .also { getCachedResource(it) }
             .future
     }

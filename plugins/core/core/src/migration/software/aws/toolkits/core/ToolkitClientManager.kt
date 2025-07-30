@@ -29,7 +29,8 @@ import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.utils.SdkAutoCloseable
 import software.aws.toolkits.core.ClientConnectionSettings
 import software.aws.toolkits.core.ConnectionSettings
-import software.aws.toolkits.core.TokenConnectionSettings
+import software.aws.toolkits.core.AwsTokenConnectionSettings
+import software.aws.toolkits.core.ExternalOidcTokenConnectionSettings
 import software.aws.toolkits.core.ToolkitClientCustomizer
 import software.aws.toolkits.core.clients.nullDefaultProfileFile
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
@@ -90,7 +91,13 @@ abstract class ToolkitClientManager {
             region = Region.of(connection.region.id),
         )
 
-        is TokenConnectionSettings -> constructAwsClient(
+        is AwsTokenConnectionSettings -> constructAwsClient(
+            sdkClass = sdkClass,
+            tokenProvider = connection.tokenProvider,
+            region = Region.of(connection.region.id),
+        )
+
+        is ExternalOidcTokenConnectionSettings -> constructAwsClient(
             sdkClass = sdkClass,
             tokenProvider = connection.tokenProvider,
             region = Region.of(connection.region.id),

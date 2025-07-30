@@ -18,7 +18,8 @@ import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration
 import software.amazon.awssdk.http.SdkHttpClient
 import software.aws.toolkits.core.ClientConnectionSettings
 import software.aws.toolkits.core.ConnectionSettings
-import software.aws.toolkits.core.TokenConnectionSettings
+import software.aws.toolkits.core.AwsTokenConnectionSettings
+import software.aws.toolkits.core.ExternalOidcTokenConnectionSettings
 import software.aws.toolkits.core.ToolkitClientCustomizer
 import software.aws.toolkits.core.ToolkitClientManager
 import software.aws.toolkits.core.credentials.CredentialIdentifier
@@ -110,9 +111,13 @@ inline fun <reified T : SdkClient> Project.awsClient(): T {
 
 inline fun <reified T : SdkClient> ConnectionSettings.awsClient(): T = AwsClientManager.getInstance().getClient(credentials, region)
 
-inline fun <reified T : SdkClient> TokenConnectionSettings.awsClient(): T = AwsClientManager.getInstance().getClient(this)
+inline fun <reified T : SdkClient> AwsTokenConnectionSettings.awsClient(): T = AwsClientManager.getInstance().getClient(this)
+
+// should never hit?
+inline fun <reified T : SdkClient> ExternalOidcTokenConnectionSettings.awsClient(): T = AwsClientManager.getInstance().getClient(this)
 
 inline fun <reified T : SdkClient> ClientConnectionSettings<*>.awsClient(): T = when (this) {
     is ConnectionSettings -> awsClient<T>()
-    is TokenConnectionSettings -> awsClient<T>()
+    is AwsTokenConnectionSettings -> awsClient<T>()
+    is ExternalOidcTokenConnectionSettings -> awsClient<T>()
 }

@@ -34,7 +34,10 @@ import software.aws.toolkits.jetbrains.core.credentials.diskCache
 import software.aws.toolkits.jetbrains.core.credentials.sso.AccessToken
 import software.aws.toolkits.jetbrains.core.credentials.sso.DeviceAuthorizationGrantToken
 import software.aws.toolkits.jetbrains.core.credentials.sso.DiskCache
+import software.aws.toolkits.jetbrains.core.credentials.sso.ExternalOidcAccessTokenProvider
+import software.aws.toolkits.jetbrains.core.credentials.sso.InteractiveAccessTokenProvider
 import software.aws.toolkits.jetbrains.core.credentials.sso.PendingAuthorization
+import software.aws.toolkits.jetbrains.core.credentials.sso.SsoAccessTokenCacheAccessor
 import software.aws.toolkits.jetbrains.core.credentials.sso.SsoAccessTokenProvider
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener.Companion.TOPIC
 import java.time.Clock
@@ -98,14 +101,24 @@ class InteractiveBearerTokenProvider(
     override val displayName = ToolkitBearerTokenProvider.ssoDisplayName(startUrl)
 
     private val ssoOidcClient: SsoOidcClient = buildUnmanagedSsoOidcClient(region)
-    private val accessTokenProvider =
-        SsoAccessTokenProvider(
-            startUrl,
-            region,
-            cache,
-            ssoOidcClient,
-            scopes = scopes
-        )
+    private val accessTokenProvider: InteractiveAccessTokenProvider =
+        if (region == "global") {
+            ExternalOidcAccessTokenProvider(
+                startUrl,
+                region,
+                cache,
+                scopes,
+                id
+            )
+        } else {
+            SsoAccessTokenProvider(
+                startUrl,
+                region,
+                cache,
+                ssoOidcClient,
+                scopes = scopes
+            )
+        }
 
     private var supplier = supplier()
 
@@ -148,7 +161,7 @@ class InteractiveBearerTokenProvider(
 
     private inner class SupplierWithInitialValue(
         initial: AccessToken?,
-        val accessTokenProvider: SsoAccessTokenProvider,
+        val accessTokenProvider: InteractiveAccessTokenProvider,
     ) : Supplier<RefreshResult<AccessToken>> {
         private val hasCalledAtLeastOnce = AtomicBoolean(false)
         private val initialValue = initial ?: accessTokenProvider.loadAccessToken()

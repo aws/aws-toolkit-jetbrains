@@ -7,7 +7,7 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.dsl.builder.panel
-import software.aws.toolkits.core.TokenConnectionSettings
+import software.aws.toolkits.core.AwsTokenConnectionSettings
 import software.aws.toolkits.core.telemetry.DefaultMetricEvent
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.core.AwsResourceCache
@@ -45,7 +45,7 @@ class CodeCatalystCredentialManager {
 
     internal fun provider(conn: AwsBearerTokenConnection) = conn.getConnectionSettings().tokenProvider.delegate as BearerTokenProvider
 
-    fun getConnectionSettings(passiveOnly: Boolean = false): TokenConnectionSettings? {
+    fun getConnectionSettings(passiveOnly: Boolean = false): AwsTokenConnectionSettings? {
         val connection = connection()
         if (connection == null) {
             if (passiveOnly) {
@@ -70,7 +70,7 @@ class CodeCatalystCredentialManager {
         }
     }
 
-    fun getSettingsAndPromptAuth(): TokenConnectionSettings {
+    fun getSettingsAndPromptAuth(): AwsTokenConnectionSettings {
         promptAuth()
         val connection = connection() ?: error("Expected connection not to be null")
         return connection.getConnectionSettings()

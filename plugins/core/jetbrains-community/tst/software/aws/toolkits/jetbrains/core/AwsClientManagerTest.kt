@@ -39,7 +39,7 @@ import software.amazon.awssdk.http.async.SdkAsyncHttpClient
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.lambda.LambdaClient
 import software.aws.toolkits.core.ConnectionSettings
-import software.aws.toolkits.core.TokenConnectionSettings
+import software.aws.toolkits.core.AwsTokenConnectionSettings
 import software.aws.toolkits.core.ToolkitClientCustomizer
 import software.aws.toolkits.core.credentials.ToolkitBearerTokenProvider
 import software.aws.toolkits.core.credentials.ToolkitBearerTokenProviderDelegate
@@ -195,7 +195,7 @@ class AwsClientManagerTest {
     @Test
     fun `tokenProvider can be passed to bearer clients`() {
         val sut = getClientManager()
-        val client = sut.getClient<DummyBearerServiceClient>(TokenConnectionSettings(mockTokenProvider(), regionProvider.createAwsRegion()))
+        val client = sut.getClient<DummyBearerServiceClient>(AwsTokenConnectionSettings(mockTokenProvider(), regionProvider.createAwsRegion()))
 
         assertThat(client.withTokenProvider).isTrue()
     }
@@ -203,7 +203,7 @@ class AwsClientManagerTest {
     @Test
     fun `no error thrown when tokenProvider is passed to incompatible client`() {
         val sut = getClientManager()
-        sut.getClient<DummyServiceClient>(TokenConnectionSettings(mockTokenProvider(), regionProvider.createAwsRegion()))
+        sut.getClient<DummyServiceClient>(AwsTokenConnectionSettings(mockTokenProvider(), regionProvider.createAwsRegion()))
     }
 
     @Test

@@ -18,6 +18,10 @@ sealed interface ClientConnectionSettings<out T> {
     fun withRegion(region: AwsRegion): ClientConnectionSettings<T>
 }
 
+sealed interface TokenConnectionSettings: ClientConnectionSettings<TokenConnectionSettings> {
+    val tokenProvider: ToolkitBearerTokenProvider
+}
+
 data class ConnectionSettings(val credentials: ToolkitCredentialsProvider, override val region: AwsRegion) : ClientConnectionSettings<ConnectionSettings> {
     override val providerId: String
         get() = credentials.id
@@ -25,14 +29,24 @@ data class ConnectionSettings(val credentials: ToolkitCredentialsProvider, overr
     override fun withRegion(region: AwsRegion) = copy(region = region)
 }
 
-data class TokenConnectionSettings(
-    val tokenProvider: ToolkitBearerTokenProvider,
+data class AwsTokenConnectionSettings(
+    override val tokenProvider: ToolkitBearerTokenProvider,
     override val region: AwsRegion,
-) : ClientConnectionSettings<TokenConnectionSettings> {
+) : TokenConnectionSettings, ClientConnectionSettings<TokenConnectionSettings> {
     override val providerId: String
         get() = tokenProvider.id
 
     override fun withRegion(region: AwsRegion) = copy(region = region)
+}
+
+data class ExternalOidcTokenConnectionSettings(
+    override val tokenProvider: ToolkitBearerTokenProvider,
+    override val region: AwsRegion = AwsRegion.GLOBAL,
+) : TokenConnectionSettings, ClientConnectionSettings<TokenConnectionSettings> {
+    override val providerId: String
+        get() = tokenProvider.id
+
+    override fun withRegion(region: AwsRegion) = this
 }
 
 val ConnectionSettings.shortName get() = "${credentials.shortName}@${region.id}"

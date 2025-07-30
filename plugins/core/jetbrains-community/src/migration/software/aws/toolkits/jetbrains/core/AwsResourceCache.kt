@@ -6,7 +6,8 @@ package migration.software.aws.toolkits.jetbrains.core
 import com.intellij.openapi.components.service
 import software.aws.toolkits.core.ClientConnectionSettings
 import software.aws.toolkits.core.ConnectionSettings
-import software.aws.toolkits.core.TokenConnectionSettings
+import software.aws.toolkits.core.AwsTokenConnectionSettings
+import software.aws.toolkits.core.ExternalOidcTokenConnectionSettings
 import software.aws.toolkits.core.credentials.ToolkitBearerTokenProvider
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
 import software.aws.toolkits.core.region.AwsRegion
@@ -61,7 +62,9 @@ interface AwsResourceCache {
         forceFetch: Boolean = false,
     ): CompletionStage<T> = when (connectionSettings) {
         is ConnectionSettings -> getResource(resource, connectionSettings.region, connectionSettings.credentials, useStale, forceFetch)
-        is TokenConnectionSettings -> getResource(resource, connectionSettings.region, connectionSettings.tokenProvider, useStale, forceFetch)
+        is AwsTokenConnectionSettings -> getResource(resource, connectionSettings.region, connectionSettings.tokenProvider, useStale, forceFetch)
+        // should never hit
+        is ExternalOidcTokenConnectionSettings -> getResource(resource, connectionSettings.region, connectionSettings.tokenProvider, useStale, forceFetch)
     }
 
     /**
@@ -102,7 +105,9 @@ interface AwsResourceCache {
         forceFetch: Boolean = false,
     ): T = when (connectionSettings) {
         is ConnectionSettings -> getResourceNow(resource, connectionSettings.region, connectionSettings.credentials, timeout, useStale, forceFetch)
-        is TokenConnectionSettings -> getResourceNow(resource, connectionSettings.region, connectionSettings.tokenProvider, timeout, useStale, forceFetch)
+        is AwsTokenConnectionSettings -> getResourceNow(resource, connectionSettings.region, connectionSettings.tokenProvider, timeout, useStale, forceFetch)
+        // should never hit
+        is ExternalOidcTokenConnectionSettings -> getResourceNow(resource, connectionSettings.region, connectionSettings.tokenProvider, timeout, useStale, forceFetch)
     }
 
     /**
@@ -124,7 +129,9 @@ interface AwsResourceCache {
     fun <T> getResourceIfPresent(resource: Resource<T>, connectionSettings: ClientConnectionSettings<*>, useStale: Boolean = true): T? =
         when (connectionSettings) {
             is ConnectionSettings -> getResourceIfPresent(resource, connectionSettings.region, connectionSettings.credentials, useStale)
-            is TokenConnectionSettings -> getResourceIfPresent(resource, connectionSettings.region, connectionSettings.tokenProvider, useStale)
+            is AwsTokenConnectionSettings -> getResourceIfPresent(resource, connectionSettings.region, connectionSettings.tokenProvider, useStale)
+            // should never hit
+            is ExternalOidcTokenConnectionSettings -> getResourceIfPresent(resource, connectionSettings.region, connectionSettings.tokenProvider, useStale)
         }
 
     /**

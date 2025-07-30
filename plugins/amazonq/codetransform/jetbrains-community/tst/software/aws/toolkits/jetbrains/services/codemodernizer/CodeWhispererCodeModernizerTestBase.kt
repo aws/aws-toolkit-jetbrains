@@ -40,7 +40,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.Transformation
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStatus
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStep
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationType
-import software.aws.toolkits.core.TokenConnectionSettings
+import software.aws.toolkits.core.AwsTokenConnectionSettings
 import software.aws.toolkits.core.credentials.ToolkitBearerTokenProvider
 import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
@@ -255,7 +255,7 @@ open class CodeWhispererCodeModernizerTestBase(
                 doReturn(provider).whenever(it).delegate
             }
         val connectionSettingsMock =
-            mock<TokenConnectionSettings> {
+            mock<AwsTokenConnectionSettings> {
                 whenever(it.tokenProvider).thenReturn(mockBearerProvider)
             }
         val toolkitConnection =
@@ -343,7 +343,7 @@ open class CodeWhispererCodeModernizerTestBase(
             doReturn(provider).whenever(it).delegate
         }
 
-        val connectionSettingsMock = mock<TokenConnectionSettings> {
+        val connectionSettingsMock = mock<AwsTokenConnectionSettings> {
             whenever(it.tokenProvider).thenReturn(mockBearerProvider)
         }
 

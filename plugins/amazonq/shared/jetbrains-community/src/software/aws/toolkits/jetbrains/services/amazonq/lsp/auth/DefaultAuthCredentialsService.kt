@@ -12,7 +12,7 @@ import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseMessage
-import software.aws.toolkits.core.TokenConnectionSettings
+import software.aws.toolkits.core.AwsTokenConnectionSettings
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
@@ -79,7 +79,7 @@ class DefaultAuthCredentialsService(
                         val connection = manager.activeConnectionForFeature(QConnection.getInstance()) ?: return@scheduleWithFixedDelay
 
                         // periodically poll token to trigger a background refresh if needed
-                        val tokenProvider = (connection.getConnectionSettings() as? TokenConnectionSettings)
+                        val tokenProvider = (connection.getConnectionSettings() as? AwsTokenConnectionSettings)
                             ?.tokenProvider
                             ?.delegate
                             ?.let { it as? BearerTokenProvider } ?: return@scheduleWithFixedDelay
@@ -156,7 +156,7 @@ class DefaultAuthCredentialsService(
         updateTokenCredentials(connection, true)
 
     private fun createUpdateCredentialsPayload(connection: ToolkitConnection, encrypted: Boolean): UpdateCredentialsPayload {
-        val token = (connection.getConnectionSettings() as? TokenConnectionSettings)
+        val token = (connection.getConnectionSettings() as? AwsTokenConnectionSettings)
             ?.tokenProvider
             ?.delegate
             ?.let { it as? BearerTokenProvider }

@@ -24,7 +24,7 @@ import org.eclipse.lsp4j.jsonrpc.messages.ResponseMessage
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
-import software.aws.toolkits.core.TokenConnectionSettings
+import software.aws.toolkits.core.AwsTokenConnectionSettings
 import software.aws.toolkits.core.credentials.ToolkitBearerTokenProvider
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
@@ -128,7 +128,7 @@ class DefaultAuthCredentialsServiceTest {
         every { getConnectionSettings() } returns createMockTokenSettings(accessToken)
     }
 
-    private fun createMockTokenSettings(accessToken: String): TokenConnectionSettings {
+    private fun createMockTokenSettings(accessToken: String): AwsTokenConnectionSettings {
         val token = PKCEAuthorizationGrantToken(
             issuerUrl = "https://example.com",
             refreshToken = "refreshToken",

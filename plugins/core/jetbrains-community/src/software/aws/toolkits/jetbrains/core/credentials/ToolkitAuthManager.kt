@@ -13,6 +13,7 @@ import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
 import software.amazon.awssdk.services.toolkittelemetry.model.MetricUnit
 import software.aws.toolkits.core.ClientConnectionSettings
 import software.aws.toolkits.core.ConnectionSettings
+import software.aws.toolkits.core.AwsTokenConnectionSettings
 import software.aws.toolkits.core.TokenConnectionSettings
 import software.aws.toolkits.core.credentials.CredentialIdentifier
 import software.aws.toolkits.core.credentials.ToolkitBearerTokenProvider
@@ -56,6 +57,13 @@ interface AwsBearerTokenConnection : ToolkitConnection {
 
 sealed interface AuthProfile
 
+sealed interface OidcProfile {
+    var configSessionName: String
+    var startUrl: String
+    var scopes: List<String>
+    val id: String
+}
+
 data class ManagedSsoProfile(
     var ssoRegion: String = "",
     var startUrl: String = "",
@@ -63,22 +71,22 @@ data class ManagedSsoProfile(
 ) : AuthProfile
 
 data class UserConfigSsoSessionProfile(
-    var configSessionName: String = "",
+    override var configSessionName: String = "",
     var ssoRegion: String = "",
-    var startUrl: String = "",
-    var scopes: List<String> = emptyList(),
-) : AuthProfile {
-    val id
+    override var startUrl: String = "",
+    override var scopes: List<String> = emptyList(),
+) : OidcProfile, AuthProfile {
+    override val id
         get() = "$SSO_SESSION_SECTION_NAME:$configSessionName"
 }
 
 data class ExternalOidcProfile(
-    var configSessionName: String = "",
-    var startUrl: String = "",
+    override var configSessionName: String = "",
+    override var startUrl: String = "",
     var clientId: String = "",
-    var scopes: List<String> = emptyList(),
-) : AuthProfile {
-    val id
+    override var scopes: List<String> = emptyList(),
+) : OidcProfile, AuthProfile {
+    override val id
         get() = "$SSO_SESSION_SECTION_NAME:$configSessionName"
 }
 
