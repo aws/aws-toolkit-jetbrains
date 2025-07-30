@@ -1,4 +1,4 @@
-name: Qodana
+name: Qodana - Duplicated Code
 
 on:
   workflow_dispatch:
@@ -38,7 +38,12 @@ jobs:
         env:
           QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }}
         with:
+          # --config points to the DuplicatedCode-only Qodana config
+          args:
+            --config,qodana-configs/duplicated-code/qodana.yaml
           cache-default-branch-only: true
+          # pr-mode off means that the whole repo should be checked for duplicate code, instead of just copy/pastes within the PR
+          pr-mode: false
       - uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: ${{ runner.temp }}/qodana/results/qodana.sarif.json
