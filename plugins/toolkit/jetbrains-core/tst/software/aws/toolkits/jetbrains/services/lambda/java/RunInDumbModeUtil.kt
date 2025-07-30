@@ -19,4 +19,3 @@ internal inline fun runInDumbMode(projectRule: JavaCodeInsightTestFixtureRule, c
         }
     }
 }
-

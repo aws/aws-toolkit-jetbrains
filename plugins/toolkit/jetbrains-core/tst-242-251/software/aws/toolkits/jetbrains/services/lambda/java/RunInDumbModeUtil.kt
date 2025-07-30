@@ -1,6 +1,5 @@
 package software.aws.toolkits.jetbrains.services.lambda.java
 
-import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.DumbServiceImpl
 import kotlinx.coroutines.runBlocking
