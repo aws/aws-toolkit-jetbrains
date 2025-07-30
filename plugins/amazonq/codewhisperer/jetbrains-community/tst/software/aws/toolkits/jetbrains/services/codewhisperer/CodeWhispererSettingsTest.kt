@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.services.codewhisperer
 
 import com.intellij.analysis.problemsView.toolWindow.ProblemsView
 import com.intellij.openapi.components.service
-import com.intellij.openapi.vfs.newvfs.impl.VfsRootAccess
 import com.intellij.openapi.wm.RegisterToolWindowTask
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowManager
@@ -45,7 +44,6 @@ class CodeWhispererSettingsTest : CodeWhispererTestBase() {
     @Before
     override fun setUp() {
         super.setUp()
-        VfsRootAccess.allowRootAccess(disposableRule.disposable, "/usr/bin", "/usr/local/bin")
         // Create a mock ToolWindowManager with working implementation of setAvailable() and isAvailable()
         toolWindowHeadlessManager = object : ToolWindowHeadlessManagerImpl(projectRule.project) {
             private val myToolWindows: MutableMap<String, ToolWindow> = HashMap()
