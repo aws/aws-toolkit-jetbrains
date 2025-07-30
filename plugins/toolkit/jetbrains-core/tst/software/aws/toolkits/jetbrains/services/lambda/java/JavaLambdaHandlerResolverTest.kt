@@ -3,20 +3,14 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.java
 
-import com.intellij.openapi.project.DumbService
-import com.intellij.openapi.project.DumbServiceImpl
-import com.intellij.openapi.project.runInDumbMode
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
 import com.intellij.testFramework.runInEdtAndWait
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.services.lambda.model.Runtime
-import software.aws.toolkits.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.services.lambda.BuiltInRuntimeGroups
 import software.aws.toolkits.jetbrains.services.lambda.Lambda
 import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver
@@ -462,7 +456,7 @@ class JavaLambdaHandlerResolverTest {
             """
         )
 
-        runInDumbMode {
+        runInDumbMode(projectRule) {
             runInEdtAndWait {
                 val elements = Lambda.findPsiElementsForHandler(
                     projectRule.project,
@@ -486,7 +480,7 @@ class JavaLambdaHandlerResolverTest {
             """
         )
 
-        runInDumbMode {
+        runInDumbMode(projectRule) {
             runInEdtAndWait {
                 val handler = JavaLambdaHandlerResolver()
                     .determineHandler(psiClass.findMethodsByName("handleRequest", false)[0])
@@ -507,7 +501,7 @@ class JavaLambdaHandlerResolverTest {
             """
         )
 
-        runInDumbMode {
+        runInDumbMode(projectRule) {
             runInEdtAndWait {
                 val handler = JavaLambdaHandlerResolver()
                     .determineHandlers(
@@ -526,17 +520,5 @@ class JavaLambdaHandlerResolverTest {
         assertThat(sut.handlerDisplayName("com.example.LambdaHandler::handleRequest")).isEqualTo("LambdaHandler.handleRequest")
         assertThat(sut.handlerDisplayName("com.example.LambdaHandler")).isEqualTo("LambdaHandler")
         assertThat(sut.handlerDisplayName("LambdaHandler::handleRequest")).isEqualTo("LambdaHandler.handleRequest")
-    }
-
-    private inline fun runInDumbMode(crossinline block: () -> Unit) {
-        val dumbServiceImpl = DumbService.getInstance(projectRule.project) as DumbServiceImpl
-        runBlocking {
-            // automatically on correct thread in 233+
-            withContext(EDT) {
-                dumbServiceImpl.runInDumbMode {
-                    block()
-                }
-            }
-        }
     }
 }
