@@ -1,3 +1,7 @@
+# _3.87_ (2025-07-30)
+- **(Bug Fix)** change to use promptStickyCard to for image verification notification
+- **(Bug Fix)** Suppress IDE error when current editor context is not valid for Amazon Q
+
 # _3.86_ (2025-07-16)
 - **(Bug Fix)** - Fixed "Insert to Cursor" button to correctly insert code blocks at the current cursor position in the active file
 
