@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Fix the issue that sometime images added via drag & drop are incorrectly routed to pinned context"
+}
