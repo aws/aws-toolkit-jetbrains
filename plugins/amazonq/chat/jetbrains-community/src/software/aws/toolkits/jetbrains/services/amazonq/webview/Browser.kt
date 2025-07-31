@@ -196,6 +196,15 @@ class Browser(parent: Disposable, private val mynahAsset: Path, val project: Pro
                             },
                         })
                     };
+                    
+                    window.setDragAndDropVisible = function(visibility) {
+                        const parsedVisibility = JSON.parse(visibility);
+                        qChat.setDragOverlayVisible(qChat.getSelectedTabId(), parsedVisibility)
+                    };
+                    
+                    window.resetTopBarClicked = function() {
+                        qChat.resetTopBarClicked(qChat.getSelectedTabId())
+                    };
                 }
             </script>        
         """.trimIndent()
