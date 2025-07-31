@@ -105,7 +105,7 @@ object IdeVersions {
         Profile(
             name = "2025.1",
             gateway = ProductProfile(
-                sdkVersion = "251.23774.317",
+                sdkVersion = "251.27812.81",
                 bundledPlugins = listOf("org.jetbrains.plugins.terminal")
             ),
             community = ProductProfile(
