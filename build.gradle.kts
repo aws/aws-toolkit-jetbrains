@@ -76,9 +76,6 @@ allprojects {
             jvmArgs("-XX:ErrorFile=${rootProject.file("build/reports").absolutePath}/hs_err_pid%p.log")
             if (System.getProperty("os.name").contains("Windows")) {
                 jvmArgs("-XX:OnError=powershell.exe ${rootProject.file("dump.ps1")}")
-                // Add Windows-specific JVM args to handle file locking
-                jvmArgs("-Djava.io.tmpdir=${System.getProperty("java.io.tmpdir")}")
-                jvmArgs("-XX:+UnlockExperimentalVMOptions")
             } else {
                 jvmArgs("-XX:OnError=ps auxww")
             }
