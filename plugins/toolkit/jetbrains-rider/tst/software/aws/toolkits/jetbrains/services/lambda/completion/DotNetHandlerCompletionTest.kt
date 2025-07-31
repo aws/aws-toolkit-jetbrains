@@ -9,8 +9,6 @@ import base.backendStartTimeout
 import com.intellij.ui.icons.CachedImageIcon
 import com.jetbrains.rd.ide.model.IconModel
 import com.jetbrains.rd.ui.icons.toIdeaIcon
-import com.jetbrains.rider.test.annotations.Solution
-import com.jetbrains.rider.test.annotations.TestEnvironment
 import org.assertj.core.api.Assertions.assertThat
 import org.testng.annotations.BeforeSuite
 import org.testng.annotations.Test
