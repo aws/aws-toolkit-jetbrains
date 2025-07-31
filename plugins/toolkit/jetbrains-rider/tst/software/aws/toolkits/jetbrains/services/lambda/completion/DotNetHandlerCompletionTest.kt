@@ -30,8 +30,7 @@ class DotNetHandlerCompletionTest : BaseTestWithSolution() {
     }
 
     @Test(description = "Check a single handler is shown in lookup when one is defined in a project.")
-    @TestEnvironment
-    @Solution("SamHelloWorldApp")
+    @TestSamHelloWorldApp
     fun testDetermineHandlersSingleHandler() {
         val handlers = DotNetHandlerCompletion().getHandlersFromBackend(project)
 
@@ -43,8 +42,7 @@ class DotNetHandlerCompletionTest : BaseTestWithSolution() {
     // TODO this test only works on 2019.2. Which we don't support anymore. Fix the test
     // TODO: This test is failing due to handlers detection logic. I assume it need to be fixed if test is correct.
     @Test(enabled = false, description = "Check all handlers are show in completion lookup when multiple handlers are defined in a project.")
-    @TestEnvironment
-    @Solution("SamMultipleHandlersApp")
+    @TestSamMultipleHandlersApp
     fun testDetermineHandlersMultipleHandlers() {
         val handlers = DotNetHandlerCompletion().getHandlersFromBackend(project).sortedBy { it.handler }
 
