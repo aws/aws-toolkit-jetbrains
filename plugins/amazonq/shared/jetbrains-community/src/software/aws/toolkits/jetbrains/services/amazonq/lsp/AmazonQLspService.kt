@@ -633,13 +633,6 @@ private class AmazonQServerInstance(private val project: Project, private val cs
             }
         }
 
-        if (Files.exists(nodePath) && Files.isExecutable(nodePath)) {
-            resolveNodeMetric(true, true)
-            return nodePath
-        }
-
-        // use alternative node runtime if it is not found
-        LOG.warn { "Node Runtime download failed. Fallback to user specified node runtime " }
         // attempt to use user provided node runtime path
         val nodeRuntime = LspSettings.getInstance().getNodeRuntimePath()
         if (!nodeRuntime.isNullOrEmpty()) {
@@ -647,7 +640,16 @@ private class AmazonQServerInstance(private val project: Project, private val cs
 
             resolveNodeMetric(false, true)
             return Path.of(nodeRuntime)
+        }
+
+        // attempt to use bundled node
+        if (Files.exists(nodePath) && Files.isExecutable(nodePath) && validateNode(nodePath) != null) {
+            resolveNodeMetric(true, true)
+            return nodePath
         } else {
+            // use alternative node runtime if it is not found
+            LOG.warn { "Node Runtime download failed. Fallback to user environment search" }
+
             val localNode = locateNodeCommand()
             if (localNode != null) {
                 LOG.info { "Using node from ${localNode.toAbsolutePath()}" }
@@ -689,34 +691,35 @@ private class AmazonQServerInstance(private val project: Project, private val cs
             .asSequence()
             .map { it.toPath() }
             .filter { Files.isRegularFile(it) && Files.isExecutable(it) }
-            .firstNotNullOfOrNull { path ->
-                try {
-                    val process = ProcessBuilder(path.toString(), "--version")
-                        .redirectErrorStream(true)
-                        .start()
+            .firstNotNullOfOrNull(::validateNode)
+    }
 
-                    if (!process.waitFor(5, TimeUnit.SECONDS)) {
-                        process.destroy()
-                        null
-                    } else if (process.exitValue() == 0) {
-                        val version = process.inputStream.bufferedReader().readText().trim()
-                        val majorVersion = version.removePrefix("v").split(".")[0].toIntOrNull()
+    /** @return null if node is not suitable **/
+    private fun validateNode(path: Path) = try {
+        val process = ProcessBuilder(path.toString(), "--version")
+            .redirectErrorStream(true)
+            .start()
 
-                        if (majorVersion != null && majorVersion >= 18) {
-                            path.toAbsolutePath()
-                        } else {
-                            LOG.debug { "Node version < 18 found at: $path (version: $version)" }
-                            null
-                        }
-                    } else {
-                        LOG.debug { "Failed to get version from node at: $path" }
-                        null
-                    }
-                } catch (e: Exception) {
-                    LOG.debug(e) { "Failed to check version for node at: $path" }
-                    null
-                }
+        if (!process.waitFor(5, TimeUnit.SECONDS)) {
+            process.destroy()
+            null
+        } else if (process.exitValue() == 0) {
+            val version = process.inputStream.bufferedReader().readText().trim()
+            val majorVersion = version.removePrefix("v").split(".")[0].toIntOrNull()
+
+            if (majorVersion != null && majorVersion >= 18) {
+                path.toAbsolutePath()
+            } else {
+                LOG.debug { "Node version < 18 found at: $path (version: $version)" }
+                null
             }
+        } else {
+            LOG.debug { "Failed to get version from node at: $path" }
+            null
+        }
+    } catch (e: Exception) {
+        LOG.debug(e) { "Failed to check version for node at: $path" }
+        null
     }
 
     override fun dispose() {
