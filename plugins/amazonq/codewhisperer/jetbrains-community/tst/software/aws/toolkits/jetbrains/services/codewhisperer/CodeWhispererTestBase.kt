@@ -117,7 +117,7 @@ open class CodeWhispererTestBase {
     @Before
     open fun setUp() = runTest {
         mockLanguageServer = mockk()
-        VfsRootAccess.allowRootAccess(disposableRule.disposable, "/usr/bin", "/usr/local/bin")
+        VfsRootAccess.allowRootAccess(disposableRule.disposable, "/usr/bin", "/usr/local/bin", "C:/Program Files/pypy3.10-v7.3.17-win64")
         val starter = object : AmazonQServerInstanceStarter {
             override fun start(
                 project: Project,
