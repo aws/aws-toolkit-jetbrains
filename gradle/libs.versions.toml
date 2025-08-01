@@ -10,7 +10,7 @@ detekt = "1.23.8"
 diff-util = "4.12"
 intellijExt = "1.1.8"
 # match with <root>/settings.gradle.kts
-intellijGradle = "2.7.1-SNAPSHOT"
+intellijGradle = "2.6.0"
 intellijRemoteRobot = "0.11.22"
 jackson = "2.17.2"
 jacoco = "0.8.12"
