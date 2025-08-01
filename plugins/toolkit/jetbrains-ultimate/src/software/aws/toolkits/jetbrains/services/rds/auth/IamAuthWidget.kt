@@ -4,7 +4,8 @@
 package software.aws.toolkits.jetbrains.services.rds.auth
 
 import com.intellij.database.dataSource.DataSourceUiUtil
-import com.intellij.database.dataSource.LocalDataSource
+import com.intellij.database.dataSource.DatabaseConnectionConfig
+import com.intellij.database.dataSource.DatabaseConnectionPoint
 import com.intellij.database.dataSource.url.template.ParametersHolder
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextField
@@ -37,8 +38,8 @@ class IamAuthWidget : AwsAuthWidget() {
         return panel
     }
 
-    override fun save(dataSource: LocalDataSource, copyCredentials: Boolean) {
-        super.save(dataSource, copyCredentials)
+    override fun save(config: DatabaseConnectionConfig, copyCredentials: Boolean) {
+        super.save(config, copyCredentials)
 
         // If the user has not specified a signing host/port we will try to use the URL in the connection
         val host = if (rdsSigningHostField.text.isNullOrBlank()) {
@@ -47,7 +48,7 @@ class IamAuthWidget : AwsAuthWidget() {
             rdsSigningHostField.text
         }
         DataSourceUiUtil.putOrRemove(
-            dataSource.additionalProperties,
+            config.additionalProperties,
             RDS_SIGNING_HOST_PROPERTY,
             host
         )
@@ -58,16 +59,16 @@ class IamAuthWidget : AwsAuthWidget() {
             rdsSigningPortField.text
         }
         DataSourceUiUtil.putOrRemove(
-            dataSource.additionalProperties,
+            config.additionalProperties,
             RDS_SIGNING_PORT_PROPERTY,
             port
         )
     }
 
-    override fun reset(dataSource: LocalDataSource, resetCredentials: Boolean) {
-        super.reset(dataSource, resetCredentials)
-        rdsSigningHostField.text = dataSource.additionalProperties[RDS_SIGNING_HOST_PROPERTY]
-        rdsSigningPortField.text = dataSource.additionalProperties[RDS_SIGNING_PORT_PROPERTY]
+    override fun reset(config: DatabaseConnectionPoint, resetCredentials: Boolean) {
+        super.reset(config, resetCredentials)
+        rdsSigningHostField.text = config.additionalProperties[RDS_SIGNING_HOST_PROPERTY]
+        rdsSigningPortField.text = config.additionalProperties[RDS_SIGNING_PORT_PROPERTY]
     }
 
     override fun updateFromUrl(holder: ParametersHolder) {
