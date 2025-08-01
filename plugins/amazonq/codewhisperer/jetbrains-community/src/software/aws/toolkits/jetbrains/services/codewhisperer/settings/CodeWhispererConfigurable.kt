@@ -123,6 +123,21 @@ class CodeWhispererConfigurable(private val project: Project) :
                     }.enabled(false)
                 }
             }
+
+            row {
+                checkBox(message("aws.settings.codewhisperer.workspace_context")).apply {
+                    connect.subscribe(
+                        ToolkitConnectionManagerListener.TOPIC,
+                        object : ToolkitConnectionManagerListener {
+                            override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
+                                enabled(isCodeWhispererEnabled(project))
+                            }
+                        }
+                    )
+                    enabled(invoke)
+                    bindSelected(codeWhispererSettings::isWorkspaceContextEnabled, codeWhispererSettings::toggleWorkspaceContextEnabled)
+                }.comment(message("aws.settings.codewhisperer.workspace_context.tooltip"))
+            }
         }
 
         group(message("aws.settings.codewhisperer.group.inline_suggestions")) {
@@ -158,20 +173,6 @@ class CodeWhispererConfigurable(private val project: Project) :
         }
 
         group(message("aws.settings.codewhisperer.group.q_chat")) {
-            row {
-                checkBox(message("aws.settings.codewhisperer.workspace_context")).apply {
-                    connect.subscribe(
-                        ToolkitConnectionManagerListener.TOPIC,
-                        object : ToolkitConnectionManagerListener {
-                            override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
-                                enabled(isCodeWhispererEnabled(project))
-                            }
-                        }
-                    )
-                    enabled(invoke)
-                    bindSelected(codeWhispererSettings::isWorkspaceContextEnabled, codeWhispererSettings::toggleWorkspaceContextEnabled)
-                }.comment(message("aws.settings.codewhisperer.workspace_context.tooltip"))
-            }.visible(false)
             row {
                 checkBox(message("aws.settings.codewhisperer.project_context")).apply {
                     connect.subscribe(
