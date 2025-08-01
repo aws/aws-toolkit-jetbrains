@@ -116,6 +116,7 @@ object IdeVersions {
                     "org.jetbrains.idea.maven",
                 ),
                 marketplacePlugins = listOf(
+                    "org.toml.lang:251.26927.47",
                     "PythonCore:251.23774.460",
                     "Docker:251.23774.466",
                     "com.intellij.modules.json:251.27812.12"
@@ -130,6 +131,7 @@ object IdeVersions {
                     "com.jetbrains.codeWithMe",
                 ),
                 marketplacePlugins = listOf(
+                    "org.toml.lang:251.26927.47",
                     "Pythonid:251.23774.460",
                     "org.jetbrains.plugins.go:251.23774.435",
                     "com.intellij.modules.json:251.27812.12"
