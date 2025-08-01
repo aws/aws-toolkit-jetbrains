@@ -129,10 +129,13 @@ object IdeVersions {
                     "JavaScriptDebugger",
                     "com.intellij.database",
                     "com.jetbrains.codeWithMe",
+                    "intellij.grid.plugin",
+                    "intellij.charts"
                 ),
                 marketplacePlugins = listOf(
                     "org.toml.lang:251.26927.47",
                     "Pythonid:251.23774.460",
+                    "PythonCore:251.23774.460",
                     "org.jetbrains.plugins.go:251.23774.435",
                     "com.intellij.modules.json:251.27812.12"
                 )
