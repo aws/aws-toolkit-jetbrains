@@ -37,6 +37,7 @@ class AwsServerCapabilitiesProvider {
             mcpServers = true,
             // Seems like this is the only way to bounce reroute back to the LSP?
             reroute = true,
+            showLogs = true
         )
     }
 }
@@ -51,6 +52,7 @@ data class ChatOptions(
     val export: Boolean,
     val mcpServers: Boolean,
     val reroute: Boolean,
+    val showLogs: Boolean,
 )
 
 data class QuickActions(
