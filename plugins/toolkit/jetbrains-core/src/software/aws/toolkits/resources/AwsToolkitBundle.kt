@@ -10,9 +10,9 @@ object AwsToolkitBundle {
     private const val BUNDLE_FQN: String = "software.aws.toolkits.resources.MessagesBundle"
     private val BUNDLE = DynamicBundle(AwsToolkitBundle::class.java, BUNDLE_FQN)
 
-    fun message(key: @PropertyKey(resourceBundle = BUNDLE_FQN) String, vararg params: Any) =
+    fun message(@PropertyKey(resourceBundle = BUNDLE_FQN) key: String, vararg params: Any) =
         BUNDLE.getMessage(key, *params)
 
-    fun messagePointer(key: @PropertyKey(resourceBundle = BUNDLE_FQN) String, vararg params: Any) =
+    fun messagePointer(@PropertyKey(resourceBundle = BUNDLE_FQN) key: String, vararg params: Any) =
         BUNDLE.getLazyMessage(key, *params)
 }

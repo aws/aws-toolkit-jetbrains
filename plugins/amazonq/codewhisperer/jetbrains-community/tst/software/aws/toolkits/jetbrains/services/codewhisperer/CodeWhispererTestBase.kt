@@ -7,6 +7,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.vfs.newvfs.impl.VfsRootAccess
 import com.intellij.psi.PsiFile
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.RuleChain
@@ -116,6 +117,7 @@ open class CodeWhispererTestBase {
     @Before
     open fun setUp() = runTest {
         mockLanguageServer = mockk()
+        VfsRootAccess.allowRootAccess(disposableRule.disposable, "/usr/bin", "/usr/local/bin", "C:/Program Files/pypy3.10-v7.3.17-win64")
         val starter = object : AmazonQServerInstanceStarter {
             override fun start(
                 project: Project,

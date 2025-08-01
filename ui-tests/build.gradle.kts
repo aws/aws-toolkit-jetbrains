@@ -45,7 +45,7 @@ tasks.register<Test>("uiTestCore") {
     systemProperty("junit.jupiter.extensions.autodetection.enabled", true)
 
     systemProperty("testDataPath", project.rootDir.resolve("testdata").toString())
-    systemProperty("testReportPath", project.buildDir.resolve("reports").resolve("tests").resolve("testRecordings").toString())
+    systemProperty("testReportPath", layout.buildDirectory.dir("reports/tests/testRecordings").get().asFile.toString())
 
     systemProperty("GRADLE_PROJECT", "sandbox-all")
     useJUnitPlatform {

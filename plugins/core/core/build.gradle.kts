@@ -11,6 +11,7 @@ plugins {
 dependencies {
     compileOnlyApi(project(":plugin-core:resources"))
     compileOnlyApi(project(":plugin-core:sdk-codegen"))
+    compileOnly(libs.kotlin.coroutines)
 
     api(libs.aws.cognitoidentity)
     api(libs.aws.ecr)

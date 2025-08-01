@@ -8,7 +8,7 @@ import com.intellij.util.ui.ListTableModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Before
@@ -75,7 +75,7 @@ class QueryActorTest : BaseCoroutineTest() {
                 GetQueryResultsResponse.builder().status(QueryStatus.COMPLETE).results(sampleResults).build()
             )
 
-        runBlockingTest {
+        runTest {
             queryactor.channel.send(InsightsQueryResultsActor.Message.StartLoadingAll)
             tableModel.waitForModelToBeAtLeast(1)
         }
@@ -103,7 +103,7 @@ class QueryActorTest : BaseCoroutineTest() {
             .thenReturn(
                 GetQueryResultsResponse.builder().status(QueryStatus.COMPLETE).results(firstSampleResultList, secondSampleResultList).build()
             )
-        runBlockingTest {
+        runTest {
             queryactor.channel.send(InsightsQueryResultsActor.Message.StartLoadingAll)
             tableModel.waitForModelToBeAtLeast(2)
         }
@@ -133,7 +133,7 @@ class QueryActorTest : BaseCoroutineTest() {
                 CloudWatchLogsException::class.java
             )
 
-        runBlockingTest {
+        runTest {
             queryactor.channel.send(InsightsQueryResultsActor.Message.StartLoadingAll)
             while (!queryactor.channel.isClosedForSend) {
                 delay(10)
@@ -150,7 +150,7 @@ class QueryActorTest : BaseCoroutineTest() {
             .thenReturn(
                 GetQueryResultsResponse.builder().status(QueryStatus.COMPLETE).build()
             )
-        runBlockingTest {
+        runTest {
             queryactor.channel.send(InsightsQueryResultsActor.Message.StartLoadingAll)
             waitForTrue { table.emptyText.text == message("cloudwatch.logs.no_results_found") }
         }
@@ -201,7 +201,7 @@ class QueryActorTest : BaseCoroutineTest() {
                 latch.countDown()
             }
 
-        runBlockingTest {
+        runTest {
             queryactor.channel.send(InsightsQueryResultsActor.Message.StartLoadingAll)
             tableModel.waitForModelToBeAtLeast(1)
             queryactor.channel.send(InsightsQueryResultsActor.Message.StopLoading)

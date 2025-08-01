@@ -19,7 +19,7 @@ dependencies {
     // - The dependency on the Kotlin Standard Library (stdlib) is automatically added when using the Gradle Kotlin plugin and may conflict with the version provided with the IntelliJ Platform, see: https://jb.gg/intellij-platform-kotlin-stdlib
     //- The Kotlin Coroutines library should not be added explicitly to the project as it is already provided with the IntelliJ Platform.
     implementation(versionCatalog.findBundle("kotlin").get())
-    implementation(versionCatalog.findLibrary("kotlin-coroutines").get())
+//    implementation(versionCatalog.findLibrary("kotlin-coroutines").get())
 
     testFixturesApi(versionCatalog.findLibrary("kotlin-test").get())
     testFixturesApi(versionCatalog.findLibrary("kotlin-coroutinesDebug").get()) {

@@ -10,7 +10,7 @@ import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.runInEdtAndWait
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Before
@@ -85,7 +85,7 @@ class DeployActionTest : BaseCoroutineTest(30) {
             on { startDeployment(any<StartDeploymentRequest>()) } doAnswer { throw RuntimeException("Failed to start deployment") }
         }
 
-        runBlockingTest {
+        runTest {
             action.deploy(
                 AppRunnerServiceNode(projectRule.project, ServiceSummary.builder().serviceName(aString()).serviceArn(aString()).build()),
                 appRunnerClient,
@@ -114,7 +114,7 @@ class DeployActionTest : BaseCoroutineTest(30) {
             on { describeLogStreams(any<DescribeLogStreamsRequest>()) } doAnswer { throw RuntimeException("broke") }
         }
 
-        runBlockingTest {
+        runTest {
             action.deploy(
                 AppRunnerServiceNode(projectRule.project, ServiceSummary.builder().serviceName(aString()).serviceArn(aString()).build()),
                 appRunnerClient,
