@@ -117,5 +117,7 @@
 
         <action id="q.manage.subscription"
                 class="software.aws.toolkits.jetbrains.services.codewhisperer.actions.ManageSubscription"/>
+        <action id="q.account.details"
+                class="software.aws.toolkits.jetbrains.services.codewhisperer.actions.AccountDetails"/>
     </actions>
 </idea-plugin>

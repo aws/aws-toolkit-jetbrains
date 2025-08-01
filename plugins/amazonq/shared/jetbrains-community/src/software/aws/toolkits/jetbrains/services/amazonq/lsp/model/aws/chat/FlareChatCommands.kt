@@ -35,6 +35,7 @@ const val CHAT_TAB_ADD = "aws/chat/tabAdd"
 const val CHAT_TAB_BAR_ACTIONS = "aws/chat/tabBarAction"
 const val CHAT_TAB_CHANGE = "aws/chat/tabChange"
 const val CHAT_TAB_REMOVE = "aws/chat/tabRemove"
+const val CHAT_SUBSCRIPTION_DETAILS = "aws/chat/subscription/details"
 
 const val DID_COPY_FILE = "aws/didCopyFile"
 const val DID_WRITE_FILE = "aws/didWriteFile"
