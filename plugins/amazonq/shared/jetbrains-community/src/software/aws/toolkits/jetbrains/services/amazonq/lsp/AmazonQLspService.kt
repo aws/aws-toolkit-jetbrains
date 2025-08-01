@@ -31,17 +31,23 @@ import com.intellij.util.net.ssl.CertificateManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.timeout
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.selects.select
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -55,6 +61,7 @@ import org.eclipse.lsp4j.InitializedParams
 import org.eclipse.lsp4j.SynchronizationCapabilities
 import org.eclipse.lsp4j.TextDocumentClientCapabilities
 import org.eclipse.lsp4j.WorkspaceClientCapabilities
+import org.eclipse.lsp4j.jsonrpc.JsonRpcException
 import org.eclipse.lsp4j.jsonrpc.Launcher
 import org.eclipse.lsp4j.jsonrpc.MessageConsumer
 import org.eclipse.lsp4j.jsonrpc.RemoteEndpoint
@@ -101,6 +108,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 // https://github.com/redhat-developer/lsp4ij/blob/main/src/main/java/com/redhat/devtools/lsp4ij/server/LSPProcessListener.java
@@ -109,6 +117,7 @@ internal class LSPProcessListener : ProcessListener {
     private val outputStream = PipedOutputStream()
     private val outputStreamWriter = OutputStreamWriter(outputStream, StandardCharsets.UTF_8)
     val inputStream = PipedInputStream(outputStream)
+    val errorStream = MutableSharedFlow<String>(replay = 50, onBufferOverflow = BufferOverflow.DROP_OLDEST)
 
     override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
         if (ProcessOutputType.isStdout(outputType)) {
@@ -120,6 +129,7 @@ internal class LSPProcessListener : ProcessListener {
             }
         } else if (ProcessOutputType.isStderr(outputType)) {
             LOG.warn { "LSP process stderr: ${event.text}" }
+            errorStream.tryEmit(event.text)
         } else if (outputType == ProcessOutputType.SYSTEM) {
             LOG.info { "LSP system events: ${event.text}" }
         }
@@ -156,18 +166,12 @@ class AmazonQLspService @VisibleForTesting constructor(
     constructor(project: Project, cs: CoroutineScope) : this(DefaultAmazonQServerInstanceStarter, project, cs)
 
     private val _flowInstance = MutableSharedFlow<AmazonQServerInstanceFacade>(replay = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
-    val instanceFlow = _flowInstance.asSharedFlow().map { it.languageServer }
+    val instanceFlow = _flowInstance.asSharedFlow()
 
     private var instance: Deferred<AmazonQServerInstanceFacade>
-
-    val encryptionManager
-        get() = instance.getCompleted().encryptionManager
     private val heartbeatJob: Job
     private val restartTimestamps = ArrayDeque<Long>()
     private val restartMutex = Mutex() // Separate mutex for restart tracking
-
-    val rawEndpoint
-        get() = instance.getCompleted().rawEndpoint
 
     // dont allow lsp commands if server is restarting
     private val mutex = Mutex(false)
@@ -176,16 +180,17 @@ class AmazonQLspService @VisibleForTesting constructor(
         // manage lifecycle RAII-like so we can restart at arbitrary time
         // and suppress IDE error if server fails to start
         var attempts = 0
-        while (attempts < 3) {
+        var lastInstance: AmazonQServerInstanceFacade? = null
+        while (isActive && attempts < 3 && checkForRemainingRestartAttempts()) {
             try {
                 // no timeout; start() can download which may take long time
-                val instance = starter.start(project, cs).also {
+                lastInstance = starter.start(project, cs).also {
                     Disposer.register(this@AmazonQLspService, it)
                 }
-                // wait for handshake to complete
-                instance.initializeResult.join()
 
-                return@async instance.also {
+                lastInstance.waitForInitializeOrThrow(this)
+
+                return@async lastInstance.also {
                     _flowInstance.emit(it)
                 }
             } catch (e: Exception) {
@@ -194,7 +199,12 @@ class AmazonQLspService @VisibleForTesting constructor(
             attempts++
         }
 
-        error("Failed to start LSP server in 3 attempts")
+        // does not capture all failure
+        lastInstance?.let {
+            _flowInstance.tryEmit(it)
+        }
+
+        lastInstance ?: error("LSP failed all attempts to start")
     }
 
     init {
@@ -294,20 +304,20 @@ class AmazonQLspService @VisibleForTesting constructor(
     suspend fun<T> execute(runnable: suspend AmazonQLspService.(AmazonQLanguageServer) -> T): T {
         val lsp = withTimeout(5.seconds) {
             val holder = mutex.withLock { instance }.await()
-            holder.initializeResult.join()
+            holder.waitForInitializeOrThrow(this)
 
             holder.languageServer
         }
         return runnable(lsp)
     }
 
-    suspend fun<T> executeIfRunning(runnable: suspend AmazonQLspService.(AmazonQLanguageServer) -> T): T? = withContext(dispatcher) {
+    suspend fun<T> executeIfRunning(runnable: suspend AmazonQServerInstanceFacade.(AmazonQLanguageServer) -> T): T? = withContext(dispatcher) {
         val lsp = try {
             withTimeout(5.seconds) {
                 val holder = mutex.withLock { instance }.await()
-                holder.initializeResult.join()
+                holder.waitForInitializeOrThrow(this)
 
-                holder.languageServer
+                holder
             }
         } catch (_: Exception) {
             LOG.debug { "LSP not running" }
@@ -315,10 +325,10 @@ class AmazonQLspService @VisibleForTesting constructor(
             null
         }
 
-        lsp?.let { runnable(it) }
+        lsp?.let { runnable(it, it.languageServer) }
     }
 
-    fun<T> syncExecuteIfRunning(runnable: suspend AmazonQLspService.(AmazonQLanguageServer) -> T): T? =
+    fun<T> syncExecuteIfRunning(runnable: suspend AmazonQServerInstanceFacade.(AmazonQLanguageServer) -> T): T? =
         runBlocking(dispatcher) {
             executeIfRunning(runnable)
         }
@@ -331,13 +341,14 @@ class AmazonQLspService @VisibleForTesting constructor(
         private const val RESTART_WINDOW_MS = 3 * 60 * 1000
         fun getInstance(project: Project) = project.service<AmazonQLspService>()
 
-        suspend fun <T> executeAsyncIfRunning(project: Project, runnable: suspend AmazonQLspService.(AmazonQLanguageServer) -> T): T? =
+        suspend fun <T> executeAsyncIfRunning(project: Project, runnable: suspend AmazonQServerInstanceFacade.(AmazonQLanguageServer) -> T): T? =
             project.serviceIfCreated<AmazonQLspService>()?.executeIfRunning(runnable)
     }
 }
 
 interface AmazonQServerInstanceFacade : Disposable {
     val launcher: Launcher<AmazonQLanguageServer>
+    val errorStream: Flow<String>
 
     @Suppress("ForbiddenVoid")
     val launcherFuture: Future<Void>
@@ -349,11 +360,18 @@ interface AmazonQServerInstanceFacade : Disposable {
 
     val rawEndpoint: RemoteEndpoint
         get() = launcher.remoteEndpoint
+
+    suspend fun waitForInitializeOrThrow(scope: CoroutineScope) =
+        select {
+            initializeResult.onAwait { it }
+            scope.async { launcherFuture.get() }.onAwait { error(errorStream.timeout(500.milliseconds).catch { }.toList().joinToString(separator = "")) }
+        }
 }
 
 private class AmazonQServerInstance(private val project: Project, private val cs: CoroutineScope) : Disposable, AmazonQServerInstanceFacade {
     override val encryptionManager = JwtEncryptionManager()
     override val launcher: Launcher<AmazonQLanguageServer>
+    override val errorStream: Flow<String>
 
     @Suppress("ForbiddenVoid")
     override val launcherFuture: Future<Void>
@@ -506,6 +524,7 @@ private class AmazonQServerInstance(private val project: Project, private val cs
 
         launcherHandler = KillableColoredProcessHandler.Silent(cmd)
         val inputWrapper = LSPProcessListener()
+        errorStream = inputWrapper.errorStream
         launcherHandler.addProcessListener(inputWrapper)
         launcherHandler.startNotify()
 
@@ -543,11 +562,21 @@ private class AmazonQServerInstance(private val project: Project, private val cs
                         AwsServerCapabilitiesProvider.getInstance(project).setAwsServerCapabilities(result.getAwsServerCapabilities())
                     }
 
-                    // required
-                    consumer?.consume(message)
+                    try {
+                        // required
+                        consumer?.consume(message)
+                    } catch (e: JsonRpcException) {
+                        // suppress stream error if notification, else bubble up for correct error propagation
+                        if (JsonRpcException.indicatesStreamClosed(e) && message is NotificationMessage) {
+                            LOG.warn { "Failed to send notification message (${message.method}): ${e.cause}" }
+                            LOG.debug(e) { "Failed to send notification message (${message.method})." }
+                        } else {
+                            throw e
+                        }
+                    }
                 }
             }
-            .setLocalService(AmazonQLanguageClientImpl(project))
+            .setLocalService(AmazonQLanguageClientImpl(project, this))
             .setRemoteInterface(AmazonQLanguageServer::class.java)
             .configureGson {
                 // otherwise Gson treats all numbers as double which causes deser issues

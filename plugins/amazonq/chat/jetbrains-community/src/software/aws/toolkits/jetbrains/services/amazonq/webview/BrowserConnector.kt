@@ -20,13 +20,19 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.timeout
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.cef.browser.CefBrowser
 import org.eclipse.lsp4j.TextDocumentIdentifier
+import org.eclipse.lsp4j.jsonrpc.JsonRpcException
 import org.eclipse.lsp4j.jsonrpc.ResponseErrorException
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseErrorCode
 import software.aws.toolkits.core.utils.error
@@ -37,6 +43,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.apps.AppConnection
 import software.aws.toolkits.jetbrains.services.amazonq.commands.MessageSerializer
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQChatServer
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQServerInstanceFacade
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.JsonRpcMethod
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.JsonRpcNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.JsonRpcRequest
@@ -114,6 +121,7 @@ import software.aws.toolkits.telemetry.Telemetry
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionException
 import java.util.function.Function
+import kotlin.time.Duration.Companion.milliseconds
 
 class BrowserConnector(
     private val serializer: MessageSerializer = MessageSerializer.getInstance(),
@@ -237,43 +245,20 @@ class BrowserConnector(
                 val chatParams: ObjectNode = (node.params as ObjectNode)
                     .setAll(serializedEnrichmentParams)
 
-                val tabId = requestFromUi.params.tabId
-                val partialResultToken = chatCommunicationManager.addPartialChatMessage(tabId)
-                chatCommunicationManager.registerPartialResultToken(partialResultToken)
-
-                var encryptionManager: JwtEncryptionManager? = null
-                val result = AmazonQLspService.executeAsyncIfRunning(project) { server ->
-                    encryptionManager = this.encryptionManager
-
-                    val encryptedParams = EncryptedChatParams(this.encryptionManager.encrypt(chatParams), partialResultToken)
-                    rawEndpoint.request(SEND_CHAT_COMMAND_PROMPT, encryptedParams) as CompletableFuture<String>
-                } ?: (CompletableFuture.failedFuture(IllegalStateException("LSP Server not running")))
-
-                // We assume there is only one outgoing request per tab because the input is
-                // blocked when there is an outgoing request
-                chatCommunicationManager.setInflightRequestForTab(tabId, result)
-                showResult(result, partialResultToken, tabId, encryptionManager, browser)
+                doChatRequest(requestFromUi.params.tabId, browser) { serverFacade, partialResultToken ->
+                    val encryptedParams = EncryptedChatParams(serverFacade.encryptionManager.encrypt(chatParams), partialResultToken)
+                    (serverFacade.rawEndpoint.request(SEND_CHAT_COMMAND_PROMPT, encryptedParams) as CompletableFuture<String>)
+                }
             }
 
             CHAT_QUICK_ACTION -> {
-                val requestFromUi = serializer.deserializeChatMessages<QuickChatActionRequest>(node)
-                val tabId = requestFromUi.params.tabId
                 val quickActionParams = node.params ?: error("empty payload")
-                val partialResultToken = chatCommunicationManager.addPartialChatMessage(tabId)
-                chatCommunicationManager.registerPartialResultToken(partialResultToken)
-                var encryptionManager: JwtEncryptionManager? = null
-                val result = AmazonQLspService.executeAsyncIfRunning(project) { server ->
-                    encryptionManager = this.encryptionManager
+                val requestFromUi = serializer.deserializeChatMessages<QuickChatActionRequest>(node)
 
-                    val encryptedParams = EncryptedQuickActionChatParams(this.encryptionManager.encrypt(quickActionParams), partialResultToken)
-                    rawEndpoint.request(CHAT_QUICK_ACTION, encryptedParams) as CompletableFuture<String>
-                } ?: (CompletableFuture.failedFuture(IllegalStateException("LSP Server not running")))
-
-                // We assume there is only one outgoing request per tab because the input is
-                // blocked when there is an outgoing request
-                chatCommunicationManager.setInflightRequestForTab(tabId, result)
-
-                showResult(result, partialResultToken, tabId, encryptionManager, browser)
+                doChatRequest(requestFromUi.params.tabId, browser) { serverFacade, partialResultToken ->
+                    val encryptedParams = EncryptedQuickActionChatParams(serverFacade.encryptionManager.encrypt(quickActionParams), partialResultToken)
+                    serverFacade.rawEndpoint.request(CHAT_QUICK_ACTION, encryptedParams) as CompletableFuture<String>
+                }
             }
 
             CHAT_LIST_CONVERSATIONS -> {
@@ -465,7 +450,6 @@ class BrowserConnector(
             AUTH_FOLLOW_UP_CLICKED -> {
                 val message = serializer.deserializeChatMessages<AuthFollowUpClickNotification>(node)
                 chatCommunicationManager.handleAuthFollowUpClicked(
-                    project,
                     message.params
                 )
             }
@@ -564,18 +548,44 @@ class BrowserConnector(
         }
     }
 
-    private fun showResult(
-        result: CompletableFuture<String>,
-        partialResultToken: String,
+    private suspend fun doChatRequest(
         tabId: String,
-        encryptionManager: JwtEncryptionManager?,
         browser: Browser,
+        action: (AmazonQServerInstanceFacade, String) -> CompletableFuture<String>,
     ) {
+        val partialResultToken = chatCommunicationManager.addPartialChatMessage(tabId)
+        chatCommunicationManager.registerPartialResultToken(partialResultToken)
+        var encryptionManager: JwtEncryptionManager? = null
+        val result = AmazonQLspService.executeAsyncIfRunning(project) { _ ->
+            // jank
+            encryptionManager = this@executeAsyncIfRunning.encryptionManager
+            action(this, partialResultToken)
+                .handle { result, ex ->
+                    if (ex == null) {
+                        return@handle result
+                    }
+
+                    if (JsonRpcException.indicatesStreamClosed(ex)) {
+                        // the flow buffer will never complete so insert some arbitrary timeout until we figure out how to end the flow
+                        // after the error stream is closed and drained
+                        val errorStream = runBlocking { this@executeAsyncIfRunning.errorStream.timeout(500.milliseconds).catch { }.toList() }
+                        throw IllegalStateException("LSP execution error. See logs for more details: ${errorStream.joinToString(separator = "")}", ex.cause)
+                    }
+
+                    throw ex
+                }
+        } ?: (CompletableFuture.failedFuture(IllegalStateException("LSP failed to start. See logs for more details: ${AmazonQLspService.getInstance(project).instanceFlow.first().errorStream.timeout(500.milliseconds).catch { }.toList().joinToString(separator = "")}")))
+
+        // We assume there is only one outgoing request per tab because the input is
+        // blocked when there is an outgoing request
+        chatCommunicationManager.setInflightRequestForTab(tabId, result)
+
         result.whenComplete { value, error ->
             try {
                 if (error != null) {
                     throw error
                 }
+
                 chatCommunicationManager.removePartialChatMessage(partialResultToken)
                 val messageToChat = ChatCommunicationManager.convertToJsonToSendToChat(
                     SEND_CHAT_COMMAND_PROMPT,
@@ -585,7 +595,7 @@ class BrowserConnector(
                 )
                 browser.postChat(messageToChat)
                 chatCommunicationManager.removeInflightRequestForTab(tabId)
-            } catch (e: CancellationException) {
+            } catch (_: CancellationException) {
                 LOG.warn { "Cancelled chat generation" }
                 try {
                     chatAsyncResultManager.createRequestId(partialResultToken)
