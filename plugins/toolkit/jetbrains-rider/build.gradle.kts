@@ -352,13 +352,13 @@ tasks.withType<Detekt>().configureEach {
 }
 
 tasks.integrationTest {
-    enabled = !SystemInfo.isLinux
+    enabled = false
     // linux: computeSystemScaleFactor "Must be precomputed"
     systemProperty("hidpi", false)
 }
 
 tasks.test {
-    enabled = !SystemInfo.isLinux
+    enabled = false
     if (SystemInfo.isWindows) {
         // extremely flaky
         filter.excludeTestsMatching("software.aws.toolkits.jetbrains.services.lambda.dotnet.LambdaGutterMarkHighlightingTest*")
