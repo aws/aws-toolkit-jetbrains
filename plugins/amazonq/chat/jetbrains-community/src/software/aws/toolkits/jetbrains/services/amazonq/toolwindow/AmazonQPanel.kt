@@ -31,7 +31,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.commands.MessageTypeRegi
 import software.aws.toolkits.jetbrains.services.amazonq.isQSupportedInThisVersion
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts.ArtifactManager
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AsyncChatUiListener
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommunicationManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.FlareUiMessage
 import software.aws.toolkits.jetbrains.services.amazonq.messages.AmazonQMessage
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessageConnector
@@ -64,21 +64,6 @@ class AmazonQPanel(val project: Project, private val scope: CoroutineScope) : Di
     private val browserConnector = BrowserConnector(project = project)
     private val editorThemeAdapter = EditorThemeAdapter()
     private val appConnections = mutableListOf<AppConnection>()
-
-    init {
-        project.messageBus.connect().subscribe(
-            AsyncChatUiListener.TOPIC,
-            object : AsyncChatUiListener {
-                override fun onChange(command: String) {
-                    browser.get()?.postChat(command)
-                }
-
-                override fun onChange(command: FlareUiMessage) {
-                    browser.get()?.postChat(command)
-                }
-            }
-        )
-    }
 
     val component = panel {
         row {
@@ -134,6 +119,11 @@ class AmazonQPanel(val project: Project, private val scope: CoroutineScope) : Di
                     browser.complete(
                         Browser(this@AmazonQPanel, webUri, project).also { browserInstance ->
                             wrapper.setContent(browserInstance.component())
+                            
+                            // Register direct callback instead of using message bus
+                            ChatCommunicationManager.getInstance(project).setChatUpdateCallback { message ->
+                                browserInstance.postChat(message)
+                            }
 
                             // Add DropTarget to the browser component
                             // JCEF does not propagate OS-level dragenter, dragOver and drop into DOM.

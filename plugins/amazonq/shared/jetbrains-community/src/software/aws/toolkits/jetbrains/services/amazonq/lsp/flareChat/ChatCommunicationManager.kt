@@ -49,10 +49,16 @@ class ChatCommunicationManager(private val project: Project, private val cs: Cor
         uiReady.complete(true)
     }
 
+    private var chatUpdateCallback: ((FlareUiMessage) -> Unit)? = null
+
+    fun setChatUpdateCallback(callback: (FlareUiMessage) -> Unit) {
+        chatUpdateCallback = callback
+    }
+
     fun notifyUi(uiMessage: FlareUiMessage) {
         cs.launch {
             uiReady.await()
-            AsyncChatUiListener.notifyPartialMessageUpdate(project, uiMessage)
+            chatUpdateCallback?.invoke(uiMessage)
         }
     }
 
@@ -131,13 +137,10 @@ class ChatCommunicationManager(private val project: Project, private val cs: Cor
         val encryptedPartialChatResult = getObject(params, String::class.java)
         if (encryptedPartialChatResult != null) {
             val partialChatResult = AmazonQLspService.getInstance(project).encryptionManager.decrypt(encryptedPartialChatResult)
-            val uiMessage = convertToJsonToSendToChat(
+            notifyUi(FlareUiMessage(
                 command = SEND_CHAT_COMMAND_PROMPT,
-                tabId = tabId,
                 params = partialChatResult,
-                isPartialResult = true
-            )
-            AsyncChatUiListener.notifyPartialMessageUpdate(project, uiMessage)
+            ))
         }
     }
 
