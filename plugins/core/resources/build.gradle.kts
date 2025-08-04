@@ -12,7 +12,7 @@ plugins {
 
 sourceSets {
     main {
-        resources.srcDir("$buildDir/downloaded-resources")
+        resources.srcDir(layout.buildDirectory.dir("downloaded-resources"))
     }
 }
 
@@ -26,12 +26,13 @@ tasks.test {
 }
 
 val download = tasks.register<Download>("downloadResources") {
-    dest("$buildDir/downloaded-resources/software/aws/toolkits/resources/")
+    val resourcesDir = layout.buildDirectory.dir("downloaded-resources/software/aws/toolkits/resources/").get().asFile
+    dest(resourcesDir)
     src(listOf("https://idetoolkits.amazonwebservices.com/endpoints.json"))
     onlyIfModified(true)
     useETag(true)
     doFirst {
-        mkdir("$buildDir/downloaded-resources/software/aws/toolkits/resources/")
+        mkdir(resourcesDir)
     }
 }
 

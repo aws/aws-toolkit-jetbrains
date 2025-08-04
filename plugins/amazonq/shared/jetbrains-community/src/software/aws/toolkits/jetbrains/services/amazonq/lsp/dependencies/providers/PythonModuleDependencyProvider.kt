@@ -19,7 +19,7 @@ internal class PythonModuleDependencyProvider : ModuleDependencyProvider {
         PythonSdkUtil.findPythonSdk(module)?.let { sdk ->
             PythonSdkUtil.getSitePackagesDirectory(sdk)?.let { sitePackagesDir ->
                 val packageManager = PythonPackageManager.forSdk(module.project, sdk)
-                packageManager.installedPackages.forEach { pkg ->
+                getInstalledPackages(packageManager).forEach { pkg ->
                     val packageDir = sitePackagesDir.findChild(pkg.name)
                     if (packageDir != null) {
                         dependencies.add(packageDir.path)
