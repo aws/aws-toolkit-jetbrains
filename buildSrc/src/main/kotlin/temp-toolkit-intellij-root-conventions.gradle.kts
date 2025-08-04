@@ -23,10 +23,10 @@ plugins {
     id("toolkit-publish-root-conventions")
 }
 
-toolkitIntelliJ.apply {
-    val runIdeVariant = providers.gradleProperty("runIdeVariant")
-    ideFlavor.set(IdeFlavor.values().firstOrNull { it.name == runIdeVariant.orNull } ?: IdeFlavor.IC)
-}
+//toolkitIntelliJ.apply {
+//    val runIdeVariant = providers.gradleProperty("runIdeVariant")
+//    ideFlavor.set(IdeFlavor.values().firstOrNull { it.name == runIdeVariant.orNull } ?: IdeFlavor.IC)
+//}
 
 val remoteRobotPort: String by project
 val ideProfile = IdeVersions.ideProfile(project)
@@ -66,12 +66,12 @@ tasks.test {
 }
 
 dependencies {
-    intellijPlatform {
-        val type = toolkitIntelliJ.ideFlavor.map { IntelliJPlatformType.fromCode(it.toString()) }
-        val version = toolkitIntelliJ.version()
-
-        create(type, version, useInstaller = false)
-    }
+//    intellijPlatform {
+//        val type = toolkitIntelliJ.ideFlavor.map { IntelliJPlatformType.fromCode(it.toString()) }
+//        val version = toolkitIntelliJ.version()
+//
+//        create(type, version, useInstaller = false)
+//    }
 
     implementation(project(":plugin-toolkit:jetbrains-ultimate"))
     project.findProject(":plugin-toolkit:jetbrains-gateway")?.let {
