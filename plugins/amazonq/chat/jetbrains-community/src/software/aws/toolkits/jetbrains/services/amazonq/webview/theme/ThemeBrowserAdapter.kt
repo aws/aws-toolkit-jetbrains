@@ -44,10 +44,10 @@ class ThemeBrowserAdapter {
         append(CssVariable.TextColorLight, theme.emptyText)
         append(CssVariable.TextColorDisabled, theme.inactiveText)
 
-        append(CssVariable.Background, bg)
+        append(CssVariable.Background, theme.background)
         append(CssVariable.BackgroundAlt, altBg)
         append(CssVariable.CardBackground, bg)
-        append(CssVariable.CardBackgroundAlt, altBg)
+        append(CssVariable.CardBackgroundAlt, theme.editorBackground)
         append(CssVariable.BorderDefault, theme.border)
         append(CssVariable.BorderFocused, theme.inputBorderFocused)
         append(CssVariable.BorderUnfocused, theme.inputBorderUnfocused)
