@@ -42,7 +42,7 @@ dependencies {
 
 val changelog = tasks.register<GeneratePluginChangeLog>("pluginChangeLog") {
     includeUnreleased.set(true)
-    changeLogFile.set(project.file("$buildDir/changelog/change-notes.xml"))
+    changeLogFile.set(project.layout.buildDirectory.file("changelog/change-notes.xml"))
 }
 
 tasks.compileJava {
@@ -113,7 +113,7 @@ val gatewayArtifacts by configurations.creating {
     extendsFrom(configurations["implementation"], configurations["runtimeOnly"])
 }
 
-val gatewayJar = tasks.create<Jar>("gatewayJar") {
+val gatewayJar = tasks.register<Jar>("gatewayJar") {
     // META-INF/plugin.xml is a duplicate?
     // unclear why the exclude() statement didn't work
     duplicatesStrategy = DuplicatesStrategy.WARN
