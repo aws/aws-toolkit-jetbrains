@@ -136,7 +136,7 @@ class AmazonQPanel(val project: Project, private val scope: CoroutineScope) : Di
                     browser.complete(
                         Browser(this@AmazonQPanel, webUri, project).also { browserInstance ->
                             wrapper.setContent(browserInstance.component())
-                            
+
                             // Register direct callback instead of using message bus
                             ChatCommunicationManager.getInstance(project).setChatUpdateCallback { message ->
                                 browserInstance.postChat(message)
