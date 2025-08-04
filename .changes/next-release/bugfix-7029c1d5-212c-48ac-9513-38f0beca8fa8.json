@@ -1,4 +1,0 @@
-{
-  "type" : "bugfix",
-  "description" : "Fix unsupported files being shown in file picker when selecting images for adding image context in Windows"
-}

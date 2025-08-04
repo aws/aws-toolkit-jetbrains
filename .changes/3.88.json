@@ -1,0 +1,14 @@
+{
+  "date" : "2025-08-04",
+  "version" : "3.88",
+  "entries" : [ {
+    "type" : "feature",
+    "description" : "Add support for 2025.2"
+  }, {
+    "type" : "bugfix",
+    "description" : "Fix unsupported files being shown in file picker when selecting images for adding image context in Windows"
+  }, {
+    "type" : "bugfix",
+    "description" : "Fix the issue that sometime images added via drag & drop are incorrectly routed to pinned context"
+  } ]
+}
