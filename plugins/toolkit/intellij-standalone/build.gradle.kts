@@ -27,6 +27,12 @@ dependencies {
     }
 }
 
+tasks.prepareJarSearchableOptions {
+    val pluginXmlJar = project(":plugin-core").tasks.jar
+    dependsOn(pluginXmlJar)
+    composedJarFile.set(pluginXmlJar.flatMap { it.archiveFile })
+}
+
 tasks.check {
     val serviceSubdirs = project(":plugin-toolkit").subprojects
         .map { it.name }.filter { it != "intellij" }.filter { it != "intellij-standalone" }
