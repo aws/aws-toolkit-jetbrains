@@ -9,7 +9,6 @@ import base.backendStartTimeout
 import com.intellij.ui.icons.CachedImageIcon
 import com.jetbrains.rd.ide.model.IconModel
 import com.jetbrains.rd.ui.icons.toIdeaIcon
-import com.jetbrains.rider.test.annotations.TestEnvironment
 import org.assertj.core.api.Assertions.assertThat
 import org.testng.annotations.BeforeSuite
 import org.testng.annotations.Test
@@ -29,8 +28,8 @@ class DotNetHandlerCompletionTest : BaseTestWithSolution() {
     }
 
     @Test(description = "Check a single handler is shown in lookup when one is defined in a project.")
-    @TestEnvironment(solution = "SamHelloWorldApp")
-    fun testDetermineHandlers_SingleHandler() {
+    @TestSamHelloWorldApp
+    fun testDetermineHandlersSingleHandler() {
         val handlers = DotNetHandlerCompletion().getHandlersFromBackend(project)
 
         assertThat(handlers.size).isEqualTo(1)
@@ -41,8 +40,8 @@ class DotNetHandlerCompletionTest : BaseTestWithSolution() {
     // TODO this test only works on 2019.2. Which we don't support anymore. Fix the test
     // TODO: This test is failing due to handlers detection logic. I assume it need to be fixed if test is correct.
     @Test(enabled = false, description = "Check all handlers are show in completion lookup when multiple handlers are defined in a project.")
-    @TestEnvironment(solution = "SamMultipleHandlersApp")
-    fun testDetermineHandlers_MultipleHandlers() {
+    @TestSamMultipleHandlersApp
+    fun testDetermineHandlersMultipleHandlers() {
         val handlers = DotNetHandlerCompletion().getHandlersFromBackend(project).sortedBy { it.handler }
 
         assertThat(handlers.size).isEqualTo(3)
