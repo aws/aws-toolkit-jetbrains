@@ -19,7 +19,6 @@ import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.testFramework.LightVirtualFile
 import kotlinx.coroutines.withContext
-import org.intellij.images.fileTypes.impl.SvgFileType
 import software.amazon.awssdk.services.codewhispererruntime.model.DocFolderLevel
 import software.amazon.awssdk.services.codewhispererruntime.model.DocInteractionType
 import software.amazon.awssdk.services.codewhispererruntime.model.DocUserDecision
@@ -400,7 +399,7 @@ class DocController(
                 // instead of diff display generated svg in edit/preview window
                 val inMemoryFile = LightVirtualFile(
                     message.filePath,
-                    SvgFileType.INSTANCE,
+                    null,
                     newFileContent
                 )
                 inMemoryFile.isWritable = false

@@ -3,20 +3,22 @@
 
 package software.aws.toolkits.jetbrains.services.dynamodb.editor.actions
 
-import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionUpdateThread
-import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.actionSystem.ComputableActionGroup
 import com.intellij.openapi.actionSystem.DataContext
+import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.actionSystem.ToggleAction
 import com.intellij.openapi.project.DumbAware
 import software.aws.toolkits.jetbrains.services.dynamodb.editor.DynamoDbTableEditor
 
-class ConfigureMaxResultsAction : ComputableActionGroup.Simple(/* popup */ true) {
-    override fun computeChildren(manager: ActionManager): Array<AnAction> = DynamoDbTableEditor.MAX_RESULTS_OPTIONS
-        .map { (ChangeMaxResults(it)) }.toTypedArray()
+class ConfigureMaxResultsAction : DefaultActionGroup(), DumbAware {
+    init {
+        isPopup = true
+        DynamoDbTableEditor.MAX_RESULTS_OPTIONS.forEach {
+            add(ChangeMaxResults(it))
+        }
+    }
 
     private class ChangeMaxResults(private val choice: Int) : ToggleAction(choice.toString()), DumbAware {
         override fun getActionUpdateThread() = ActionUpdateThread.BGT
