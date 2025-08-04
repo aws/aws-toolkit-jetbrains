@@ -8,7 +8,7 @@ plugins {
 }
 
 // mynah build assumes 'build/' belongs to itself, which conflicts with gradle
-buildDir = file("gradle_build")
+layout.buildDirectory = file("gradle_build")
 
 val buildMynahUI = tasks.register<NpmTask>("buildMynahUI") {
     dependsOn(tasks.npmInstall)
