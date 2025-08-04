@@ -1,4 +1,0 @@
-{
-  "type" : "bugfix",
-  "description" : "Suppress IDE error when current editor context is not valid for Amazon Q"
-}

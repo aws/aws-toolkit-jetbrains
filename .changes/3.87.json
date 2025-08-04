@@ -1,0 +1,11 @@
+{
+  "date" : "2025-07-30",
+  "version" : "3.87",
+  "entries" : [ {
+    "type" : "bugfix",
+    "description" : "change to use promptStickyCard to for image verification notification"
+  }, {
+    "type" : "bugfix",
+    "description" : "Suppress IDE error when current editor context is not valid for Amazon Q"
+  } ]
+}
