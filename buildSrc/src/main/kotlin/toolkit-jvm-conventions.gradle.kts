@@ -2,8 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import org.gradle.kotlin.dsl.kotlin
-import org.gradle.kotlin.dsl.withType
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jetbrains.kotlin.gradle.dsl.JvmDefaultMode
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import software.aws.toolkits.gradle.jvmTarget
 import software.aws.toolkits.gradle.kotlinTarget
 
@@ -18,11 +19,11 @@ java {
     targetCompatibility = javaVersion
 }
 
-tasks.withType<KotlinCompile>().configureEach {
-    kotlinOptions {
-        jvmTarget = javaVersion.majorVersion
-        apiVersion = project.kotlinTarget().get()
-        languageVersion = project.kotlinTarget().get()
-        freeCompilerArgs = listOf("-Xjvm-default=all")
+kotlin {
+    compilerOptions {
+        jvmTarget = JvmTarget.fromTarget("21")
+        languageVersion = KotlinVersion.fromVersion(project.kotlinTarget().get())
+        apiVersion = KotlinVersion.fromVersion(project.kotlinTarget().get())
+        jvmDefault.set(JvmDefaultMode.NO_COMPATIBILITY)
     }
 }
