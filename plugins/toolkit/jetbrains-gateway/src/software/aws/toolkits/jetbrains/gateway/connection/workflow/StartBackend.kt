@@ -52,16 +52,18 @@ class StartBackend(
                 LinkedClientManager.getInstance().startNewClient(
                     lifetime,
                     localLink,
-                    URLEncoder.encode(message("caws.workspace.backend.title"), Charsets.UTF_8)
-                ) {
-                    CodecatalystTelemetry.devEnvironmentWorkflowStatistic(
-                        project = null,
-                        userId = lazilyGetUserId(),
-                        result = TelemetryResult.Succeeded,
-                        duration = System.currentTimeMillis() - start.toDouble(),
-                        codecatalystDevEnvironmentWorkflowStep = "startThinClient",
-                    )
-                }
+                    URLEncoder.encode(message("caws.workspace.backend.title"), Charsets.UTF_8),
+                    onStarted = {
+                        CodecatalystTelemetry.devEnvironmentWorkflowStatistic(
+                            project = null,
+                            userId = lazilyGetUserId(),
+                            result = TelemetryResult.Succeeded,
+                            duration = System.currentTimeMillis() - start.toDouble(),
+                            codecatalystDevEnvironmentWorkflowStep = "startThinClient",
+                        )
+                    },
+                    enableBeforeRunHooks = true
+                )
             } catch (e: Throwable) {
                 CodecatalystTelemetry.devEnvironmentWorkflowStatistic(
                     project = null,
