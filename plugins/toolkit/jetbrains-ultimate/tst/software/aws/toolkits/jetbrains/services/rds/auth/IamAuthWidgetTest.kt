@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.services.rds.auth
 
 import com.intellij.database.dataSource.DatabaseConnectionConfig
 import com.intellij.database.dataSource.DatabaseConnectionPoint
-import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.database.dataSource.url.template.UrlEditorModel
 import com.intellij.testFramework.ProjectRule
 import org.assertj.core.api.Assertions.assertThat
@@ -96,7 +95,10 @@ class IamAuthWidgetTest {
 
     @Test
     fun `Save saves set signing host and port if set`() {
-        widget.reset(mock<DatabaseConnectionPoint> { on { additionalProperties } doReturn mapOf(RDS_SIGNING_HOST_PROPERTY to "host", RDS_SIGNING_PORT_PROPERTY to "port") }, false)
+        widget.reset(
+            mock<DatabaseConnectionPoint> { on { additionalProperties } doReturn mapOf(RDS_SIGNING_HOST_PROPERTY to "host", RDS_SIGNING_PORT_PROPERTY to "port") },
+            false
+        )
         val m = mutableMapOf<String, String>()
         widget.save(mock<DatabaseConnectionConfig> { on { additionalProperties } doReturn m }, false)
         assertThat(m[RDS_SIGNING_HOST_PROPERTY]).isEqualTo("host")

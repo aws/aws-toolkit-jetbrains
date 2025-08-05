@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.datagrip.auth
 
 import com.intellij.database.dataSource.DatabaseConnectionPoint
-import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.database.dataSource.url.template.UrlEditorModel
 import com.intellij.testFramework.ProjectRule
 import com.intellij.testFramework.RuleChain

@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.redshift.auth
 
 import com.intellij.database.dataSource.DatabaseConnectionPoint
-import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.database.dataSource.url.template.UrlEditorModel
 import com.intellij.testFramework.ProjectRule
 import org.assertj.core.api.Assertions.assertThat
