@@ -96,7 +96,12 @@ class IamAuthWidgetTest {
     @Test
     fun `Save saves set signing host and port if set`() {
         widget.reset(
-            mock<DatabaseConnectionPoint> { on { additionalProperties } doReturn mapOf(RDS_SIGNING_HOST_PROPERTY to "host", RDS_SIGNING_PORT_PROPERTY to "port") },
+            mock<DatabaseConnectionPoint> {
+                on { additionalProperties } doReturn mapOf(
+                    RDS_SIGNING_HOST_PROPERTY to "host",
+                    RDS_SIGNING_PORT_PROPERTY to "port"
+                )
+            },
             false
         )
         val m = mutableMapOf<String, String>()
