@@ -3,6 +3,8 @@
 
 package software.aws.toolkits.jetbrains.services.rds.auth
 
+import com.intellij.database.dataSource.DatabaseConnectionConfig
+import com.intellij.database.dataSource.DatabaseConnectionPoint
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.database.dataSource.url.template.UrlEditorModel
 import com.intellij.testFramework.ProjectRule
@@ -76,7 +78,7 @@ class IamAuthWidgetTest {
 
     @Test
     fun `Sets region from URL`() {
-        widget.reset(mock(), false)
+        widget.reset(mock<DatabaseConnectionPoint>(), false)
         val endpointUrl = "jdbc:postgresql://abc.host.$defaultRegion.rds.amazonaws.com:5432/dev"
         widget.updateFromUrl(mock<UrlEditorModel> { on { url } doReturn endpointUrl })
         assertThat(widget.getSelectedRegion()?.id).isEqualTo(defaultRegion)
@@ -84,7 +86,7 @@ class IamAuthWidgetTest {
 
     @Test
     fun `Does not unset region on invalid url`() {
-        widget.reset(mock(), false)
+        widget.reset(mock<DatabaseConnectionPoint>(), false)
         val endpointUrl = "jdbc:postgresql://abc.host.$defaultRegion.rds.amazonaws.com:5432/dev"
         widget.updateFromUrl(mock<UrlEditorModel> { on { url } doReturn endpointUrl })
         val badUrl = "jdbc:postgresql://abc.host.1000000%invalidregion.rds.amazonaws.com:5432/dev"
@@ -94,9 +96,9 @@ class IamAuthWidgetTest {
 
     @Test
     fun `Save saves set signing host and port if set`() {
-        widget.reset(mock { on { additionalProperties } doReturn mapOf(RDS_SIGNING_HOST_PROPERTY to "host", RDS_SIGNING_PORT_PROPERTY to "port") }, false)
+        widget.reset(mock<DatabaseConnectionPoint> { on { additionalProperties } doReturn mapOf(RDS_SIGNING_HOST_PROPERTY to "host", RDS_SIGNING_PORT_PROPERTY to "port") }, false)
         val m = mutableMapOf<String, String>()
-        widget.save(mock { on { additionalProperties } doReturn m }, false)
+        widget.save(mock<DatabaseConnectionConfig> { on { additionalProperties } doReturn m }, false)
         assertThat(m[RDS_SIGNING_HOST_PROPERTY]).isEqualTo("host")
         assertThat(m[RDS_SIGNING_PORT_PROPERTY]).isEqualTo("port")
     }
@@ -104,7 +106,7 @@ class IamAuthWidgetTest {
     @Test
     fun `Save saves null signing host and port if not set`() {
         val m = mutableMapOf<String, String>()
-        widget.save(mock { on { additionalProperties } doReturn m }, false)
+        widget.save(mock<DatabaseConnectionConfig> { on { additionalProperties } doReturn m }, false)
         assertThat(m[RDS_SIGNING_HOST_PROPERTY]).isNull()
         assertThat(m[RDS_SIGNING_PORT_PROPERTY]).isNull()
     }
@@ -112,7 +114,7 @@ class IamAuthWidgetTest {
     private fun buildDataSource(
         hasCredentials: Boolean = true,
         hasRegion: Boolean = true,
-    ): LocalDataSource = mock {
+    ): DatabaseConnectionPoint = mock {
         on { additionalProperties } doAnswer {
             val m = mutableMapOf<String, String>()
             if (hasCredentials) {

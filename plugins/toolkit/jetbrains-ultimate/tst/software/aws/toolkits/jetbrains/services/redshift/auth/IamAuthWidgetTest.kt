@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.redshift.auth
 
+import com.intellij.database.dataSource.DatabaseConnectionPoint
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.database.dataSource.url.template.UrlEditorModel
 import com.intellij.testFramework.ProjectRule
@@ -56,7 +57,7 @@ class IamAuthWidgetTest {
 
     @Test
     fun `Does not unset region on invalid url`() {
-        widget.reset(mock(), false)
+        widget.reset(mock<DatabaseConnectionPoint>(), false)
         val endpointUrl = "jdbc:redshift://redshift-cluster.host.$defaultRegion.redshift.amazonaws.com:5439/dev"
         widget.updateFromUrl(mock<UrlEditorModel> { on { url } doReturn endpointUrl })
         val badUrl = "jdbc:redshift://redshift-cluster.host.100000%InvalidRegion.redshift.amazonaws.com:5439/dev"
@@ -66,13 +67,13 @@ class IamAuthWidgetTest {
 
     @Test
     fun `Sets region from URL`() {
-        widget.reset(mock(), false)
+        widget.reset(mock<DatabaseConnectionPoint>(), false)
         val endpointUrl = "jdbc:redshift://redshift-cluster.host.$defaultRegion.redshift.amazonaws.com:5439/dev"
         widget.updateFromUrl(mock<UrlEditorModel> { on { url } doReturn endpointUrl })
         assertThat(widget.getSelectedRegion()?.id).isEqualTo(defaultRegion)
     }
 
-    private fun buildDataSource(hasCluster: Boolean = true): LocalDataSource = mock {
+    private fun buildDataSource(hasCluster: Boolean = true): DatabaseConnectionPoint = mock {
         on { additionalProperties } doAnswer {
             mutableMapOf<String, String>().also {
                 it[CREDENTIAL_ID_PROPERTY] = credentialId
