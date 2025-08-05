@@ -25,6 +25,19 @@ fun formatText(project: Project, language: Language, content: String): String {
     return result
 }
 
+fun formatText2(project: Project, language: Language, content: String): String {
+    var result = content
+    CommandProcessor.getInstance().runUndoTransparentAction {
+        PsiFileFactory.getInstance(project)
+            .createFileFromText("foo.bar", language, content, false, true)?.let {
+                result = CodeStyleManager.getInstance(project).reformat(it).text
+            }
+    }
+
+    return result
+}
+
+
 /**
  * Designed to convert underscore separated words (e.g. UPDATE_COMPLETE) into title cased human readable text
  * (e.g. Update Complete)
