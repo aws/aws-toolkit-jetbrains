@@ -423,7 +423,7 @@ class BrowserConnector(
                 val action = node.params.get("action")
                 if (action.textValue() == "show_logs") {
                     runInEdt {
-                        GetAmazonQLogsAction.showLogCollectionWarning(project)
+                        GetAmazonQLogsAction.showLogCollectionWarningGetLogs(project)
                     }
                 } else {
                     handleChat(AmazonQChatServer.tabBarActions, node) { params, invoke ->
