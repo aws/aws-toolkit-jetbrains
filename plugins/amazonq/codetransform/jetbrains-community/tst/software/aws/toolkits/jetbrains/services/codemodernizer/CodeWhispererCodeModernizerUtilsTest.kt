@@ -411,8 +411,8 @@ dependencyManagement:
         """.trimIndent()
 
         val virtualFile = LightVirtualFile("test-valid.yaml", YAMLFileType.YML, sampleFileContents)
-        val isValidFile = validateCustomVersionsFile(virtualFile)
-        assertThat(isValidFile).isTrue()
+        val missingKey = validateCustomVersionsFile(virtualFile)
+        assertThat(missingKey).isNull()
     }
 
     @Test
@@ -432,8 +432,8 @@ invalidKey:
         """.trimIndent()
 
         val virtualFile = LightVirtualFile("test-invalid.yaml", YAMLFileType.YML, sampleFileContents)
-        val isValidFile = validateCustomVersionsFile(virtualFile)
-        assertThat(isValidFile).isFalse()
+        val missingKey = validateCustomVersionsFile(virtualFile)
+        assertThat(missingKey).isEqualTo("dependencyManagement")
     }
 
     @Test
@@ -454,7 +454,27 @@ dependencyManagement:
 
         val virtualFile = LightVirtualFile("test-invalid-file-type.txt", sampleFileContents)
         val isValidFile = validateCustomVersionsFile(virtualFile)
-        assertThat(isValidFile).isFalse()
+        assertThat(isValidFile).isEqualTo(message("codemodernizer.chat.message.custom_dependency_upgrades_invalid_not_yaml"))
+    }
+
+    @Test
+    fun `WHEN validateCustomVersionsFile on yaml file missing originType THEN fails validation`() {
+        val sampleFileContents = """name: "dependency-upgrade"
+description: "Custom dependency version management for Java migration from JDK 8/11/17 to JDK 17/21"
+dependencyManagement:
+  dependencies:
+    - identifier: "com.example:library1"
+        targetVersion: "2.1.0"
+        versionProperty: "library1.version"
+  plugins:
+    - identifier: "com.example:plugin"
+        targetVersion: "1.2.0"
+        versionProperty: "plugin.version"
+        """.trimIndent()
+
+        val virtualFile = LightVirtualFile("sample.yaml", sampleFileContents)
+        val missingKey = validateCustomVersionsFile(virtualFile)
+        assertThat(missingKey).isEqualTo("originType")
     }
 
     @Test
