@@ -419,9 +419,9 @@ fun buildSQLMetadataValidationErrorChatContent(errorReason: String) = CodeTransf
     message = errorReason,
 )
 
-fun buildCustomDependencyVersionsFileInvalidChatContent() = CodeTransformChatMessageContent(
+fun buildCustomDependencyVersionsFileInvalidChatContent(missingKey: String) = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.FinalizedAnswer,
-    message = message("codemodernizer.chat.message.custom_dependency_upgrades_invalid"),
+    message = message("codemodernizer.chat.message.custom_dependency_upgrades_invalid", missingKey),
 )
 
 fun buildUserCancelledChatContent() = CodeTransformChatMessageContent(
