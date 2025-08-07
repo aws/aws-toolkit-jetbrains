@@ -1,3 +1,6 @@
+# _3.89_ (2025-08-07)
+- **(Bug Fix)** /transform: validate YAML dependency file for required fields
+
 # _3.88_ (2025-08-04)
 - **(Feature)** Add support for 2025.2
 - **(Bug Fix)** Fix unsupported files being shown in file picker when selecting images for adding image context in Windows
