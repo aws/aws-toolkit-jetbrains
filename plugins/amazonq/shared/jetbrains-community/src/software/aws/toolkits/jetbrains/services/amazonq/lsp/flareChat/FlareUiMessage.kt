@@ -8,5 +8,5 @@ data class FlareUiMessage(
     val params: Any,
     val requestId: String? = null,
     val tabId: String? = null,
-    val isPartialResult: Boolean? = false
+    val isPartialResult: Boolean? = false,
 )
