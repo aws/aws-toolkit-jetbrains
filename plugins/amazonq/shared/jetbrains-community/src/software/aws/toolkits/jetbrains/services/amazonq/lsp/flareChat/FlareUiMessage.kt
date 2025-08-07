@@ -7,4 +7,6 @@ data class FlareUiMessage(
     val command: String,
     val params: Any,
     val requestId: String? = null,
+    val tabId: String? = null,
+    val isPartialResult: Boolean? = false
 )

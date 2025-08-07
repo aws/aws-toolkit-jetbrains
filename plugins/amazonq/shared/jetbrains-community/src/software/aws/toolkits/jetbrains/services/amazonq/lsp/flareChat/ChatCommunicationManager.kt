@@ -137,10 +137,16 @@ class ChatCommunicationManager(private val project: Project, private val cs: Cor
         val encryptedPartialChatResult = getObject(params, String::class.java)
         if (encryptedPartialChatResult != null) {
             val partialChatResult = AmazonQLspService.getInstance(project).encryptionManager.decrypt(encryptedPartialChatResult)
+            val partialResultMap: Any = tryOrNull {
+                Gson().fromJson(partialChatResult, Map::class.java)
+            } ?: partialChatResult
+
             notifyUi(
                 FlareUiMessage(
                     command = SEND_CHAT_COMMAND_PROMPT,
-                    params = partialChatResult,
+                    tabId = tabId,
+                    params = partialResultMap,
+                    isPartialResult = true
                 )
             )
         }
