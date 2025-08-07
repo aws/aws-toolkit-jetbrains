@@ -1,4 +1,0 @@
-{
-  "type" : "bugfix",
-  "description" : "/transform: validate YAML dependency file for required fields"
-}
