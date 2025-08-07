@@ -31,6 +31,6 @@ tasks.prepareTestSandbox {
     val pluginXmlJar = project(":plugin-amazonq").tasks.jar
 
     dependsOn(pluginXmlJar)
-    intoChild(intellijPlatform.projectName.map { "$it/lib" })
-        .from(pluginXmlJar)
+    from(intellijPlatform.projectName.map { "$it/lib" })
+        .into(pluginXmlJar)
 }

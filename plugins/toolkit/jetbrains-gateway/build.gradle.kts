@@ -138,8 +138,8 @@ tasks.jar {
 }
 
 tasks.withType<PrepareSandboxTask>().configureEach {
-    intoChild(intellijPlatform.projectName.map { "$it/gateway-resources" })
-        .from(gatewayResourcesDir)
+    from(intellijPlatform.projectName.map { "$it/gateway-resources" })
+        .into(gatewayResourcesDir)
 }
 
 listOf(
@@ -150,8 +150,8 @@ listOf(
         runtimeClasspath.setFrom(gatewayOnlyRuntimeClasspath)
 
         dependsOn(gatewayOnlyResourcesJar)
-        intoChild(intellijPlatform.projectName.map { "$it/lib" })
-            .from(gatewayOnlyResourcesJar)
+        from(intellijPlatform.projectName.map { "$it/lib" })
+            .into(gatewayOnlyResourcesJar)
     }
 }
 
