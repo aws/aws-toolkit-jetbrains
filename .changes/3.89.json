@@ -1,0 +1,8 @@
+{
+  "date" : "2025-08-07",
+  "version" : "3.89",
+  "entries" : [ {
+    "type" : "bugfix",
+    "description" : "/transform: validate YAML dependency file for required fields"
+  } ]
+}
