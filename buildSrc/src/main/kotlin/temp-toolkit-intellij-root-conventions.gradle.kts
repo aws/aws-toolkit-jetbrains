@@ -53,11 +53,13 @@ intellijPlatform {
 tasks.prepareSandbox {
     val pluginName = intellijPlatform.projectName
 
-    from(resharperDlls)
-        .into(pluginName.map { "$it/dotnet" })
+    from(resharperDlls) {
+        into(pluginName.map { "$it/dotnet" })
+    }
 
-    .from(gatewayResources)
-        .into(pluginName.map { "$it/gateway-resources" })
+    from(gatewayResources) {
+        into(pluginName.map { "$it/gateway-resources" })
+    }
 }
 
 // We have no source in this project, so skip test task

@@ -338,8 +338,9 @@ tasks.withType<PrepareSandboxTask>().configureEach {
 
     dependsOn(resharperDllsDir)
 
-    from(intellijPlatform.projectName.map { "$it/dotnet" })
-        .into(resharperDllsDir)
+    from(intellijPlatform.projectName.map { "$it/dotnet" }) {
+        into(resharperDllsDir)
+    }
 }
 
 tasks.compileKotlin {
