@@ -33,6 +33,7 @@ data class DeveloperProfiles(
 
 data class WindowSettings(
     val showSaveFileDialog: Boolean,
+    val showLogs: Boolean,
 )
 
 data class ClientInfoMetadata(
@@ -75,7 +76,8 @@ fun createExtendedClientMetadata(project: Project): ExtendedClientMetadata {
                     workspaceFilePath = project.workspaceFile?.path,
                 ),
                 window = WindowSettings(
-                    showSaveFileDialog = true
+                    showSaveFileDialog = true,
+                    showLogs = true,
                 )
             ),
             contextConfiguration = ContextConfiguration(
