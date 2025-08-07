@@ -29,8 +29,6 @@ class GetAmazonQLogsAction : DumbAwareAction(message("amazonq.getLogs.tooltip.te
         IconUtil.colorize(baseIcon, ColorUtil.brighter(UIUtil.getLabelForeground(), 2))
     }
 
-
-
     override fun update(e: AnActionEvent) {
         e.presentation.icon = if (!JBColor.isBright()) {
             baseIcon
