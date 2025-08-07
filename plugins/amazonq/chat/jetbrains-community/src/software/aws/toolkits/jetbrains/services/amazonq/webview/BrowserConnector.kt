@@ -33,6 +33,7 @@ import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.services.amazonq.GetAmazonQLogsAction
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AppConnection
 import software.aws.toolkits.jetbrains.services.amazonq.commands.MessageSerializer
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQChatServer
@@ -419,33 +420,40 @@ class BrowserConnector(
             }
 
             CHAT_TAB_BAR_ACTIONS -> {
-                handleChat(AmazonQChatServer.tabBarActions, node) { params, invoke ->
-                    invoke()
-                        .whenComplete { actions, error ->
-                            try {
-                                if (error != null) {
-                                    throw error
-                                }
+                val action = node.params.get("action")
+                if (action.textValue() == "show_logs") {
+                    runInEdt {
+                        GetAmazonQLogsAction.showLogCollectionWarningGetLogs(project)
+                    }
+                } else {
+                    handleChat(AmazonQChatServer.tabBarActions, node) { params, invoke ->
+                        invoke()
+                            .whenComplete { actions, error ->
+                                try {
+                                    if (error != null) {
+                                        throw error
+                                    }
 
-                                browser.postChat(
-                                    FlareUiMessage(
-                                        command = CHAT_TAB_BAR_ACTIONS,
-                                        params = actions
+                                    browser.postChat(
+                                        FlareUiMessage(
+                                            command = CHAT_TAB_BAR_ACTIONS,
+                                            params = actions
+                                        )
                                     )
-                                )
-                            } catch (e: Exception) {
-                                val cause = if (e is CompletionException) e.cause else e
+                                } catch (e: Exception) {
+                                    val cause = if (e is CompletionException) e.cause else e
 
-                                // dont post error to UI if user cancels export
-                                if (cause is ResponseErrorException && cause.responseError.code == ResponseErrorCode.RequestCancelled.getValue()) {
-                                    return@whenComplete
-                                }
-                                LOG.error { "Failed to perform chat tab bar action $e" }
-                                params.tabId?.let {
-                                    browser.postChat(chatCommunicationManager.getErrorUiMessage(it, e, null))
+                                    // dont post error to UI if user cancels export
+                                    if (cause is ResponseErrorException && cause.responseError.code == ResponseErrorCode.RequestCancelled.getValue()) {
+                                        return@whenComplete
+                                    }
+                                    LOG.error { "Failed to perform chat tab bar action $e" }
+                                    params.tabId?.let {
+                                        browser.postChat(chatCommunicationManager.getErrorUiMessage(it, e, null))
+                                    }
                                 }
                             }
-                        }
+                    }
                 }
             }
 
