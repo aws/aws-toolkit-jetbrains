@@ -432,9 +432,9 @@ class CodeTransformChatController(
             val descriptor = FileChooserDescriptorFactory.createSingleFileDescriptor()
                 .withDescription("Select .yaml file")
             val selectedFile = FileChooser.chooseFile(descriptor, null, null) ?: return@withContext
-            val isValid = validateCustomVersionsFile(selectedFile)
-            if (!isValid) {
-                codeTransformChatHelper.updateLastPendingMessage(buildCustomDependencyVersionsFileInvalidChatContent())
+            val missingKey = validateCustomVersionsFile(selectedFile)
+            if (missingKey != null) {
+                codeTransformChatHelper.updateLastPendingMessage(buildCustomDependencyVersionsFileInvalidChatContent(missingKey))
                 codeTransformChatHelper.addNewMessage(buildStartNewTransformFollowup())
                 return@withContext
             }
