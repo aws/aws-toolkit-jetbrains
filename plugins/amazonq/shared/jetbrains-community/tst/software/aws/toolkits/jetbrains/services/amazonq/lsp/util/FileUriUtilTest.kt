@@ -97,6 +97,23 @@ class FileUriUtilTest {
     }
 
     @Test
+    fun `test wsl-like path`() {
+        val virtualFile = createMockVirtualFile("//wsl.localhost/Ubuntu/home/user/file.sh")
+        val result = LspEditorUtil.toUriString(virtualFile)
+        val expected = normalizeFileUri("file://wsl.localhost/Ubuntu/home/user/file.sh")
+        assertThat(result).isEqualTo(expected)
+    }
+
+    @Test
+    fun `test UNC path`() {
+        val virtualFile = createMockVirtualFile("//server/share/path/to/file.txt")
+        val result = LspEditorUtil.toUriString(virtualFile)
+        val expected = normalizeFileUri("file://server/share/path/to/file.txt")
+        assertThat(result).isEqualTo(expected)
+    }
+
+
+    @Test
     fun `test jar protocol conversion`() {
         val virtualFile = createMockVirtualFile(
             "jar:file:///path/to/archive.jar!/com/example/Test.class",
