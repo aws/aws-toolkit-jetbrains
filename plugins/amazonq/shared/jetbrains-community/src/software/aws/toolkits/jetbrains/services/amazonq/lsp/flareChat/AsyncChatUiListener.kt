@@ -23,6 +23,7 @@ interface AsyncChatUiListener : EventListener {
             project.messageBus.syncPublisher(TOPIC).onChange(command)
         }
 
+        // will be removed in next iteration.
         @Deprecated("shouldn't need this version")
         fun notifyPartialMessageUpdate(project: Project, command: String) {
             project.messageBus.syncPublisher(TOPIC).onChange(command)
