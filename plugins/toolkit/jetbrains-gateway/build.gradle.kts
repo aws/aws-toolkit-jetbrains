@@ -138,8 +138,8 @@ tasks.jar {
 }
 
 tasks.withType<PrepareSandboxTask>().configureEach {
-    from(intellijPlatform.projectName.map { "$it/gateway-resources" }) {
-        into(gatewayResourcesDir)
+    from(gatewayResourcesDir) {
+        into(intellijPlatform.projectName.map { "$it/gateway-resources" })
     }
 }
 
