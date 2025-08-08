@@ -95,7 +95,7 @@ tasks.prepareTestSandbox {
     val pluginXmlJar = project(":plugin-core").tasks.jar
 
     dependsOn(pluginXmlJar)
-    from(intellijPlatform.projectName.map { "$it/lib" }) {
-        into(pluginXmlJar)
+    from(pluginXmlJar) {
+        into(intellijPlatform.projectName.map { "$it/lib" })
     }
 }

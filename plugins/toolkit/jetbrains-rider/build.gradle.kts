@@ -338,8 +338,8 @@ tasks.withType<PrepareSandboxTask>().configureEach {
 
     dependsOn(resharperDllsDir)
 
-    from(intellijPlatform.projectName.map { "$it/dotnet" }) {
-        into(resharperDllsDir)
+    from(resharperDllsDir) {
+        into(intellijPlatform.projectName.map { "$it/dotnet" })
     }
 }
 

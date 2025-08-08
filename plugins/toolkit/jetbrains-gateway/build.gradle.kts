@@ -151,8 +151,8 @@ listOf(
         runtimeClasspath.setFrom(gatewayOnlyRuntimeClasspath)
 
         dependsOn(gatewayOnlyResourcesJar)
-        from(intellijPlatform.projectName.map { "$it/lib" }) {
-            into(gatewayOnlyResourcesJar)
+        from(gatewayOnlyResourcesJar) {
+            into(intellijPlatform.projectName.map { "$it/lib" })
         }
     }
 }
