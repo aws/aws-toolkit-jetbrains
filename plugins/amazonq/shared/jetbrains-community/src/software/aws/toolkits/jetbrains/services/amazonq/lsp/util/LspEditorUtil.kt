@@ -47,11 +47,23 @@ object LspEditorUtil {
     private fun toUri(file: File): URI {
         try {
             // URI scheme specified by language server protocol
-            return URI("file", "", file.absoluteFile.toURI().path, null)
+            val uri = URI("file", "", file.absoluteFile.toURI().path, null)
+            val fallback = file.toPath().toAbsolutePath().normalize().toUri()
+            return if (uri.isCompliant()) uri else fallback
         } catch (e: URISyntaxException) {
             LOG.warn { "${e.localizedMessage}: $e" }
             return file.absoluteFile.toURI()
         }
+    }
+
+    private fun URI.isCompliant(): Boolean {
+        if (!"file".equals(this.scheme, ignoreCase = true)) return true
+
+        val path = this.rawPath ?: this.path ?: ""
+        val noAuthority = this.authority.isNullOrEmpty()
+
+        // If the authority component is empty, the path cannot begin with two slash characters ("//")
+        return !(noAuthority && path.startsWith("//"))
     }
 
     /**
