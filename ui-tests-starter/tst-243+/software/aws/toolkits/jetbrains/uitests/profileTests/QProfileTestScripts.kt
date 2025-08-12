@@ -43,38 +43,46 @@ val testChatShownDirectly = """
 $testScriptPrefix
 
 async function testChatShownDirectly() {
-    const browser = await puppeteer.connect({
-        browserURL: "http://localhost:9222"
-    })
-    try {
-        const pages = await browser.pages()
-        for(const page of pages) {
-            // Check if the page contains the chat input (which would mean profile selector was skipped)
-            const chatInput = await page.$('.mynah-chat-prompt-input')
-            if(chatInput) {
-                console.log("Chat is shown directly")
-                
-                // Check if profile UI is hidden (except in menu)
-                const profileUI = await page.$('.q-profile-selector-webview')
-                if(!profileUI) {
-                    console.log("Profile UI is not visible")
-                }
-                return
-            }
-            
-            // Check if the page contains the profile selector webview (which shouldn't be shown)
-            const profileSelector = await page.$('.q-profile-selector-webview')
-            if(profileSelector) {
-                console.log("Profile selector is shown when it should be skipped")
-                return
-            }
+  const { JSDOM } = require('jsdom');
+  const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>');
+  global.window = dom.window;
+  global.document = dom.window.document;
+  global.self = dom.window;
+
+  const MynahUITestIds = require("@aws/mynah-ui").MynahUITestIds;
+  const browser = await puppeteer.connect({
+    browserURL: "http://localhost:9222"
+  })
+  try {
+    const pages = await browser.pages()
+    for(const page of pages) {
+      // Check if the page contains the chat input (which would mean profile selector was skipped)
+      const chatInput = await page.${'$'}(`[${'$'}{MynahUITestIds.selector}="${'$'}{MynahUITestIds.prompt.input}"]`)
+      if(chatInput) {
+        console.log("Chat is shown directly")
+
+        // Check if profile UI is hidden (except in menu)
+        const profileUI = await page.$('.q-profile-selector-webview')
+        if(!profileUI) {
+          console.log("Profile UI is not visible")
         }
-        console.log("Neither profile selector nor chat found")
-    } finally {
-        await browser.close()
+        return
+      }
+
+      // Check if the page contains the profile selector webview (which shouldn't be shown)
+      const profileSelector = await page.$('.q-profile-selector-webview')
+      if(profileSelector) {
+        console.log("Profile selector is shown when it should be skipped")
+        return
+      }
     }
+    console.log("Neither profile selector nor chat found")
+  } finally {
+    await browser.close()
+  }
 }
 testChatShownDirectly().catch(console.error);
+
 """.trimIndent()
 
 // language=JS

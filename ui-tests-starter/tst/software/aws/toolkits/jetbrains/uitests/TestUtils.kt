@@ -18,7 +18,7 @@ private const val TEST_RESOURCES_PATH = "src/test/tstData"
 
 @OptIn(ExperimentalPathApi::class)
 fun IDETestContext.copyExistingConfig(configPath: Path): IDETestContext {
-    configPath.copyToRecursively(paths.configDir, followLinks = false)
+    configPath.copyToRecursively(paths.configDir, followLinks = false, overwrite = true)
     return this
 }
 fun executePuppeteerScript(@Language("JS") scriptContent: String): String {
