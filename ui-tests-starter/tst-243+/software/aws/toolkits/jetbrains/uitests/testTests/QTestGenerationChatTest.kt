@@ -23,6 +23,7 @@ import org.kodein.di.DI
 import org.kodein.di.bindSingleton
 import software.aws.toolkits.jetbrains.uitests.TestCIServer
 import software.aws.toolkits.jetbrains.uitests.clearAwsXmlFile
+import software.aws.toolkits.jetbrains.uitests.copyExistingConfig
 import software.aws.toolkits.jetbrains.uitests.executePuppeteerScript
 import software.aws.toolkits.jetbrains.uitests.setupTestEnvironment
 import software.aws.toolkits.jetbrains.uitests.useExistingConnectionForTest

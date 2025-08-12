@@ -23,6 +23,7 @@ import org.kodein.di.DI
 import org.kodein.di.bindSingleton
 import software.aws.toolkits.jetbrains.uitests.TestCIServer
 import software.aws.toolkits.jetbrains.uitests.clearAwsXmlFile
+import software.aws.toolkits.jetbrains.uitests.copyExistingConfig
 import software.aws.toolkits.jetbrains.uitests.docTests.prepTestData
 import software.aws.toolkits.jetbrains.uitests.docTests.scripts.updateReadmeSpecificChangesMakeChangesFlowTestScript
 import software.aws.toolkits.jetbrains.uitests.docTests.scripts.updateReadmeSpecificChangesTestScript

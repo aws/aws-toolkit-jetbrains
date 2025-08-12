@@ -48,6 +48,14 @@ configurations.getByName(uiTestSource.runtimeClasspathConfigurationName) {
     extendsFrom(uiTestImplementation)
 }
 
+configurations {
+    configureEach {
+        if (name.contains("runtime", ignoreCase = true) && !name.contains("uiTest", ignoreCase = true)) {
+            exclude(group = "org.jetbrains.kotlinx")
+        }
+    }
+}
+
 dependencies {
     // should really be set by the BOM, but too much work to figure out right now
     uiTestImplementation("org.kodein.di:kodein-di-jvm:7.20.2")
@@ -57,10 +65,11 @@ dependencies {
 
     // not sure why not coming in transitively for starter
     uiTestRuntimeOnly(libs.kotlin.coroutines)
+    uiTestRuntimeOnly(libs.junit.platform.launcher)
 
     intellijPlatform {
         val version = ideProfile.community.sdkVersion
-        intellijIdeaCommunity(version, !version.contains("SNAPSHOT"))
+        intellijIdeaCommunity(version, useInstaller = false)
 
         localPlugin(project(":plugin-core"))
         testImplementation(project(":plugin-core:core"))
@@ -87,12 +96,22 @@ val prepareAmazonQTest by intellijPlatformTesting.testIde.registering {
     }
 }
 
+// Task to install npm dependencies
+tasks.register<Exec>("npmInstall") {
+    workingDir = projectDir
+    commandLine("npm", "install")
+    inputs.file("package.json")
+    outputs.dir("node_modules")
+}
+
 tasks.register<Test>("uiTest") {
     testClassesDirs = uiTestSource.output.classesDirs
     classpath = uiTestSource.runtimeClasspath
 
     dependsOn(prepareAmazonQTest)
     dependsOn(testPlugins)
+    dependsOn("npmInstall") // Ensure npm dependencies are installed
+    
     systemProperty("ui.test.plugins", testPlugins.get().asPath)
     systemProperty("org.gradle.project.ideProfileName", ideProfile.name)
     val testSuite = System.getenv("TEST_DIR") ?: ""

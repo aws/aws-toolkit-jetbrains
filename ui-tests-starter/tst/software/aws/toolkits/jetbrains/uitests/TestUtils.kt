@@ -3,14 +3,24 @@
 
 package software.aws.toolkits.jetbrains.uitests
 
+import com.intellij.ide.starter.ide.IDETestContext
 import org.assertj.core.api.Assertions.assertThat
 import org.intellij.lang.annotations.Language
 import java.io.File
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
+import kotlin.io.path.ExperimentalPathApi
+import kotlin.io.path.copyToRecursively
 
 private const val TEST_RESOURCES_PATH = "src/test/tstData"
+
+@OptIn(ExperimentalPathApi::class)
+fun IDETestContext.copyExistingConfig(configPath: Path): IDETestContext {
+    configPath.copyToRecursively(paths.configDir, followLinks = false)
+    return this
+}
 fun executePuppeteerScript(@Language("JS") scriptContent: String): String {
     val scriptFile = File("$TEST_RESOURCES_PATH/temp-script.js")
     scriptFile.parentFile.mkdirs()
@@ -33,39 +43,51 @@ fun executePuppeteerScript(@Language("JS") scriptContent: String): String {
 fun useExistingConnectionForTest() {
     val testStartUrl = System.getenv("TEST_START_URL")
     val testRegion = System.getenv("TEST_REGION")
+    val testArn = System.getenv("TEST_ARN")
+    val testDevProfileName = System.getenv("TEST_DEV_PROFILE_NAME")
+    val testProfileId = testStartUrl.substringAfter("https://").substringBefore(".awsapps.com")
     val configContent =
         """
        <application>
         <component name="authManager">
-            <option name="ssoProfiles">
-                <list>
-                    <ManagedSsoProfile>
-                        <option name="scopes">
-                            <list>
-                                <option value="codewhisperer:conversations" />
-                                <option value="codewhisperer:transformations" />
-                                <option value="codewhisperer:taskassist" />
-                                <option value="codewhisperer:completions" />
-                                <option value="codewhisperer:analysis" />
-                            </list>
-                        </option>
-                        <option name="ssoRegion" value="$testRegion" />
-                        <option name="startUrl" value="$testStartUrl" />
-                    </ManagedSsoProfile>
-                </list>
+            <option name="lastLoginIdcInfo">
+                <LastLoginIdcInfo>
+                    <option name="profileName" value="$testProfileId" />
+                    <option name="region" value="$testRegion" />
+                    <option name="startUrl" value="$testStartUrl" />
+                </LastLoginIdcInfo>
             </option>
         </component>
         <component name="connectionPinningManager">
             <option name="pinnedConnections">
                 <map>
-                    <entry key="aws.codewhisperer" value="sso;$testRegion;$testStartUrl" />
-                    <entry key="aws.q" value="sso;$testRegion;$testStartUrl" />
+                    <entry key="aws.codewhisperer" value="sso-session:$testProfileId" />
+                    <entry key="aws.q" value="sso-session:$testProfileId" />
                 </map>
             </option>
         </component>
-      <component name="meetQPage">
-        <option name="shouldDisplayPage" value="false" />
-      </component>
+        <component name="qProfileStates">
+            <option name="connectionIdToActiveProfile">
+                <map>
+                    <entry key="sso-session:$testProfileId">
+                        <value>
+                            <QRegionProfile>
+                                <option name="arn" value="$testArn" />
+                                <option name="profileName" value="$testDevProfileName" />
+                            </QRegionProfile>
+                        </value>
+                    </entry>
+                </map>
+            </option>
+            <option name="connectionIdToProfileList">
+                <map>
+                    <entry key="sso-session:$testProfileId" value="1" />
+                </map>
+            </option>
+        </component>
+        <component name="meetQPage">
+            <option name="shouldDisplayPage" value="false" />
+        </component>
     </application>
         """.trimIndent()
     writeToAwsXml(configContent)
