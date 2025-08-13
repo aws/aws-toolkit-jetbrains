@@ -68,6 +68,13 @@ jobs:
     # Add any setup steps before running the `github/codeql-action/init` action.
     # This includes steps like installing compilers or runtimes (`actions/setup-node`
     # or others). This is typically only required for manual builds.
+    - name: Maximize Build Space
+      if: runner.os == 'Linux'
+      uses: jlumbroso/free-disk-space@main
+      with:
+        tool-cache: false
+        large-packages: false
+
     - uses: actions/setup-java@v4
       with:
         distribution: 'corretto' # See 'Supported distributions' for available options
