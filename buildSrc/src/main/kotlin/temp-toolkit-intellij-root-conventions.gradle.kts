@@ -23,10 +23,10 @@ plugins {
     id("toolkit-publish-root-conventions")
 }
 
-toolkitIntelliJ.apply {
-    val runIdeVariant = providers.gradleProperty("runIdeVariant")
-    ideFlavor.set(IdeFlavor.values().firstOrNull { it.name == runIdeVariant.orNull } ?: IdeFlavor.IC)
-}
+//toolkitIntelliJ.apply {
+//    val runIdeVariant = providers.gradleProperty("runIdeVariant")
+//    ideFlavor.set(IdeFlavor.values().firstOrNull { it.name == runIdeVariant.orNull } ?: IdeFlavor.IC)
+//}
 
 val remoteRobotPort: String by project
 val ideProfile = IdeVersions.ideProfile(project)
@@ -53,11 +53,13 @@ intellijPlatform {
 tasks.prepareSandbox {
     val pluginName = intellijPlatform.projectName
 
-    intoChild(pluginName.map { "$it/dotnet" })
-        .from(resharperDlls)
+    from(resharperDlls) {
+        into(pluginName.map { "$it/dotnet" })
+    }
 
-    intoChild(pluginName.map { "$it/gateway-resources" })
-        .from(gatewayResources)
+    from(gatewayResources) {
+        into(pluginName.map { "$it/gateway-resources" })
+    }
 }
 
 // We have no source in this project, so skip test task
@@ -66,12 +68,12 @@ tasks.test {
 }
 
 dependencies {
-    intellijPlatform {
-        val type = toolkitIntelliJ.ideFlavor.map { IntelliJPlatformType.fromCode(it.toString()) }
-        val version = toolkitIntelliJ.version()
-
-        create(type, version, useInstaller = false)
-    }
+//    intellijPlatform {
+//        val type = toolkitIntelliJ.ideFlavor.map { IntelliJPlatformType.fromCode(it.toString()) }
+//        val version = toolkitIntelliJ.version()
+//
+//        create(type, version, useInstaller = false)
+//    }
 
     implementation(project(":plugin-toolkit:jetbrains-ultimate"))
     project.findProject(":plugin-toolkit:jetbrains-gateway")?.let {

@@ -1,3 +1,18 @@
+# _3.89_ (2025-08-07)
+- **(Bug Fix)** /transform: validate YAML dependency file for required fields
+
+# _3.88_ (2025-08-04)
+- **(Feature)** Add support for 2025.2
+- **(Bug Fix)** Fix unsupported files being shown in file picker when selecting images for adding image context in Windows
+- **(Bug Fix)** Fix the issue that sometime images added via drag & drop are incorrectly routed to pinned context
+
+# _3.87_ (2025-07-30)
+- **(Bug Fix)** change to use promptStickyCard to for image verification notification
+- **(Bug Fix)** Suppress IDE error when current editor context is not valid for Amazon Q
+
+# _3.86_ (2025-07-16)
+- **(Bug Fix)** - Fixed "Insert to Cursor" button to correctly insert code blocks at the current cursor position in the active file
+
 # _3.85_ (2025-07-10)
 - **(Feature)** Amazon Q /test, /doc, and /dev capabilities integrated into Agentic coding.
 - **(Feature)** Add image context support

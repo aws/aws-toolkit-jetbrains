@@ -34,7 +34,7 @@ jobs:
           tool-cache: false
           large-packages: false
       - name: 'Qodana Scan'
-        uses: JetBrains/qodana-action@v2024.2.3
+        uses: JetBrains/qodana-action@v2025.1.1
         env:
           QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }}
         with:

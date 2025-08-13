@@ -42,7 +42,7 @@ dependencies {
 
 //val changelog = tasks.register<GeneratePluginChangeLog>("pluginChangeLog") {
 //    includeUnreleased.set(true)
-//    changeLogFile.set(project.file("$buildDir/changelog/change-notes.xml"))
+//    changeLogFile.set(project.layout.buildDirectory.file("changelog/change-notes.xml"))
 //}
 
 tasks.compileJava {
@@ -60,10 +60,10 @@ patchPluginXml.configure {
 }
 
 tasks.jar {
-//    dependsOn(patchPluginXml, changelog)
-//    from(changelog) {
-//        into("META-INF")
-//    }
+    dependsOn(patchPluginXml, changelog)
+    from(changelog) {
+        into("META-INF")
+    }
 
     from(patchPluginXml) {
         duplicatesStrategy = DuplicatesStrategy.INCLUDE

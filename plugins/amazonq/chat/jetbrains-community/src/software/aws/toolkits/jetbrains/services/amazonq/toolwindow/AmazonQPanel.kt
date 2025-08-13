@@ -49,7 +49,9 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isCodeTrans
 import software.aws.toolkits.resources.message
 import java.awt.datatransfer.DataFlavor
 import java.awt.dnd.DropTarget
+import java.awt.dnd.DropTargetDragEvent
 import java.awt.dnd.DropTargetDropEvent
+import java.awt.dnd.DropTargetEvent
 import java.io.File
 import java.util.concurrent.CompletableFuture
 import javax.imageio.ImageIO.read
@@ -138,6 +140,15 @@ class AmazonQPanel(val project: Project, private val scope: CoroutineScope) : Di
                             // As an alternative, enabling the native drag in JCEF,
                             // and let the native handling the drop event, and update the UI through JS bridge.
                             val dropTarget = object : DropTarget() {
+                                override fun dragEnter(dtde: DropTargetDragEvent) {
+                                    setDragAndDropOverlayVisible(browserInstance, true)
+                                }
+                                override fun dragOver(dtde: DropTargetDragEvent) {
+                                    setDragAndDropOverlayVisible(browserInstance, true)
+                                }
+                                override fun dragExit(dte: DropTargetEvent) {
+                                    setDragAndDropOverlayVisible(browserInstance, false)
+                                }
                                 override fun drop(dtde: DropTargetDropEvent) {
                                     try {
                                         dtde.acceptDrop(dtde.dropAction)
@@ -166,19 +177,18 @@ class AmazonQPanel(val project: Project, private val scope: CoroutineScope) : Di
                                                 validImages.subList(20, validImages.size).clear()
                                             }
 
-                                            val json = OBJECT_MAPPER.writeValueAsString(validImages)
-                                            browserInstance.jcefBrowser.cefBrowser.executeJavaScript(
-                                                "window.handleNativeDrop('$json')",
-                                                browserInstance.jcefBrowser.cefBrowser.url,
-                                                0
-                                            )
+                                            executeJavaScript(browserInstance, "window.resetTopBarClicked()")
 
-                                            val errorJson = OBJECT_MAPPER.writeValueAsString(errorMessages)
-                                            browserInstance.jcefBrowser.cefBrowser.executeJavaScript(
-                                                "window.handleNativeNotify('$errorJson')",
-                                                browserInstance.jcefBrowser.cefBrowser.url,
-                                                0
-                                            )
+                                            setDragAndDropOverlayVisible(browserInstance, false)
+
+                                            val json = OBJECT_MAPPER.writeValueAsString(validImages)
+                                            executeJavaScript(browserInstance, "window.handleNativeDrop('$json')")
+
+                                            if (errorMessages.isNotEmpty()) {
+                                                val errorJson = OBJECT_MAPPER.writeValueAsString(errorMessages)
+                                                executeJavaScript(browserInstance, "window.handleNativeNotify('$errorJson')")
+                                            }
+
                                             dtde.dropComplete(true)
                                         } else {
                                             dtde.dropComplete(false)
@@ -281,6 +291,22 @@ class AmazonQPanel(val project: Project, private val scope: CoroutineScope) : Di
                 themeSource = editorThemeAdapter.onThemeChange(),
             )
         }
+    }
+
+    private fun executeJavaScript(browserInstance: Browser, jsCommand: String) {
+        try {
+            browserInstance.jcefBrowser.cefBrowser.executeJavaScript(
+                jsCommand,
+                browserInstance.jcefBrowser.cefBrowser.url,
+                0
+            )
+        } catch (e: Exception) {
+            LOG.error { "Failed to execute JavaScript: $jsCommand - ${e.message}" }
+        }
+    }
+
+    private fun setDragAndDropOverlayVisible(browserInstance: Browser, visible: Boolean) {
+        executeJavaScript(browserInstance, "window.setDragAndDropVisible('$visible')")
     }
 
     private fun validateImageFile(file: File, allowedTypes: Set<String>, maxFileSize: Double, maxDimension: Int): String? {
