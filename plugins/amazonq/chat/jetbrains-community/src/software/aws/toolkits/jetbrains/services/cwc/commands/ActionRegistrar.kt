@@ -41,7 +41,6 @@ class ActionRegistrar {
                     uiMessage = FlareUiMessage(command = SEND_TO_PROMPT, params = params)
                 }
                 ChatCommunicationManager.getInstance(project).notifyUi(uiMessage)
-                // AsyncChatUiListener.notifyPartialMessageUpdate(project, uiMessage)
             }
         }
     }
