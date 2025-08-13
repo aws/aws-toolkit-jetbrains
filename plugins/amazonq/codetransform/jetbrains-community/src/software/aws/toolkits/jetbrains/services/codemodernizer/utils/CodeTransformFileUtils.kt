@@ -196,21 +196,22 @@ fun parseXmlDependenciesReport(pathToXmlDependency: Path): DependencyUpdatesRepo
     return report
 }
 
-fun validateCustomVersionsFile(file: VirtualFile): Boolean {
+// return the first missing key in the custom versions file, or null if all required keys are present
+fun validateCustomVersionsFile(file: VirtualFile): String? {
     val validFileEndings = listOf("yaml", "yml")
     if (!validFileEndings.any { file.name.lowercase().endsWith(it) }) {
         getLogger<CodeTransformChatController>().error { "Custom versions file is not a YAML file: ${file.name}" }
-        return false
+        return message("codemodernizer.chat.message.custom_dependency_upgrades_invalid_not_yaml")
     }
     val fileContents = file.readText()
-    val requiredKeys = listOf("dependencyManagement:", "identifier:", "targetVersion:")
+    val requiredKeys = listOf("dependencyManagement", "identifier", "targetVersion", "originType")
     for (key in requiredKeys) {
         if (!fileContents.contains(key)) {
             getLogger<CodeTransformChatController>().error { "Missing yaml key: $key" }
-            return false
+            return key
         }
     }
-    return true
+    return null
 }
 
 fun validateSctMetadata(sctFile: File?): SqlMetadataValidationResult {

@@ -151,11 +151,11 @@ object IdeVersions {
         Profile(
             name = "2025.2",
             gateway = ProductProfile(
-                sdkVersion = "252.23892.230",
+                sdkVersion = "2025.2",
                 bundledPlugins = listOf("org.jetbrains.plugins.terminal")
             ),
             community = ProductProfile(
-                sdkVersion = "252.23892.248-EAP-SNAPSHOT",
+                sdkVersion = "2025.2",
                 bundledPlugins = commonPlugins + listOf(
                     "com.intellij.java",
                     "com.intellij.gradle",
@@ -163,14 +163,14 @@ object IdeVersions {
                     "com.intellij.properties"
                 ),
                 marketplacePlugins = listOf(
-                    "org.toml.lang:252.23892.361",
-                    "PythonCore:252.23892.248",
-                    "Docker:252.23892.248",
-                    "com.intellij.modules.json:252.23892.248"
+                    "org.toml.lang:252.23892.464",
+                    "PythonCore:252.23892.458",
+                    "Docker:252.23892.464",
+                    "com.intellij.modules.json:252.23892.360"
                 )
             ),
             ultimate = ProductProfile(
-                sdkVersion = "252.23892.248-EAP-SNAPSHOT",
+                sdkVersion = "2025.2",
                 bundledPlugins = commonPlugins + listOf(
                     "JavaScript",
                     "JavaScriptDebugger",
@@ -178,17 +178,17 @@ object IdeVersions {
                     "com.jetbrains.codeWithMe",
                 ),
                 marketplacePlugins = listOf(
-                    "Pythonid:252.23892.248",
-                    "org.jetbrains.plugins.go:252.23892.248",
-                    "com.intellij.modules.json:252.23892.248"
+                    "Pythonid:252.23892.458",
+                    "org.jetbrains.plugins.go:252.23892.360",
+                    "com.intellij.modules.json:252.23892.360"
                 )
             ),
             rider = RiderProfile(
-                sdkVersion = "2025.2-EAP8-SNAPSHOT",
+                sdkVersion = "2025.2-SNAPSHOT",
                 bundledPlugins = commonPlugins,
                 netFrameworkTarget = "net472",
                 rdGenVersion = "2025.2.2",
-                nugetVersion = "2025.2.0-eap08"
+                nugetVersion = "2025.2.0-rc02"
             )
         )
     ).associateBy { it.name }
