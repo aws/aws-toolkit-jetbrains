@@ -3,10 +3,12 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils
 
+import com.google.gson.Gson
 import com.intellij.diff.DiffContentFactory
 import com.intellij.diff.DiffManager
 import com.intellij.diff.requests.SimpleDiffRequest
 import com.intellij.diff.util.DiffUserDataKeys
+import com.intellij.docker.agent.util.toJson
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
@@ -63,7 +65,8 @@ val metaBackgroundColor = JBColor.namedColor("FileColor.Blue", JBColor(0xeaf6ff,
 val metaForegroundColor = JBColor.namedColor("Label.infoForeground", JBColor(0x808080, 0x8C8C8C))
 
 private val LOG = getLogger<CodeWhispererCodeScanHighlightingFilesPanel>()
-private val explainIssueDataKey = DataKey.create<MutableMap<String, String>>("amazonq.codescan.explainissue")
+private val hanldeIssueCommandContextDataKey = DataKey.create<MutableMap<String, String>>("amazonq.codescan.handleIssueCommandContext")
+private val hanldeIssueCommandActionDataKey = DataKey.create<String>("amazonq.codescan.handleIssueCommandAction")
 
 enum class IssueSeverity(val displayName: String) {
     CRITICAL("Critical"),
@@ -76,6 +79,11 @@ enum class IssueSeverity(val displayName: String) {
 enum class IssueGroupingStrategy(val displayName: String) {
     SEVERITY("Severity"),
     FILE_LOCATION("File Location"),
+}
+
+private enum class IssueCommandAction(val displayName: String) {
+    EXPLAIN_ISSUE("explainIssue"),
+    APPLY_FIX("applyFix"),
 }
 
 fun getCodeScanIssueDetailsHtml(
@@ -228,18 +236,37 @@ private fun createSuggestedFixSection(issue: CodeWhispererCodeScanIssue, suggest
 }
 
 fun explainIssue(issue: CodeWhispererCodeScanIssue) {
-    val explainIssueContext = mutableMapOf(
+    handleIssueCommand(issue, IssueCommandAction.EXPLAIN_ISSUE)
+}
+
+fun applyFix(issue: CodeWhispererCodeScanIssue) {
+    handleIssueCommand(issue, IssueCommandAction.APPLY_FIX)
+}
+
+private fun handleIssueCommand(issue: CodeWhispererCodeScanIssue, action: IssueCommandAction) {
+    val gson = Gson()
+    val handleIssueCommandContext = mutableMapOf(
         "title" to issue.title,
         "description" to issue.description.markdown,
-        "code" to issue.codeText
+        "code" to issue.codeText,
+        "fileName" to issue.file.name,
+        "startLine" to issue.startLine.toString(),
+        "endLine" to issue.endLine.toString(),
+        "recommendation" to gson.toJson(issue.recommendation).toString(),
+        "suggestedFixes" to gson.toJson(issue.suggestedFixes).toString(),
+        "codeSnippet" to gson.toJson(issue.codeSnippet).toString()
     )
     val actionEvent = AnActionEvent.createFromInputEvent(
         null,
         ToolkitPlaces.EDITOR_PSI_REFERENCE,
         null,
-        SimpleDataContext.builder().add(explainIssueDataKey, explainIssueContext).add(CommonDataKeys.PROJECT, issue.project).build()
+        SimpleDataContext.builder()
+            .add(hanldeIssueCommandContextDataKey, handleIssueCommandContext)
+            .add(CommonDataKeys.PROJECT, issue.project)
+            .add(hanldeIssueCommandActionDataKey, action.displayName)
+            .build()
     )
-    ActionManager.getInstance().getAction("aws.amazonq.explainCodeScanIssue").actionPerformed(actionEvent)
+    ActionManager.getInstance().getAction("aws.amazonq.handleCodeScanIssueCommand").actionPerformed(actionEvent)
 }
 
 fun openDiff(issue: CodeWhispererCodeScanIssue) {

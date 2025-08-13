@@ -25,7 +25,9 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LSPAny
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.AuthFollowUpClickedParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.AuthFollowupType
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_ERROR_PARAMS
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CODE_REVIEW_FINDINGS_SUFFIX
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatMessage
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.DISPLAY_FINDINGS_SUFFIX
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ErrorParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_CHAT_COMMAND_PROMPT
@@ -155,9 +157,11 @@ class ChatCommunicationManager(private val project: Project, private val cs: Cor
 
             if (partialResultMap != null) {
                 @Suppress("UNCHECKED_CAST")
-                val additionalMessages = partialResultMap["additionalMessages"] as? List<Map<String, Any>>
+                val additionalMessages = partialResultMap["additionalMessages"] as? MutableList<Map<String, Any>>
                 if (additionalMessages != null) {
-                    for (message in additionalMessages) {
+                    var i = 0
+                    while (i < additionalMessages.size) {
+                        val message = additionalMessages[i]
                         val messageId = message["messageId"] as? String
                         if (messageId != null && messageId.startsWith("stopped")) {
                             // Process stop messages immediately
@@ -171,7 +175,11 @@ class ChatCommunicationManager(private val project: Project, private val cs: Cor
                             finalResultProcessed[token] = true
                             ChatAsyncResultManager.getInstance(project).setResult(token, partialResultMap)
                             return
+                        } else if (messageId != null && (messageId.endsWith(CODE_REVIEW_FINDINGS_SUFFIX) || messageId.endsWith(DISPLAY_FINDINGS_SUFFIX))) {
+                            additionalMessages.removeAt(i)
+                            continue
                         }
+                        i = i + 1
                     }
                 }
             }
@@ -185,7 +193,7 @@ class ChatCommunicationManager(private val project: Project, private val cs: Cor
                 val uiMessage = convertToJsonToSendToChat(
                     command = SEND_CHAT_COMMAND_PROMPT,
                     tabId = tabId,
-                    params = partialChatResult,
+                    params = Gson().toJson(partialResultMap),
                     isPartialResult = true
                 )
                 AsyncChatUiListener.notifyPartialMessageUpdate(project, uiMessage)

@@ -537,6 +537,15 @@ class CodeWhispererCodeScanManager(val project: Project) {
         ondemandScanIssues = ondemandScanIssues.filter { it.findingId != issue.findingId }
     }
 
+    fun addOnDemandIssues(issues: List<CodeWhispererCodeScanIssue>, scannedFiles: List<VirtualFile>, scope: CodeWhispererConstants.CodeAnalysisScope) = projectCoroutineScope(project).launch {
+        ondemandScanIssues = ondemandScanIssues + issues
+        renderResponseOnUIThread(
+            getCombinedScanIssues(),
+            scannedFiles,
+            scope
+        )
+    }
+
     fun removeIssueByFindingId(issue: CodeWhispererCodeScanIssue, findingId: String) {
         scanNodesLookup[issue.file]?.forEach { node ->
             val issueNode = node.userObject as CodeWhispererCodeScanIssue

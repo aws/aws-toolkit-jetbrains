@@ -18,33 +18,42 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SendToPromptParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TriggerType
 
-class ExplainCodeIssueAction : AnAction(), DumbAware {
+class HandleIssueCommandAction : AnAction(), DumbAware {
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
 
     override fun update(e: AnActionEvent) {
         e.presentation.isEnabledAndVisible = e.project != null
     }
+    fun createLineRangeText(issueContext: MutableMap<String, String>): String {
+        val startLineString = issueContext["startLine"]
+        val endLineString = issueContext["endLine"]
+        val startLineInteger = Integer.parseInt(startLineString)
+        val endLineInteger = Integer.parseInt(endLineString)
+        return if (startLineInteger == endLineInteger) {
+            "[${startLineInteger}]"
+        } else {
+            "[${startLineInteger}, ${endLineInteger}]"
+        }
+    }
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
-        val issueDataKey = DataKey.create<MutableMap<String, String>>("amazonq.codescan.explainissue")
-        val issueContext = e.getData(issueDataKey) ?: return
-
+        val contextDataKey = DataKey.create<MutableMap<String, String>>("amazonq.codescan.handleIssueCommandContext")
+        val actionDataKey = DataKey.create<String>("amazonq.codescan.handleIssueCommandAction")
+        val context = e.getData(contextDataKey) ?: return
+        val action = e.getData(actionDataKey) ?: return
         ActionManager.getInstance().getAction("q.openchat").actionPerformed(e)
 
         ApplicationManager.getApplication().executeOnPooledThread {
             runBlocking {
                 // https://github.com/aws/aws-toolkit-vscode/blob/master/packages/amazonq/src/lsp/chat/commands.ts#L30
-                val codeSelection = "\n```\n${issueContext["code"]?.trimIndent()?.trim()}\n```\n"
+                val codeSelection = "\n```\n${context["code"]?.trimIndent()?.trim()}\n```\n"
+                val actionString = if (action == "explainIssue") "Explain" else "Fix"
 
-                val prompt = "Explain the issue \n\n " +
-                    "Issue:    \"${issueContext["title"]}\" \n" +
-                    "Code:    $codeSelection"
+                val prompt = "$actionString ${context["title"]} issue in ${context["fileName"]} at ${createLineRangeText(context)}"
 
-                val modelPrompt = "Explain the issue ${issueContext["title"]} \n\n " +
-                    "Issue:    \"${issueContext["title"]}\" \n" +
-                    "Description:    ${issueContext["description"]} \n" +
-                    "Code:    $codeSelection and generate the code demonstrating the fix"
+                val modelPrompt = "$actionString ${context["title"]} issue in ${context["fileName"]} at ${createLineRangeText(context)}" +
+                    "Issue: \"${context["issue"]}\" \n"
 
                 val params = SendToPromptParams(
                     selection = codeSelection,

@@ -109,3 +109,6 @@ enum class MessageType(@JsonValue val repr: String) {
     DIRECTIVE("directive"),
     TOOL("tool"),
 }
+
+val CODE_REVIEW_FINDINGS_SUFFIX = "_codeReviewFindings"
+val DISPLAY_FINDINGS_SUFFIX = "_displayFindings"
