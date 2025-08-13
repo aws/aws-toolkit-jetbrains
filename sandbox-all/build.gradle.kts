@@ -6,6 +6,7 @@ import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.toolkitIntelliJ
 
 plugins {
+    id("toolkit-jvm-conventions")
     id("toolkit-intellij-plugin")
     id("toolkit-publish-root-conventions")
 }
