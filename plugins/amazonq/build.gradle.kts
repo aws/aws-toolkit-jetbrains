@@ -111,27 +111,26 @@ val downloadFlareArtifacts by tasks.registering(Download::class) {
 
 val prepareBundledFlare by tasks.registering(Copy::class) {
     // TODO: https://docs.gradle.org/current/userguide/configuration_cache.html#config_cache:requirements:use_project_during_execution
-    notCompatibleWithConfigurationCache("requires some untangling")
     dependsOn(downloadFlareArtifacts)
     inputs.files(downloadFlareArtifacts)
 
     val dest = layout.buildDirectory.dir("tmp/extractFlare")
     into(dest)
     from(downloadFlareArtifacts.map { it.outputFiles.filterNot { file -> file.name.endsWith(".zip") } })
-
-    doLast {
-        copy {
-            into(dest)
-            includeEmptyDirs = false
-            downloadFlareArtifacts.get().outputFiles.filter { it.name.endsWith(".zip") }.forEach {
-                dest.get().file(it.parentFile.name).asFile.createNewFile()
-                from(zipTree(it)) {
-                    include("*.js")
-                    include("*.txt")
-                }
-            }
-        }
-    }
+    includeEmptyDirs = false
+//
+//    doLast {
+//        copy {
+//            into(dest)
+//            downloadFlareArtifacts.get().outputFiles.filter { it.name.endsWith(".zip") }.forEach {
+//                dest.get().file(it.parentFile.name).asFile.createNewFile()
+//                from(zipTree(it)) {
+//                    include("*.js")
+//                    include("*.txt")
+//                }
+//            }
+//        }
+//    }
 }
 
 tasks.withType<PrepareSandboxTask>().configureEach {

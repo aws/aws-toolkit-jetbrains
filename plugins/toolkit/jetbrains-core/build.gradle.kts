@@ -60,10 +60,10 @@ patchPluginXml.configure {
 }
 
 tasks.jar {
-    dependsOn(patchPluginXml, changelog)
-    from(changelog) {
-        into("META-INF")
-    }
+//    dependsOn(patchPluginXml, changelog)
+//    from(changelog) {
+//        into("META-INF")
+//    }
 
     from(patchPluginXml) {
         duplicatesStrategy = DuplicatesStrategy.INCLUDE

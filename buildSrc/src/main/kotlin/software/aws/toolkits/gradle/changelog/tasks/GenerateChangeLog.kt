@@ -18,7 +18,7 @@ import software.aws.toolkits.gradle.changelog.JetBrainsWriter
 abstract class GenerateChangeLog(private val shouldStage: Boolean) : ChangeLogTask() {
     @Input
     @Optional
-    val repoUrl: Provider<String?> = project.objects.property(String::class.java).convention("https://github.com/aws/aws-toolkit-jetbrains")
+    val repoUrl: Provider<String> = project.objects.property(String::class.java).convention("https://github.com/aws/aws-toolkit-jetbrains")
 
     @Input
     val includeUnreleased: Property<Boolean> = project.objects.property(Boolean::class.java).convention(false)

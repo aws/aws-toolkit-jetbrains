@@ -40,7 +40,8 @@ pluginManagement {
 }
 
 plugins {
-    id("com.github.burrunan.s3-build-cache") version "1.5"
+    // https://github.com/burrunan/gradle-s3-build-cache/issues/118
+//    id("com.github.burrunan.s3-build-cache") version "1.5"
     id("com.gradle.develocity") version "3.17.6"
     id("org.jetbrains.intellij.platform.settings") version "2.7.1"
 }
@@ -72,25 +73,25 @@ buildscript {
     }
 }
 
-val regionEnv: Provider<String> = providers.environmentVariable("AWS_REGION")
-val bucketEnv: Provider<String> = providers.environmentVariable("S3_BUILD_CACHE_BUCKET")
-val prefixEnv: Provider<String> = providers.environmentVariable("S3_BUILD_CACHE_PREFIX")
-if (regionEnv.isPresent && bucketEnv.isPresent && prefixEnv.isPresent) {
-    // TODO: can we serve a remote cache out of CloudFront instead? https://docs.gradle.org/8.1/userguide/build_cache.html#sec:build_cache_configure_remote
-    buildCache {
-        local {
-            isEnabled = false
-        }
-
-        remote<com.github.burrunan.s3cache.AwsS3BuildCache> {
-            region = regionEnv.get()
-            bucket = bucketEnv.get()
-            prefix = prefixEnv.get()
-            isPush = true
-            lookupDefaultAwsCredentials = true
-        }
-    }
-}
+//val regionEnv: Provider<String> = providers.environmentVariable("AWS_REGION")
+//val bucketEnv: Provider<String> = providers.environmentVariable("S3_BUILD_CACHE_BUCKET")
+//val prefixEnv: Provider<String> = providers.environmentVariable("S3_BUILD_CACHE_PREFIX")
+//if (regionEnv.isPresent && bucketEnv.isPresent && prefixEnv.isPresent) {
+//    // TODO: can we serve a remote cache out of CloudFront instead? https://docs.gradle.org/8.1/userguide/build_cache.html#sec:build_cache_configure_remote
+//    buildCache {
+//        local {
+//            isEnabled = false
+//        }
+//
+//        remote<com.github.burrunan.s3cache.AwsS3BuildCache> {
+//            region = regionEnv.get()
+//            bucket = bucketEnv.get()
+//            prefix = prefixEnv.get()
+//            isPush = true
+//            lookupDefaultAwsCredentials = true
+//        }
+//    }
+//}
 
 develocity {
     buildScan {
