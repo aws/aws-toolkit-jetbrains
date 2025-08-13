@@ -113,8 +113,10 @@ import software.aws.toolkits.jetbrains.services.amazonqCodeTest.auth.isCodeTestA
 import software.aws.toolkits.jetbrains.services.amazonqDoc.auth.isDocAvailable
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.auth.isFeatureDevAvailable
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isCodeTransformAvailable
+import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeLine
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanIssue
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanManager
+import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanSession
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.Description
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.Recommendation
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.SuggestedFix
@@ -583,7 +585,7 @@ class BrowserConnector(
         }
     }
 
-    data class FlareCodeScanIssue(
+    data class flareCodeScanIssue(
         val startLine: Int,
         val endLine: Int,
         val comment: String?,
@@ -607,7 +609,7 @@ class BrowserConnector(
 
     data class AggregatedCodeScanIssue(
         val filePath: String,
-        val issues: List<FlareCodeScanIssue>
+        val issues: List<flareCodeScanIssue>
     )
 
     private fun showResult(
@@ -629,7 +631,7 @@ class BrowserConnector(
                 val findingsMessage = additionalMessages?.find {message ->
                     (message["messageId"] as String).endsWith(CODE_REVIEW_FINDINGS_SUFFIX)
                     || (message["messageId"] as String).endsWith(DISPLAY_FINDINGS_SUFFIX)}
-                val scannedFiles = mutableListOf<VirtualFile>()
+                val scannedFiles = mutableListOf<VirtualFile>();
                 if (findingsMessage != null) {
                     additionalMessages.remove(findingsMessage)
                     val gson = Gson()

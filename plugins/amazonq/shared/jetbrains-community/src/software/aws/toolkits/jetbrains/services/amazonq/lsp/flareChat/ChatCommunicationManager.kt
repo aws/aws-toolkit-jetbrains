@@ -143,15 +143,6 @@ class ChatCommunicationManager(private val project: Project, private val cs: Cor
                 Gson().fromJson(partialChatResult, Map::class.java)
             } ?: partialChatResult
 
-            if (partialResultMap is Map<*, *>) {
-                val additionalMessages = partialResultMap["additionalMessages"] as? MutableList<Map<String, Any>>
-                additionalMessages?.removeAll {
-                    val messageId = it["messageId"] as? String
-                    messageId != null &&
-                        (messageId.endsWith(CODE_REVIEW_FINDINGS_SUFFIX) ||
-                            messageId.endsWith(DISPLAY_FINDINGS_SUFFIX))
-                }
-            }
 
             notifyUi(
                 FlareUiMessage(
