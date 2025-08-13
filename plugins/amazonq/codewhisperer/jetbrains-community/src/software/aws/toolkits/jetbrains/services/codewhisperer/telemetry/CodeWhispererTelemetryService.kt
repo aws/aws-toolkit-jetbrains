@@ -149,6 +149,7 @@ class CodeWhispererTelemetryService(private val cs: CoroutineScope) {
                 }
             }
             CodeWhispererConstants.CodeAnalysisScope.PROJECT -> CodewhispererCodeScanScope.PROJECT
+            CodeWhispererConstants.CodeAnalysisScope.AGENTIC -> CodewhispererCodeScanScope.PROJECT
         }
 
     fun sendSecurityScanEvent(codeScanEvent: CodeScanTelemetryEvent, project: Project? = null) {

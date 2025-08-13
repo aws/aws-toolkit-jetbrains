@@ -22,7 +22,7 @@ import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.context.CodeScanIssueDetailsDisplayType
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.additionBackgroundColor
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.additionForegroundColor
-import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.applySuggestedFix
+import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.applyFix
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.codeBlockBackgroundColor
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.codeBlockBorderColor
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.codeBlockForegroundColor
@@ -143,9 +143,10 @@ internal class CodeWhispererCodeScanIssueDetailsPanel(
 
             buttonPane.apply {
                 removeAll()
-                if (issue.suggestedFixes.isNotEmpty()) add(applyFixButton)
-                add(regenerateFixButton)
+//                if (issue.suggestedFixes.isNotEmpty()) add(applyFixButton)
+//                add(regenerateFixButton)
                 add(explainIssueButton)
+                add(applyFixButton)
                 add(ignoreIssueButton)
                 add(ignoreIssuesButton)
                 add(Box.createHorizontalGlue())
@@ -234,27 +235,32 @@ internal class CodeWhispererCodeScanIssueDetailsPanel(
         horizontalTextPosition = JLabel.LEFT
         font = font.deriveFont(16f)
     }
+//    private val applyFixButton = JButton(message("codewhisperer.codescan.apply_fix_button_label")).apply {
+//        putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
+//        addActionListener {
+//            applySuggestedFix(project, issue)
+//        }
+//    }
+//    private val generateFixButton = JButton(message("codewhisperer.codescan.generate_fix_button_label")).apply {
+//        putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
+//        isEnabled = issue.ruleId != "sbom-software-assurance-services"
+//        addActionListener {
+//            defaultScope.launch {
+//                handleGenerateFix(issue)
+//            }
+//        }
+//    }
+//    private val regenerateFixButton = JButton(message("codewhisperer.codescan.regenerate_fix_button_label")).apply {
+//        putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
+//        addActionListener {
+//            defaultScope.launch {
+//                handleGenerateFix(issue, isRegenerate = true)
+//            }
+//        }
+//    }
     private val applyFixButton = JButton(message("codewhisperer.codescan.apply_fix_button_label")).apply {
-        putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
         addActionListener {
-            applySuggestedFix(project, issue)
-        }
-    }
-    private val generateFixButton = JButton(message("codewhisperer.codescan.generate_fix_button_label")).apply {
-        putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
-        isEnabled = issue.ruleId != "sbom-software-assurance-services"
-        addActionListener {
-            defaultScope.launch {
-                handleGenerateFix(issue)
-            }
-        }
-    }
-    private val regenerateFixButton = JButton(message("codewhisperer.codescan.regenerate_fix_button_label")).apply {
-        putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
-        addActionListener {
-            defaultScope.launch {
-                handleGenerateFix(issue, isRegenerate = true)
-            }
+            applyFix(issue)
         }
     }
     private val explainIssueButton = JButton(message("codewhisperer.codescan.explain_button_label")).apply {
@@ -298,9 +304,10 @@ internal class CodeWhispererCodeScanIssueDetailsPanel(
     private val buttonPane = JPanel().apply {
         layout = BoxLayout(this, BoxLayout.X_AXIS)
         preferredSize = Dimension(this.width, 30)
-        if (issue.suggestedFixes.isNotEmpty()) add(applyFixButton)
-        if (issue.suggestedFixes.isNotEmpty()) add(regenerateFixButton) else add(generateFixButton)
+//        if (issue.suggestedFixes.isNotEmpty()) add(applyFixButton)
+//        if (issue.suggestedFixes.isNotEmpty()) add(regenerateFixButton) else add(generateFixButton)
         add(explainIssueButton)
+        add(applyFixButton)
         add(ignoreIssueButton)
         add(ignoreIssuesButton)
         add(Box.createHorizontalGlue())
@@ -333,10 +340,10 @@ internal class CodeWhispererCodeScanIssueDetailsPanel(
         add(BorderLayout.SOUTH, buttonPane)
         isVisible = true
         revalidate()
-        if (issue.suggestedFixes.isEmpty()) {
-            defaultScope.launch {
-                handleGenerateFix(issue)
-            }
-        }
+//        if (issue.suggestedFixes.isEmpty()) {
+//            defaultScope.launch {
+//                handleGenerateFix(issue)
+//            }
+//        }
     }
 }
