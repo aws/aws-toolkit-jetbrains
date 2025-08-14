@@ -4,6 +4,12 @@
 package software.aws.toolkits.jetbrains.uitests.profileTests
 
 import com.intellij.driver.sdk.waitForProjectOpen
+import com.intellij.driver.sdk.ui.components.common.ideFrame
+import com.intellij.driver.sdk.ui.notPresent
+import com.intellij.driver.sdk.ui.shouldBe
+import com.intellij.driver.sdk.ui.ui
+import com.intellij.driver.sdk.ui.xQuery
+import java.awt.event.KeyEvent
 import com.intellij.ide.starter.ci.CIServer
 import com.intellij.ide.starter.config.ConfigurationStorage
 import com.intellij.ide.starter.di.di
@@ -12,6 +18,7 @@ import com.intellij.ide.starter.ide.IdeProductProvider
 import com.intellij.ide.starter.junit5.hyphenateWithClass
 import com.intellij.ide.starter.models.TestCase
 import com.intellij.ide.starter.project.LocalProjectInfo
+import com.intellij.ide.starter.report.AllureHelper.step
 import com.intellij.ide.starter.runner.CurrentTestMethod
 import com.intellij.ide.starter.runner.Starter
 import org.assertj.core.api.Assertions.assertThat
@@ -26,6 +33,7 @@ import software.aws.toolkits.jetbrains.uitests.clearAwsXmlFile
 import software.aws.toolkits.jetbrains.uitests.copyExistingConfig
 import software.aws.toolkits.jetbrains.uitests.executePuppeteerScript
 import software.aws.toolkits.jetbrains.uitests.setupTestEnvironment
+import software.aws.toolkits.jetbrains.uitests.useExistingConnectionForTest
 import software.aws.toolkits.jetbrains.uitests.writeToAwsXml
 import java.io.File
 import java.nio.file.Path
@@ -86,7 +94,8 @@ class QProfileSelectionTest {
     }
 
     @Test
-    fun `Test chat shown directly for users with single profile`() {
+//    @SsoLogin("single_profile_user")
+    fun `Test single dev profile user accounts`() {
         val testCase = TestCase(
             IdeProductProvider.IC,
             LocalProjectInfo(
@@ -94,8 +103,7 @@ class QProfileSelectionTest {
             )
         ).withVersion(System.getProperty("org.gradle.project.ideProfileName"))
 
-        // Configure test with single profile
-        setupSingleProfileForTest()
+        useExistingConnectionForTest()
 
         Starter.newContext(CurrentTestMethod.hyphenateWithClass(), testCase).apply {
             System.getProperty("ui.test.plugins").split(File.pathSeparator).forEach { path ->
@@ -110,10 +118,44 @@ class QProfileSelectionTest {
             .useDriverAndCloseIde {
                 waitForProjectOpen()
                 // Wait for the system to be fully ready
-                Thread.sleep(30000)
+                Thread.sleep(10000)
 
-                val result = executePuppeteerScript(testChatShownDirectly)
-                assertThat(result).contains("Chat is shown directly")
+                step("Test chat shown directly for users with single profile") {
+                    val result = executePuppeteerScript(testChatShownDirectly)
+                    assertThat(result).contains("Chat is shown directly")
+                }
+
+                step("Test changing same profile A -> A does nothing") {
+                    ideFrame {
+                        // Click Amazon Q button in status bar
+                        x(xQuery { byAccessibleName("Amazon Q") }).click()
+                        Thread.sleep(100)
+
+                        ui.keyboard {
+                            // navigate and select "Change Profile" in the popup menu
+                            key(KeyEvent.VK_UP)
+                            key(KeyEvent.VK_UP)
+                            key(KeyEvent.VK_ENTER)
+
+                            //wait for list to load
+                            Thread.sleep(3000)
+
+                            // profile combobox selection and select (current) connection
+                            key(KeyEvent.VK_TAB)
+                            key(KeyEvent.VK_DOWN)
+                            key(KeyEvent.VK_ENTER)
+
+                            // confirm selection
+                            key(KeyEvent.VK_ENTER)
+                        }
+
+                        // Verify no notification appears
+                        assertThat {
+                            x(xQuery { byClass("NotificationCenterPanel").and(byText("You changed your profile")) })
+                            .shouldBe(notPresent)
+                        }
+                    }
+                }
             }
     }
 
@@ -226,54 +268,6 @@ class QProfileSelectionTest {
                     <option name="connectionIdToProfileList">
                         <map>
                             <entry key="sso;$testRegion;$testStartUrl" value="2" />
-                        </map>
-                    </option>
-                </component>
-                <component name="meetQPage">
-                    <option name="shouldDisplayPage" value="false" />
-                </component>
-            </application>
-            """.trimIndent()
-            writeToAwsXml(configContent)
-        }
-
-        fun setupSingleProfileForTest() {
-            val testStartUrl = System.getenv("TEST_START_URL")
-            val testRegion = System.getenv("TEST_REGION")
-            val testArn = System.getenv("TEST_ARN")
-            val configContent = """
-            <application>
-                <component name="authManager">
-                    <option name="ssoProfiles">
-                        <list>
-                            <ManagedSsoProfile>
-                                <option name="scopes">
-                                    <list>
-                                        <option value="codewhisperer:conversations" />
-                                        <option value="codewhisperer:transformations" />
-                                        <option value="codewhisperer:taskassist" />
-                                        <option value="codewhisperer:completions" />
-                                        <option value="codewhisperer:analysis" />
-                                    </list>
-                                </option>
-                                <option name="ssoRegion" value="$testRegion" />
-                                <option name="startUrl" value="$testStartUrl" />
-                            </ManagedSsoProfile>
-                        </list>
-                    </option>
-                </component>
-                <component name="connectionPinningManager">
-                    <option name="pinnedConnections">
-                        <map>
-                            <entry key="aws.codewhisperer" value="sso;$testRegion;$testStartUrl" />
-                            <entry key="aws.q" value="sso;$testRegion;$testStartUrl" />
-                        </map>
-                    </option>
-                </component>
-                <component name="qProfileStates">
-                    <option name="connectionIdToProfileList">
-                        <map>
-                            <entry key="sso;$testRegion;$testStartUrl" value="1" />
                         </map>
                     </option>
                 </component>
