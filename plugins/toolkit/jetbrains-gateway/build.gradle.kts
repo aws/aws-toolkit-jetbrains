@@ -7,7 +7,6 @@ import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import org.jetbrains.intellij.platform.gradle.tasks.PrepareSandboxTask
 import org.jetbrains.kotlin.gradle.internal.ensureParentDirsCreated
 import software.aws.toolkits.gradle.intellij.IdeFlavor
-import software.aws.toolkits.gradle.intellij.toolkitIntelliJ
 import kotlin.io.encoding.Base64
 
 plugins {
@@ -46,22 +45,6 @@ val processGatewayOnlyResources by tasks.existing
 val gatewayOnlyResourcesJar by tasks.registering(Jar::class) {
     archiveClassifier.set("gatewayOnlyResources")
     from(processGatewayOnlyResources)
-}
-
-listOf(
-    "intellijPlatformDependency",
-    "intellijPlatformDependency_integrationTest",
-    "intellijPluginVerifierIdesDependency",
-).forEach { configurationName ->
-    configurations[configurationName].dependencies.addLater(
-        toolkitIntelliJ.version().map {
-            dependencies.create(
-                group = "com.jetbrains.gateway",
-                name = "JetBrainsGateway",
-                version = it,
-            )
-        }
-    )
 }
 
 dependencies {
@@ -130,14 +113,14 @@ val toolkitInstallationScripts = tasks.register<Tar>("generateTar") {
     archiveFileName.set("scripts.tar.gz")
     compression = Compression.GZIP
     from("gateway-resources/remote")
-    // set all files as:
-    //           r-xr-xr-x
-    fileMode = 0b101101101
+    filePermissions {
+        unix("r-xr-xr-x")
+    }
 }
 
 val gatewayResourcesDir = tasks.register<Sync>("gatewayResourcesDir") {
     from("gateway-resources/caws-proxy-command.bat", toolkitInstallationScripts)
-    into("$buildDir/$name")
+    into(layout.buildDirectory.dir(name))
 
     includeEmptyDirs = false
 }
@@ -155,8 +138,9 @@ tasks.jar {
 }
 
 tasks.withType<PrepareSandboxTask>().configureEach {
-    intoChild(intellijPlatform.projectName.map { "$it/gateway-resources" })
-        .from(gatewayResourcesDir)
+    from(gatewayResourcesDir) {
+        into(intellijPlatform.projectName.map { "$it/gateway-resources" })
+    }
 }
 
 listOf(
@@ -167,8 +151,9 @@ listOf(
         runtimeClasspath.setFrom(gatewayOnlyRuntimeClasspath)
 
         dependsOn(gatewayOnlyResourcesJar)
-        intoChild(intellijPlatform.projectName.map { "$it/lib" })
-            .from(gatewayOnlyResourcesJar)
+        from(gatewayOnlyResourcesJar) {
+            into(intellijPlatform.projectName.map { "$it/lib" })
+        }
     }
 }
 

@@ -10,6 +10,8 @@ import com.intellij.ide.BrowserUtil
 import com.intellij.notification.NotificationAction
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.fileChooser.FileChooser
+import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.fileChooser.FileChooserFactory
 import com.intellij.openapi.fileChooser.FileSaverDescriptor
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -19,6 +21,8 @@ import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFileManager
 import migration.software.aws.toolkits.jetbrains.settings.AwsSettings
+import org.eclipse.lsp4j.ApplyWorkspaceEditParams
+import org.eclipse.lsp4j.ApplyWorkspaceEditResponse
 import org.eclipse.lsp4j.ConfigurationParams
 import org.eclipse.lsp4j.MessageActionItem
 import org.eclipse.lsp4j.MessageParams
@@ -40,7 +44,6 @@ import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AsyncChatUiListener
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommunicationManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.FlareUiMessage
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LSPAny
@@ -56,10 +59,13 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FileP
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GET_SERIALIZED_CHAT_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenFileDiffParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowOpenFileDialogParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowSaveFileDialogParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowSaveFileDialogResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.ConnectionMetadata
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.LspEditorUtil
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.TelemetryParsingUtil
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.applyExtensionFilter
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
@@ -255,6 +261,68 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
         )
     }
 
+    override fun showOpenFileDialog(params: ShowOpenFileDialogParams): CompletableFuture<LSPAny> =
+        CompletableFuture.supplyAsync(
+            {
+                // Handle the case where both canSelectFiles and canSelectFolders are false (should never be sent from flare)
+                if (!params.canSelectFiles && !params.canSelectFolders) {
+                    return@supplyAsync mapOf("uris" to emptyList<String>()) as LSPAny
+                }
+
+                val descriptor = when {
+                    params.canSelectFolders && params.canSelectFiles -> {
+                        if (params.canSelectMany) {
+                            FileChooserDescriptorFactory.createAllButJarContentsDescriptor()
+                        } else {
+                            FileChooserDescriptorFactory.createSingleFileOrFolderDescriptor()
+                        }
+                    }
+                    params.canSelectFolders -> {
+                        if (params.canSelectMany) {
+                            FileChooserDescriptorFactory.createMultipleFoldersDescriptor()
+                        } else {
+                            FileChooserDescriptorFactory.createSingleFolderDescriptor()
+                        }
+                    }
+                    else -> {
+                        if (params.canSelectMany) {
+                            FileChooserDescriptorFactory.createMultipleFilesNoJarsDescriptor()
+                        } else {
+                            FileChooserDescriptorFactory.createSingleFileNoJarsDescriptor()
+                        }
+                    }
+                }.apply {
+                    withTitle(
+                        params.title ?: when {
+                            params.canSelectFolders && params.canSelectFiles -> "Select Files or Folders"
+                            params.canSelectFolders -> "Select Folders"
+                            else -> "Select Files"
+                        }
+                    )
+                    withDescription(
+                        when {
+                            params.canSelectFolders && params.canSelectFiles -> "Choose files or folders to open"
+                            params.canSelectFolders -> "Choose folders to open"
+                            else -> "Choose files to open"
+                        }
+                    )
+
+                    // Apply file filters if provided
+                    if (params.filters.isNotEmpty() && !params.canSelectFolders) {
+                        // Create a combined list of all allowed extensions
+                        val allowedExtensions = params.filters.values.flatten().toSet()
+                        applyExtensionFilter(this, "Images", allowedExtensions)
+                    }
+                }
+
+                val chosenFiles = FileChooser.chooseFiles(descriptor, project, null)
+                val uris = chosenFiles.map { it.path }
+
+                mapOf("uris" to uris) as LSPAny
+            },
+            ApplicationManager.getApplication()::invokeLater
+        )
+
     override fun getSerializedChat(params: LSPAny): CompletableFuture<GetSerializedChatResult> {
         val requestId = UUID.randomUUID().toString()
         val result = CompletableFuture<GetSerializedChatResult>()
@@ -330,8 +398,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
     }
 
     override fun sendChatUpdate(params: LSPAny) {
-        AsyncChatUiListener.notifyPartialMessageUpdate(
-            project,
+        chatManager.notifyUi(
             FlareUiMessage(
                 command = CHAT_SEND_UPDATE,
                 params = params,
@@ -493,6 +560,20 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
             )
         )
     }
+
+    override fun applyEdit(params: ApplyWorkspaceEditParams): CompletableFuture<ApplyWorkspaceEditResponse> =
+        CompletableFuture.supplyAsync(
+            {
+                try {
+                    LspEditorUtil.applyWorkspaceEdit(project, params.edit)
+                    ApplyWorkspaceEditResponse(true)
+                } catch (e: Exception) {
+                    LOG.warn(e) { "Failed to apply workspace edit" }
+                    ApplyWorkspaceEditResponse(false)
+                }
+            },
+            ApplicationManager.getApplication()::invokeLater
+        )
 
     private fun refreshVfs(path: String) {
         val currPath = Paths.get(path)

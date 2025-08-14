@@ -419,9 +419,9 @@ fun buildSQLMetadataValidationErrorChatContent(errorReason: String) = CodeTransf
     message = errorReason,
 )
 
-fun buildCustomDependencyVersionsFileInvalidChatContent() = CodeTransformChatMessageContent(
+fun buildCustomDependencyVersionsFileInvalidChatContent(missingKey: String) = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.FinalizedAnswer,
-    message = message("codemodernizer.chat.message.custom_dependency_upgrades_invalid"),
+    message = message("codemodernizer.chat.message.custom_dependency_upgrades_invalid", missingKey),
 )
 
 fun buildUserCancelledChatContent() = CodeTransformChatMessageContent(
@@ -768,13 +768,7 @@ fun buildDownloadFailureChatContent(downloadFailureReason: DownloadFailureReason
     return CodeTransformChatMessageContent(
         type = CodeTransformChatMessageType.FinalizedAnswer,
         message = "$message\n\n${message("codemodernizer.chat.message.validation.error.more_info", docLink)}",
-        buttons = if (downloadFailureReason.artifactType == TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS &&
-            (downloadFailureReason is DownloadFailureReason.OTHER || downloadFailureReason is DownloadFailureReason.SSL_HANDSHAKE_ERROR)
-        ) {
-            listOf(viewDiffButton, viewSummaryButton)
-        } else {
-            null
-        },
+        buttons = listOf(viewDiffButton, viewSummaryButton)
     )
 }
 

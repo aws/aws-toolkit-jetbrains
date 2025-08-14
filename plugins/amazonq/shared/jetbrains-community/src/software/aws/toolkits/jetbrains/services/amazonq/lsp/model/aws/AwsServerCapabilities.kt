@@ -14,7 +14,8 @@ data class ChatOptions(
     val history: Boolean,
     val export: Boolean,
     val mcpServers: Boolean,
-    val modelSelection: Boolean,
+    val reroute: Boolean,
+    val showLogs: Boolean,
 )
 
 data class QuickActions(

@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.codemodernizer.utils
 
 import com.fasterxml.jackson.module.kotlin.readValue
-import com.intellij.grazie.utils.orFalse
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.diff.impl.patch.PatchReader
@@ -87,11 +86,6 @@ suspend fun JobId.pollTransformationStatusAndPlan(
     var transformationPlan: TransformationPlan? = null
     var didSleepOnce = false
     var hasSeenTransforming = false
-    val maxRefreshes = 10
-    var numRefreshes = 0
-
-    // refresh token at start of polling since local build just prior can take a long time
-    refreshToken(project)
 
     try {
         waitUntil(
@@ -138,13 +132,10 @@ suspend fun JobId.pollTransformationStatusAndPlan(
                     onStateChange(state, newStatus, transformationPlan)
                 }
                 state = newStatus
-                numRefreshes = 0
                 return@waitUntil state
-            } catch (e: AccessDeniedException) {
-                if (numRefreshes++ > maxRefreshes) throw e
-                refreshToken(project)
-                return@waitUntil state
-            } catch (e: InvalidGrantException) {
+            } catch (e: Exception) {
+                if (e !is AccessDeniedException && e !is InvalidGrantException) throw e
+
                 CodeTransformMessageListener.instance.onReauthStarted()
                 notifyStickyWarn(
                     message("codemodernizer.notification.warn.expired_credentials.title"),
@@ -296,7 +287,7 @@ fun findDownloadArtifactProgressUpdate(transformationSteps: List<TransformationS
         }
 
 // once dependency changes table (key of "1") available, plan is complete
-fun isPlanComplete(plan: TransformationPlan?) = plan?.transformationSteps()?.get(0)?.progressUpdates()?.any { update -> update.name() == "1" }.orFalse()
+fun isPlanComplete(plan: TransformationPlan?) = plan?.transformationSteps()?.get(0)?.progressUpdates()?.any { update -> update.name() == "1" } == true
 
 // "name" holds the ID of the corresponding plan step (where table will go) and "description" holds the plan data
 fun getTableMapping(stepZeroProgressUpdates: List<TransformationProgressUpdate>): Map<String, List<String>> =

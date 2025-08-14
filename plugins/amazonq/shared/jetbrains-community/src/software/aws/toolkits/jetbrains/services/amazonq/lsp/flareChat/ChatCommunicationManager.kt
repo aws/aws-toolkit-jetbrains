@@ -43,18 +43,22 @@ class ChatCommunicationManager(private val project: Project, private val cs: Cor
     private val inflightRequestByTabId = ConcurrentHashMap<String, CompletableFuture<String>>()
     private val pendingSerializedChatRequests = ConcurrentHashMap<String, CompletableFuture<GetSerializedChatResult>>()
     private val pendingTabRequests = ConcurrentHashMap<String, CompletableFuture<LSPAny>>()
-    private val partialResultLocks = ConcurrentHashMap<String, Any>()
-    private val finalResultProcessed = ConcurrentHashMap<String, Boolean>()
     private val openTabs = mutableSetOf<String>()
 
     fun setUiReady() {
         uiReady.complete(true)
     }
 
+    private var chatUpdateCallback: ((FlareUiMessage) -> Unit)? = null
+
+    fun setChatUpdateCallback(callback: (FlareUiMessage) -> Unit) {
+        chatUpdateCallback = callback
+    }
+
     fun notifyUi(uiMessage: FlareUiMessage) {
         cs.launch {
             uiReady.await()
-            AsyncChatUiListener.notifyPartialMessageUpdate(project, uiMessage)
+            chatUpdateCallback?.invoke(uiMessage)
         }
     }
 
@@ -118,20 +122,6 @@ class ChatCommunicationManager(private val project: Project, private val cs: Cor
     fun removeTabOpenRequest(requestId: String) =
         pendingTabRequests.remove(requestId)
 
-    fun removePartialResultLock(token: String) {
-        partialResultLocks.remove(token)
-    }
-
-    fun removeFinalResultProcessed(token: String) {
-        finalResultProcessed.remove(token)
-    }
-
-    fun registerPartialResultToken(partialResultToken: String) {
-        val lock = Any()
-        partialResultLocks[partialResultToken] = lock
-        finalResultProcessed[partialResultToken] = false
-    }
-
     fun handlePartialResultProgressNotification(project: Project, params: ProgressParams) {
         val token = ProgressNotificationUtils.getToken(params)
         val tabId = getPartialChatMessage(token)
@@ -147,49 +137,18 @@ class ChatCommunicationManager(private val project: Project, private val cs: Cor
         val encryptedPartialChatResult = getObject(params, String::class.java)
         if (encryptedPartialChatResult != null) {
             val partialChatResult = AmazonQLspService.getInstance(project).encryptionManager.decrypt(encryptedPartialChatResult)
-
-            // Special case: check for stop message before proceeding
-            val partialResultMap = tryOrNull {
+            val partialResultMap: Any = tryOrNull {
                 Gson().fromJson(partialChatResult, Map::class.java)
-            }
+            } ?: partialChatResult
 
-            if (partialResultMap != null) {
-                @Suppress("UNCHECKED_CAST")
-                val additionalMessages = partialResultMap["additionalMessages"] as? List<Map<String, Any>>
-                if (additionalMessages != null) {
-                    for (message in additionalMessages) {
-                        val messageId = message["messageId"] as? String
-                        if (messageId != null && messageId.startsWith("stopped")) {
-                            // Process stop messages immediately
-                            val uiMessage = convertToJsonToSendToChat(
-                                command = SEND_CHAT_COMMAND_PROMPT,
-                                tabId = tabId,
-                                params = partialChatResult,
-                                isPartialResult = true
-                            )
-                            AsyncChatUiListener.notifyPartialMessageUpdate(project, uiMessage)
-                            finalResultProcessed[token] = true
-                            ChatAsyncResultManager.getInstance(project).setResult(token, partialResultMap)
-                            return
-                        }
-                    }
-                }
-            }
-
-            // Normal processing for non-stop messages
-            val lock = partialResultLocks[token] ?: return
-            synchronized(lock) {
-                if (finalResultProcessed[token] == true || partialResultLocks[token] == null) {
-                    return@synchronized
-                }
-                val uiMessage = convertToJsonToSendToChat(
+            notifyUi(
+                FlareUiMessage(
                     command = SEND_CHAT_COMMAND_PROMPT,
                     tabId = tabId,
-                    params = partialChatResult,
+                    params = partialResultMap,
                     isPartialResult = true
                 )
-                AsyncChatUiListener.notifyPartialMessageUpdate(project, uiMessage)
-            }
+            )
         }
     }
 
@@ -200,7 +159,7 @@ class ChatCommunicationManager(private val project: Project, private val cs: Cor
         var errorMessage: String? = null
         if (exception is ResponseErrorException) {
             errorMessage = tryOrNull {
-                Gson().fromJson(exception.responseError.data as JsonObject, ChatMessage::class.java).body
+                "${exception.responseError.message}: ${Gson().fromJson(exception.responseError.data as JsonObject, ChatMessage::class.java).body}"
             } ?: exception.responseError.message
         }
 
@@ -217,21 +176,6 @@ class ChatCommunicationManager(private val project: Project, private val cs: Cor
                 }
         """.trimIndent()
         return uiMessage
-    }
-
-    fun getCancellationUiMessage(tabId: String): String {
-        // Create a minimal error params with empty error message to hide the stop button
-        // without showing an actual error message to the user
-        val errorParams = Gson().toJson(ErrorParams(tabId, null, "", "")).toString()
-
-        return """
-            {
-            "command":"$CHAT_ERROR_PARAMS",
-            "tabId": "$tabId",
-            "params": $errorParams,
-            "isPartialResult": false
-            }
-        """.trimIndent()
     }
 
     fun handleAuthFollowUpClicked(project: Project, params: AuthFollowUpClickedParams) {

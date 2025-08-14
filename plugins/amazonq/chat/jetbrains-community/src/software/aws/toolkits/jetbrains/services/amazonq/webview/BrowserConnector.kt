@@ -32,7 +32,9 @@ import org.eclipse.lsp4j.jsonrpc.ResponseErrorException
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseErrorCode
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.services.amazonq.GetAmazonQLogsAction
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AppConnection
 import software.aws.toolkits.jetbrains.services.amazonq.commands.MessageSerializer
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQChatServer
@@ -41,7 +43,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.JsonRpcMethod
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.JsonRpcNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.JsonRpcRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatAsyncResultManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommunicationManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.FlareUiMessage
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.AUTH_FOLLOW_UP_CLICKED
@@ -74,9 +75,12 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.Encry
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedQuickActionChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GET_SERIALIZED_CHAT_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatResponse
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.LIST_AVAILABLE_MODELS
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.LIST_MCP_SERVERS_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.LIST_RULES_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.MCP_SERVER_CLICK_REQUEST_METHOD
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OPEN_FILE_DIALOG
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OPEN_FILE_DIALOG_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OPEN_SETTINGS
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OPEN_WORKSPACE_SETTINGS_KEY
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenSettingsNotification
@@ -118,7 +122,6 @@ class BrowserConnector(
 ) {
     val uiReady = CompletableDeferred<Boolean>()
     private val chatCommunicationManager = ChatCommunicationManager.getInstance(project)
-    private val chatAsyncResultManager = ChatAsyncResultManager.getInstance(project)
 
     suspend fun connect(
         browser: Browser,
@@ -235,7 +238,6 @@ class BrowserConnector(
 
                 val tabId = requestFromUi.params.tabId
                 val partialResultToken = chatCommunicationManager.addPartialChatMessage(tabId)
-                chatCommunicationManager.registerPartialResultToken(partialResultToken)
 
                 var encryptionManager: JwtEncryptionManager? = null
                 val result = AmazonQLspService.executeAsyncIfRunning(project) { server ->
@@ -256,7 +258,6 @@ class BrowserConnector(
                 val tabId = requestFromUi.params.tabId
                 val quickActionParams = node.params ?: error("empty payload")
                 val partialResultToken = chatCommunicationManager.addPartialChatMessage(tabId)
-                chatCommunicationManager.registerPartialResultToken(partialResultToken)
                 var encryptionManager: JwtEncryptionManager? = null
                 val result = AmazonQLspService.executeAsyncIfRunning(project) { server ->
                     encryptionManager = this.encryptionManager
@@ -301,6 +302,7 @@ class BrowserConnector(
             }
 
             CHAT_READY -> {
+                LOG.info { "Amazon Q Chat UI loaded and ready for input" }
                 handleChat(AmazonQChatServer.chatReady, node) { params, invoke ->
                     uiReady.complete(true)
                     chatCommunicationManager.setUiReady()
@@ -351,7 +353,22 @@ class BrowserConnector(
             }
 
             CHAT_INSERT_TO_CURSOR -> {
-                handleChat(AmazonQChatServer.insertToCursorPosition, node)
+                val editor = FileEditorManager.getInstance(project).selectedTextEditor
+                val textDocumentIdentifier = editor?.let { TextDocumentIdentifier(toUriString(it.virtualFile)) }
+                val cursorPosition = editor?.let { LspEditorUtil.getCursorPosition(it) }
+
+                val enrichmentParams = mapOf(
+                    "textDocument" to textDocumentIdentifier,
+                    "cursorPosition" to cursorPosition,
+                )
+
+                val insertToCursorPositionParams: ObjectNode = (node.params as ObjectNode)
+                    .setAll(serializer.objectMapper.valueToTree<ObjectNode>(enrichmentParams))
+                val enrichedNode = (node as ObjectNode).apply {
+                    set<JsonNode>("params", insertToCursorPositionParams)
+                }
+
+                handleChat(AmazonQChatServer.insertToCursorPosition, enrichedNode)
             }
 
             CHAT_LINK_CLICK -> {
@@ -399,33 +416,40 @@ class BrowserConnector(
             }
 
             CHAT_TAB_BAR_ACTIONS -> {
-                handleChat(AmazonQChatServer.tabBarActions, node) { params, invoke ->
-                    invoke()
-                        .whenComplete { actions, error ->
-                            try {
-                                if (error != null) {
-                                    throw error
-                                }
+                val action = node.params.get("action")
+                if (action.textValue() == "show_logs") {
+                    runInEdt {
+                        GetAmazonQLogsAction.showLogCollectionWarningGetLogs(project)
+                    }
+                } else {
+                    handleChat(AmazonQChatServer.tabBarActions, node) { params, invoke ->
+                        invoke()
+                            .whenComplete { actions, error ->
+                                try {
+                                    if (error != null) {
+                                        throw error
+                                    }
 
-                                browser.postChat(
-                                    FlareUiMessage(
-                                        command = CHAT_TAB_BAR_ACTIONS,
-                                        params = actions
+                                    browser.postChat(
+                                        FlareUiMessage(
+                                            command = CHAT_TAB_BAR_ACTIONS,
+                                            params = actions
+                                        )
                                     )
-                                )
-                            } catch (e: Exception) {
-                                val cause = if (e is CompletionException) e.cause else e
+                                } catch (e: Exception) {
+                                    val cause = if (e is CompletionException) e.cause else e
 
-                                // dont post error to UI if user cancels export
-                                if (cause is ResponseErrorException && cause.responseError.code == ResponseErrorCode.RequestCancelled.getValue()) {
-                                    return@whenComplete
-                                }
-                                LOG.error { "Failed to perform chat tab bar action $e" }
-                                params.tabId?.let {
-                                    browser.postChat(chatCommunicationManager.getErrorUiMessage(it, e, null))
+                                    // dont post error to UI if user cancels export
+                                    if (cause is ResponseErrorException && cause.responseError.code == ResponseErrorCode.RequestCancelled.getValue()) {
+                                        return@whenComplete
+                                    }
+                                    LOG.error { "Failed to perform chat tab bar action $e" }
+                                    params.tabId?.let {
+                                        browser.postChat(chatCommunicationManager.getErrorUiMessage(it, e, null))
+                                    }
                                 }
                             }
-                        }
+                    }
                 }
             }
 
@@ -489,6 +513,19 @@ class BrowserConnector(
                         )
                     }
             }
+
+            OPEN_FILE_DIALOG -> {
+                handleChat(AmazonQChatServer.showOpenFileDialog, node)
+                    .whenComplete { response, _ ->
+                        browser.postChat(
+                            FlareUiMessage(
+                                command = OPEN_FILE_DIALOG_REQUEST_METHOD,
+                                params = response
+                            )
+                        )
+                    }
+            }
+
             LIST_RULES_REQUEST_METHOD -> {
                 handleChat(AmazonQChatServer.listRules, node)
                     .whenComplete { response, _ ->
@@ -517,6 +554,17 @@ class BrowserConnector(
             CHAT_PINNED_CONTEXT_REMOVE -> {
                 handleChat(AmazonQChatServer.pinnedContextRemove, node)
             }
+            LIST_AVAILABLE_MODELS -> {
+                handleChat(AmazonQChatServer.listAvailableModels, node)
+                    .whenComplete { response, _ ->
+                        browser.postChat(
+                            FlareUiMessage(
+                                command = LIST_AVAILABLE_MODELS,
+                                params = response
+                            )
+                        )
+                    }
+            }
         }
     }
 
@@ -543,17 +591,6 @@ class BrowserConnector(
                 chatCommunicationManager.removeInflightRequestForTab(tabId)
             } catch (e: CancellationException) {
                 LOG.warn { "Cancelled chat generation" }
-                try {
-                    chatAsyncResultManager.createRequestId(partialResultToken)
-                    chatAsyncResultManager.getResult(partialResultToken)
-                    handleCancellation(tabId, browser)
-                } catch (ex: Exception) {
-                    LOG.warn(ex) { "An error occurred while processing cancellation" }
-                } finally {
-                    chatAsyncResultManager.removeRequestId(partialResultToken)
-                    chatCommunicationManager.removePartialResultLock(partialResultToken)
-                    chatCommunicationManager.removeFinalResultProcessed(partialResultToken)
-                }
             } catch (e: Exception) {
                 LOG.warn(e) { "Failed to send chat message" }
                 browser.postChat(chatCommunicationManager.getErrorUiMessage(tabId, e, partialResultToken))
@@ -561,13 +598,7 @@ class BrowserConnector(
         }
     }
 
-    private fun handleCancellation(tabId: String, browser: Browser) {
-        // Send a message to hide the stop button without showing an error
-        val cancelMessage = chatCommunicationManager.getCancellationUiMessage(tabId)
-        browser.postChat(cancelMessage)
-    }
-
-    private suspend fun updateQuickActionsInBrowser(browser: Browser) {
+    private fun updateQuickActionsInBrowser(browser: Browser) {
         val isFeatureDevAvailable = isFeatureDevAvailable(project)
         val isCodeTransformAvailable = isCodeTransformAvailable(project)
         val isDocAvailable = isDocAvailable(project)

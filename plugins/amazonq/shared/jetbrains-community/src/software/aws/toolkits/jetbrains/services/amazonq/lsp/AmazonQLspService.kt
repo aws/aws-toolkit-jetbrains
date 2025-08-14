@@ -25,7 +25,6 @@ import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.util.EnvironmentUtil
 import com.intellij.util.io.DigestUtil
-import com.intellij.util.io.await
 import com.intellij.util.net.HttpConfigurable
 import com.intellij.util.net.JdkProxyProvider
 import com.intellij.util.net.ssl.CertificateManager
@@ -39,6 +38,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.future.asCompletableFuture
+import kotlinx.coroutines.future.await
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -73,6 +73,7 @@ import software.aws.toolkits.core.utils.writeText
 import software.aws.toolkits.jetbrains.core.coroutines.ioDispatcher
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts.ArtifactManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.auth.DefaultAuthCredentialsService
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.dependencies.DefaultModuleDependenciesService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AmazonQLspTypeAdapterFactory
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AwsExtendedInitializeResult
@@ -461,6 +462,7 @@ private class AmazonQServerInstance(private val project: Project, private val cs
 
         val node = if (SystemInfo.isWindows) "node.exe" else "node"
         val nodePath = getNodeRuntimePath(artifact.resolve(node))
+        val emptyFile = Files.createTempFile("empty", null).toAbsolutePath().toString()
 
         val cmd = NodeExePatcher.patch(nodePath)
             .withParameters(
@@ -473,6 +475,9 @@ private class AmazonQServerInstance(private val project: Project, private val cs
                         LOG.info { "Starting Flare with NODE_EXTRA_CA_CERTS: $it" }
                         put("NODE_EXTRA_CA_CERTS", it)
                     }
+
+                    put("AWS_CONFIG_FILE", emptyFile)
+                    put("AWS_SHARED_CREDENTIALS_FILE", emptyFile)
 
                     // assume default endpoint will pick correct proxy if needed
                     val qUri = URI(QDefaultServiceConfig.ENDPOINT)
@@ -586,9 +591,9 @@ private class AmazonQServerInstance(private val project: Project, private val cs
                 WorkspaceServiceHandler(project, cs, lspInitResult).also {
                     Disposer.register(this, it)
                 }
-                // DefaultModuleDependenciesService(project, cs).also {
-                //    Disposer.register(this, it)
-                // }
+                DefaultModuleDependenciesService(project, cs).also {
+                    Disposer.register(this, it)
+                }
             }
         }
     }
@@ -622,13 +627,6 @@ private class AmazonQServerInstance(private val project: Project, private val cs
             }
         }
 
-        if (Files.exists(nodePath) && Files.isExecutable(nodePath)) {
-            resolveNodeMetric(true, true)
-            return nodePath
-        }
-
-        // use alternative node runtime if it is not found
-        LOG.warn { "Node Runtime download failed. Fallback to user specified node runtime " }
         // attempt to use user provided node runtime path
         val nodeRuntime = LspSettings.getInstance().getNodeRuntimePath()
         if (!nodeRuntime.isNullOrEmpty()) {
@@ -636,7 +634,16 @@ private class AmazonQServerInstance(private val project: Project, private val cs
 
             resolveNodeMetric(false, true)
             return Path.of(nodeRuntime)
+        }
+
+        // attempt to use bundled node
+        if (Files.exists(nodePath) && Files.isExecutable(nodePath) && validateNode(nodePath) != null) {
+            resolveNodeMetric(true, true)
+            return nodePath
         } else {
+            // use alternative node runtime if it is not found
+            LOG.warn { "Node Runtime download failed. Fallback to user environment search" }
+
             val localNode = locateNodeCommand()
             if (localNode != null) {
                 LOG.info { "Using node from ${localNode.toAbsolutePath()}" }
@@ -678,48 +685,56 @@ private class AmazonQServerInstance(private val project: Project, private val cs
             .asSequence()
             .map { it.toPath() }
             .filter { Files.isRegularFile(it) && Files.isExecutable(it) }
-            .firstNotNullOfOrNull { path ->
-                try {
-                    val process = ProcessBuilder(path.toString(), "--version")
-                        .redirectErrorStream(true)
-                        .start()
+            .firstNotNullOfOrNull(::validateNode)
+    }
 
-                    if (!process.waitFor(5, TimeUnit.SECONDS)) {
-                        process.destroy()
-                        null
-                    } else if (process.exitValue() == 0) {
-                        val version = process.inputStream.bufferedReader().readText().trim()
-                        val majorVersion = version.removePrefix("v").split(".")[0].toIntOrNull()
+    /** @return null if node is not suitable **/
+    private fun validateNode(path: Path) = try {
+        val process = ProcessBuilder(path.toString(), "--version")
+            .redirectErrorStream(true)
+            .start()
 
-                        if (majorVersion != null && majorVersion >= 18) {
-                            path.toAbsolutePath()
-                        } else {
-                            LOG.debug { "Node version < 18 found at: $path (version: $version)" }
-                            null
-                        }
-                    } else {
-                        LOG.debug { "Failed to get version from node at: $path" }
-                        null
-                    }
-                } catch (e: Exception) {
-                    LOG.debug(e) { "Failed to check version for node at: $path" }
-                    null
-                }
+        if (!process.waitFor(5, TimeUnit.SECONDS)) {
+            process.destroy()
+            null
+        } else if (process.exitValue() == 0) {
+            val version = process.inputStream.bufferedReader().readText().trim()
+            val majorVersion = version.removePrefix("v").split(".")[0].toIntOrNull()
+
+            if (majorVersion != null && majorVersion >= 18) {
+                path.toAbsolutePath()
+            } else {
+                LOG.debug { "Node version < 18 found at: $path (version: $version)" }
+                null
             }
+        } else {
+            LOG.debug { "Failed to get version from node at: $path" }
+            null
+        }
+    } catch (e: Exception) {
+        LOG.debug(e) { "Failed to check version for node at: $path" }
+        null
     }
 
     override fun dispose() {
         if (!launcherFuture.isDone) {
             try {
-                languageServer.apply {
-                    shutdown().thenRun { exit() }
-                }
+                // otherwise can deadlock waiting for frozen flare process
+                cs.launch {
+                    languageServer.apply {
+                        withTimeout(2000) {
+                            shutdown().await()
+                            exit()
+                        }
+                    }
+                }.asCompletableFuture()
+                    .get(3000, TimeUnit.MILLISECONDS)
             } catch (e: Exception) {
                 LOG.warn(e) { "LSP shutdown failed" }
-                launcherHandler.destroyProcess()
+                launcherHandler.killProcess()
             }
         } else if (!launcherHandler.isProcessTerminated) {
-            launcherHandler.destroyProcess()
+            launcherHandler.killProcess()
         }
     }
 

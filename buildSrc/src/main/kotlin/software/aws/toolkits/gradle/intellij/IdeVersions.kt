@@ -75,7 +75,8 @@ object IdeVersions {
                 marketplacePlugins = listOf(
                     "org.toml.lang:243.21565.122",
                     "PythonCore:243.21565.211",
-                    "Docker:243.21565.204"
+                    "Docker:243.21565.204",
+                    "com.intellij.modules.json:243.26574.91"
                 )
             ),
             ultimate = ProductProfile(
@@ -90,6 +91,7 @@ object IdeVersions {
                     "org.toml.lang:243.21565.122",
                     "Pythonid:243.21565.211",
                     "org.jetbrains.plugins.go:243.21565.211",
+                    "com.intellij.modules.json:243.26574.91"
                 )
             ),
             rider = RiderProfile(
@@ -103,7 +105,7 @@ object IdeVersions {
         Profile(
             name = "2025.1",
             gateway = ProductProfile(
-                sdkVersion = "251.23774.441-CUSTOM-SNAPSHOT",
+                sdkVersion = "2025.1",
                 bundledPlugins = listOf("org.jetbrains.plugins.terminal")
             ),
             community = ProductProfile(
@@ -114,8 +116,10 @@ object IdeVersions {
                     "org.jetbrains.idea.maven",
                 ),
                 marketplacePlugins = listOf(
+                    "org.toml.lang:251.26927.47",
                     "PythonCore:251.23774.460",
-                    "Docker:251.23774.466"
+                    "Docker:251.23774.466",
+                    "com.intellij.modules.json:251.27812.12"
                 )
             ),
             ultimate = ProductProfile(
@@ -125,10 +129,15 @@ object IdeVersions {
                     "JavaScriptDebugger",
                     "com.intellij.database",
                     "com.jetbrains.codeWithMe",
+                    "intellij.grid.plugin",
+                    "intellij.charts"
                 ),
                 marketplacePlugins = listOf(
+                    "org.toml.lang:251.26927.47",
                     "Pythonid:251.23774.460",
+                    "PythonCore:251.23774.460",
                     "org.jetbrains.plugins.go:251.23774.435",
+                    "com.intellij.modules.json:251.27812.12"
                 )
             ),
             rider = RiderProfile(
@@ -139,6 +148,49 @@ object IdeVersions {
                 nugetVersion = " 2025.1.0"
             )
         ),
+        Profile(
+            name = "2025.2",
+            gateway = ProductProfile(
+                sdkVersion = "2025.2",
+                bundledPlugins = listOf("org.jetbrains.plugins.terminal")
+            ),
+            community = ProductProfile(
+                sdkVersion = "2025.2",
+                bundledPlugins = commonPlugins + listOf(
+                    "com.intellij.java",
+                    "com.intellij.gradle",
+                    "org.jetbrains.idea.maven",
+                    "com.intellij.properties"
+                ),
+                marketplacePlugins = listOf(
+                    "org.toml.lang:252.23892.464",
+                    "PythonCore:252.23892.458",
+                    "Docker:252.23892.464",
+                    "com.intellij.modules.json:252.23892.360"
+                )
+            ),
+            ultimate = ProductProfile(
+                sdkVersion = "2025.2",
+                bundledPlugins = commonPlugins + listOf(
+                    "JavaScript",
+                    "JavaScriptDebugger",
+                    "com.intellij.database",
+                    "com.jetbrains.codeWithMe",
+                ),
+                marketplacePlugins = listOf(
+                    "Pythonid:252.23892.458",
+                    "org.jetbrains.plugins.go:252.23892.360",
+                    "com.intellij.modules.json:252.23892.360"
+                )
+            ),
+            rider = RiderProfile(
+                sdkVersion = "2025.2-SNAPSHOT",
+                bundledPlugins = commonPlugins,
+                netFrameworkTarget = "net472",
+                rdGenVersion = "2025.2.2",
+                nugetVersion = "2025.2.0-rc02"
+            )
+        )
     ).associateBy { it.name }
 
     fun ideProfile(project: Project): Profile = ideProfile(project.providers).get()

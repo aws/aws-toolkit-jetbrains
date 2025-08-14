@@ -17,20 +17,32 @@ val codeArtifactMavenRepo = fun RepositoryHandler.(): MavenArtifactRepository? {
     } else {
         null
     }
-}.also {
-    pluginManagement {
-        repositories {
-            it()
-            maven("https://oss.sonatype.org/content/repositories/snapshots/")
-            gradlePluginPortal()
+}
+
+pluginManagement {
+    repositories {
+        // unfortunately pluginManagement is special, so we need to duplicate
+        val codeArtifactUrl: Provider<String> = providers.environmentVariable("CODEARTIFACT_URL")
+        val codeArtifactToken: Provider<String> = providers.environmentVariable("CODEARTIFACT_AUTH_TOKEN")
+        if (codeArtifactUrl.isPresent && codeArtifactToken.isPresent) {
+            maven {
+                url = uri(codeArtifactUrl.get())
+                credentials {
+                    username = "aws"
+                    password = codeArtifactToken.get()
+                }
+            }
         }
+
+        gradlePluginPortal()
+        maven("https://central.sonatype.com/repository/maven-snapshots/")
     }
 }
 
 plugins {
     id("com.github.burrunan.s3-build-cache") version "1.5"
     id("com.gradle.develocity") version "3.17.6"
-    id("org.jetbrains.intellij.platform.settings") version "2.3.0"
+    id("org.jetbrains.intellij.platform.settings") version "2.7.1"
 }
 
 dependencyResolutionManagement {

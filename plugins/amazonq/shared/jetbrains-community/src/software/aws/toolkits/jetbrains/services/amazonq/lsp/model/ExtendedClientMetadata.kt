@@ -25,11 +25,14 @@ data class QCapabilities(
     val developerProfiles: Boolean,
     val mcp: Boolean,
     val pinnedContextEnabled: Boolean,
+    val imageContextEnabled: Boolean,
+    val reroute: Boolean,
     val workspaceFilePath: String?,
 )
 
 data class WindowCapabilities(
     val showSaveFileDialog: Boolean,
+    val showLogs: Boolean,
 )
 
 data class ClientInfoMetadata(
@@ -66,10 +69,13 @@ fun createExtendedClientMetadata(project: Project): ExtendedClientMetadata {
                     developerProfiles = true,
                     mcp = true,
                     pinnedContextEnabled = true,
+                    imageContextEnabled = true,
+                    reroute = true,
                     workspaceFilePath = project.workspaceFile?.path,
                 ),
                 window = WindowCapabilities(
-                    showSaveFileDialog = true
+                    showSaveFileDialog = true,
+                    showLogs = true,
                 )
             ),
             contextConfiguration = ContextConfiguration(

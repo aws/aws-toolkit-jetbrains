@@ -18,12 +18,12 @@ import org.junit.platform.commons.util.ReflectionUtils
  * the binary method signature change of [ReflectionUtils.makeAccessible] caused by JUnit 5.11.0 in
  * https://github.com/junit-team/junit5/commit/abb5ed16be3a9ce552f4a45c11264ded608ae9da
  */
-@TestOnly
 internal class TestDisposableExtension :
     BeforeEachCallback,
     AfterEachCallback,
     ParameterResolver {
 
+    @TestOnly
     override fun beforeEach(context: ExtensionContext) {
         val instance = context.requiredTestInstance
         for (field in findAnnotatedFields(instance.javaClass, TestDisposable::class.java, ReflectionUtils::isNotStatic)) {
@@ -31,6 +31,7 @@ internal class TestDisposableExtension :
         }
     }
 
+    @TestOnly
     override fun afterEach(context: ExtensionContext) {
         context.testDisposableIfRequested()?.let { disposable ->
             Assertions.assertFalse(disposable.isDisposed)
@@ -38,10 +39,12 @@ internal class TestDisposableExtension :
         }
     }
 
+    @TestOnly
     override fun supportsParameter(parameterContext: ParameterContext, extensionContext: ExtensionContext): Boolean {
         return parameterContext.parameter.type === Disposable::class.java && parameterContext.isAnnotated(TestDisposable::class.java)
     }
 
+    @TestOnly
     override fun resolveParameter(parameterContext: ParameterContext, extensionContext: ExtensionContext): Any {
         return extensionContext.testDisposable()
     }

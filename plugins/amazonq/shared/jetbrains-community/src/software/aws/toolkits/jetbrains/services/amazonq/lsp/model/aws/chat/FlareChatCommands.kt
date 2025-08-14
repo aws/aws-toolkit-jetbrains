@@ -52,12 +52,17 @@ const val PROMPT_INPUT_OPTIONS_CHANGE = "aws/chat/promptInputOptionChange"
 
 const val SEND_CHAT_COMMAND_PROMPT = "aws/chat/sendChatPrompt"
 const val SHOW_SAVE_FILE_DIALOG_REQUEST_METHOD = "aws/showSaveFileDialog"
+const val SHOW_OPEN_FILE_DIALOG_REQUEST_METHOD = "aws/showOpenFileDialog"
 const val STOP_CHAT_RESPONSE = "stopChatResponse"
 const val SEND_TO_PROMPT = "sendToPrompt"
+const val OPEN_FILE_DIALOG = "openFileDialog"
 const val TELEMETRY_EVENT = "telemetry/event"
 
 // https://github.com/aws/language-server-runtimes/blob/112feba70219a98a12f13727d67c540205fa9c9f/types/chat.ts#L32
 const val LIST_MCP_SERVERS_REQUEST_METHOD = "aws/chat/listMcpServers"
 const val MCP_SERVER_CLICK_REQUEST_METHOD = "aws/chat/mcpServerClick"
+const val OPEN_FILE_DIALOG_REQUEST_METHOD = "aws/chat/openFileDialog"
 const val LIST_RULES_REQUEST_METHOD = "aws/chat/listRules"
 const val RULE_CLICK_REQUEST_METHOD = "aws/chat/ruleClick"
+
+const val LIST_AVAILABLE_MODELS = "aws/chat/listAvailableModels"
