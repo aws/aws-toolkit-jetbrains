@@ -110,5 +110,5 @@ enum class MessageType(@JsonValue val repr: String) {
     TOOL("tool"),
 }
 
-val CODE_REVIEW_FINDINGS_SUFFIX = "_codeReviewFindings"
-val DISPLAY_FINDINGS_SUFFIX = "_displayFindings"
+const val CODE_REVIEW_FINDINGS_SUFFIX = "_codeReviewFindings"
+const val DISPLAY_FINDINGS_SUFFIX = "_displayFindings"
