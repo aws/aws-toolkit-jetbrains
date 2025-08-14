@@ -9,24 +9,36 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.jcef.JBCefJSQuery
-import org.cef.CefApp
+import software.aws.toolkits.core.utils.inputStream
+import software.aws.toolkits.jetbrains.core.webview.LocalAssetJBCefRequestHandler
 import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.FlareUiMessage
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
 import software.aws.toolkits.jetbrains.services.amazonq.util.HighlightCommand
 import software.aws.toolkits.jetbrains.services.amazonq.util.createBrowser
 import software.aws.toolkits.jetbrains.settings.MeetQSettings
-import java.net.URI
+import java.nio.file.Path
+import java.nio.file.Paths
 
-/*
-Displays the web view for the Amazon Q tool window
+/**
+ * Displays the web view for the Amazon Q tool window
  */
-
-class Browser(parent: Disposable, private val webUri: URI, val project: Project) : Disposable {
+class Browser(parent: Disposable, private val mynahAsset: Path, val project: Project) : Disposable {
 
     val jcefBrowser = createBrowser(parent)
 
     val receiveMessageQuery = JBCefJSQuery.create(jcefBrowser)
+
+    private val assetRequestHandler = LocalAssetJBCefRequestHandler(jcefBrowser)
+
+    init {
+        assetRequestHandler.addWildcardHandler("mynah") { path ->
+            val asset = path.replaceFirst("mynah/", "/mynah-ui/assets/")
+            Paths.get(asset).normalize().toString().replace("\\", "/").let {
+                this::class.java.getResourceAsStream(it)
+            }
+        }
+    }
 
     fun init(
         isCodeTransformAvailable: Boolean,
@@ -37,14 +49,6 @@ class Browser(parent: Disposable, private val webUri: URI, val project: Project)
         highlightCommand: HighlightCommand?,
         activeProfile: QRegionProfile?,
     ) {
-        // register the scheme handler to route http://mynah/ URIs to the resources/assets directory on classpath
-        CefApp.getInstance()
-            .registerSchemeHandlerFactory(
-                "http",
-                "mynah",
-                AssetResourceHandler.AssetResourceHandlerFactory(),
-            )
-
         loadWebView(
             isCodeTransformAvailable,
             isFeatureDevAvailable,
@@ -88,15 +92,18 @@ class Browser(parent: Disposable, private val webUri: URI, val project: Project)
             true // Allow drag operations
         }, jcefBrowser.cefBrowser)
         // load the web app
-        jcefBrowser.loadHTML(
-            getWebviewHTML(
-                isCodeTransformAvailable,
-                isFeatureDevAvailable,
-                isDocAvailable,
-                isCodeScanAvailable,
-                isCodeTestAvailable,
-                highlightCommand,
-                activeProfile
+        jcefBrowser.loadURL(
+            assetRequestHandler.createResource(
+                "webview/chat.html",
+                getWebviewHTML(
+                    isCodeTransformAvailable,
+                    isFeatureDevAvailable,
+                    isDocAvailable,
+                    isCodeScanAvailable,
+                    isCodeTestAvailable,
+                    highlightCommand,
+                    activeProfile,
+                )
             )
         )
     }
@@ -115,14 +122,14 @@ class Browser(parent: Disposable, private val webUri: URI, val project: Project)
         activeProfile: QRegionProfile?,
     ): String {
         val postMessageToJavaJsCode = receiveMessageQuery.inject("JSON.stringify(message)")
-        val connectorAdapterPath = "http://mynah/js/connectorAdapter.js"
+        val connectorAdapterPath = "${LocalAssetJBCefRequestHandler.PROTOCOL}://${LocalAssetJBCefRequestHandler.AUTHORITY}/mynah/js/connectorAdapter.js"
+        val mynahResource = assetRequestHandler.createResource(mynahAsset.fileName.toString(), mynahAsset.inputStream())
 
         // https://github.com/highlightjs/highlight.js/issues/1387
         // language=HTML
         val jsScripts = """
             <script type="text/javascript" charset="UTF-8" src="$connectorAdapterPath"></script>
-            <script type="text/javascript" charset="UTF-8" src="$webUri" defer onload="init()"></script>
-            
+            <script type="text/javascript" charset="UTF-8" src="$mynahResource" defer onload="init()"></script>
             <script type="text/javascript">
                 
                 const init = () => {

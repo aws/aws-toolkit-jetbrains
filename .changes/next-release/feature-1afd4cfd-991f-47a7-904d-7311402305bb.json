@@ -1,0 +1,4 @@
+{
+  "type" : "feature",
+  "description" : "Add support for using Amazon Q chat through a remote IDE instance on 2024.2+"
+}

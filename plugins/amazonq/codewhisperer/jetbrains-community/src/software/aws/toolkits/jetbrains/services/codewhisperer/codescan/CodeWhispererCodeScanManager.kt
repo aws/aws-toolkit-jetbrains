@@ -3,13 +3,13 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.codescan
 
-import com.intellij.analysis.problemsView.toolWindow.ProblemsView
 import com.intellij.codeHighlighting.HighlightDisplayLevel
 import com.intellij.codeInspection.util.InspectionMessage
 import com.intellij.icons.AllIcons
 import com.intellij.lang.Commenter
 import com.intellij.lang.Language
 import com.intellij.lang.LanguageCommenters
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
@@ -36,8 +36,10 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.isFile
+import com.intellij.openapi.wm.ToolWindow
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.refactoring.suggested.range
+import com.intellij.ui.content.Content
 import com.intellij.ui.content.ContentManagerEvent
 import com.intellij.ui.content.ContentManagerListener
 import com.intellij.ui.treeStructure.Tree
@@ -60,6 +62,7 @@ import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.ProblemsViewMutator
 import software.aws.toolkits.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
@@ -107,25 +110,9 @@ import kotlin.coroutines.CoroutineContext
 
 private val LOG = getLogger<CodeWhispererCodeScanManager>()
 
-class CodeWhispererCodeScanManager(val project: Project) {
-    private val defaultScope = projectCoroutineScope(project)
+class CodeWhispererCodeScanManager(val project: Project, private val defaultScope: CoroutineScope) : Disposable {
     private val codeScanResultsPanel by lazy {
         CodeWhispererCodeScanResultsView(project, defaultScope)
-    }
-    private val codeScanIssuesContent by lazy {
-        val contentManager = getProblemsWindow().contentManager
-        contentManager.factory.createContent(
-            codeScanResultsPanel,
-            message("codewhisperer.codescan.scan_display"),
-            false
-        ).also {
-            Disposer.register(contentManager, it)
-            contentManager.addContentManagerListener(object : ContentManagerListener {
-                override fun contentRemoved(event: ContentManagerEvent) {
-                    if (event.content == it) reset()
-                }
-            })
-        }
     }
 
     private var autoScanIssues = emptyList<CodeWhispererCodeScanIssue>()
@@ -507,12 +494,19 @@ class CodeWhispererCodeScanManager(val project: Project) {
     private fun refreshUi() {
         val codeScanTreeModel = CodeWhispererCodeScanTreeModel(codeScanTreeNodeRoot)
         val totalIssuesCount = codeScanTreeModel.getTotalIssuesCount()
-        if (totalIssuesCount > 0) {
-            codeScanIssuesContent.displayName =
-                message("codewhisperer.codescan.scan_display_with_issues", totalIssuesCount, INACTIVE_TEXT_COLOR)
+        val displayName = if (totalIssuesCount > 0) {
+            message("codewhisperer.codescan.scan_display_with_issues", totalIssuesCount, INACTIVE_TEXT_COLOR)
         } else {
-            codeScanIssuesContent.displayName = message("codewhisperer.codescan.scan_display")
+            message("codewhisperer.codescan.scan_display")
         }
+
+        withToolWindow { window ->
+            window.contentManager.contents.filter { it.isCodeScanView() }
+                .forEach {
+                    it.displayName = displayName
+                }
+        }
+
         codeScanResultsPanel.refreshUIWithUpdatedModel(codeScanTreeModel)
     }
 
@@ -650,10 +644,25 @@ class CodeWhispererCodeScanManager(val project: Project) {
      * This method adds code content to the problems view if not already added.
      */
     fun buildCodeScanUI() = runInEdt {
-        val problemsWindow = getProblemsWindow()
-        if (!problemsWindow.contentManager.contents.contains(codeScanIssuesContent)) {
-            problemsWindow.contentManager.addContent(codeScanIssuesContent)
-            codeScanIssuesContent.displayName = message("codewhisperer.codescan.scan_display")
+        withToolWindow { problemsWindow ->
+            val contentManager = problemsWindow.contentManager
+            if (!contentManager.contents.any { it.isCodeScanView() }) {
+                contentManager.addContent(
+                    contentManager.factory.createContent(
+                        codeScanResultsPanel,
+                        message("codewhisperer.codescan.scan_display"),
+                        false
+                    ).also {
+                        it.tabName = message("codewhisperer.codescan.scan_display")
+                        Disposer.register(contentManager, it)
+                        contentManager.addContentManagerListener(object : ContentManagerListener {
+                            override fun contentRemoved(event: ContentManagerEvent) {
+                                if (event.content == it) reset()
+                            }
+                        })
+                    }
+                )
+            }
         }
     }
 
@@ -661,15 +670,19 @@ class CodeWhispererCodeScanManager(val project: Project) {
      * This method shows the code content panel in problems view
      */
     fun showCodeScanUI() = runInEdt {
-        val problemsWindow = getProblemsWindow()
-        problemsWindow.contentManager.setSelectedContent(codeScanIssuesContent)
-        problemsWindow.show()
+        withToolWindow { problemsWindow ->
+            problemsWindow.contentManager.contents.firstOrNull { it.isCodeScanView() }
+                ?.let { problemsWindow.contentManager.setSelectedContent(it) }
+            problemsWindow.show()
+        }
     }
 
     fun removeCodeScanUI() = runInEdt {
-        val problemsWindow = getProblemsWindow()
-        if (problemsWindow.contentManager.contents.contains(codeScanIssuesContent)) {
-            problemsWindow.contentManager.removeContent(codeScanIssuesContent, false)
+        withToolWindow { problemsWindow ->
+            problemsWindow.contentManager.contents.filter { it.isCodeScanView() }
+                .forEach {
+                    problemsWindow.contentManager.removeContent(it, true)
+                }
         }
     }
 
@@ -735,8 +748,13 @@ class CodeWhispererCodeScanManager(val project: Project) {
         )
     }
 
-    private fun getProblemsWindow() = ProblemsView.getToolWindow(project)
-        ?: error(message("codewhisperer.codescan.problems_window_not_found"))
+    private fun withToolWindow(runnable: (ToolWindow) -> Unit) {
+        ProblemsViewMutator.EP.forEachExtensionSafe { mutator ->
+            mutator.mutateProblemsView(project, runnable)
+        }
+    }
+
+    private fun Content.isCodeScanView() = component == codeScanResultsPanel
 
     private fun reset() = runInEdt {
         // clear the codeScanTreeNodeRoot
@@ -765,7 +783,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
             editorFactory.addEditorFactoryListener(fileListener, project)
             editorFactory.eventMulticaster.addEditorMouseMotionListener(
                 editorMouseListener,
-                codeScanIssuesContent
+                this
             )
         }
     }
@@ -955,8 +973,12 @@ class CodeWhispererCodeScanManager(val project: Project) {
         val codeScanTreeModel = CodeWhispererCodeScanTreeModel(codeScanTreeNodeRoot)
         val totalIssuesCount = codeScanTreeModel.getTotalIssuesCount()
         if (totalIssuesCount > 0) {
-            codeScanIssuesContent.displayName =
-                message("codewhisperer.codescan.scan_display_with_issues", totalIssuesCount, INACTIVE_TEXT_COLOR)
+            withToolWindow { problemsWindow ->
+                problemsWindow.contentManager.contents.filter { it.isCodeScanView() }
+                    .forEach {
+                        it.displayName = message("codewhisperer.codescan.scan_display_with_issues", totalIssuesCount, INACTIVE_TEXT_COLOR)
+                    }
+            }
         }
         codeScanResultsPanel.refreshUIWithUpdatedModel(codeScanTreeModel)
     }
@@ -971,8 +993,13 @@ class CodeWhispererCodeScanManager(val project: Project) {
             val codeScanTreeModel = CodeWhispererCodeScanTreeModel(root)
             val totalIssuesCount = codeScanTreeModel.getTotalIssuesCount()
             if (totalIssuesCount > 0) {
-                codeScanIssuesContent.displayName =
-                    message("codewhisperer.codescan.scan_display_with_issues", totalIssuesCount, INACTIVE_TEXT_COLOR)
+                withToolWindow { window ->
+                    window.contentManager.contents.filter { it.isCodeScanView() }
+                        .forEach {
+                            it.displayName =
+                                message("codewhisperer.codescan.scan_display_with_issues", totalIssuesCount, INACTIVE_TEXT_COLOR)
+                        }
+                }
             }
             codeScanResultsPanel.updateAndDisplayScanResults(codeScanTreeModel, scannedFiles, scope)
         }
@@ -1002,6 +1029,9 @@ class CodeWhispererCodeScanManager(val project: Project) {
             return false
         }
         return isInsideWorkTree(projectDir)
+    }
+
+    override fun dispose() {
     }
 
     companion object {
