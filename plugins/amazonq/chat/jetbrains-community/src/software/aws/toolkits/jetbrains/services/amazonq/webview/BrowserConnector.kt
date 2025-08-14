@@ -598,7 +598,7 @@ class BrowserConnector(
         }
     }
 
-    private fun updateQuickActionsInBrowser(browser: Browser) {
+    private suspend fun updateQuickActionsInBrowser(browser: Browser) {
         val isFeatureDevAvailable = isFeatureDevAvailable(project)
         val isCodeTransformAvailable = isCodeTransformAvailable(project)
         val isDocAvailable = isDocAvailable(project)
