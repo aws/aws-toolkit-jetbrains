@@ -45,6 +45,7 @@ open class CreateRelease @Inject constructor(projectLayout: ProjectLayout) : Cha
 
         val creator = ReleaseCreator(releaseEntries.files, releaseFile.get().asFile, logger)
         creator.create(releaseVersion.get(), releaseDate)
+        val git = git()
         if (git != null) {
             git.stage(releaseFile.get().asFile.absoluteFile)
             git.stage(nextReleaseDirectory.get().asFile.absoluteFile)

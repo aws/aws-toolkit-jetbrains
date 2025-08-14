@@ -21,16 +21,16 @@ buildscript {
     }
 }
 
-//val changelog = tasks.register<GeneratePluginChangeLog>("pluginChangeLog") {
-//    includeUnreleased.set(true)
-//    changeLogFile.value(layout.buildDirectory.file("changelog/change-notes.xml"))
-//}
+val changelog = tasks.register<GeneratePluginChangeLog>("pluginChangeLog") {
+    includeUnreleased.set(true)
+    changeLogFile.value(layout.buildDirectory.file("changelog/change-notes.xml"))
+}
 
 tasks.jar {
-//    dependsOn(changelog)
-//    from(changelog) {
-//        into("META-INF")
-//    }
+    dependsOn(changelog)
+    from(changelog) {
+        into("META-INF")
+    }
 }
 
 dependencies {
@@ -109,35 +109,29 @@ val downloadFlareArtifacts by tasks.registering(Download::class) {
     useETag(true)
 }
 
-val prepareBundledFlare by tasks.registering(Copy::class) {
-    // TODO: https://docs.gradle.org/current/userguide/configuration_cache.html#config_cache:requirements:use_project_during_execution
-    dependsOn(downloadFlareArtifacts)
-    inputs.files(downloadFlareArtifacts)
-
-    val dest = layout.buildDirectory.dir("tmp/extractFlare")
-    into(dest)
-    from(downloadFlareArtifacts.map { it.outputFiles.filterNot { file -> file.name.endsWith(".zip") } })
-    includeEmptyDirs = false
+//val prepareBundledFlare by tasks.registering(Copy::class) {
+//    dependsOn(downloadFlareArtifacts)
+//    inputs.files(downloadFlareArtifacts)
+//    val dest = layout.buildDirectory.dir("tmp/extractFlare")
 //
-//    doLast {
-//        copy {
-//            into(dest)
-//            downloadFlareArtifacts.get().outputFiles.filter { it.name.endsWith(".zip") }.forEach {
-//                dest.get().file(it.parentFile.name).asFile.createNewFile()
-//                from(zipTree(it)) {
-//                    include("*.js")
-//                    include("*.txt")
-//                }
+//    includeEmptyDirs = false
+//    into(dest) {
+//        downloadFlareArtifacts.get().outputFiles.filter { it.name.endsWith(".zip") }.forEach {
+//            println("Extracting flare from ${it}")
+//            dest.get().file(it.parentFile.name).asFile.createNewFile()
+//            from(zipTree(it)) {
+//                include("*.js")
+//                include("*.txt")
 //            }
 //        }
 //    }
-}
+//}
 
 tasks.withType<PrepareSandboxTask>().configureEach {
     from(file("contrib/QCT-Maven-6-16.jar")) {
         into(intellijPlatform.projectName.map { "$it/lib" })
     }
-    from(prepareBundledFlare) {
-        into(intellijPlatform.projectName.map { "$it/flare" })
-    }
+//    from(prepareBundledFlare) {
+//        into(intellijPlatform.projectName.map { "$it/flare" })
+//    }
 }

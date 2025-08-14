@@ -46,7 +46,7 @@ abstract class GenerateChangeLog(private val shouldStage: Boolean) : ChangeLogTa
         generator.close()
 
         if (shouldStage) {
-            git?.stage(changeLogFile.get().asFile)
+            git()?.stage(changeLogFile.get().asFile)
         }
     }
 

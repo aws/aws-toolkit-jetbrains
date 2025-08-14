@@ -30,7 +30,7 @@ open class NewChange : ChangeLogTask() {
             changeType != null && description != null -> createChange(changeType, description)
             else -> promptForChange(input, changeType)
         }
-        git?.stage(file)
+        git()?.stage(file)
     }
 
     private fun promptForChange(input: Scanner, existingChangeType: ChangeType?): File {

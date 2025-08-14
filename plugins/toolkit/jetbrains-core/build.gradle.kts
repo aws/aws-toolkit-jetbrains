@@ -40,10 +40,10 @@ dependencies {
     }
 }
 
-//val changelog = tasks.register<GeneratePluginChangeLog>("pluginChangeLog") {
-//    includeUnreleased.set(true)
-//    changeLogFile.set(project.layout.buildDirectory.file("changelog/change-notes.xml"))
-//}
+val changelog = tasks.register<GeneratePluginChangeLog>("pluginChangeLog") {
+    includeUnreleased.set(true)
+    changeLogFile.set(project.layout.buildDirectory.file("changelog/change-notes.xml"))
+}
 
 tasks.compileJava {
     // https://github.com/gradle/gradle/issues/26006
@@ -60,10 +60,10 @@ patchPluginXml.configure {
 }
 
 tasks.jar {
-//    dependsOn(patchPluginXml, changelog)
-//    from(changelog) {
-//        into("META-INF")
-//    }
+    dependsOn(patchPluginXml, changelog)
+    from(changelog) {
+        into("META-INF")
+    }
 
     from(patchPluginXml) {
         duplicatesStrategy = DuplicatesStrategy.INCLUDE
