@@ -11,7 +11,7 @@ import com.intellij.openapi.actionSystem.DataKey
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.DumbAware
 import kotlinx.coroutines.runBlocking
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AsyncChatUiListener
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommunicationManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.FlareUiMessage
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatPrompt
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_TO_PROMPT
@@ -58,7 +58,8 @@ class ExplainCodeIssueAction : AnAction(), DumbAware {
                 )
 
                 val uiMessage = FlareUiMessage(SEND_TO_PROMPT, params)
-                AsyncChatUiListener.notifyPartialMessageUpdate(project, uiMessage)
+                ChatCommunicationManager.getInstance(project).notifyUi(uiMessage)
+//                AsyncChatUiListener.notifyPartialMessageUpdate(project, uiMessage)
             }
         }
     }
