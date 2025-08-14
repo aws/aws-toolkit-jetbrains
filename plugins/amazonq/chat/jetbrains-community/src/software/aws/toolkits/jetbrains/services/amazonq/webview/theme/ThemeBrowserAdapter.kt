@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.webview.theme
 
-import kotlinx.coroutines.CompletableDeferred
 import org.cef.browser.CefBrowser
 import java.awt.Color
 import java.awt.Font
