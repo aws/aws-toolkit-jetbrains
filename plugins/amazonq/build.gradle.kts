@@ -4,7 +4,14 @@
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import de.undercouch.gradle.tasks.download.Download
+import org.gradle.api.DefaultTask
+import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.TaskAction
 import org.jetbrains.intellij.platform.gradle.tasks.PrepareSandboxTask
+import software.aws.toolkits.gradle.ExtractFlareTask
 import software.aws.toolkits.gradle.changelog.tasks.GeneratePluginChangeLog
 
 plugins {
@@ -109,29 +116,17 @@ val downloadFlareArtifacts by tasks.registering(Download::class) {
     useETag(true)
 }
 
-//val prepareBundledFlare by tasks.registering(Copy::class) {
-//    dependsOn(downloadFlareArtifacts)
-//    inputs.files(downloadFlareArtifacts)
-//    val dest = layout.buildDirectory.dir("tmp/extractFlare")
-//
-//    includeEmptyDirs = false
-//    into(dest) {
-//        downloadFlareArtifacts.get().outputFiles.filter { it.name.endsWith(".zip") }.forEach {
-//            println("Extracting flare from ${it}")
-//            dest.get().file(it.parentFile.name).asFile.createNewFile()
-//            from(zipTree(it)) {
-//                include("*.js")
-//                include("*.txt")
-//            }
-//        }
-//    }
-//}
+val prepareBundledFlare by tasks.registering(ExtractFlareTask::class) {
+    dependsOn(downloadFlareArtifacts)
+    zipFiles.from(downloadFlareArtifacts.map { it.outputFiles })
+    outputDir.set(layout.buildDirectory.dir("tmp/extractFlare"))
+}
 
 tasks.withType<PrepareSandboxTask>().configureEach {
     from(file("contrib/QCT-Maven-6-16.jar")) {
         into(intellijPlatform.projectName.map { "$it/lib" })
     }
-//    from(prepareBundledFlare) {
-//        into(intellijPlatform.projectName.map { "$it/flare" })
-//    }
+    from(prepareBundledFlare) {
+        into(intellijPlatform.projectName.map { "$it/flare" })
+    }
 }
