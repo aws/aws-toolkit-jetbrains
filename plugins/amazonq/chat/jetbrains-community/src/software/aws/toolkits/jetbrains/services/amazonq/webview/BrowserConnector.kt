@@ -25,6 +25,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onEach
@@ -46,7 +47,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.JsonRpcMethod
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.JsonRpcNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.JsonRpcRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AwsServerCapabilitiesProvider
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommunicationManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.FlareUiMessage
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.AUTH_FOLLOW_UP_CLICKED
@@ -704,15 +704,19 @@ class BrowserConnector(
         }
     }
 
-    private fun updateQuickActionsInBrowser(browser: Browser) {
+    private suspend fun updateQuickActionsInBrowser(browser: Browser) {
         val isFeatureDevAvailable = isFeatureDevAvailable(project)
         val isCodeTransformAvailable = isCodeTransformAvailable(project)
         val isDocAvailable = isDocAvailable(project)
         val isCodeScanAvailable = isCodeScanAvailable(project)
         val isCodeTestAvailable = isCodeTestAvailable(project)
 
+        val serverCapabilities = AmazonQLspService.getInstance(project).instanceFlow.first().initializeResult.await().awsServerCapabilities
+
+        // language=JavaScript
         val script = """
             try {
+                // hack to create the list of actions across all tab types
                 const tempConnector = connectorAdapter.initiateAdapter(
                     false, 
                     true, // the two values are not used here, needed for constructor
@@ -725,7 +729,7 @@ class BrowserConnector(
                 );
                 
                 const commands = tempConnector.initialQuickActions?.slice(0, 2) || [];
-                const options = ${Gson().toJson(AwsServerCapabilitiesProvider.getInstance(project).getChatOptions())};
+                const options = ${Gson().toJson(serverCapabilities.chatOptions)};
                 options.quickActions.quickActionsCommandGroups = [
                     ...commands,
                     ...options.quickActions.quickActionsCommandGroups
