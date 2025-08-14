@@ -17,11 +17,11 @@ data class AwsMetadata(
 )
 
 data class AwsClientCapabilities(
-    val q: DeveloperProfiles,
-    val window: WindowSettings,
+    val q: QCapabilities,
+    val window: WindowCapabilities,
 )
 
-data class DeveloperProfiles(
+data class QCapabilities(
     val developerProfiles: Boolean,
     val mcp: Boolean,
     val pinnedContextEnabled: Boolean,
@@ -30,7 +30,7 @@ data class DeveloperProfiles(
     val workspaceFilePath: String?,
 )
 
-data class WindowSettings(
+data class WindowCapabilities(
     val showSaveFileDialog: Boolean,
     val showLogs: Boolean,
 )
@@ -65,7 +65,7 @@ fun createExtendedClientMetadata(project: Project): ExtendedClientMetadata {
                 name = metadata.parentProduct
             ),
             awsClientCapabilities = AwsClientCapabilities(
-                q = DeveloperProfiles(
+                q = QCapabilities(
                     developerProfiles = true,
                     mcp = true,
                     pinnedContextEnabled = true,
@@ -73,7 +73,7 @@ fun createExtendedClientMetadata(project: Project): ExtendedClientMetadata {
                     reroute = true,
                     workspaceFilePath = project.workspaceFile?.path,
                 ),
-                window = WindowSettings(
+                window = WindowCapabilities(
                     showSaveFileDialog = true,
                     showLogs = true,
                 )
