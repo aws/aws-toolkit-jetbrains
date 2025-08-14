@@ -59,7 +59,7 @@ object LspEditorUtil {
     private fun URI.isCompliant(): Boolean {
         if (!"file".equals(this.scheme, ignoreCase = true)) return true
 
-        val path = this.rawPath ?: this.path ?: ""
+        val path = this.rawPath ?: this.path.orEmpty()
         val noAuthority = this.authority.isNullOrEmpty()
 
         // If the authority component is empty, the path cannot begin with two slash characters ("//")

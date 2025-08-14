@@ -116,7 +116,6 @@ class FileUriUtilTest {
         assertThat(result).isEqualTo(expected)
     }
 
-
     @Test
     fun `test jar protocol conversion`() {
         val virtualFile = createMockVirtualFile(
