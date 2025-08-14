@@ -133,8 +133,12 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
         }
     }
 
+    /**
+     * Only applies to local
+     * On remote, since we are using PROJECTOR_INSTANCING, this will never run
+     */
     override fun init(toolWindow: ToolWindow) {
-        toolWindow.stripeTitle = message("q.window.title")
+        toolWindow.stripeTitle = message("toolwindow.stripe.amazon.q.window")
         toolWindow.component.addComponentListener(
             object : ComponentAdapter() {
                 override fun componentResized(e: ComponentEvent) {
@@ -143,6 +147,8 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
                     LOG.debug {
                         "Amazon Q Tool window stretched to a width less than the minimum allowed width, resizing to the minimum allowed width"
                     }
+
+                    // can't implement equivalent on remote as stretchWidth impl is noop
                     (toolWindow as ToolWindowEx).stretchWidth(MINIMUM_TOOLWINDOW_WIDTH - newWidth)
                 }
             }
