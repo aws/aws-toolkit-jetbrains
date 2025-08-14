@@ -25,8 +25,12 @@ import com.intellij.util.concurrency.EdtExecutorService
 import com.intellij.util.execution.ParametersListUtil
 import kotlinx.coroutines.launch
 import org.eclipse.lsp4j.DidChangeConfigurationParams
+import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
+import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
+import software.aws.toolkits.jetbrains.core.credentials.sono.isInternalUser
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererLoginType
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
@@ -46,6 +50,12 @@ class CodeWhispererConfigurable(private val project: Project) :
 
     private val isSso: Boolean
         get() = CodeWhispererExplorerActionManager.getInstance().checkActiveCodeWhispererConnectionType(project) == CodeWhispererLoginType.SSO
+
+    private val isInternalUser: Boolean
+        get() {
+            val conn = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance()) as? AwsBearerTokenConnection
+            return conn?.let { isInternalUser(it.startUrl) } ?: false
+        }
 
     override fun getId() = "aws.codewhisperer"
 
@@ -123,6 +133,21 @@ class CodeWhispererConfigurable(private val project: Project) :
                     }.enabled(false)
                 }
             }
+
+            row {
+                checkBox(message("aws.settings.codewhisperer.workspace_context")).apply {
+                    connect.subscribe(
+                        ToolkitConnectionManagerListener.TOPIC,
+                        object : ToolkitConnectionManagerListener {
+                            override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
+                                enabled(isCodeWhispererEnabled(project))
+                            }
+                        }
+                    )
+                    enabled(invoke)
+                    bindSelected(codeWhispererSettings::isWorkspaceContextEnabled, codeWhispererSettings::toggleWorkspaceContextEnabled)
+                }.comment(message("aws.settings.codewhisperer.workspace_context.tooltip"))
+            }.visible(isInternalUser)
         }
 
         group(message("aws.settings.codewhisperer.group.inline_suggestions")) {
@@ -158,20 +183,6 @@ class CodeWhispererConfigurable(private val project: Project) :
         }
 
         group(message("aws.settings.codewhisperer.group.q_chat")) {
-            row {
-                checkBox(message("aws.settings.codewhisperer.workspace_context")).apply {
-                    connect.subscribe(
-                        ToolkitConnectionManagerListener.TOPIC,
-                        object : ToolkitConnectionManagerListener {
-                            override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
-                                enabled(isCodeWhispererEnabled(project))
-                            }
-                        }
-                    )
-                    enabled(invoke)
-                    bindSelected(codeWhispererSettings::isWorkspaceContextEnabled, codeWhispererSettings::toggleWorkspaceContextEnabled)
-                }.comment(message("aws.settings.codewhisperer.workspace_context.tooltip"))
-            }.visible(false)
             row {
                 checkBox(message("aws.settings.codewhisperer.project_context")).apply {
                     connect.subscribe(
