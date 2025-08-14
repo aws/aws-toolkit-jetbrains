@@ -42,7 +42,7 @@ dependencies {
     aggregateCoverage(project(":ui-tests"))
 }
 
-tasks.register("runIde") {
+tasks.register<DefaultTask>("runIde") {
     doFirst {
         throw GradleException("Use project specific runIde command, i.e. :plugin-toolkit:intellij-standalone:runIde")
     }
