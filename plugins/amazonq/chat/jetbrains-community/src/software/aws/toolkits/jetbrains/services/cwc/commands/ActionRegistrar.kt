@@ -8,7 +8,7 @@ import com.intellij.openapi.project.Project
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.runBlocking
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AsyncChatUiListener
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommunicationManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.FlareUiMessage
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GENERIC_COMMAND
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GenericCommandParams
@@ -40,7 +40,7 @@ class ActionRegistrar {
                     val params = SendToPromptParams(selection = codeSelection, triggerType = TriggerType.CONTEXT_MENU)
                     uiMessage = FlareUiMessage(command = SEND_TO_PROMPT, params = params)
                 }
-                AsyncChatUiListener.notifyPartialMessageUpdate(project, uiMessage)
+                ChatCommunicationManager.getInstance(project).notifyUi(uiMessage)
             }
         }
     }
