@@ -126,7 +126,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
     }
 
     override fun showMessage(messageParams: MessageParams) {
-        notify(messageParams.type.toNotificationType(), message("q.window.title"), getCleanedContent(messageParams.message, true), project, emptyList())
+        notify(messageParams.type.toNotificationType(), message("toolwindow.stripe.amazon.q.window"), getCleanedContent(messageParams.message, true), project, emptyList())
     }
 
     override fun showMessageRequest(requestParams: ShowMessageRequestParams): CompletableFuture<MessageActionItem?> {
@@ -137,7 +137,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
 
         notify(
             requestParams.type.toNotificationType(),
-            message("q.window.title"),
+            message("toolwindow.stripe.amazon.q.window"),
             getCleanedContent(requestParams.message, true),
             project,
             requestParams.actions.map { item ->
