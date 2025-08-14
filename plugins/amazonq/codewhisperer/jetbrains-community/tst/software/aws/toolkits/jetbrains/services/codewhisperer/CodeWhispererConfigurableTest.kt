@@ -40,7 +40,7 @@ class CodeWhispererConfigurableTest : CodeWhispererTestBase() {
             message("aws.settings.codewhisperer.include_code_with_reference"),
             message("aws.settings.codewhisperer.configurable.opt_out.title"),
             message("aws.settings.codewhisperer.automatic_import_adder"),
-            "Workspace context",
+            "Server-side context",
             message("aws.settings.codewhisperer.project_context"),
             message("aws.settings.codewhisperer.project_context_gpu")
         )
