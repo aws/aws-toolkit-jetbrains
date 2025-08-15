@@ -7,12 +7,15 @@ import de.undercouch.gradle.tasks.download.Download
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 import org.jetbrains.intellij.platform.gradle.tasks.PrepareSandboxTask
-import software.aws.toolkits.gradle.ExtractFlareTask
 import software.aws.toolkits.gradle.changelog.tasks.GeneratePluginChangeLog
+import java.net.URI
+import java.net.URL
 
 plugins {
     id("toolkit-publishing-conventions")
@@ -93,32 +96,77 @@ data class FlareContent(
     val url: String,
 )
 
-val downloadFlareArtifacts by tasks.registering(Download::class) {
+abstract class DownloadFlareArtifactsTask : DefaultTask() {
+    @get:InputFile
+    abstract val manifestFile: RegularFileProperty
+    
+    @get:OutputDirectory
+    abstract val outputDir: DirectoryProperty
+    
+    @TaskAction
+    fun download() {
+        val manifest = jacksonObjectMapper()
+            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+            .readValue(manifestFile.get().asFile.readText(), FlareManifest::class.java)
+        
+        val latest = manifest.versions.first()
+        val darwin = latest.targets.first { it.platform == "darwin" && it.arch == "arm64" }
+        val urls = darwin.contents.map { it.url } + latest.thirdPartyLicenses
+        
+        val destDir = outputDir.get().asFile
+        destDir.mkdirs()
+        
+        urls.forEach { url ->
+            val uri = URI(url)
+            val fileName = uri.path.substringAfterLast('/')
+            val destFile = destDir.resolve(fileName)
+            if (!destFile.exists()) {
+                logger.info("Downloading $url to $destFile")
+                uri.toURL().openStream().use { input ->
+                    destFile.outputStream().use { output ->
+                        input.copyTo(output)
+                    }
+                }
+            }
+        }
+    }
+}
+
+val downloadFlareArtifacts by tasks.registering(DownloadFlareArtifactsTask::class) {
     dependsOn(downloadFlareManifest)
-    inputs.files(downloadFlareManifest)
+    manifestFile.set(layout.buildDirectory.file("flare/manifest.json"))
+    outputDir.set(layout.buildDirectory.dir("flare/artifacts"))
+}
 
-    val manifestFile = downloadFlareManifest.map { it.outputFiles.first() }
-    val manifest = manifestFile.map { jacksonObjectMapper().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES).readValue(it.readText(), FlareManifest::class.java) }
-
-    // use darwin-aarch64 because its the smallest and we're going to throw away everything platform specific
-    val latest = manifest.map { it.versions.first() }
-    val latestVersion = latest.map { it.serverVersion }
-    val licensesUrl = latest.map { it.thirdPartyLicenses }
-    val darwin = latest.map { it.targets.first { target -> target.platform == "darwin" && target.arch == "arm64" } }
-    val contentUrls = darwin.map { it.contents.map { content -> content.url } }
-
-    val destination = layout.buildDirectory.dir(latestVersion.map { "flare/$it" })
-    outputs.dir(destination)
-
-    src(contentUrls.zip(licensesUrl) { left, right -> left + right})
-    dest(destination)
-    onlyIfModified(true)
-    useETag(true)
+abstract class ExtractFlareTask : DefaultTask() {
+    @get:InputFiles
+    abstract val zipFiles: ConfigurableFileCollection
+    
+    @get:OutputDirectory
+    abstract val outputDir: DirectoryProperty
+    
+    @TaskAction
+    fun extract() {
+        val destDir = outputDir.get().asFile
+        destDir.deleteRecursively()
+        destDir.mkdirs()
+        
+        zipFiles.filter { it.name.endsWith(".zip") }.forEach { zipFile ->
+            logger.info("Extracting flare from ${zipFile}")
+            project.copy {
+                from(project.zipTree(zipFile)) {
+                    include("*.js")
+                    include("*.txt")
+                }
+                into(destDir)
+            }
+        }
+    }
 }
 
 val prepareBundledFlare by tasks.registering(ExtractFlareTask::class) {
     dependsOn(downloadFlareArtifacts)
-    zipFiles.from(downloadFlareArtifacts.map { it.outputFiles })
+    zipFiles.from(downloadFlareArtifacts.map { it.outputDir.asFileTree })
     outputDir.set(layout.buildDirectory.dir("tmp/extractFlare"))
 }
 
