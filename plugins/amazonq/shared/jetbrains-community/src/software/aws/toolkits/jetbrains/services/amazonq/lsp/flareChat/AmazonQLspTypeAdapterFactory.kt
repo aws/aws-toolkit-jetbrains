@@ -10,6 +10,7 @@ import com.google.gson.reflect.TypeToken
 import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonWriter
 import org.eclipse.lsp4j.InitializeResult
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.AwsServerCapabilities
 import java.io.IOException
 
 class AmazonQLspTypeAdapterFactory : TypeAdapterFactory {
@@ -32,12 +33,4 @@ class AmazonQLspTypeAdapterFactory : TypeAdapterFactory {
     }
 }
 
-class AwsExtendedInitializeResult(awsServerCapabilities: AwsServerCapabilities? = null) : InitializeResult() {
-    private var awsServerCapabilities: AwsServerCapabilities? = null
-
-    fun getAwsServerCapabilities(): AwsServerCapabilities? = awsServerCapabilities
-
-    fun setAwsServerCapabilities(awsServerCapabilities: AwsServerCapabilities?) {
-        this.awsServerCapabilities = awsServerCapabilities
-    }
-}
+data class AwsExtendedInitializeResult(val awsServerCapabilities: AwsServerCapabilities) : InitializeResult()

@@ -36,7 +36,6 @@ import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.isActive
@@ -77,7 +76,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.dependencies.Default
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AmazonQLspTypeAdapterFactory
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AwsExtendedInitializeResult
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AwsServerCapabilitiesProvider
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.createExtendedClientMetadata
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.textdocument.TextDocumentServiceHandler
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.WorkspaceFolderUtil.createWorkspaceFolders
@@ -156,7 +154,7 @@ class AmazonQLspService @VisibleForTesting constructor(
     constructor(project: Project, cs: CoroutineScope) : this(DefaultAmazonQServerInstanceStarter, project, cs)
 
     private val _flowInstance = MutableSharedFlow<AmazonQServerInstanceFacade>(replay = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
-    val instanceFlow = _flowInstance.asSharedFlow().map { it.languageServer }
+    val instanceFlow = _flowInstance.asSharedFlow()
 
     private var instance: Deferred<AmazonQServerInstanceFacade>
 
@@ -536,11 +534,6 @@ private class AmazonQServerInstance(private val project: Project, private val cs
                             }
                             else -> "$direction: $message"
                         }
-                    }
-
-                    if (message is ResponseMessage && message.result is AwsExtendedInitializeResult) {
-                        val result = message.result as AwsExtendedInitializeResult
-                        AwsServerCapabilitiesProvider.getInstance(project).setAwsServerCapabilities(result.getAwsServerCapabilities())
                     }
 
                     // required
