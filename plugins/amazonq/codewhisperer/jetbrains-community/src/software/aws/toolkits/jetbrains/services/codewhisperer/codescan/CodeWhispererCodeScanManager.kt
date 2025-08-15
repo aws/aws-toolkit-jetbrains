@@ -110,7 +110,7 @@ private val LOG = getLogger<CodeWhispererCodeScanManager>()
 class CodeWhispererCodeScanManager(val project: Project) {
     private val defaultScope = projectCoroutineScope(project)
     private val codeScanResultsPanel by lazy {
-        CodeWhispererCodeScanResultsView(project, defaultScope)
+        CodeWhispererCodeScanResultsView(project)
     }
     private val codeScanIssuesContent by lazy {
         val contentManager = getProblemsWindow().contentManager

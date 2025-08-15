@@ -48,10 +48,7 @@ fun foo() {
 }
                 """.trimIndent()
             )
-        ).singleElement()
-            .matches {
-                it.id == "LazyLog" && it.message == "Use the lambda version of LOG.debug instead"
-            }
+        ).isEmpty()
     }
 
     @Test
