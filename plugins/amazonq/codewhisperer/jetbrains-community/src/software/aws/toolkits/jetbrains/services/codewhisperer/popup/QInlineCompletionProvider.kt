@@ -133,7 +133,7 @@ class QInlineCompletionProvider(private val cs: CoroutineScope) : InlineCompleti
     private var currentAcceptedItemContext: InlineCompletionItemContext? = null
 
     // not needed for current implementation, will need this when we support concurrent triggers, so leave it here
-    private val activeTriggerSessions = mutableMapOf<Int, InlineCompletionSessionContext>()
+    private val activeTriggerSessions = linkedMapOf<Int, InlineCompletionSessionContext>()
 
     fun qToolTip(
         title: String,
