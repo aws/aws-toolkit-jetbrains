@@ -342,7 +342,7 @@ class QInlineCompletionProvider(private val cs: CoroutineScope) : InlineCompleti
                         InlineCompletionUsageTracker.ShownEvents.FinishType.INVALIDATED -> {
                             // For the current blocking trigger logic, when using JB inline API,
                             // previous display session will always be disposed when there's a new one
-                            // So we will display any valid results in the nwer display session
+                            // So we will display any valid results in the newer display session
                             // Don't yet send UTD telemetry for all the suggestions because they
                             // can be displayed later(still in activeTriggerSessions map),
                             // by then we will send telemetry for them.
@@ -540,7 +540,7 @@ class QInlineCompletionProvider(private val cs: CoroutineScope) : InlineCompleti
                             u.itemContexts.map { itemContext ->
                                 itemContext.data.putUserData(KEY_Q_INLINE_ITEM_CONTEXT, itemContext)
                                 InlineCompletionVariant.build(data = itemContext.data, elements = itemContext.channel.receiveAsFlow())
-                            }.take(MAX_CHANNELS_PER_DISPLAY_SESSION - result.size)
+                            }.take((MAX_CHANNELS_PER_DISPLAY_SESSION - result.size).coerceAtLeast(0))
                         )
                     }
                     return result
