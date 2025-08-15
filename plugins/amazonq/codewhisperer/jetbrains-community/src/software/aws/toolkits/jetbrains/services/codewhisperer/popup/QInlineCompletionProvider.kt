@@ -38,6 +38,7 @@ import com.intellij.ui.util.preferredHeight
 import icons.AwsIcons
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.future.await
@@ -132,6 +133,7 @@ class QInlineCompletionProvider(private val cs: CoroutineScope) : InlineCompleti
 
     // not needed for current implementation, will need this when we support concurrent triggers, so leave it here
     private val activeTriggerSessions = mutableMapOf<Int, InlineCompletionSessionContext>()
+    private val previousTriggerSessions = mutableMapOf<Int, InlineCompletionSessionContext>()
 
     fun qToolTip(
         title: String,
@@ -261,6 +263,7 @@ class QInlineCompletionProvider(private val cs: CoroutineScope) : InlineCompleti
                 }
 
                 override fun onInvalidated(event: InlineCompletionEventType.Invalidated) {
+//                    CodeWhispererInvocationStatus.getInstance().setIsInvokingQInline(session, false)
                     updateDisplayIndex(session)
                     super.onInvalidated(event)
                 }
@@ -401,9 +404,9 @@ class QInlineCompletionProvider(private val cs: CoroutineScope) : InlineCompleti
         return TriggerTypeInfo(triggerType, automatedTriggerType)
     }
 
-    override suspend fun getSuggestion(request: InlineCompletionRequest): InlineCompletionSuggestion {
+    override suspend fun getSuggestion(request: InlineCompletionRequest): InlineCompletionSuggestion = withContext(NonCancellable) {
         val editor = request.editor
-        val project = editor.project ?: return InlineCompletionSuggestion.Empty
+        val project = editor.project ?: return@withContext InlineCompletionSuggestion.Empty
 
         // try to refresh automatically if possible, otherwise ask user to login again
         if (isQExpired(project)) {
@@ -414,13 +417,13 @@ class QInlineCompletionProvider(private val cs: CoroutineScope) : InlineCompleti
             }
 
             if (shouldReauth) {
-                return InlineCompletionSuggestion.Empty
+                return@withContext InlineCompletionSuggestion.Empty
             }
         }
 
         val document = editor.document
-        val handler = InlineCompletion.getHandlerOrNull(editor) ?: return InlineCompletionSuggestion.Empty
-        val session = InlineCompletionSession.getOrNull(editor) ?: return InlineCompletionSuggestion.Empty
+        val handler = InlineCompletion.getHandlerOrNull(editor) ?: return@withContext InlineCompletionSuggestion.Empty
+        val session = InlineCompletionSession.getOrNull(editor) ?: return@withContext InlineCompletionSuggestion.Empty
         val triggerSessionId = triggerSessionId++
         val latencyContext = LatencyContext(codewhispererEndToEndStart = System.nanoTime())
         val triggerTypeInfo = getTriggerTypeInfo(request)
@@ -429,14 +432,6 @@ class QInlineCompletionProvider(private val cs: CoroutineScope) : InlineCompleti
         CodeWhispererInvocationStatus.getInstance().setIsInvokingQInline(session, true)
         Disposer.register(session) {
             CodeWhispererInvocationStatus.getInstance().setIsInvokingQInline(session, false)
-        }
-
-        // this is only available in 2024.3+
-        if (request.event.isDeletion()) {
-            logInline(triggerSessionId) {
-                "Skip inline completion when deleting"
-            }
-            return InlineCompletionSuggestion.Empty
         }
 
         val sessionContext = InlineCompletionSessionContext(triggerOffset = request.endOffset, diagnostics = diagnostics)
@@ -490,17 +485,38 @@ class QInlineCompletionProvider(private val cs: CoroutineScope) : InlineCompleti
                 it.channel.close()
             }
             if (session.context.isDisposed) {
+                previousTriggerSessions[triggerSessionId] = sessionContext
                 logInline(triggerSessionId) {
                     "Current display session already disposed by a new trigger before pagination finishes, exiting"
                 }
+                return@withContext InlineCompletionSuggestion.Empty
             }
 
-            return object : InlineCompletionSuggestion {
-                override suspend fun getVariants(): List<InlineCompletionVariant> =
-                    sessionContext.itemContexts.map { itemContext ->
-                        itemContext.data.putUserData(KEY_Q_INLINE_ITEM_CONTEXT, itemContext)
-                        InlineCompletionVariant.build(data = itemContext.data, elements = itemContext.channel.receiveAsFlow())
+            return@withContext object : InlineCompletionSuggestion {
+                override suspend fun getVariants(): List<InlineCompletionVariant> {
+                    // also need to build valid elements from last session
+                    val result = mutableListOf<InlineCompletionVariant>()
+                    previousTriggerSessions.forEach { (t, u) ->
+                        logInline(triggerSessionId) {
+                            "Adding results from previous trigger $t for the current display session"
+                        }
+                        result.addAll(
+                            u.itemContexts.map { itemContext ->
+                                itemContext.data.putUserData(KEY_Q_INLINE_ITEM_CONTEXT, itemContext)
+                                InlineCompletionVariant.build(data = itemContext.data, elements = itemContext.channel.receiveAsFlow())
+                            }
+                        )
                     }
+                    previousTriggerSessions.clear()
+
+                    result.addAll(
+                        sessionContext.itemContexts.map { itemContext ->
+                            itemContext.data.putUserData(KEY_Q_INLINE_ITEM_CONTEXT, itemContext)
+                            InlineCompletionVariant.build(data = itemContext.data, elements = itemContext.channel.receiveAsFlow())
+                        }
+                    )
+                    return result
+                }
             }
         } catch (e: Exception) {
             logInline(triggerSessionId, e) {
@@ -509,7 +525,7 @@ class QInlineCompletionProvider(private val cs: CoroutineScope) : InlineCompleti
             if (e is CancellationException) {
                 throw e
             }
-            return InlineCompletionSuggestion.Empty
+            return@withContext InlineCompletionSuggestion.Empty
         }
     }
 
@@ -537,7 +553,8 @@ class QInlineCompletionProvider(private val cs: CoroutineScope) : InlineCompleti
             }
 
             logInline(triggerSessionId) {
-                "Received ${nextPageResult.items.size} items from pagination with token: ${nextToken?.left}"
+                "Received ${nextPageResult.items.size} items from pagination with current token: ${nextToken?.left}, " +
+                    "next token: ${nextPageResult.partialResultToken?.left}"
             }
 
             // Update channels in order with new items from pagination
@@ -587,7 +604,9 @@ class QInlineCompletionProvider(private val cs: CoroutineScope) : InlineCompleti
                 sessionContext.itemContexts[channelIndex].isDiscarded = discarded
                 val success = existingChannel.trySend(InlineCompletionGrayTextElement(displayText))
                 logInline(triggerSessionId) {
-                    "Adding paginated item '${newItem.itemId}' to channel $channelIndex, success: ${success.isSuccess}, discarded: $discarded"
+                    "Adding paginated item '${newItem.itemId}' to channel $channelIndex, " +
+                        "original first line context: ${newItem.insertText.lines()[0]}, " +
+                        "success: ${success.isSuccess}, discarded: $discarded"
                 }
                 sessionContext.counter++
             }
@@ -638,7 +657,7 @@ class QInlineCompletionProvider(private val cs: CoroutineScope) : InlineCompleti
         if (QRegionProfileManager.getInstance().hasValidConnectionButNoActiveProfile(project)) return false
         if (event.isManualCall()) return true
         if (!CodeWhispererExplorerActionManager.getInstance().isAutoEnabled()) return false
-
+        if (request.event.isDeletion()) return false
         return true
     }
 }
