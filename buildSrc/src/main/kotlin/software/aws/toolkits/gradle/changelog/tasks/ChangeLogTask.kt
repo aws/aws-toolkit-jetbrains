@@ -12,8 +12,7 @@ import org.gradle.api.tasks.Internal
 import software.aws.toolkits.gradle.changelog.GitStager
 
 abstract class ChangeLogTask : DefaultTask() {
-    @Internal
-    protected val git = GitStager.create(project.rootDir)
+    fun git() = GitStager.create(project.rootDir)
 
     @InputDirectory
     val changesDirectory: DirectoryProperty = project.objects.directoryProperty().convention(project.rootProject.layout.projectDirectory.dir(".changes"))

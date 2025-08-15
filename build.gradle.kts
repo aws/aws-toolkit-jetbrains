@@ -7,7 +7,6 @@ import software.aws.toolkits.gradle.changelog.tasks.GenerateGithubChangeLog
 plugins {
     id("base")
     id("toolkit-changelog")
-    id("toolkit-git-secrets")
     id("toolkit-jacoco-report")
     id("org.jetbrains.gradle.plugin.idea-ext")
 }
@@ -42,7 +41,7 @@ dependencies {
     aggregateCoverage(project(":ui-tests"))
 }
 
-tasks.register("runIde") {
+tasks.register<DefaultTask>("runIde") {
     doFirst {
         throw GradleException("Use project specific runIde command, i.e. :plugin-toolkit:intellij-standalone:runIde")
     }
