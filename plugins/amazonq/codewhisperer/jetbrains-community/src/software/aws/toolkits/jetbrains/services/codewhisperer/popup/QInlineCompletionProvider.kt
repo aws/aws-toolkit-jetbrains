@@ -540,7 +540,7 @@ class QInlineCompletionProvider(private val cs: CoroutineScope) : InlineCompleti
                             u.itemContexts.map { itemContext ->
                                 itemContext.data.putUserData(KEY_Q_INLINE_ITEM_CONTEXT, itemContext)
                                 InlineCompletionVariant.build(data = itemContext.data, elements = itemContext.channel.receiveAsFlow())
-                            }.take(MAX_CHANNELS_PER_DISPLAY_SESSION - result.size)
+                            }.take((MAX_CHANNELS_PER_DISPLAY_SESSION - result.size).coerceAtLeast(0))
                         )
                     }
                     return result
