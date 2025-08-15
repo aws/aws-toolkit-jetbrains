@@ -601,13 +601,12 @@ class BrowserConnector(
         val language: String,
         val autoDetected: Boolean,
         val filePath: String,
-        val findingContext: String
-
+        val findingContext: String,
     )
 
     data class AggregatedCodeScanIssue(
         val filePath: String,
-        val issues: List<FlareCodeScanIssue>
+        val issues: List<FlareCodeScanIssue>,
     )
 
     private fun showResult(
@@ -626,9 +625,10 @@ class BrowserConnector(
                 val params = value?.let { encryptionManager?.decrypt(it) }.orEmpty()
                 val jsonObject = Gson().fromJson(params, Map::class.java)
                 val additionalMessages = jsonObject["additionalMessages"] as? MutableList<Map<String, Any>>
-                val findingsMessage = additionalMessages?.find {message ->
-                    (message["messageId"] as String).endsWith(CODE_REVIEW_FINDINGS_SUFFIX)
-                    || (message["messageId"] as String).endsWith(DISPLAY_FINDINGS_SUFFIX)}
+                val findingsMessage = additionalMessages?.find { message ->
+                    (message["messageId"] as String).endsWith(CODE_REVIEW_FINDINGS_SUFFIX) ||
+                        (message["messageId"] as String).endsWith(DISPLAY_FINDINGS_SUFFIX)
+                }
                 val scannedFiles = mutableListOf<VirtualFile>()
                 if (findingsMessage != null) {
                     additionalMessages.remove(findingsMessage)
@@ -639,7 +639,7 @@ class BrowserConnector(
                         val aggregatedIssue = gson.fromJson(gson.toJson(aggregatedIssueUnformatted), AggregatedCodeScanIssue::class.java)
                         val file = try {
                             LocalFileSystem.getInstance().findFileByIoFile(
-                                Path.of(aggregatedIssue.filePath).toFile()
+                                Path.of(aggregatedIssue.filePath).toFile(),
                             )
                         } catch (e: Exception) {
                             null
@@ -656,28 +656,30 @@ class BrowserConnector(
                                     if (isIssueIgnored) {
                                         continue
                                     }
-                                    mappedFindings.add(CodeWhispererCodeScanIssue(
-                                        startLine = issue.startLine,
-                                        startCol = 1,
-                                        endLine = issue.endLine,
-                                        endCol = endCol,
-                                        file = file,
-                                        project = project,
-                                        title = issue.title,
-                                        description = issue.description,
-                                        detectorId = issue.detectorId,
-                                        detectorName = issue.detectorName,
-                                        findingId = issue.findingId,
-                                        ruleId = issue.ruleId,
-                                        relatedVulnerabilities = issue.relatedVulnerabilities,
-                                        severity = issue.severity,
-                                        recommendation = issue.recommendation,
-                                        suggestedFixes = issue.suggestedFixes,
-                                        codeSnippet = emptyList(),
-                                        isVisible = true,
-                                        autoDetected = issue.autoDetected,
-                                        scanJobId = issue.scanJobId
-                                    ))
+                                    mappedFindings.add(
+                                        CodeWhispererCodeScanIssue(
+                                            startLine = issue.startLine,
+                                            startCol = 1,
+                                            endLine = issue.endLine,
+                                            endCol = endCol,
+                                            file = file,
+                                            project = project,
+                                            title = issue.title,
+                                            description = issue.description,
+                                            detectorId = issue.detectorId,
+                                            detectorName = issue.detectorName,
+                                            findingId = issue.findingId,
+                                            ruleId = issue.ruleId,
+                                            relatedVulnerabilities = issue.relatedVulnerabilities,
+                                            severity = issue.severity,
+                                            recommendation = issue.recommendation,
+                                            suggestedFixes = issue.suggestedFixes,
+                                            codeSnippet = emptyList(),
+                                            isVisible = true,
+                                            autoDetected = issue.autoDetected,
+                                            scanJobId = issue.scanJobId,
+                                        ),
+                                    )
                                 }
                             }
                         }

@@ -30,9 +30,9 @@ class HandleIssueCommandAction : AnAction(), DumbAware {
         val startLineInteger = Integer.parseInt(startLineString)
         val endLineInteger = Integer.parseInt(endLineString)
         return if (startLineInteger == endLineInteger) {
-            "[${startLineInteger}]"
+            "[$startLineInteger]"
         } else {
-            "[${startLineInteger}, ${endLineInteger}]"
+            "[$startLineInteger, $endLineInteger]"
         }
     }
 
