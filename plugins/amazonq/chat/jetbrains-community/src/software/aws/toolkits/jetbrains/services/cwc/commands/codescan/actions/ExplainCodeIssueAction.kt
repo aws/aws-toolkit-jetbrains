@@ -59,7 +59,6 @@ class ExplainCodeIssueAction : AnAction(), DumbAware {
 
                 val uiMessage = FlareUiMessage(SEND_TO_PROMPT, params)
                 ChatCommunicationManager.getInstance(project).notifyUi(uiMessage)
-//                AsyncChatUiListener.notifyPartialMessageUpdate(project, uiMessage)
             }
         }
     }
