@@ -3,12 +3,11 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils
 
-import com.google.gson.Gson
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.diff.DiffContentFactory
 import com.intellij.diff.DiffManager
 import com.intellij.diff.requests.SimpleDiffRequest
 import com.intellij.diff.util.DiffUserDataKeys
-import com.intellij.docker.agent.util.toJson
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
@@ -244,7 +243,6 @@ fun applyFix(issue: CodeWhispererCodeScanIssue) {
 }
 
 private fun handleIssueCommand(issue: CodeWhispererCodeScanIssue, action: IssueCommandAction) {
-    val gson = Gson()
     val handleIssueCommandContext = mutableMapOf(
         "title" to issue.title,
         "description" to issue.description.markdown,
@@ -252,9 +250,9 @@ private fun handleIssueCommand(issue: CodeWhispererCodeScanIssue, action: IssueC
         "fileName" to issue.file.name,
         "startLine" to issue.startLine.toString(),
         "endLine" to issue.endLine.toString(),
-        "recommendation" to gson.toJson(issue.recommendation).toString(),
-        "suggestedFixes" to gson.toJson(issue.suggestedFixes).toString(),
-        "codeSnippet" to gson.toJson(issue.codeSnippet).toString()
+        "recommendation" to jacksonObjectMapper().writeValueAsString(issue.recommendation),
+        "suggestedFixes" to jacksonObjectMapper().writeValueAsString(issue.suggestedFixes),
+        "codeSnippet" to jacksonObjectMapper().writeValueAsString(issue.codeSnippet)
     )
     val actionEvent = AnActionEvent.createFromInputEvent(
         null,
