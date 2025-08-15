@@ -91,7 +91,7 @@ class CodeWhispererTelemetryService(private val cs: CoroutineScope) {
             return
         }
         QInlineCompletionProvider.logInline(triggerSessionId) {
-            "Sending UserTriggerDecision for ${sessionContext.sessionId}:"
+            "Sending UserTriggerDecision for trigger session: $triggerSessionId, ${sessionContext.sessionId}:"
         }
         sessionContext.itemContexts.forEachIndexed { i, itemContext ->
             QInlineCompletionProvider.logInline(triggerSessionId) {
@@ -128,8 +128,7 @@ class CodeWhispererTelemetryService(private val cs: CoroutineScope) {
             firstCompletionDisplayLatency = latencyContext.perceivedLatency,
             totalSessionDisplayTime = CodeWhispererInvocationStatus.getInstance().completionShownTime?.let { Duration.between(it, Instant.now()) }
                 ?.toMillis()?.toDouble(),
-            // no userInput in JB inline completion API, every new char input will discard the previous trigger so
-            // user input is always 0
+            // TODO: yuxqiang fix userInputLength/typeaheadLength, need to confirm which one this is but non-P0
             typeaheadLength = 0,
             addedDiagnostics = diffDiagnostics.added,
             removedDiagnostics = diffDiagnostics.removed,
