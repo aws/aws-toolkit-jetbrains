@@ -295,7 +295,7 @@ class QInlineCompletionProvider(private val cs: CoroutineScope) : InlineCompleti
                     updateDisplayIndex(session, event.toVariantIndex - event.fromVariantIndex)
                     setSelectedVariantAsSeen(targetSessionContext, targetVariantIndex)
                     logInline(triggerSessionId) {
-                        "Switching to session ${targetSessionContext.sessionId} variant ${targetVariantIndex}"
+                        "Switching to session ${targetSessionContext.sessionId} variant $targetVariantIndex"
                     }
                     super.onVariantSwitched(event)
                 }
@@ -640,7 +640,7 @@ class QInlineCompletionProvider(private val cs: CoroutineScope) : InlineCompleti
                 logInline(triggerSessionId) {
                     "Adding paginated item '${newItem.itemId}' to channel $channelIndex, " +
                         "original first line context: ${newItem.insertText.lines()[0]}, " +
-                        "success: ${isSuccess}, discarded: $discarded. Closing"
+                        "success: $isSuccess, discarded: $discarded. Closing"
                 }
                 existingChannel.close()
                 sessionContext.counter++
