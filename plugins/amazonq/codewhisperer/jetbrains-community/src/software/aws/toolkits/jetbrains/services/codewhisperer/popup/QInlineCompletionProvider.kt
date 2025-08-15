@@ -342,7 +342,7 @@ class QInlineCompletionProvider(private val cs: CoroutineScope) : InlineCompleti
                         InlineCompletionUsageTracker.ShownEvents.FinishType.INVALIDATED -> {
                             // For the current blocking trigger logic, when using JB inline API,
                             // previous display session will always be disposed when there's a new one
-                            // So we will display any valid results in the nwer display session
+                            // So we will display any valid results in the newer display session
                             // Don't yet send UTD telemetry for all the suggestions because they
                             // can be displayed later(still in activeTriggerSessions map),
                             // by then we will send telemetry for them.
