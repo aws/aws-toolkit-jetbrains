@@ -10,6 +10,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataKey
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.DumbAware
+import com.intellij.ui.dsl.stringToInt
 import kotlinx.coroutines.runBlocking
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommunicationManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.FlareUiMessage
@@ -27,8 +28,8 @@ class HandleIssueCommandAction : AnAction(), DumbAware {
     fun createLineRangeText(issueContext: MutableMap<String, String>): String {
         val startLineString = issueContext["startLine"]
         val endLineString = issueContext["endLine"]
-        val startLineInteger = Integer.parseInt(startLineString)
-        val endLineInteger = Integer.parseInt(endLineString)
+        val startLineInteger = stringToInt(startLineString!!)
+        val endLineInteger = stringToInt(endLineString!!)
         return if (startLineInteger == endLineInteger) {
             "[$startLineInteger]"
         } else {
