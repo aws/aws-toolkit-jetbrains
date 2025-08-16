@@ -10,7 +10,6 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataKey
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.DumbAware
-import com.intellij.ui.dsl.stringToInt
 import kotlinx.coroutines.runBlocking
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommunicationManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.FlareUiMessage
@@ -18,6 +17,8 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatP
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_TO_PROMPT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SendToPromptParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TriggerType
+import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.TelemetryHelper
+import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
 
 class HandleIssueCommandAction : AnAction(), DumbAware {
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
@@ -26,14 +27,12 @@ class HandleIssueCommandAction : AnAction(), DumbAware {
         e.presentation.isEnabledAndVisible = e.project != null
     }
     fun createLineRangeText(issueContext: MutableMap<String, String>): String {
-        val startLineString = issueContext["startLine"]
-        val endLineString = issueContext["endLine"]
-        val startLineInteger = stringToInt(startLineString ?: return "")
-        val endLineInteger = stringToInt(endLineString ?: return "")
-        return if (startLineInteger == endLineInteger) {
-            "[$startLineInteger]"
+        val startLine = issueContext["startLine"]
+        val endLine = issueContext["endLine"]
+        return if (startLine.equals(endLine)) {
+            "[$startLine]"
         } else {
-            "[$startLineInteger, $endLineInteger]"
+            "[$startLine, $endLine]"
         }
     }
 
@@ -43,6 +42,18 @@ class HandleIssueCommandAction : AnAction(), DumbAware {
         val actionDataKey = DataKey.create<String>("amazonq.codescan.handleIssueCommandAction")
         val context = e.getData(contextDataKey) ?: return
         val action = e.getData(actionDataKey) ?: return
+
+        // Emit telemetry event
+        TelemetryHelper.recordTelemetryIssueCommandAction(
+            context["findingId"].orEmpty(),
+            context["detectorId"].orEmpty(),
+            context["ruleId"].orEmpty(),
+            context["autoDetected"].orEmpty(),
+            getStartUrl(project).orEmpty(),
+            action, // The action name (explainIssue or applyFix)
+            "Succeeded"
+        )
+
         ActionManager.getInstance().getAction("q.openchat").actionPerformed(e)
 
         ApplicationManager.getApplication().executeOnPooledThread {
@@ -54,7 +65,7 @@ class HandleIssueCommandAction : AnAction(), DumbAware {
                 val prompt = "$actionString ${context["title"]} issue in ${context["fileName"]} at ${createLineRangeText(context)}"
 
                 val modelPrompt = "$actionString ${context["title"]} issue in ${context["fileName"]} at ${createLineRangeText(context)}" +
-                    "Issue: \"${context["issue"]}\" \n"
+                    "Issue: \"${context}\" \n"
 
                 val params = SendToPromptParams(
                     selection = codeSelection,

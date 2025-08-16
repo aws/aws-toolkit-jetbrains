@@ -252,7 +252,11 @@ private fun handleIssueCommand(issue: CodeWhispererCodeScanIssue, action: IssueC
         "endLine" to issue.endLine.toString(),
         "recommendation" to jacksonObjectMapper().writeValueAsString(issue.recommendation),
         "suggestedFixes" to jacksonObjectMapper().writeValueAsString(issue.suggestedFixes),
-        "codeSnippet" to jacksonObjectMapper().writeValueAsString(issue.codeSnippet)
+        "codeSnippet" to jacksonObjectMapper().writeValueAsString(issue.codeSnippet),
+        "findingId" to issue.findingId,
+        "ruleId" to issue.ruleId.orEmpty(),
+        "detectorId" to issue.detectorId,
+        "autoDetected" to issue.autoDetected.toString(),
     )
     val actionEvent = AnActionEvent.createFromInputEvent(
         null,
