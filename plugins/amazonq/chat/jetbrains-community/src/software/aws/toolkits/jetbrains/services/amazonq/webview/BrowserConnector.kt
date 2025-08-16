@@ -657,7 +657,8 @@ class BrowserConnector(
                 for (aggregatedIssueUnformatted in jsonFindings) {
                     val aggregatedIssue = gson.fromJson(gson.toJson(aggregatedIssueUnformatted), AggregatedCodeScanIssue::class.java)
                     val file = LocalFileSystem.getInstance().findFileByIoFile(
-                        Path.of(aggregatedIssue.filePath).toFile())
+                        Path.of(aggregatedIssue.filePath).toFile()
+                    )
                     if (file?.isDirectory == false) {
                         scannedFiles.add(file)
                         runReadAction {
@@ -694,14 +695,18 @@ class BrowserConnector(
                                         autoDetected = issue.autoDetected,
                                         scanJobId = issue.scanJobId,
                                     ),
-
-                                    )
+                                )
                             }
                         }
                     }
                 }
 
-                CodeWhispererCodeScanManager.getInstance(project).addOnDemandIssues(mappedFindings, scannedFiles, CodeWhispererConstants.CodeAnalysisScope.AGENTIC)
+                CodeWhispererCodeScanManager.getInstance(project)
+                    .addOnDemandIssues(
+                        mappedFindings,
+                        scannedFiles,
+                        CodeWhispererConstants.CodeAnalysisScope.AGENTIC
+                    )
                 CodeWhispererCodeScanManager.getInstance(project).showCodeScanUI()
             }
         }

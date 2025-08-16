@@ -28,8 +28,8 @@ class HandleIssueCommandAction : AnAction(), DumbAware {
     fun createLineRangeText(issueContext: MutableMap<String, String>): String {
         val startLineString = issueContext["startLine"]
         val endLineString = issueContext["endLine"]
-        val startLineInteger = stringToInt(startLineString!!)
-        val endLineInteger = stringToInt(endLineString!!)
+        val startLineInteger = stringToInt(startLineString ?: return "")
+        val endLineInteger = stringToInt(endLineString ?: return "")
         return if (startLineInteger == endLineInteger) {
             "[$startLineInteger]"
         } else {
