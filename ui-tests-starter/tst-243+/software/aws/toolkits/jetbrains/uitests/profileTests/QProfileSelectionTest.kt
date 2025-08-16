@@ -3,10 +3,11 @@
 
 package software.aws.toolkits.jetbrains.uitests.profileTests
 
+import com.intellij.driver.client.Driver
+import com.intellij.driver.sdk.ui.components.common.editor
 import com.intellij.driver.sdk.waitForProjectOpen
 import com.intellij.driver.sdk.ui.components.common.ideFrame
-import com.intellij.driver.sdk.ui.notPresent
-import com.intellij.driver.sdk.ui.shouldBe
+import com.intellij.driver.sdk.openFile
 import com.intellij.driver.sdk.ui.ui
 import com.intellij.driver.sdk.ui.xQuery
 import java.awt.event.KeyEvent
@@ -23,6 +24,7 @@ import com.intellij.ide.starter.runner.CurrentTestMethod
 import com.intellij.ide.starter.runner.Starter
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
@@ -32,15 +34,31 @@ import software.aws.toolkits.jetbrains.uitests.TestCIServer
 import software.aws.toolkits.jetbrains.uitests.clearAwsXmlFile
 import software.aws.toolkits.jetbrains.uitests.copyExistingConfig
 import software.aws.toolkits.jetbrains.uitests.executePuppeteerScript
+import software.aws.toolkits.jetbrains.uitests.setupMultipleProfilesForTest
+import software.aws.toolkits.jetbrains.uitests.setupMultipleProfilesWithSelectionForTest
 import software.aws.toolkits.jetbrains.uitests.setupTestEnvironment
 import software.aws.toolkits.jetbrains.uitests.useExistingConnectionForTest
 import software.aws.toolkits.jetbrains.uitests.writeToAwsXml
 import java.io.File
+import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.nio.file.StandardOpenOption
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class QProfileSelectionTest {
+
+    private val setupContent = """public class Example {
+    public static void main(String[] args) {
+        int a = 10;
+        int b = 20;
+        int c = add(a, b);
+        System.out.println("The sum of a and b is: " + c);
+    }
+    
+}"""
+
+
 
     init {
         di = DI {
@@ -61,40 +79,20 @@ class QProfileSelectionTest {
         setupTestEnvironment()
     }
 
-    @Test
-    fun `Test profile selector shown for users with multiple profiles`() {
-        val testCase = TestCase(
-            IdeProductProvider.IC,
-            LocalProjectInfo(
-                Paths.get("tstData", "Hello")
-            )
-        ).withVersion(System.getProperty("org.gradle.project.ideProfileName"))
+    @BeforeEach
+    fun resetTestFile() {
+        val path = Paths.get("tstData", "Hello", "Example.java")
 
-        // Configure test with multiple profiles
-        setupMultipleProfilesForTest()
-
-        Starter.newContext(CurrentTestMethod.hyphenateWithClass(), testCase).apply {
-            System.getProperty("ui.test.plugins").split(File.pathSeparator).forEach { path ->
-                pluginConfigurator.installPluginFromPath(
-                    Path.of(path)
-                )
-            }
-
-            copyExistingConfig(Paths.get("tstData", "configAmazonQTests"))
-            updateGeneralSettings()
-        }.runIdeWithDriver()
-            .useDriverAndCloseIde {
-                waitForProjectOpen()
-                // Wait for the system to be fully ready
-                Thread.sleep(30000)
-
-                val result = executePuppeteerScript(testProfileSelectorShown)
-                assertThat(result).contains("Profile selector is shown")
-            }
+        Files.createDirectories(path.parent)
+        Files.write(
+            path,
+            setupContent.toByteArray(),
+            StandardOpenOption.CREATE,
+            StandardOpenOption.TRUNCATE_EXISTING
+        )
     }
 
     @Test
-//    @SsoLogin("single_profile_user")
     fun `Test single dev profile user accounts`() {
         val testCase = TestCase(
             IdeProductProvider.IC,
@@ -121,46 +119,22 @@ class QProfileSelectionTest {
                 Thread.sleep(10000)
 
                 step("Test chat shown directly for users with single profile") {
-                    val result = executePuppeteerScript(testChatShownDirectly)
-                    assertThat(result).contains("Chat is shown directly")
+                    val result = executePuppeteerScript(testActiveToolWindowPage)
+                    assertThat(result).contains("Chat is shown")
                 }
 
                 step("Test changing same profile A -> A does nothing") {
-                    ideFrame {
-                        // Click Amazon Q button in status bar
-                        x(xQuery { byAccessibleName("Amazon Q") }).click()
-                        Thread.sleep(100)
+                    changeProfileAndVerify(this, false)
+                }
 
-                        ui.keyboard {
-                            // navigate and select "Change Profile" in the popup menu
-                            key(KeyEvent.VK_UP)
-                            key(KeyEvent.VK_UP)
-                            key(KeyEvent.VK_ENTER)
-
-                            //wait for list to load
-                            Thread.sleep(3000)
-
-                            // profile combobox selection and select (current) connection
-                            key(KeyEvent.VK_TAB)
-                            key(KeyEvent.VK_DOWN)
-                            key(KeyEvent.VK_ENTER)
-
-                            // confirm selection
-                            key(KeyEvent.VK_ENTER)
-                        }
-
-                        // Verify no notification appears
-                        assertThat {
-                            x(xQuery { byClass("NotificationCenterPanel").and(byText("You changed your profile")) })
-                            .shouldBe(notPresent)
-                        }
-                    }
+                step("Dev features work with single profile user") {
+                    triggerDevFeatures(this, true)
                 }
             }
     }
 
     @Test
-    fun `Test profile switching clears chat history`() {
+    fun `Test 2+ dev profile user account new login`() {
         val testCase = TestCase(
             IdeProductProvider.IC,
             LocalProjectInfo(
@@ -184,16 +158,36 @@ class QProfileSelectionTest {
             .useDriverAndCloseIde {
                 waitForProjectOpen()
                 // Wait for the system to be fully ready
-                Thread.sleep(30000)
+                Thread.sleep(10000)
 
-                val result = executePuppeteerScript(testProfileSwitching)
-                assertThat(result).contains("Profile switch confirmation shown")
-                assertThat(result).contains("Chat history cleared")
+                step("profile selector shown when signed in with no selection") {
+                    val result = executePuppeteerScript(testActiveToolWindowPage)
+                    assertThat(result).contains("Profile selector is shown")
+                }
+
+                step("Q services not triggered when no profile selected"){
+                    triggerDevFeatures(this, false)
+                }
+
+                step("Switching profile notifies and shows chat"){
+                    changeProfileAndVerify(this, true)
+                    val result = executePuppeteerScript(testActiveToolWindowPage)
+                    assertThat(result).contains("Chat is shown")
+                }
+
+                step("Q features work with selected profile"){
+                    triggerDevFeatures(this, true)
+                }
+
+                step("Changing profile A -> A does nothing") {
+                    changeProfileAndVerify(this, false)
+                }
+
             }
     }
 
     @Test
-    fun `Test IDE restart remembers profile selection`() {
+    fun `Test 2+ dev profile user account selected profile login`() {
         val testCase = TestCase(
             IdeProductProvider.IC,
             LocalProjectInfo(
@@ -201,7 +195,6 @@ class QProfileSelectionTest {
             )
         ).withVersion(System.getProperty("org.gradle.project.ideProfileName"))
 
-        // Configure test with multiple profiles and a selected profile
         setupMultipleProfilesWithSelectionForTest()
 
         Starter.newContext(CurrentTestMethod.hyphenateWithClass(), testCase).apply {
@@ -216,124 +209,137 @@ class QProfileSelectionTest {
         }.runIdeWithDriver()
             .useDriverAndCloseIde {
                 waitForProjectOpen()
-                // Wait for the system to be fully ready
-                Thread.sleep(30000)
+                // Wait for the system to be fully read
+                Thread.sleep(10000)
 
-                val result = executePuppeteerScript(testProfileRemembered)
-                assertThat(result).contains("Chat is shown directly")
-                assertThat(result).contains("Profile selection remembered")
+                // tab starts closed and needs to be clicked to open
+                ideFrame {
+                    x(xQuery { byAccessibleName("Amazon Q Chat") }).click()
+                }
+
+                step("Chat is shown directly on startup") {
+                    val result = executePuppeteerScript(testActiveToolWindowPage)
+                    assertThat(result).contains("Chat is shown")
+                }
+
+                step("Changing profile A -> A does nothing") {
+                    changeProfileAndVerify(this, false)
+                }
+
+                step("Dev features work with selected profile") {
+                    triggerDevFeatures(this, true)
+                }
             }
     }
 
     @AfterAll
     fun clearAwsXml() {
         clearAwsXmlFile()
+
+        val path = Paths.get("tstData", "Hello", "Example.java")
+        Files.write(path, ByteArray(0), StandardOpenOption.TRUNCATE_EXISTING)
     }
 
-    companion object {
+    private fun changeProfileAndVerify(driver: Driver, switchingProfiles: Boolean) =
+        driver.ideFrame {
+            // Click Amazon Q button in status bar
+            x(xQuery {
+                byAccessibleName("Amazon Q") and byJavaClass("com.intellij.openapi.wm.impl.status.MultipleTextValues")
+            }).click()
+            Thread.sleep(100)
 
-        fun setupMultipleProfilesForTest() {
-            val testStartUrl = System.getenv("TEST_START_URL")
-            val testRegion = System.getenv("TEST_REGION")
-            val configContent = """
-            <application>
-                <component name="authManager">
-                    <option name="ssoProfiles">
-                        <list>
-                            <ManagedSsoProfile>
-                                <option name="scopes">
-                                    <list>
-                                        <option value="codewhisperer:conversations" />
-                                        <option value="codewhisperer:transformations" />
-                                        <option value="codewhisperer:taskassist" />
-                                        <option value="codewhisperer:completions" />
-                                        <option value="codewhisperer:analysis" />
-                                    </list>
-                                </option>
-                                <option name="ssoRegion" value="$testRegion" />
-                                <option name="startUrl" value="$testStartUrl" />
-                            </ManagedSsoProfile>
-                        </list>
-                    </option>
-                </component>
-                <component name="connectionPinningManager">
-                    <option name="pinnedConnections">
-                        <map>
-                            <entry key="aws.codewhisperer" value="sso;$testRegion;$testStartUrl" />
-                            <entry key="aws.q" value="sso;$testRegion;$testStartUrl" />
-                        </map>
-                    </option>
-                </component>
-                <component name="qProfileStates">
-                    <option name="connectionIdToProfileList">
-                        <map>
-                            <entry key="sso;$testRegion;$testStartUrl" value="2" />
-                        </map>
-                    </option>
-                </component>
-                <component name="meetQPage">
-                    <option name="shouldDisplayPage" value="false" />
-                </component>
-            </application>
-            """.trimIndent()
-            writeToAwsXml(configContent)
+            driver.ui.keyboard {
+                // navigate and select "Change Profile" in the popup menu
+                key(KeyEvent.VK_UP)
+                key(KeyEvent.VK_UP)
+                key(KeyEvent.VK_ENTER)
+
+                //wait for list to load
+                Thread.sleep(3000)
+
+                // profile combobox selection and select connection
+                key(KeyEvent.VK_TAB)
+                if(switchingProfiles){
+                    // navigate past (current)
+                    key(KeyEvent.VK_DOWN)
+                }
+                key(KeyEvent.VK_DOWN)
+                key(KeyEvent.VK_ENTER)
+
+                // confirm selection
+                key(KeyEvent.VK_ENTER)
+            }
+
+            // Verify notification behavior
+            Thread.sleep(100)
+            val notification = x(xQuery { byVisibleText("You changed your profile") })
+            if(switchingProfiles){
+                assertTrue { notification.present() }
+            } else {
+                assertTrue { notification.notPresent() }
+            }
         }
 
-        fun setupMultipleProfilesWithSelectionForTest() {
-            val testStartUrl = System.getenv("TEST_START_URL")
-            val testRegion = System.getenv("TEST_REGION")
-            val configContent = """
-            <application>
-                <component name="authManager">
-                    <option name="ssoProfiles">
-                        <list>
-                            <ManagedSsoProfile>
-                                <option name="scopes">
-                                    <list>
-                                        <option value="codewhisperer:conversations" />
-                                        <option value="codewhisperer:transformations" />
-                                        <option value="codewhisperer:taskassist" />
-                                        <option value="codewhisperer:completions" />
-                                        <option value="codewhisperer:analysis" />
-                                    </list>
-                                </option>
-                                <option name="ssoRegion" value="$testRegion" />
-                                <option name="startUrl" value="$testStartUrl" />
-                            </ManagedSsoProfile>
-                        </list>
-                    </option>
-                </component>
-                <component name="connectionPinningManager">
-                    <option name="pinnedConnections">
-                        <map>
-                            <entry key="aws.codewhisperer" value="sso;$testRegion;$testStartUrl" />
-                            <entry key="aws.q" value="sso;$testRegion;$testStartUrl" />
-                        </map>
-                    </option>
-                </component>
-                <component name="qProfileStates">
-                    <option name="connectionIdToProfileList">
-                        <map>
-                            <entry key="sso;$testRegion;$testStartUrl" value="2" />
-                        </map>
-                    </option>
-                    <option name="connectionIdToActiveProfile">
-                        <map>
-                            <entry key="sso;$testRegion;$testStartUrl">
-                                <QRegionProfile>
-                                    <option name="profileName" value="TestProfile" />
-                                    <option name="arn" value="" />
-                                </QRegionProfile>
-                            </entry>
-                        </map>
-                    </option>
-                </component>
-                <component name="meetQPage">
-                    <option name="shouldDisplayPage" value="false" />
-                </component>
-            </application>
-            """.trimIndent()
-            writeToAwsXml(configContent)
+    private fun triggerDevFeatures(driver: Driver, isProfileSelected: Boolean) {
+
+        //trigger inline completion
+        var originalText: String? = null
+        var afterSuggestion: String? = null
+        driver.ideFrame {
+            driver.openFile("Example.java")
+            editor {
+                originalText = text
+                moveCaretToOffset(text.length - 2)
+
+                driver.ui.keyboard {
+                    pressing(KeyEvent.VK_ALT) {
+                        key(KeyEvent.VK_C)
+                    }
+                }
+                Thread.sleep(2000)
+
+                val hintExists = editor.getInlayModel().getInlineElementsInRange(0, text.length).isNotEmpty()
+                if(isProfileSelected) {
+                    assertThat(hintExists).isTrue()
+                }
+                else {
+                    assertThat(hintExists).isFalse()
+                }
+                driver.ui.keyboard {
+                    key(KeyEvent.VK_TAB)
+                }
+                afterSuggestion = text
+                text = setupContent
+            }
+        }
+        if(isProfileSelected) {
+            assertThat(afterSuggestion?.replace(Regex("\\s+"), " ")?.trim())
+                .isNotEqualTo(originalText?.replace(Regex("\\s+"), " ")?.trim())
+        }
+        else {
+            assertThat(afterSuggestion?.replace(Regex("\\s+"), " ")?.trim())
+                .isEqualTo(originalText?.replace(Regex("\\s+"), " ")?.trim())
+        }
+
+        //check q features
+        driver.ideFrame {
+            val editor = x(xQuery { byClass("EditorComponentImpl") })
+            editor.click()
+            editor.rightClick()
+
+            // Wait for context menu to appear
+            Thread.sleep(100)
+
+            // Check if "Amazon Q" option is present
+            val amazonQInMenu = x(xQuery {
+                byVisibleText("Amazon Q") and byJavaClass("com.intellij.openapi.actionSystem.impl.ActionMenu")
+            })
+            if(isProfileSelected) {
+                assertTrue { amazonQInMenu.present() }
+            }
+            else {
+                assertTrue { amazonQInMenu.notPresent() }
+            }
         }
     }
 }

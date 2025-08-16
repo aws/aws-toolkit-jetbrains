@@ -81,6 +81,118 @@ fun useExistingConnectionForTest() {
     writeToAwsXml(configContent)
 }
 
+fun setupMultipleProfilesForTest() {
+    val testStartUrl = System.getenv("TEST_START_URL")
+    val testRegion = System.getenv("TEST_REGION")
+    val configContent = """
+               <application>
+                <component name="authManager">
+                    <option name="ssoProfiles">
+                        <list>
+                            <ManagedSsoProfile>
+                                <option name="scopes">
+                                    <list>
+                                        <option value="codewhisperer:conversations" />
+                                        <option value="codewhisperer:transformations" />
+                                        <option value="codewhisperer:taskassist" />
+                                        <option value="codewhisperer:completions" />
+                                        <option value="codewhisperer:analysis" />
+                                    </list>
+                                </option>
+                                <option name="ssoRegion" value="$testRegion" />
+                                <option name="startUrl" value="$testStartUrl" />
+                            </ManagedSsoProfile>
+                        </list>
+                    </option>
+                </component>
+                <component name="connectionPinningManager">
+                    <option name="pinnedConnections">
+                        <map>
+                            <entry key="aws.codewhisperer" value="sso;$testRegion;$testStartUrl" />
+                            <entry key="aws.q" value="sso;$testRegion;$testStartUrl"  />
+                        </map>
+                    </option>
+                </component>
+              <component name="meetQPage">
+                <option name="shouldDisplayPage" value="false" />
+              </component>
+            </application>
+            """.trimIndent()
+    writeToAwsXml(configContent)
+}
+
+fun setupMultipleProfilesWithSelectionForTest() {
+    val testRegion = System.getenv("TEST_REGION")
+    val testStartUrl = System.getenv("TEST_START_URL")
+    val testArn = System.getenv("TEST_ARN")
+    val testProfile = System.getenv("TEST_PROFILE")
+    val testProfileName = testStartUrl.substringAfter("https://").substringBefore(".awsapps.com")
+    val configContent = """
+            <application>
+              <component name="authManager">
+                <option name="lastLoginIdcInfo">
+                  <LastLoginIdcInfo>
+                    <option name="profileName" value="$testProfileName" />
+                    <option name="region" value="$testRegion" />
+                    <option name="startUrl" value="$testStartUrl" />
+                  </LastLoginIdcInfo>
+                </option>
+              </component>
+              <component name="aws">
+                <option name="autoUpdateFeatureNotificationShownOnce" value="true" />
+                <option name="profilesNotification" value="Never" />
+                <option name="promptedForTelemetry" value="true" />
+              </component>
+              <component name="codewhispererSettings">
+                <option name="value">
+                  <map>
+                    <entry key="IsProjectContextEnabled" value="true" />
+                  </map>
+                </option>
+              </component>
+              <component name="codewhispererStates">
+                <option name="value">
+                  <map>
+                    <entry key="IsMonthlyQuotaForCodeScansExceeded" value="false" />
+                    <entry key="IsFirstRestartAfterQInstall" value="false" />
+                  </map>
+                </option>
+              </component>
+              <component name="connectionPinningManager">
+                <option name="pinnedConnections">
+                  <map>
+                    <entry key="aws.q" value="sso-session:$testProfileName" />
+                  </map>
+                </option>
+              </component>
+              <component name="meetQPage">
+                <option name="disclaimerAcknowledged" value="true" />
+                <option name="shouldDisplayPage" value="false" />
+              </component>
+              <component name="qProfileStates">
+                <option name="connectionIdToActiveProfile">
+                  <map>
+                    <entry key="sso-session:$testProfileName">
+                      <value>
+                        <QRegionProfile>
+                          <option name="arn" value="$testArn" />
+                          <option name="profileName" value="$testProfile" />
+                        </QRegionProfile>
+                      </value>
+                    </entry>
+                  </map>
+                </option>
+                <option name="connectionIdToProfileList">
+                  <map>
+                    <entry key="sso-session:$testProfileName" value="2" />
+                  </map>
+                </option>
+              </component>
+            </application>
+            """.trimIndent()
+    writeToAwsXml(configContent)
+}
+
 fun clearAwsXmlFile() {
     val configContent =
         """
@@ -113,6 +225,8 @@ fun writeToAwsXml(@Language("XML") configContent: String) {
         StandardOpenOption.TRUNCATE_EXISTING
     )
 }
+
+fun String.normalizeWhitespace(): String = this.replace(Regex("\\s+"), " ").trim()
 
 // language=JS
 val testScriptPrefix = """
