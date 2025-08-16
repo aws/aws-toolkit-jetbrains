@@ -107,6 +107,7 @@ class CodeScanSessionConfig(
                 null -> getProjectPayloadMetadata()
                 else -> when (scope) {
                     CodeAnalysisScope.PROJECT -> getProjectPayloadMetadata()
+                    CodeAnalysisScope.AGENTIC -> getProjectPayloadMetadata()
                     CodeAnalysisScope.FILE -> if (selectedFile.isWithin(projectRoot)) {
                         getFilePayloadMetadata(selectedFile, true)
                     } else {

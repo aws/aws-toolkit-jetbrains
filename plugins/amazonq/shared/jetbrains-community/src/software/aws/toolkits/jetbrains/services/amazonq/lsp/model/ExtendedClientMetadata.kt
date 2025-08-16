@@ -27,6 +27,8 @@ data class QCapabilities(
     val pinnedContextEnabled: Boolean,
     val imageContextEnabled: Boolean,
     val reroute: Boolean,
+    val codeReviewInChat: Boolean,
+    val displayFindings: Boolean,
     val workspaceFilePath: String?,
 )
 
@@ -71,6 +73,8 @@ fun createExtendedClientMetadata(project: Project): ExtendedClientMetadata {
                     pinnedContextEnabled = true,
                     imageContextEnabled = true,
                     reroute = true,
+                    codeReviewInChat = true,
+                    displayFindings = true,
                     workspaceFilePath = project.workspaceFile?.path,
                 ),
                 window = WindowCapabilities(

@@ -25,6 +25,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhisp
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.context.CodeScanIssueDetailsDisplayType
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.additionBackgroundColor
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.additionForegroundColor
+import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.applyFix
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.applySuggestedFix
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.codeBlockBackgroundColor
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.codeBlockBorderColor
@@ -182,10 +183,19 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
         val explainButton = JButton(
             message("codewhisperer.codescan.explain_button_label")
         ).apply {
-            toolTipText = message("codewhisperer.codescan.apply_fix_button_tooltip")
+            toolTipText = message("codewhisperer.codescan.explain_button_tooltip")
             addActionListener {
                 hidePopup()
                 explainIssue(issue)
+            }
+        }
+        val applyFixButton = JButton(
+            message("codewhisperer.codescan.apply_fix_button_label")
+        ).apply {
+            toolTipText = message("codewhisperer.codescan.apply_fix_button_tooltip")
+            addActionListener {
+                hidePopup()
+                applyFix(issue)
             }
         }
 
@@ -204,6 +214,7 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
                 add(button)
             }
             add(explainButton)
+            add(applyFixButton)
 
             // Add glue before and after label to center it
             add(Box.createHorizontalGlue())

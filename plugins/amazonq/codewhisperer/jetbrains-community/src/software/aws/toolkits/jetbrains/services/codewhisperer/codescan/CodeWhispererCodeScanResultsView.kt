@@ -20,7 +20,6 @@ import com.intellij.ui.components.ActionLink
 import com.intellij.ui.treeStructure.Tree
 import com.intellij.util.ui.JBUI
 import icons.AwsIcons
-import kotlinx.coroutines.CoroutineScope
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.IssueGroupingStrategy
@@ -48,7 +47,7 @@ import javax.swing.tree.TreePath
 /**
  * Create a Code Scan results view that displays the code scan results.
  */
-internal class CodeWhispererCodeScanResultsView(private val project: Project, private val defaultScope: CoroutineScope) : JPanel(BorderLayout()) {
+internal class CodeWhispererCodeScanResultsView(private val project: Project) : JPanel(BorderLayout()) {
 
     private fun isGroupedBySeverity() = CodeWhispererCodeScanManager.getInstance(project).getGroupingStrategySelected() == IssueGroupingStrategy.SEVERITY
 
@@ -59,7 +58,7 @@ internal class CodeWhispererCodeScanResultsView(private val project: Project, pr
             val issueNode = e.path.lastPathComponent as? DefaultMutableTreeNode
             val issue = issueNode?.userObject as? CodeWhispererCodeScanIssue ?: return@addTreeSelectionListener
 
-            showIssueDetails(issue, defaultScope)
+            showIssueDetails(issue)
 
             synchronized(issueNode) {
                 if (issueNode.userObject !is CodeWhispererCodeScanIssue) return@addTreeSelectionListener
@@ -300,8 +299,8 @@ internal class CodeWhispererCodeScanResultsView(private val project: Project, pr
         }
     }
 
-    private fun showIssueDetails(issue: CodeWhispererCodeScanIssue, defaultScope: CoroutineScope) {
-        val issueDetailsViewPanel = CodeWhispererCodeScanIssueDetailsPanel(project, issue, defaultScope)
+    private fun showIssueDetails(issue: CodeWhispererCodeScanIssue) {
+        val issueDetailsViewPanel = CodeWhispererCodeScanIssueDetailsPanel(project, issue)
         issueDetailsViewPanel.apply {
             isVisible = true
             revalidate()

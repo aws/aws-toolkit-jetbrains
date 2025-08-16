@@ -108,8 +108,8 @@
 
         <group id = "aws.toolkit.explorer.codewhisperer.codescan">
             <action
-                id="aws.amazonq.explainCodeScanIssue"
-                class="software.aws.toolkits.jetbrains.services.cwc.commands.codescan.actions.ExplainCodeIssueAction"/>
+                id="aws.amazonq.handleCodeScanIssueCommand"
+                class="software.aws.toolkits.jetbrains.services.cwc.commands.codescan.actions.HandleIssueCommandAction"/>
             <action
                 id="aws.amazonq.codeScanComplete"
                 class="software.aws.toolkits.jetbrains.services.cwc.commands.codescan.actions.CodeScanCompleteAction" />
