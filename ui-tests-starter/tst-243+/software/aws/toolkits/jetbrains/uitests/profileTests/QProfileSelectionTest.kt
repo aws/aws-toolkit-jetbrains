@@ -134,7 +134,7 @@ class QProfileSelectionTest {
     }
 
     @Test
-    fun `Test 2+ dev profile user account new login`() {
+    fun `Test 2+ dev profile user account fresh login`() {
         val testCase = TestCase(
             IdeProductProvider.IC,
             LocalProjectInfo(
@@ -187,7 +187,7 @@ class QProfileSelectionTest {
     }
 
     @Test
-    fun `Test 2+ dev profile user account selected profile login`() {
+    fun `Test 2+ profile user account with selected profile startup`() {
         val testCase = TestCase(
             IdeProductProvider.IC,
             LocalProjectInfo(
