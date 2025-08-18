@@ -3,7 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.webview
 
-import com.google.gson.Gson
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.vfs.LocalFileSystem
@@ -41,31 +41,31 @@ class BrowserConnectorTest : AmazonQTestBase() {
     override fun setup() {
         super.setup()
         fixture = projectRule.fixture
-        
+
         mockCodeScanManager = mock()
         mockLocalFileSystem = mock()
         mockFileDocumentManager = mock()
-        
+
         project.replaceService(CodeWhispererCodeScanManager::class.java, mockCodeScanManager, disposableRule.disposable)
-        
+
         browserConnector = spy(BrowserConnector(project = project))
     }
 
     @Test
     fun `parseFindingsMessages should handle empty additionalMessages`() {
         val messagesMap = mapOf<String, Any>()
-        
+
         browserConnector.parseFindingsMessages(messagesMap)
-        
+
         verify(mockCodeScanManager, never()).addOnDemandIssues(any(), any(), any())
     }
 
     @Test
     fun `parseFindingsMessages should handle null additionalMessages`() {
         val messagesMap = mapOf("additionalMessages" to null)
-        
+
         browserConnector.parseFindingsMessages(messagesMap)
-        
+
         verify(mockCodeScanManager, never()).addOnDemandIssues(any(), any(), any())
     }
 
@@ -81,9 +81,9 @@ class BrowserConnectorTest : AmazonQTestBase() {
         )
         val additionalMessages = mutableListOf<Map<String, Any>>(findingsMessage, otherMessage)
         val messagesMap = mapOf("additionalMessages" to additionalMessages)
-        
+
         browserConnector.parseFindingsMessages(messagesMap)
-        
+
         assert(additionalMessages.size == 1)
         assert(additionalMessages[0] == otherMessage)
     }
@@ -96,9 +96,9 @@ class BrowserConnectorTest : AmazonQTestBase() {
         )
         val additionalMessages = mutableListOf<Map<String, Any>>(findingsMessage)
         val messagesMap = mapOf("additionalMessages" to additionalMessages)
-        
+
         browserConnector.parseFindingsMessages(messagesMap)
-        
+
         assert(additionalMessages.isEmpty())
     }
 
@@ -112,16 +112,16 @@ class BrowserConnectorTest : AmazonQTestBase() {
             on { getLineStartOffset(0) } doReturn 0
             on { getLineEndOffset(0) } doReturn 10
         }
-        
+
         mockStatic(LocalFileSystem::class.java).use { localFileSystemMock ->
             localFileSystemMock.`when`<LocalFileSystem> { LocalFileSystem.getInstance() }.thenReturn(mockLocalFileSystem)
             whenever(mockLocalFileSystem.findFileByIoFile(any())) doReturn mockVirtualFile
-            
+
             mockStatic(FileDocumentManager::class.java).use { fileDocumentManagerMock ->
                 fileDocumentManagerMock.`when`<FileDocumentManager> { FileDocumentManager.getInstance() } doReturn mockFileDocumentManager
                 whenever(mockFileDocumentManager.getDocument(mockVirtualFile)) doReturn mockDocument
                 whenever(mockCodeScanManager.isIgnoredIssue(any(), any(), any(), any())) doReturn false
-                
+
                 val issue = BrowserConnector.FlareCodeScanIssue(
                     startLine = 1, endLine = 1, comment = "Test comment", title = "Test Issue",
                     description = Description("Test description", "Test text"), detectorId = "test-detector",
@@ -132,24 +132,24 @@ class BrowserConnectorTest : AmazonQTestBase() {
                     scanJobId = "test-job-id", language = "kotlin", autoDetected = false,
                     filePath = "/test/file.kt", findingContext = "test context"
                 )
-                
+
                 val aggregatedIssue = BrowserConnector.AggregatedCodeScanIssue("/test/file.kt", listOf(issue))
                 val findingsMessage = mapOf(
                     "messageId" to "test_codeReviewFindings",
-                    "body" to Gson().toJson(listOf(aggregatedIssue))
+                    "body" to jacksonObjectMapper().writeValueAsString(listOf(aggregatedIssue))
                 )
                 val additionalMessages = mutableListOf<Map<String, Any>>(findingsMessage)
                 val messagesMap = mapOf("additionalMessages" to additionalMessages)
-                
+
                 browserConnector.parseFindingsMessages(messagesMap)
-                
+
                 val issuesCaptor = argumentCaptor<List<CodeWhispererCodeScanIssue>>()
                 verify(mockCodeScanManager).addOnDemandIssues(
                     issuesCaptor.capture(),
                     any(),
                     eq(CodeWhispererConstants.CodeAnalysisScope.AGENTIC)
                 )
-                
+
                 assert(additionalMessages.isEmpty())
                 assert(issuesCaptor.firstValue.isNotEmpty())
                 assert(issuesCaptor.firstValue[0].title == "Test Issue")
@@ -160,11 +160,11 @@ class BrowserConnectorTest : AmazonQTestBase() {
     @Test
     fun `parseFindingsMessages should skip directory files and not populate mappedFindings`() {
         val mockDirectoryFile = mock<VirtualFile> { on { isDirectory } doReturn true }
-        
+
         mockStatic(LocalFileSystem::class.java).use { localFileSystemMock ->
             localFileSystemMock.`when`<LocalFileSystem> { LocalFileSystem.getInstance() } doReturn mockLocalFileSystem
             whenever(mockLocalFileSystem.findFileByIoFile(any())) doReturn mockDirectoryFile
-            
+
             val issue = BrowserConnector.FlareCodeScanIssue(
                 startLine = 1, endLine = 1, comment = null, title = "Test Issue",
                 description = Description("Test description", "Test text"), detectorId = "test-detector",
@@ -174,15 +174,15 @@ class BrowserConnectorTest : AmazonQTestBase() {
                 scanJobId = "test-job-id", language = "kotlin", autoDetected = true,
                 filePath = "/test/directory", findingContext = "test context"
             )
-            
+
             val aggregatedIssue = BrowserConnector.AggregatedCodeScanIssue("/test/directory", listOf(issue))
             val findingsMessage = mapOf(
                 "messageId" to "test_displayFindings",
-                "body" to Gson().toJson(listOf(aggregatedIssue))
+                "body" to jacksonObjectMapper().writeValueAsString(listOf(aggregatedIssue))
             )
             val additionalMessages = mutableListOf<Map<String, Any>>(findingsMessage)
             val messagesMap = mapOf("additionalMessages" to additionalMessages)
-            
+
             browserConnector.parseFindingsMessages(messagesMap)
 
             val issuesCaptor = argumentCaptor<List<CodeWhispererCodeScanIssue>>()
@@ -205,9 +205,9 @@ class BrowserConnectorTest : AmazonQTestBase() {
         )
         val additionalMessages = mutableListOf<Map<String, Any>>(findingsMessage)
         val messagesMap = mapOf("additionalMessages" to additionalMessages)
-        
+
         browserConnector.parseFindingsMessages(messagesMap)
-        
+
         assert(additionalMessages.isEmpty())
     }
 }
