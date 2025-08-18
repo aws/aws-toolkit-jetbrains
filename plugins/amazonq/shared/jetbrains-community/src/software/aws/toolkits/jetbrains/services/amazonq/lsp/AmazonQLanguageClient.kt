@@ -14,6 +14,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_CONTEXT_COMMANDS
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_PINNED_CONTEXT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_UPDATE
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SUBSCRIPTION_DETAILS
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CopyFileParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.DID_APPEND_FILE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.DID_COPY_FILE
@@ -88,4 +89,7 @@ interface AmazonQLanguageClient : LanguageClient {
 
     @JsonNotification(CHAT_OPTIONS_UPDATE_NOTIFICATION)
     fun sendChatOptionsUpdate(params: LSPAny)
+
+    @JsonNotification(CHAT_SUBSCRIPTION_DETAILS)
+    fun sendSubscriptionDetails(params: LSPAny)
 }
