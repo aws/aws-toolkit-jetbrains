@@ -641,74 +641,78 @@ class BrowserConnector(
         }
     }
 
-    private fun parseFindingsMessages(messagesMap: Map<*, *>) {
-        val additionalMessages = messagesMap["additionalMessages"] as? MutableList<Map<String, Any>>
-        val findingsMessages = additionalMessages?.filter { message ->
-            message["messageId"] != null && (message["messageId"] as String).endsWith(CODE_REVIEW_FINDINGS_SUFFIX) ||
-                (message["messageId"] as String).endsWith(DISPLAY_FINDINGS_SUFFIX)
-        }
-        val scannedFiles = mutableListOf<VirtualFile>()
-        if (findingsMessages != null) {
-            for (findingsMessage in findingsMessages) {
-                additionalMessages.remove(findingsMessage)
-                val gson = Gson()
-                val jsonFindings = gson.fromJson(findingsMessage["body"] as String, List::class.java)
-                val mappedFindings = mutableListOf<CodeWhispererCodeScanIssue>()
-                for (aggregatedIssueUnformatted in jsonFindings) {
-                    val aggregatedIssue = gson.fromJson(gson.toJson(aggregatedIssueUnformatted), AggregatedCodeScanIssue::class.java)
-                    val file = LocalFileSystem.getInstance().findFileByIoFile(
-                        Path.of(aggregatedIssue.filePath).toFile()
-                    )
-                    if (file?.isDirectory == false) {
-                        scannedFiles.add(file)
-                        runReadAction {
-                            FileDocumentManager.getInstance().getDocument(file)
-                        }?.let { document ->
-                            for (issue in aggregatedIssue.issues) {
-                                val endLineInDocument = minOf(maxOf(0, issue.endLine - 1), document.lineCount - 1)
-                                val endCol = document.getLineEndOffset(endLineInDocument) - document.getLineStartOffset(endLineInDocument) + 1
-                                val isIssueIgnored = CodeWhispererCodeScanManager.getInstance(project)
-                                    .isIgnoredIssue(issue.title, document, file, issue.startLine - 1)
-                                if (isIssueIgnored) {
-                                    continue
+    fun parseFindingsMessages(messagesMap: Map<*, *>) {
+        try {
+            val additionalMessages = messagesMap["additionalMessages"] as? MutableList<Map<String, Any>>
+            val findingsMessages = additionalMessages?.filter { message ->
+                message["messageId"] != null && (message["messageId"] as String).endsWith(CODE_REVIEW_FINDINGS_SUFFIX) ||
+                    (message["messageId"] as String).endsWith(DISPLAY_FINDINGS_SUFFIX)
+            }
+            val scannedFiles = mutableListOf<VirtualFile>()
+            if (findingsMessages != null) {
+                for (findingsMessage in findingsMessages) {
+                    additionalMessages.remove(findingsMessage)
+                    val gson = Gson()
+                    val jsonFindings = gson.fromJson(findingsMessage["body"] as String, List::class.java)
+                    val mappedFindings = mutableListOf<CodeWhispererCodeScanIssue>()
+                    for (aggregatedIssueUnformatted in jsonFindings) {
+                        val aggregatedIssue = gson.fromJson(gson.toJson(aggregatedIssueUnformatted), AggregatedCodeScanIssue::class.java)
+                        val file = LocalFileSystem.getInstance().findFileByIoFile(
+                            Path.of(aggregatedIssue.filePath).toFile()
+                        )
+                        if (file?.isDirectory == false) {
+                            scannedFiles.add(file)
+                            runReadAction {
+                                FileDocumentManager.getInstance().getDocument(file)
+                            }?.let { document ->
+                                for (issue in aggregatedIssue.issues) {
+                                    val endLineInDocument = minOf(maxOf(0, issue.endLine - 1), document.lineCount - 1)
+                                    val endCol = document.getLineEndOffset(endLineInDocument) - document.getLineStartOffset(endLineInDocument) + 1
+                                    val isIssueIgnored = CodeWhispererCodeScanManager.getInstance(project)
+                                        .isIgnoredIssue(issue.title, document, file, issue.startLine - 1)
+                                    if (isIssueIgnored) {
+                                        continue
+                                    }
+                                    mappedFindings.add(
+                                        CodeWhispererCodeScanIssue(
+                                            startLine = issue.startLine,
+                                            startCol = 1,
+                                            endLine = issue.endLine,
+                                            endCol = endCol,
+                                            file = file,
+                                            project = project,
+                                            title = issue.title,
+                                            description = issue.description,
+                                            detectorId = issue.detectorId,
+                                            detectorName = issue.detectorName,
+                                            findingId = issue.findingId,
+                                            ruleId = issue.ruleId,
+                                            relatedVulnerabilities = issue.relatedVulnerabilities,
+                                            severity = issue.severity,
+                                            recommendation = issue.recommendation,
+                                            suggestedFixes = issue.suggestedFixes,
+                                            codeSnippet = emptyList(),
+                                            isVisible = true,
+                                            autoDetected = issue.autoDetected,
+                                            scanJobId = issue.scanJobId,
+                                        ),
+                                    )
                                 }
-                                mappedFindings.add(
-                                    CodeWhispererCodeScanIssue(
-                                        startLine = issue.startLine,
-                                        startCol = 1,
-                                        endLine = issue.endLine,
-                                        endCol = endCol,
-                                        file = file,
-                                        project = project,
-                                        title = issue.title,
-                                        description = issue.description,
-                                        detectorId = issue.detectorId,
-                                        detectorName = issue.detectorName,
-                                        findingId = issue.findingId,
-                                        ruleId = issue.ruleId,
-                                        relatedVulnerabilities = issue.relatedVulnerabilities,
-                                        severity = issue.severity,
-                                        recommendation = issue.recommendation,
-                                        suggestedFixes = issue.suggestedFixes,
-                                        codeSnippet = emptyList(),
-                                        isVisible = true,
-                                        autoDetected = issue.autoDetected,
-                                        scanJobId = issue.scanJobId,
-                                    ),
-                                )
                             }
                         }
                     }
-                }
 
-                CodeWhispererCodeScanManager.getInstance(project)
-                    .addOnDemandIssues(
-                        mappedFindings,
-                        scannedFiles,
-                        CodeWhispererConstants.CodeAnalysisScope.AGENTIC
-                    )
-                CodeWhispererCodeScanManager.getInstance(project).showCodeScanUI()
+                    CodeWhispererCodeScanManager.getInstance(project)
+                        .addOnDemandIssues(
+                            mappedFindings,
+                            scannedFiles,
+                            CodeWhispererConstants.CodeAnalysisScope.AGENTIC
+                        )
+                    CodeWhispererCodeScanManager.getInstance(project).showCodeScanUI()
+                }
             }
+        } catch (e: Exception) {
+            LOG.error { "Failed to parse findings message $e" }
         }
     }
 
