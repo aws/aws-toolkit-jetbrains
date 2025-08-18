@@ -4,13 +4,12 @@
 package software.aws.toolkits.jetbrains.uitests.profileTests
 
 import com.intellij.driver.client.Driver
-import com.intellij.driver.sdk.ui.components.common.editor
-import com.intellij.driver.sdk.waitForProjectOpen
-import com.intellij.driver.sdk.ui.components.common.ideFrame
 import com.intellij.driver.sdk.openFile
+import com.intellij.driver.sdk.ui.components.common.editor
+import com.intellij.driver.sdk.ui.components.common.ideFrame
 import com.intellij.driver.sdk.ui.ui
 import com.intellij.driver.sdk.ui.xQuery
-import java.awt.event.KeyEvent
+import com.intellij.driver.sdk.waitForProjectOpen
 import com.intellij.ide.starter.ci.CIServer
 import com.intellij.ide.starter.config.ConfigurationStorage
 import com.intellij.ide.starter.di.di
@@ -38,7 +37,7 @@ import software.aws.toolkits.jetbrains.uitests.setupMultipleProfilesForTest
 import software.aws.toolkits.jetbrains.uitests.setupMultipleProfilesWithSelectionForTest
 import software.aws.toolkits.jetbrains.uitests.setupTestEnvironment
 import software.aws.toolkits.jetbrains.uitests.useExistingConnectionForTest
-import software.aws.toolkits.jetbrains.uitests.writeToAwsXml
+import java.awt.event.KeyEvent
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
@@ -57,8 +56,6 @@ class QProfileSelectionTest {
     }
     
 }"""
-
-
 
     init {
         di = DI {
@@ -165,24 +162,23 @@ class QProfileSelectionTest {
                     assertThat(result).contains("Profile selector is shown")
                 }
 
-                step("Q services not triggered when no profile selected"){
+                step("Q services not triggered when no profile selected") {
                     triggerDevFeatures(this, false)
                 }
 
-                step("Switching profile notifies and shows chat"){
+                step("Switching profile notifies and shows chat") {
                     changeProfileAndVerify(this, true)
                     val result = executePuppeteerScript(testActiveToolWindowPage)
                     assertThat(result).contains("Chat is shown")
                 }
 
-                step("Q features work with selected profile"){
+                step("Q features work with selected profile") {
                     triggerDevFeatures(this, true)
                 }
 
                 step("Changing profile A -> A does nothing") {
                     changeProfileAndVerify(this, false)
                 }
-
             }
     }
 
@@ -243,9 +239,11 @@ class QProfileSelectionTest {
     private fun changeProfileAndVerify(driver: Driver, switchingProfiles: Boolean) =
         driver.ideFrame {
             // Click Amazon Q button in status bar
-            x(xQuery {
-                byAccessibleName("Amazon Q") and byJavaClass("com.intellij.openapi.wm.impl.status.MultipleTextValues")
-            }).click()
+            x(
+                xQuery {
+                    byAccessibleName("Amazon Q") and byJavaClass("com.intellij.openapi.wm.impl.status.MultipleTextValues")
+                }
+            ).click()
             Thread.sleep(100)
 
             driver.ui.keyboard {
@@ -254,12 +252,12 @@ class QProfileSelectionTest {
                 key(KeyEvent.VK_UP)
                 key(KeyEvent.VK_ENTER)
 
-                //wait for list to load
+                // wait for list to load
                 Thread.sleep(3000)
 
                 // profile combobox selection and select connection
                 key(KeyEvent.VK_TAB)
-                if(switchingProfiles){
+                if (switchingProfiles) {
                     // navigate past (current)
                     key(KeyEvent.VK_DOWN)
                 }
@@ -273,7 +271,7 @@ class QProfileSelectionTest {
             // Verify notification behavior
             Thread.sleep(100)
             val notification = x(xQuery { byVisibleText("You changed your profile") })
-            if(switchingProfiles){
+            if (switchingProfiles) {
                 assertTrue { notification.present() }
             } else {
                 assertTrue { notification.notPresent() }
@@ -281,8 +279,7 @@ class QProfileSelectionTest {
         }
 
     private fun triggerDevFeatures(driver: Driver, isProfileSelected: Boolean) {
-
-        //trigger inline completion
+        // trigger inline completion
         var originalText: String? = null
         var afterSuggestion: String? = null
         driver.ideFrame {
@@ -299,10 +296,9 @@ class QProfileSelectionTest {
                 Thread.sleep(2000)
 
                 val hintExists = editor.getInlayModel().getInlineElementsInRange(0, text.length).isNotEmpty()
-                if(isProfileSelected) {
+                if (isProfileSelected) {
                     assertThat(hintExists).isTrue()
-                }
-                else {
+                } else {
                     assertThat(hintExists).isFalse()
                 }
                 driver.ui.keyboard {
@@ -312,16 +308,15 @@ class QProfileSelectionTest {
                 text = setupContent
             }
         }
-        if(isProfileSelected) {
+        if (isProfileSelected) {
             assertThat(afterSuggestion?.replace(Regex("\\s+"), " ")?.trim())
                 .isNotEqualTo(originalText?.replace(Regex("\\s+"), " ")?.trim())
-        }
-        else {
+        } else {
             assertThat(afterSuggestion?.replace(Regex("\\s+"), " ")?.trim())
                 .isEqualTo(originalText?.replace(Regex("\\s+"), " ")?.trim())
         }
 
-        //check q features
+        // check q features
         driver.ideFrame {
             val editor = x(xQuery { byClass("EditorComponentImpl") })
             editor.click()
@@ -331,13 +326,14 @@ class QProfileSelectionTest {
             Thread.sleep(100)
 
             // Check if "Amazon Q" option is present
-            val amazonQInMenu = x(xQuery {
-                byVisibleText("Amazon Q") and byJavaClass("com.intellij.openapi.actionSystem.impl.ActionMenu")
-            })
-            if(isProfileSelected) {
+            val amazonQInMenu = x(
+                xQuery {
+                    byVisibleText("Amazon Q") and byJavaClass("com.intellij.openapi.actionSystem.impl.ActionMenu")
+                }
+            )
+            if (isProfileSelected) {
                 assertTrue { amazonQInMenu.present() }
-            }
-            else {
+            } else {
                 assertTrue { amazonQInMenu.notPresent() }
             }
         }

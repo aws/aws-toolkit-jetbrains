@@ -111,7 +111,7 @@ tasks.register<Test>("uiTest") {
     dependsOn(prepareAmazonQTest)
     dependsOn(testPlugins)
     dependsOn("npmInstall") // Ensure npm dependencies are installed
-    
+
     systemProperty("ui.test.plugins", testPlugins.get().asPath)
     systemProperty("org.gradle.project.ideProfileName", ideProfile.name)
     val testSuite = System.getenv("TEST_DIR") ?: ""

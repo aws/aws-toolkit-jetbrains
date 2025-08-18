@@ -117,7 +117,7 @@ fun setupMultipleProfilesForTest() {
                 <option name="shouldDisplayPage" value="false" />
               </component>
             </application>
-            """.trimIndent()
+    """.trimIndent()
     writeToAwsXml(configContent)
 }
 
@@ -189,7 +189,7 @@ fun setupMultipleProfilesWithSelectionForTest() {
                 </option>
               </component>
             </application>
-            """.trimIndent()
+    """.trimIndent()
     writeToAwsXml(configContent)
 }
 
