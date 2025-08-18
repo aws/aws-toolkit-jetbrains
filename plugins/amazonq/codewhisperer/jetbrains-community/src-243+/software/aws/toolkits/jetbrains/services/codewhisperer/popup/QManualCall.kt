@@ -11,6 +11,9 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.popup.QInlineCompl
 fun InlineCompletionEvent.isManualCall(): Boolean =
     this is InlineCompletionEvent.ManualCall && this.additionalData.getUserData(KEY_Q_AUTO_TRIGGER_INTELLISENSE) == false
 
+fun InlineCompletionEvent.isIntelliSense(): Boolean =
+    this is InlineCompletionEvent.ManualCall && this.additionalData.getUserData(KEY_Q_AUTO_TRIGGER_INTELLISENSE) == true
+
 fun getManualCallEvent(editor: Editor, isIntelliSenseAccept: Boolean): InlineCompletionEvent {
     val data = UserDataHolderBase().apply { this.putUserData(KEY_Q_AUTO_TRIGGER_INTELLISENSE, isIntelliSenseAccept) }
     return InlineCompletionEvent.ManualCall(editor, Q_INLINE_PROVIDER_ID, data)
