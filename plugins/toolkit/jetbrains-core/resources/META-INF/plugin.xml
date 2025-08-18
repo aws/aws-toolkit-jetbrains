@@ -69,7 +69,7 @@
 
     <vendor email="aws-toolkit-jetbrains@amazon.com" url="https://github.com/aws/aws-toolkit-jetbrains">AWS</vendor>
     <!-- 223.7571.182 is 2022.3 Stable -->
-    <idea-version since-build="223.7571.182" until-build="224.*"/>
+    <idea-version since-build="223.7571.182" />
 
     <!-- a 'resource-bundle' declaration under <idea-plugin> declares the global default for the entire plugin -->
     <!-- use the 'resource-bundle' attribute in 'actions' tag if another bundle is needed -->

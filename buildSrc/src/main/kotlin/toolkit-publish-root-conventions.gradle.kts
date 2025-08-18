@@ -14,7 +14,6 @@ plugins {
 
 tasks.withType<PatchPluginXmlTask>().configureEach {
     sinceBuild.set(toolkitIntelliJ.ideProfile().map { it.sinceVersion })
-    untilBuild.set(toolkitIntelliJ.ideProfile().map { it.untilVersion })
 }
 
 intellijPlatform {
