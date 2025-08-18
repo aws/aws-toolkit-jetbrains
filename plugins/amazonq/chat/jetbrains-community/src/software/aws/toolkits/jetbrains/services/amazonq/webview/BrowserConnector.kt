@@ -21,6 +21,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onEach
@@ -42,8 +43,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.JsonRpcMethod
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.JsonRpcNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.JsonRpcRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AwsServerCapabilitiesProvider
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatAsyncResultManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommunicationManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.FlareUiMessage
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.AUTH_FOLLOW_UP_CLICKED
@@ -123,7 +122,6 @@ class BrowserConnector(
 ) {
     val uiReady = CompletableDeferred<Boolean>()
     private val chatCommunicationManager = ChatCommunicationManager.getInstance(project)
-    private val chatAsyncResultManager = ChatAsyncResultManager.getInstance(project)
 
     suspend fun connect(
         browser: Browser,
@@ -240,7 +238,6 @@ class BrowserConnector(
 
                 val tabId = requestFromUi.params.tabId
                 val partialResultToken = chatCommunicationManager.addPartialChatMessage(tabId)
-                chatCommunicationManager.registerPartialResultToken(partialResultToken)
 
                 var encryptionManager: JwtEncryptionManager? = null
                 val result = AmazonQLspService.executeAsyncIfRunning(project) { server ->
@@ -261,7 +258,6 @@ class BrowserConnector(
                 val tabId = requestFromUi.params.tabId
                 val quickActionParams = node.params ?: error("empty payload")
                 val partialResultToken = chatCommunicationManager.addPartialChatMessage(tabId)
-                chatCommunicationManager.registerPartialResultToken(partialResultToken)
                 var encryptionManager: JwtEncryptionManager? = null
                 val result = AmazonQLspService.executeAsyncIfRunning(project) { server ->
                     encryptionManager = this.encryptionManager
@@ -595,17 +591,6 @@ class BrowserConnector(
                 chatCommunicationManager.removeInflightRequestForTab(tabId)
             } catch (e: CancellationException) {
                 LOG.warn { "Cancelled chat generation" }
-                try {
-                    chatAsyncResultManager.createRequestId(partialResultToken)
-                    chatAsyncResultManager.getResult(partialResultToken)
-                    handleCancellation(tabId, browser)
-                } catch (ex: Exception) {
-                    LOG.warn(ex) { "An error occurred while processing cancellation" }
-                } finally {
-                    chatAsyncResultManager.removeRequestId(partialResultToken)
-                    chatCommunicationManager.removePartialResultLock(partialResultToken)
-                    chatCommunicationManager.removeFinalResultProcessed(partialResultToken)
-                }
             } catch (e: Exception) {
                 LOG.warn(e) { "Failed to send chat message" }
                 browser.postChat(chatCommunicationManager.getErrorUiMessage(tabId, e, partialResultToken))
@@ -613,21 +598,19 @@ class BrowserConnector(
         }
     }
 
-    private fun handleCancellation(tabId: String, browser: Browser) {
-        // Send a message to hide the stop button without showing an error
-        val cancelMessage = chatCommunicationManager.getCancellationUiMessage(tabId)
-        browser.postChat(cancelMessage)
-    }
-
-    private fun updateQuickActionsInBrowser(browser: Browser) {
+    private suspend fun updateQuickActionsInBrowser(browser: Browser) {
         val isFeatureDevAvailable = isFeatureDevAvailable(project)
         val isCodeTransformAvailable = isCodeTransformAvailable(project)
         val isDocAvailable = isDocAvailable(project)
         val isCodeScanAvailable = isCodeScanAvailable(project)
         val isCodeTestAvailable = isCodeTestAvailable(project)
 
+        val serverCapabilities = AmazonQLspService.getInstance(project).instanceFlow.first().initializeResult.await().awsServerCapabilities
+
+        // language=JavaScript
         val script = """
             try {
+                // hack to create the list of actions across all tab types
                 const tempConnector = connectorAdapter.initiateAdapter(
                     false, 
                     true, // the two values are not used here, needed for constructor
@@ -640,7 +623,7 @@ class BrowserConnector(
                 );
                 
                 const commands = tempConnector.initialQuickActions?.slice(0, 2) || [];
-                const options = ${Gson().toJson(AwsServerCapabilitiesProvider.getInstance(project).getChatOptions())};
+                const options = ${Gson().toJson(serverCapabilities.chatOptions)};
                 options.quickActions.quickActionsCommandGroups = [
                     ...commands,
                     ...options.quickActions.quickActionsCommandGroups
