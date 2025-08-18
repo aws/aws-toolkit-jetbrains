@@ -8,6 +8,8 @@ import io.mockk.every
 import io.mockk.mockk
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.condition.EnabledOnOs
+import org.junit.jupiter.api.condition.OS
 import org.junit.jupiter.api.extension.ExtendWith
 
 @ExtendWith(ApplicationExtension::class)
@@ -94,6 +96,24 @@ class FileUriUtilTest {
             assertThat(uri.contains("file.txt")).isTrue
             assertThat(uri.startsWith("file:///")).isTrue
         }
+    }
+
+    @Test
+    @EnabledOnOs(OS.WINDOWS)
+    fun `test wsl-like path`() {
+        val virtualFile = createMockVirtualFile("//wsl.localhost/Ubuntu/home/user/file.sh")
+        val result = LspEditorUtil.toUriString(virtualFile)
+        val expected = normalizeFileUri("file://wsl.localhost/Ubuntu/home/user/file.sh")
+        assertThat(result).isEqualTo(expected)
+    }
+
+    @Test
+    @EnabledOnOs(OS.WINDOWS)
+    fun `test UNC path`() {
+        val virtualFile = createMockVirtualFile("//server/share/path/to/file.txt")
+        val result = LspEditorUtil.toUriString(virtualFile)
+        val expected = normalizeFileUri("file://server/share/path/to/file.txt")
+        assertThat(result).isEqualTo(expected)
     }
 
     @Test
