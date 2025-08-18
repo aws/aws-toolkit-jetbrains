@@ -12,6 +12,15 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LogInlineC
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LspServerConfigurations
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.UpdateConfigurationParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.UpdateCredentialsPayload
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.dependencies.SyncModuleDependenciesParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.identity.GetSsoTokenParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.identity.GetSsoTokenResult
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.identity.InvalidateSsoTokenParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.identity.InvalidateSsoTokenResult
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.identity.ListProfilesResult
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.identity.SsoTokenChangedParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.identity.UpdateProfileParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.identity.UpdateProfileResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.dependencies.DidChangeDependencyPathsParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionListWithReferences
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionWithReferencesParams
@@ -36,6 +45,21 @@ interface AmazonQLanguageServer : LanguageServer {
 
     @JsonNotification("aws/credentials/token/delete")
     fun deleteTokenCredentials()
+
+    @JsonRequest("aws/identity/listProfiles")
+    fun listProfiles(): CompletableFuture<ListProfilesResult>
+
+    @JsonRequest("aws/identity/getSsoToken")
+    fun getSsoToken(params: GetSsoTokenParams): CompletableFuture<GetSsoTokenResult>
+
+    @JsonRequest("aws/identity/invalidateSsoToken")
+    fun invalidateSsoToken(params: InvalidateSsoTokenParams): CompletableFuture<InvalidateSsoTokenResult>
+
+    @JsonRequest("aws/identity/updateProfile")
+    fun updateProfile(params: UpdateProfileParams): CompletableFuture<UpdateProfileResult>
+
+    @JsonNotification("aws/identity/ssoTokenChanged")
+    fun ssoTokenChanged(params: SsoTokenChangedParams): CompletableFuture<Unit>
 
     @JsonRequest("aws/getConfigurationFromServer")
     fun getConfigurationFromServer(params: GetConfigurationFromServerParams): CompletableFuture<LspServerConfigurations>
