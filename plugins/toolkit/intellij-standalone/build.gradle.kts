@@ -21,9 +21,6 @@ intellijPlatform {
 dependencies {
     intellijPlatform {
         localPlugin(project(":plugin-core"))
-        pluginModule(project(":plugin-toolkit:jetbrains-core"))
-
-        plugin("PythonCore:243.18137.10")
     }
 }
 
