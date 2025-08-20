@@ -21,7 +21,6 @@ intellijPlatform {
 dependencies {
     intellijPlatform {
         localPlugin(project(":plugin-core"))
-        plugin("PythonCore:243.18137.10")
     }
 }
 
