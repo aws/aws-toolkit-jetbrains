@@ -57,6 +57,8 @@ val patchPluginXml = tasks.named<PatchPluginXmlTask>("patchPluginXml")
 patchPluginXml.configure {
     val buildSuffix = if (!project.isCi()) "+${buildMetadata()}" else ""
     pluginVersion.set("$toolkitVersion.${ideProfile.shortName}$buildSuffix")
+    sinceBuild.set(ideProfile.sinceVersion)
+    untilBuild.set(ideProfile.untilVersion)
 }
 
 tasks.jar {
@@ -79,6 +81,8 @@ tasks.integrationTest {
 val gatewayPluginXml = tasks.register<PatchPluginXmlTask>("pluginXmlForGateway") {
     val buildSuffix = if (!project.isCi()) "+${buildMetadata()}" else ""
     pluginVersion.set("GW-$toolkitVersion-${ideProfile.shortName}$buildSuffix")
+    sinceBuild.set(ideProfile.sinceVersion)
+    untilBuild.set(ideProfile.untilVersion)
 }
 
 val patchGatewayPluginXml by tasks.registering {
