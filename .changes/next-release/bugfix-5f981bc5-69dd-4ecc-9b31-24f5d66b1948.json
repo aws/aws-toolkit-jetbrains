@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "fix incompatible version warning for AWS Toolkit in 252"
+}
