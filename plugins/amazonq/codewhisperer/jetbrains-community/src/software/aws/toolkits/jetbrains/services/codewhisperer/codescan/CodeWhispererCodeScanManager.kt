@@ -110,7 +110,7 @@ private val LOG = getLogger<CodeWhispererCodeScanManager>()
 class CodeWhispererCodeScanManager(val project: Project) {
     private val defaultScope = projectCoroutineScope(project)
     private val codeScanResultsPanel by lazy {
-        CodeWhispererCodeScanResultsView(project, defaultScope)
+        CodeWhispererCodeScanResultsView(project)
     }
     private val codeScanIssuesContent by lazy {
         val contentManager = getProblemsWindow().contentManager
@@ -536,6 +536,16 @@ class CodeWhispererCodeScanManager(val project: Project) {
         autoScanIssues = autoScanIssues.filter { it.findingId != issue.findingId }
         ondemandScanIssues = ondemandScanIssues.filter { it.findingId != issue.findingId }
     }
+
+    fun addOnDemandIssues(issues: List<CodeWhispererCodeScanIssue>, scannedFiles: List<VirtualFile>, scope: CodeWhispererConstants.CodeAnalysisScope) =
+        defaultScope.launch {
+            ondemandScanIssues = ondemandScanIssues + issues
+            renderResponseOnUIThread(
+                getCombinedScanIssues(),
+                scannedFiles,
+                scope
+            )
+        }
 
     fun removeIssueByFindingId(issue: CodeWhispererCodeScanIssue, findingId: String) {
         scanNodesLookup[issue.file]?.forEach { node ->

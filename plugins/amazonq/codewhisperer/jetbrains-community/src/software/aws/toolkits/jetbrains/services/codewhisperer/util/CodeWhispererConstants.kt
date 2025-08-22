@@ -120,6 +120,7 @@ object CodeWhispererConstants {
     enum class CodeAnalysisScope(val value: String) {
         FILE("FILE"),
         PROJECT("PROJECT"),
+        AGENTIC("AGENTIC"),
     }
 
     enum class FeatureName(val value: String) {
