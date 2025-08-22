@@ -645,8 +645,12 @@ class BrowserConnector(
         try {
             val additionalMessages = messagesMap["additionalMessages"] as? MutableList<Map<String, Any>>
             val findingsMessages = additionalMessages?.filter { message ->
-                message["messageId"] != null && (message["messageId"] as String).endsWith(CODE_REVIEW_FINDINGS_SUFFIX) ||
-                    (message["messageId"] as String).endsWith(DISPLAY_FINDINGS_SUFFIX)
+                if (message["messageId"] != null) {
+                    (message["messageId"] as String).endsWith(CODE_REVIEW_FINDINGS_SUFFIX) ||
+                        (message["messageId"] as String).endsWith(DISPLAY_FINDINGS_SUFFIX)
+                } else {
+                    false
+                }
             }
             val scannedFiles = mutableListOf<VirtualFile>()
             if (findingsMessages != null) {
