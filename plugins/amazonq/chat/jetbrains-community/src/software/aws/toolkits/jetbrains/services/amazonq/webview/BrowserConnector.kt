@@ -127,7 +127,6 @@ import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionException
 import java.util.function.Function
-import kotlin.collections.get
 
 class BrowserConnector(
     private val serializer: MessageSerializer = MessageSerializer.getInstance(),
