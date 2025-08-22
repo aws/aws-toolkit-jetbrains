@@ -1,4 +1,0 @@
-{
-  "type" : "bugfix",
-  "description" : "Fix UriError when project is on WSL or a UNC path"
-}
