@@ -1,0 +1,14 @@
+{
+  "date" : "2025-08-22",
+  "version" : "3.90",
+  "entries" : [ {
+    "type" : "feature",
+    "description" : "Amazon Q supports admin control for MCP servers to restrict MCP server usage"
+  }, {
+    "type" : "bugfix",
+    "description" : "Fix incompatible version warning for AWS Toolkit in 2025.2"
+  }, {
+    "type" : "bugfix",
+    "description" : "Fix UriError when project is on WSL or a UNC path"
+  } ]
+}
