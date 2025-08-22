@@ -622,6 +622,7 @@ class BrowserConnector(
                 }
                 chatCommunicationManager.removePartialChatMessage(partialResultToken)
                 val decryptedMessage = Gson().fromJson(value?.let { encryptionManager?.decrypt(it) }.orEmpty(), Map::class.java)
+                    as Map<String, *>
                 parseFindingsMessages(decryptedMessage)
 
                 val messageToChat = ChatCommunicationManager.convertToJsonToSendToChat(
@@ -641,11 +642,11 @@ class BrowserConnector(
         }
     }
 
-    fun parseFindingsMessages(messagesMap: Map<*, *>) {
+    fun parseFindingsMessages(messagesMap: Map<String, *>) {
         try {
             val additionalMessages = messagesMap["additionalMessages"] as? MutableList<Map<String, Any>>
             val findingsMessages = additionalMessages?.filter { message ->
-                if (message["messageId"] != null) {
+                if (message.contains("messageId")) {
                     (message["messageId"] as String).endsWith(CODE_REVIEW_FINDINGS_SUFFIX) ||
                         (message["messageId"] as String).endsWith(DISPLAY_FINDINGS_SUFFIX)
                 } else {

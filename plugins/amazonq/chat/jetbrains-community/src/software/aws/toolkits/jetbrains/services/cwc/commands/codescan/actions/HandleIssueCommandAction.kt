@@ -21,6 +21,9 @@ import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.Te
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
 
 class HandleIssueCommandAction : AnAction(), DumbAware {
+    val contextDataKey = DataKey.create<MutableMap<String, String>>("amazonq.codescan.handleIssueCommandContext")
+    val actionDataKey = DataKey.create<String>("amazonq.codescan.handleIssueCommandAction")
+
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
 
     override fun update(e: AnActionEvent) {
@@ -38,8 +41,6 @@ class HandleIssueCommandAction : AnAction(), DumbAware {
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
-        val contextDataKey = DataKey.create<MutableMap<String, String>>("amazonq.codescan.handleIssueCommandContext")
-        val actionDataKey = DataKey.create<String>("amazonq.codescan.handleIssueCommandAction")
         val context = e.getData(contextDataKey) ?: return
         val action = e.getData(actionDataKey) ?: return
 
