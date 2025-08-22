@@ -538,9 +538,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
     }
 
     fun addOnDemandIssues(issues: List<CodeWhispererCodeScanIssue>, scannedFiles: List<VirtualFile>, scope: CodeWhispererConstants.CodeAnalysisScope) =
-        projectCoroutineScope(
-            project
-        ).launch {
+        defaultScope.launch {
             ondemandScanIssues = ondemandScanIssues + issues
             renderResponseOnUIThread(
                 getCombinedScanIssues(),

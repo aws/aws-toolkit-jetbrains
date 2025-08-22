@@ -10,6 +10,7 @@ import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.intellij.testFramework.replaceService
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito.mockStatic
@@ -84,8 +85,8 @@ class BrowserConnectorTest : AmazonQTestBase() {
 
         browserConnector.parseFindingsMessages(messagesMap)
 
-        assert(additionalMessages.size == 1)
-        assert(additionalMessages[0] == otherMessage)
+        assertThat(additionalMessages.size == 1)
+        assertThat(additionalMessages[0] == otherMessage)
     }
 
     @Test
@@ -99,7 +100,7 @@ class BrowserConnectorTest : AmazonQTestBase() {
 
         browserConnector.parseFindingsMessages(messagesMap)
 
-        assert(additionalMessages.isEmpty())
+        assertThat(additionalMessages).isEmpty()
     }
 
     @Test
@@ -150,9 +151,9 @@ class BrowserConnectorTest : AmazonQTestBase() {
                     eq(CodeWhispererConstants.CodeAnalysisScope.AGENTIC)
                 )
 
-                assert(additionalMessages.isEmpty())
-                assert(issuesCaptor.firstValue.isNotEmpty())
-                assert(issuesCaptor.firstValue[0].title == "Test Issue")
+                assertThat(additionalMessages).isEmpty()
+                assertThat(issuesCaptor.firstValue.isNotEmpty())
+                assertThat(issuesCaptor.firstValue[0].title == "Test Issue")
             }
         }
     }
@@ -192,8 +193,8 @@ class BrowserConnectorTest : AmazonQTestBase() {
                 eq(CodeWhispererConstants.CodeAnalysisScope.AGENTIC)
             )
 
-            assert(issuesCaptor.firstValue.isEmpty())
-            assert(additionalMessages.isEmpty())
+            assertThat(issuesCaptor.firstValue.isEmpty())
+            assertThat(additionalMessages).isEmpty()
         }
     }
 
@@ -208,6 +209,6 @@ class BrowserConnectorTest : AmazonQTestBase() {
 
         browserConnector.parseFindingsMessages(messagesMap)
 
-        assert(additionalMessages.isEmpty())
+        assertThat(additionalMessages).isEmpty()
     }
 }
