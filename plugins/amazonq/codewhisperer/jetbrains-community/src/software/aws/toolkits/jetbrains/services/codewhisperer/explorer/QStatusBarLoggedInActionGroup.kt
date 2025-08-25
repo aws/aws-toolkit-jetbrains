@@ -72,7 +72,7 @@ class QStatusBarLoggedInActionGroup : DefaultActionGroup() {
                 } else {
                     add(actionManager.getAction("q.manage.subscription"))
                 }
-
+                add(actionManager.getAction("q.account.details"))
                 add(SsoLogoutAction(connection))
             }
         }.toTypedArray()
