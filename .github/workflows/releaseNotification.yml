@@ -1,0 +1,32 @@
+permissions:
+  contents: read
+name: Release Notification
+
+on:
+  release:
+    types: [published] # Trigger on new releases being published
+
+jobs:
+  slack_notification:
+    runs-on: ubuntu-latest
+    if: ${{ !github.event.release.prerelease }}
+    steps:
+      - name: Print payload
+        run: |
+          echo '{
+            "version": "${{ github.event.release.tag_name }}",
+            "releaseLink": "${{ github.event.release.html_url }}",
+            "changelog": ${{ toJSON(github.event.release.body) }}
+          }'
+
+      - name: Send Release Details to Slack
+        uses: slackapi/slack-github-action@v1.23.0
+        with:
+          payload: |
+            {
+              "version": "${{ github.event.release.tag_name }}",
+              "releaseLink": "${{ github.event.release.html_url }}",
+              "changelog": ${{ toJSON(github.event.release.body) }}
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

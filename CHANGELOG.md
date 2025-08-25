@@ -1,3 +1,8 @@
+# _3.90_ (2025-08-22)
+- **(Feature)** Amazon Q supports admin control for MCP servers to restrict MCP server usage
+- **(Bug Fix)** Fix incompatible version warning for AWS Toolkit in 2025.2
+- **(Bug Fix)** Fix UriError when project is on WSL or a UNC path
+
 # _3.89_ (2025-08-07)
 - **(Bug Fix)** /transform: validate YAML dependency file for required fields
 
