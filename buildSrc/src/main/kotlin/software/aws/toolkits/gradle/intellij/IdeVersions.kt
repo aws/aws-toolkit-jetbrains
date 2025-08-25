@@ -163,6 +163,7 @@ object IdeVersions {
                     "com.intellij.java",
                     "com.intellij.gradle",
                     "org.jetbrains.idea.maven",
+                    "com.jetbrains.codeWithMe",
                     "com.intellij.properties"
                 ),
                 marketplacePlugins = listOf(

@@ -16,6 +16,8 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.FlareUiMes
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
 import software.aws.toolkits.jetbrains.services.amazonq.util.HighlightCommand
 import software.aws.toolkits.jetbrains.services.amazonq.util.createBrowser
+import software.aws.toolkits.jetbrains.services.amazonq.webview.theme.EditorThemeAdapter
+import software.aws.toolkits.jetbrains.services.amazonq.webview.theme.ThemeBrowserAdapter
 import software.aws.toolkits.jetbrains.settings.MeetQSettings
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -128,26 +130,26 @@ class Browser(parent: Disposable, private val mynahAsset: Path, val project: Pro
         // https://github.com/highlightjs/highlight.js/issues/1387
         // language=HTML
         val jsScripts = """
-            <script type="text/javascript" charset="UTF-8" src="$connectorAdapterPath"></script>
+            <script type="text/javascript" charset="UTF-8" src="$connectorAdapterPath" defer></script>
             <script type="text/javascript" charset="UTF-8" src="$mynahResource" defer onload="init()"></script>
             <script type="text/javascript">
                 
                 const init = () => {
                     const hybridChatConnector = connectorAdapter.initiateAdapter(
-                     ${MeetQSettings.getInstance().reinvent2024OnboardingCount < MAX_ONBOARDING_PAGE_COUNT},
-                     ${MeetQSettings.getInstance().disclaimerAcknowledged},
-                     $isFeatureDevAvailable,
-                     $isCodeTransformAvailable,
-                     $isDocAvailable,
-                     $isCodeScanAvailable,
-                     $isCodeTestAvailable,
-                     {
-                            postMessage: message => {
-                                $postMessageToJavaJsCode
-                            }
+                        ${MeetQSettings.getInstance().reinvent2024OnboardingCount < MAX_ONBOARDING_PAGE_COUNT},
+                        ${MeetQSettings.getInstance().disclaimerAcknowledged},
+                        $isFeatureDevAvailable,
+                        $isCodeTransformAvailable,
+                        $isDocAvailable,
+                        $isCodeScanAvailable,
+                        $isCodeTestAvailable,
+                        {
+                            postMessage: message => { $postMessageToJavaJsCode }
                         },
+                        ${OBJECT_MAPPER.writeValueAsString(highlightCommand)},
+                        "${activeProfile?.profileName.orEmpty()}"
+                    )
                     
-                     "${activeProfile?.profileName.orEmpty()}")
                     const qChat = amazonQChat.createChat(
                         {
                             postMessage: message => {
@@ -208,15 +210,7 @@ class Browser(parent: Disposable, private val mynahAsset: Path, val project: Pro
             </script>        
         """.trimIndent()
 
-        addQuickActionCommands(
-            isCodeTransformAvailable,
-            isFeatureDevAvailable,
-            isDocAvailable,
-            isCodeTestAvailable,
-            isCodeScanAvailable,
-            highlightCommand,
-            activeProfile
-        )
+        // language=HTML
         return """
             <!DOCTYPE html>
             <style>
@@ -283,36 +277,19 @@ class Browser(parent: Disposable, private val mynahAsset: Path, val project: Pro
                         transform: translateZ(0) !important;
                     }
                 </style>
-            <html>
+            <html lang="en">
                 <head>
                     <title>AWS Q</title>
                     $jsScripts
                 </head>
                 <body>
+                    <div style="text-align: center;">Amazon Q is loading...</div>
+                    <script type="text/javascript">
+                        ${ThemeBrowserAdapter().buildJsCodeToUpdateTheme(EditorThemeAdapter.getThemeFromIde())}
+                    </script>
                 </body>
             </html>
         """.trimIndent()
-    }
-
-    private fun addQuickActionCommands(
-        isCodeTransformAvailable: Boolean,
-        isFeatureDevAvailable: Boolean,
-        isDocAvailable: Boolean,
-        isCodeTestAvailable: Boolean,
-        isCodeScanAvailable: Boolean,
-        highlightCommand: HighlightCommand?,
-        activeProfile: QRegionProfile?,
-    ) {
-        // TODO:  Remove this once chat has been integrated with agents. This is added temporarily to keep detekt happy.
-        isCodeScanAvailable
-        isCodeTestAvailable
-        isDocAvailable
-        isFeatureDevAvailable
-        isCodeTransformAvailable
-        MAX_ONBOARDING_PAGE_COUNT
-        OBJECT_MAPPER
-        highlightCommand
-        activeProfile
     }
 
     companion object {
