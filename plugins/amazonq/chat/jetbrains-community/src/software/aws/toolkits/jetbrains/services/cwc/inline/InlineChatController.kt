@@ -55,11 +55,11 @@ import software.aws.toolkits.jetbrains.core.gettingstarted.requestCredentialsFor
 import software.aws.toolkits.jetbrains.core.webview.BrowserState
 import software.aws.toolkits.jetbrains.services.amazonq.QWebviewPanel
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileSelectedListener
 import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AMAZON_Q_WINDOW_ID
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretPosition
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.QFeatureEvent
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.broadcastQEvent
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.ChatRequestData
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.TriggerType
 import software.aws.toolkits.jetbrains.services.cwc.controller.ReferenceLogController
@@ -101,6 +101,14 @@ class InlineChatController(
     init {
         Disposer.register(this, listener)
         project.messageBus.connect(this).subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, listener)
+        project.messageBus.connect(this).subscribe(
+            QRegionProfileSelectedListener.TOPIC,
+            object : QRegionProfileSelectedListener {
+                override fun onProfileSelected(project: Project, profile: QRegionProfile?) {
+                    sessionStorage.deleteAllSessions()
+                }
+            }
+        )
     }
 
     data class InlineChatMetrics(
@@ -535,7 +543,6 @@ class InlineChatController(
     private fun insertString(editor: Editor, offset: Int, text: String): RangeMarker {
         lateinit var rangeMarker: RangeMarker
 
-        broadcastQEvent(QFeatureEvent.STARTS_EDITING)
         ApplicationManager.getApplication().invokeAndWait {
             CommandProcessor.getInstance().runUndoTransparentAction {
                 WriteCommandAction.runWriteCommandAction(project) {
@@ -545,12 +552,10 @@ class InlineChatController(
                 highlightCodeWithBackgroundColor(editor, rangeMarker.startOffset, rangeMarker.endOffset, true)
             }
         }
-        broadcastQEvent(QFeatureEvent.FINISHES_EDITING)
         return rangeMarker
     }
 
     private fun replaceString(document: Document, start: Int, end: Int, text: String) {
-        broadcastQEvent(QFeatureEvent.STARTS_EDITING)
         ApplicationManager.getApplication().invokeAndWait {
             CommandProcessor.getInstance().runUndoTransparentAction {
                 WriteCommandAction.runWriteCommandAction(project) {
@@ -558,7 +563,6 @@ class InlineChatController(
                 }
             }
         }
-        broadcastQEvent(QFeatureEvent.FINISHES_EDITING)
     }
 
     private fun highlightString(editor: Editor, start: Int, end: Int, isInsert: Boolean) {
@@ -715,8 +719,6 @@ class InlineChatController(
             canPopupAbort.set(true)
             undoChanges()
         }
-
-        broadcastQEvent(QFeatureEvent.FINISHES_EDITING)
         return errorMessage
     }
 

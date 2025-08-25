@@ -8,6 +8,7 @@ import com.intellij.openapi.actionSystem.ActionGroup
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionToolbar
 import com.intellij.openapi.application.invokeLater
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.projectRoots.JavaSdkVersion
@@ -27,6 +28,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.panels.CodeModern
 import software.aws.toolkits.jetbrains.services.codemodernizer.panels.LoadingPanel
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeModernizerSessionState
 import software.aws.toolkits.jetbrains.services.codemodernizer.toolwindow.CodeModernizerBottomToolWindowFactory
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isPlanComplete
 import software.aws.toolkits.resources.message
 import java.awt.BorderLayout
 import java.awt.Component
@@ -38,7 +40,7 @@ import javax.swing.BorderFactory
 import javax.swing.JPanel
 
 class CodeModernizerBottomWindowPanelManager(private val project: Project) : JPanel(BorderLayout()) {
-    private var lastShownProgressPanel: Component? = null
+    private var progressPanel: Component? = null
     val toolbar = createToolbar().apply {
         targetComponent = this@CodeModernizerBottomWindowPanelManager
         component.border = BorderFactory.createCompoundBorder(
@@ -62,14 +64,16 @@ class CodeModernizerBottomWindowPanelManager(private val project: Project) : JPa
     }
 
     private fun setUI(function: () -> Unit) {
-        lastShownProgressPanel = this.components.firstOrNull { it == fullSizeLoadingPanel || it == buildProgressSplitterPanelManager } ?: lastShownProgressPanel
-        removeAll()
-        add(BorderLayout.WEST, toolbar.component)
-        add(BorderLayout.NORTH, banner)
-        function.invoke()
-        updateRunTime()
-        revalidate()
-        repaint()
+        runInEdt {
+            progressPanel = this.components.firstOrNull { it == fullSizeLoadingPanel || it == buildProgressSplitterPanelManager } ?: progressPanel
+            removeAll()
+            add(BorderLayout.WEST, toolbar.component)
+            add(BorderLayout.NORTH, banner)
+            function.invoke()
+            updateRunTime()
+            revalidate()
+            repaint()
+        }
     }
 
     private fun updateRunTime(now: Instant? = null) {
@@ -173,8 +177,8 @@ class CodeModernizerBottomWindowPanelManager(private val project: Project) : JPa
     }
 
     fun showUnalteredJobUI() = setUI {
-        if (lastShownProgressPanel != null) {
-            add(BorderLayout.CENTER, lastShownProgressPanel)
+        if (progressPanel != null) {
+            add(BorderLayout.CENTER, progressPanel)
         } else {
             add(BorderLayout.CENTER, fullSizeLoadingPanel)
             fullSizeLoadingPanel.progressIndicatorLabel.text = "No jobs active"
@@ -248,7 +252,7 @@ class CodeModernizerBottomWindowPanelManager(private val project: Project) : JPa
                 TransformationStatus.PAUSED,
                 TransformationStatus.COMPLETED,
                 TransformationStatus.PARTIALLY_COMPLETED
-            ) && transformType != CodeTransformType.SQL_CONVERSION // no plan for SQL conversions
+            ) && transformType == CodeTransformType.LANGUAGE_UPGRADE && isPlanComplete(plan)
         ) {
             addPlanToBanner()
         }

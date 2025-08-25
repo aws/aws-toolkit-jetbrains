@@ -32,7 +32,8 @@ object CodeWhispererEditorUtil {
         val fileName = getFileName(psiFile)
         val programmingLanguage = psiFile.programmingLanguage()
         val fileRelativePath = getRelativePathToContentRoot(editor)
-        return FileContextInfo(caretContext, fileName, programmingLanguage, fileRelativePath)
+        val fileUri = getFileUri(psiFile)
+        return FileContextInfo(caretContext, fileName, programmingLanguage, fileRelativePath, fileUri)
     }
 
     fun extractCaretContext(editor: Editor): CaretContext {
@@ -73,6 +74,11 @@ object CodeWhispererEditorUtil {
     private fun getFileName(psiFile: PsiFile): String =
         psiFile.name.substring(0, psiFile.name.length.coerceAtMost(CodeWhispererConstants.FILENAME_CHARS_LIMIT))
 
+    private fun getFileUri(psiFile: PsiFile): String? =
+        psiFile.virtualFile?.takeIf { it.isValid }?.let { vFile ->
+            vFile.url.substring(0, vFile.url.length.coerceAtMost(CodeWhispererConstants.FILENAME_CHARS_LIMIT))
+        }
+
     fun getRelativePathToContentRoot(editor: Editor): String? =
         editor.project?.let { project ->
             FileDocumentManager.getInstance().getFile(editor.document)?.let { vFile ->
@@ -93,17 +99,6 @@ object CodeWhispererEditorUtil {
             editorLocation.y + textAbsolutePosition.y - editor.scrollingModel.verticalScrollOffset -
                 (popup as AbstractPopup).preferredContentSize.height
         )
-    }
-
-    fun shouldSkipInvokingBasedOnRightContext(editor: Editor): Boolean {
-        val caretContext = runReadAction { extractCaretContext(editor) }
-        val rightContextLines = caretContext.rightFileContext.split(Regex("\r?\n"))
-        val rightContextCurrentLine = if (rightContextLines.isEmpty()) "" else rightContextLines[0]
-
-        return rightContextCurrentLine.isNotEmpty() &&
-            !rightContextCurrentLine.startsWith(" ") &&
-            rightContextCurrentLine.trim() != ("}") &&
-            rightContextCurrentLine.trim() != (")")
     }
 
     /**

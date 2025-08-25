@@ -6,28 +6,29 @@ assertJ = "3.26.3"
 # match with <root>/settings.gradle.kts
 awsSdk = "2.26.25"
 commonmark = "0.22.0"
-detekt = "1.23.7"
+detekt = "1.23.8"
 diff-util = "4.12"
 intellijExt = "1.1.8"
 # match with <root>/settings.gradle.kts
-intellijGradle = "2.2.1"
+intellijGradle = "2.7.1"
 intellijRemoteRobot = "0.11.22"
 jackson = "2.17.2"
 jacoco = "0.8.12"
 jgit = "6.5.0.202303070854-r"
 junit4 = "4.13.2"
-junit5 = "5.11.0"
+junit5 = "5.13.4"
 # https://plugins.jetbrains.com/docs/intellij/kotlin.html#adding-kotlin-support
 # https://kotlinlang.org/docs/releases.html#release-details
-kotlin = "2.0.0"
+kotlin = "2.2.0"
 # set in <root>/settings.gradle.kts
-kotlinCoroutines = "1.8.0"
+kotlinCoroutines = "1.10.1"
+lsp4j = "0.24.0"
 mockito = "5.12.0"
-mockitoKotlin = "5.4.0"
-mockk = "1.13.10"
+mockitoKotlin = "5.4.1-SNAPSHOT"
+mockk = "1.13.17"
 nimbus-jose-jwt = "9.40"
 node-gradle = "7.0.2"
-telemetryGenerator = "1.0.297"
+telemetryGenerator = "1.0.322"
 testLogger = "4.0.0"
 testRetry = "1.5.10"
 # test-only; platform provides slf4j transitively at runtime
@@ -105,7 +106,9 @@ kotlin-coroutinesTest = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-tes
 kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
 kotlin-stdLibJdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
+lsp4j = { module = "org.eclipse.lsp4j:org.eclipse.lsp4j", version.ref = "lsp4j" }
 mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito" }
+mockito-junit-jupiter = { module = "org.mockito:mockito-junit-jupiter", version.ref = "mockito" }
 mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockitoKotlin" }
 mockk = { module = "io.mockk:mockk", version.ref="mockk" }
 nimbus-jose-jwt = {module = "com.nimbusds:nimbus-jose-jwt", version.ref = "nimbus-jose-jwt"}
@@ -121,7 +124,7 @@ zjsonpatch = { module = "com.flipkart.zjsonpatch:zjsonpatch", version.ref = "zjs
 [bundles]
 jackson = ["jackson-datetime", "jackson-kotlin", "jackson-yaml", "jackson-xml"]
 kotlin = ["kotlin-stdLibJdk8", "kotlin-reflect"]
-mockito = ["mockito-core", "mockito-kotlin"]
+mockito = ["mockito-core", "mockito-junit-jupiter", "mockito-kotlin"]
 sshd = ["sshd-core", "sshd-scp", "sshd-sftp"]
 
 [plugins]

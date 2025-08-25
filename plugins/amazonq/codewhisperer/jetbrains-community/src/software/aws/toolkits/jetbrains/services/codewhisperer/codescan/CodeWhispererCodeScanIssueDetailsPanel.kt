@@ -17,6 +17,8 @@ import com.intellij.ui.components.JBScrollPane
 import com.intellij.util.Alarm
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.context.CodeScanIssueDetailsDisplayType
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.additionBackgroundColor
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.additionForegroundColor
@@ -35,8 +37,8 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.ope
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.sendCodeFixGeneratedTelemetryToServiceAPI
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.truncateIssueTitle
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererColorUtil.getHexString
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.getHexString
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.Component
@@ -55,6 +57,7 @@ import javax.swing.ScrollPaneConstants
 import javax.swing.event.HyperlinkEvent
 import javax.swing.text.html.HTMLEditorKit
 
+private val logger = getLogger<CodeWhispererCodeScanIssueDetailsPanel>()
 internal class CodeWhispererCodeScanIssueDetailsPanel(
     private val project: Project,
     issue: CodeWhispererCodeScanIssue,
@@ -66,6 +69,10 @@ internal class CodeWhispererCodeScanIssueDetailsPanel(
     private val codeScanManager = CodeWhispererCodeScanManager.getInstance(project)
 
     private suspend fun handleGenerateFix(issue: CodeWhispererCodeScanIssue, isRegenerate: Boolean = false) {
+        if (issue.ruleId == "sbom-software-assurance-services") {
+            logger.warn { "GenerateFix is not available for SAS findings." }
+            return
+        }
         editorPane.text = getCodeScanIssueDetailsHtml(
             issue, CodeScanIssueDetailsDisplayType.DetailsPane, CodeWhispererConstants.FixGenerationState.GENERATING,
             project = project
@@ -235,6 +242,7 @@ internal class CodeWhispererCodeScanIssueDetailsPanel(
     }
     private val generateFixButton = JButton(message("codewhisperer.codescan.generate_fix_button_label")).apply {
         putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
+        isEnabled = issue.ruleId != "sbom-software-assurance-services"
         addActionListener {
             defaultScope.launch {
                 handleGenerateFix(issue)
@@ -325,5 +333,10 @@ internal class CodeWhispererCodeScanIssueDetailsPanel(
         add(BorderLayout.SOUTH, buttonPane)
         isVisible = true
         revalidate()
+        if (issue.suggestedFixes.isEmpty()) {
+            defaultScope.launch {
+                handleGenerateFix(issue)
+            }
+        }
     }
 }

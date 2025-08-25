@@ -5,10 +5,12 @@ package software.aws.toolkits.jetbrains.services.codewhisperer
 
 import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.Ignore
 import org.junit.Test
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonFileName
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonTestLeftContext
 
+@Ignore("This test suite needs a rewrite for JB inline completion API")
 class CodeWhispererTypeaheadTest : CodeWhispererTestBase() {
 
     @Test
@@ -85,7 +87,7 @@ class CodeWhispererTypeaheadTest : CodeWhispererTestBase() {
             projectRule.fixture.editor.caretModel.moveToOffset(pythonTestLeftContext.length)
         }
         withCodeWhispererServiceInvokedAndWait { states ->
-            val recommendation = states.recommendationContext.details[0].reformatted.content()
+            val recommendation = states.recommendationContext.details[0].completion.insertText
             val editor = projectRule.fixture.editor
             val startOffset = editor.caretModel.offset
             recommendation.forEachIndexed { index, char ->

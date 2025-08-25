@@ -13,14 +13,12 @@ import com.intellij.diff.util.DiffUserDataKeys
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.fileEditor.FileEditorManager
-import com.intellij.openapi.project.Project
-import com.intellij.openapi.roots.ProjectRootManager
+import com.intellij.openapi.fileEditor.TextEditorWithPreview
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.testFramework.LightVirtualFile
 import kotlinx.coroutines.withContext
-import org.intellij.images.fileTypes.impl.SvgFileType
 import software.amazon.awssdk.services.codewhispererruntime.model.DocFolderLevel
 import software.amazon.awssdk.services.codewhispererruntime.model.DocInteractionType
 import software.amazon.awssdk.services.codewhispererruntime.model.DocUserDecision
@@ -31,16 +29,17 @@ import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.common.util.selectFolder
 import software.aws.toolkits.jetbrains.core.coroutines.EDT
-import software.aws.toolkits.jetbrains.services.amazonq.RepoSizeError
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
+import software.aws.toolkits.jetbrains.services.amazonq.project.RepoSizeError
 import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindowFactory
 import software.aws.toolkits.jetbrains.services.amazonqDoc.DEFAULT_RETRY_LIMIT
 import software.aws.toolkits.jetbrains.services.amazonqDoc.DIAGRAM_SVG_EXT
-import software.aws.toolkits.jetbrains.services.amazonqDoc.DocException
+import software.aws.toolkits.jetbrains.services.amazonqDoc.DocClientException
 import software.aws.toolkits.jetbrains.services.amazonqDoc.FEATURE_NAME
 import software.aws.toolkits.jetbrains.services.amazonqDoc.InboundAppMessagesHandler
-import software.aws.toolkits.jetbrains.services.amazonqDoc.ZipFileError
+import software.aws.toolkits.jetbrains.services.amazonqDoc.MetricDataOperationName
+import software.aws.toolkits.jetbrains.services.amazonqDoc.MetricDataResult
 import software.aws.toolkits.jetbrains.services.amazonqDoc.cancellingProgressField
 import software.aws.toolkits.jetbrains.services.amazonqDoc.createUserFacingErrorMessage
 import software.aws.toolkits.jetbrains.services.amazonqDoc.denyListedErrors
@@ -73,15 +72,13 @@ import software.aws.toolkits.jetbrains.services.amazonqDoc.storage.ChatSessionSt
 import software.aws.toolkits.jetbrains.services.amazonqDoc.util.getFollowUpOptions
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CodeIterationLimitException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MonthlyConversationLimitError
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ZipFileCorruptedException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.CodeReferenceGenerated
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.DeletedFileInfo
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.NewFileZipInfo
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.SessionStatePhase
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.CancellationTokenSource
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.QFeatureEvent
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.broadcastQEvent
 import software.aws.toolkits.resources.message
-import java.nio.file.Paths
 import java.util.UUID
 
 enum class DocGenerationStep {
@@ -132,9 +129,8 @@ class DocController(
     private val authController: AuthController = AuthController(),
 ) : InboundAppMessagesHandler {
     val messenger = context.messagesFromAppToUi
-    var mode: Mode = Mode.CREATE
     val toolWindow = ToolWindowManager.getInstance(context.project).getToolWindow(AmazonQToolWindowFactory.WINDOW_ID)
-    var docGenerationTask = DocGenerationTask()
+    private val docGenerationTasks = DocGenerationTasks()
 
     override suspend fun processPromptChatMessage(message: IncomingDocMessage.ChatPrompt) {
         handleChat(
@@ -148,7 +144,7 @@ class DocController(
     }
 
     override suspend fun processTabRemovedMessage(message: IncomingDocMessage.TabRemoved) {
-        docGenerationTask.reset()
+        docGenerationTasks.deleteTask(message.tabId)
         chatSessionStorage.deleteSession(message.tabId)
     }
 
@@ -160,6 +156,7 @@ class DocController(
 
     override suspend fun processFollowupClickedMessage(message: IncomingDocMessage.FollowupClicked) {
         val session = getSessionInfo(message.tabId)
+        val docGenerationTask = docGenerationTasks.getTask(message.tabId)
 
         session.preloader(message.followUp.pillText, messenger) // also stores message in session history
 
@@ -173,7 +170,7 @@ class DocController(
             FollowUpTypes.CLOSE_SESSION -> closeSession(message.tabId)
             FollowUpTypes.CREATE_DOCUMENTATION -> {
                 docGenerationTask.interactionType = DocInteractionType.GENERATE_README
-                mode = Mode.CREATE
+                docGenerationTask.mode = Mode.CREATE
                 promptForDocTarget(message.tabId)
             }
 
@@ -183,11 +180,11 @@ class DocController(
             }
 
             FollowUpTypes.CANCEL_FOLDER_SELECTION -> {
-                docGenerationTask.folderLevel = DocFolderLevel.ENTIRE_WORKSPACE
+                docGenerationTask.reset()
                 newTask(message.tabId)
             }
 
-            FollowUpTypes.PROCEED_FOLDER_SELECTION -> if (mode == Mode.EDIT) makeChanges(message.tabId) else onDocsGeneration(message)
+            FollowUpTypes.PROCEED_FOLDER_SELECTION -> if (docGenerationTask.mode == Mode.EDIT) makeChanges(message.tabId) else onDocsGeneration(message)
             FollowUpTypes.ACCEPT_CHANGES -> {
                 docGenerationTask.userDecision = DocUserDecision.ACCEPT
                 sendDocAcceptanceTelemetry(message.tabId)
@@ -195,7 +192,7 @@ class DocController(
             }
 
             FollowUpTypes.MAKE_CHANGES -> {
-                mode = Mode.EDIT
+                docGenerationTask.mode = Mode.EDIT
                 makeChanges(message.tabId)
             }
 
@@ -206,12 +203,12 @@ class DocController(
             }
 
             FollowUpTypes.SYNCHRONIZE_DOCUMENTATION -> {
-                mode = Mode.SYNC
+                docGenerationTask.mode = Mode.SYNC
                 promptForDocTarget(message.tabId)
             }
 
             FollowUpTypes.EDIT_DOCUMENTATION -> {
-                mode = Mode.EDIT
+                docGenerationTask.mode = Mode.EDIT
                 docGenerationTask.interactionType = DocInteractionType.EDIT_README
                 promptForDocTarget(message.tabId)
             }
@@ -241,7 +238,6 @@ class DocController(
             session.sessionState.token?.cancel()
         }
 
-        docGenerationTask.reset()
         newTask(message.tabId)
     }
 
@@ -301,19 +297,23 @@ class DocController(
         messenger.sendChatInputEnabledMessage(message.tabId, false)
     }
 
+    private val diffVirtualFiles = mutableMapOf<String, ChainDiffVirtualFile>()
+
     private suspend fun acceptChanges(message: IncomingDocMessage.FollowupClicked) {
         insertCode(message.tabId)
+        previewReadmeFile(message.tabId)
     }
 
     private suspend fun promptForDocTarget(tabId: String) {
         val session = getSessionInfo(tabId)
+        val docGenerationTask = docGenerationTasks.getTask(tabId)
 
-        val currentSourceFolder = session.context.selectedSourceFolder
+        val currentSourceFolder = session.context.selectionRoot
 
         try {
             messenger.sendFolderConfirmationMessage(
                 tabId = tabId,
-                message = if (mode == Mode.CREATE) message("amazonqDoc.prompt.create.confirmation") else message("amazonqDoc.prompt.update"),
+                message = if (docGenerationTask.mode == Mode.CREATE) message("amazonqDoc.prompt.create.confirmation") else message("amazonqDoc.prompt.update"),
                 folderPath = currentSourceFolder.name,
                 followUps = listOf(
                     FollowUp(
@@ -399,13 +399,13 @@ class DocController(
                 // instead of diff display generated svg in edit/preview window
                 val inMemoryFile = LightVirtualFile(
                     message.filePath,
-                    SvgFileType.INSTANCE,
+                    null,
                     newFileContent
                 )
                 inMemoryFile.isWritable = false
                 FileEditorManager.getInstance(context.project).openFile(inMemoryFile, true)
             } else {
-                val existingFile = VfsUtil.findRelativeFile(message.filePath, session.context.selectedSourceFolder)
+                val existingFile = VfsUtil.findRelativeFile(message.filePath, session.context.addressableRoot)
                 val leftDiffContent = if (existingFile == null) {
                     EmptyContent()
                 } else {
@@ -422,6 +422,8 @@ class DocController(
                 request.putUserData(DiffUserDataKeys.FORCE_READ_ONLY, true)
 
                 val newDiff = ChainDiffVirtualFile(SimpleDiffRequestChain(request), message.filePath)
+
+                diffVirtualFiles[message.filePath] = newDiff
                 DiffEditorTabFilesManager.getInstance(context.project).showDiffFile(newDiff, true)
             }
         }
@@ -452,6 +454,9 @@ class DocController(
         var session: DocSession? = null
         try {
             session = getSessionInfo(tabId)
+            val docGenerationTask = docGenerationTasks.getTask(tabId)
+            docGenerationTask.mode = Mode.NONE
+
             logger.debug { "$FEATURE_NAME: Session created with id: ${session.tabID}" }
 
             val credentialState = authController.getAuthNeededStates(context.project).amazonQ
@@ -528,7 +533,7 @@ class DocController(
     }
 
     private suspend fun newTask(tabId: String) {
-        docGenerationTask = DocGenerationTask()
+        docGenerationTasks.deleteTask(tabId)
         chatSessionStorage.deleteSession(tabId)
 
         messenger.sendAnswer(
@@ -577,7 +582,7 @@ class DocController(
         )
 
         messenger.sendChatInputEnabledMessage(tabId = tabId, enabled = false)
-        docGenerationTask.reset()
+        docGenerationTasks.deleteTask(tabId)
     }
 
     private suspend fun provideFeedbackAndRegenerateCode(tabId: String) {
@@ -593,9 +598,12 @@ class DocController(
         messenger.sendUpdatePlaceholder(tabId, message("amazonqFeatureDev.placeholder.provide_code_feedback"))
     }
 
-    private suspend fun processErrorChatMessage(err: Exception, session: DocSession?, tabId: String, isEnableChatInput: Boolean) {
+    private suspend fun processErrorChatMessage(err: Exception, session: DocSession?, tabId: String) {
         logger.warn(err) { "Encountered ${err.message} for tabId: $tabId" }
         messenger.sendUpdatePromptProgress(tabId, null)
+        val docGenerationMode = docGenerationTasks.getTask(tabId).mode
+        val isEnableChatInput = docGenerationMode == Mode.EDIT &&
+            (err as? DocClientException)?.remainingIterations?.let { it > 0 } ?: false
 
         when (err) {
             is RepoSizeError -> {
@@ -617,7 +625,7 @@ class DocController(
                 )
             }
 
-            is ZipFileError -> {
+            is ZipFileCorruptedException -> {
                 messenger.sendError(
                     tabId = tabId,
                     errMessage = err.message,
@@ -627,12 +635,11 @@ class DocController(
             }
 
             is MonthlyConversationLimitError -> {
-                messenger.sendUpdatePlaceholder(tabId, newPlaceholder = message("amazonqFeatureDev.placeholder.after_monthly_limit"))
-                messenger.sendChatInputEnabledMessage(tabId, enabled = true)
                 messenger.sendMonthlyLimitError(tabId = tabId)
+                messenger.sendChatInputEnabledMessage(tabId, enabled = false)
             }
 
-            is DocException -> {
+            is DocClientException -> {
                 messenger.sendErrorToUser(
                     tabId = tabId,
                     errMessage = err.message,
@@ -728,6 +735,7 @@ class DocController(
         message: String,
     ) {
         var session: DocSession? = null
+        val docGenerationTask = docGenerationTasks.getTask(tabId)
         try {
             logger.debug { "$FEATURE_NAME: Processing message: $message" }
             session = getSessionInfo(tabId)
@@ -746,7 +754,7 @@ class DocController(
 
             when (session.sessionState.phase) {
                 SessionStatePhase.CODEGEN -> {
-                    onCodeGeneration(session, message, tabId, mode)
+                    onCodeGeneration(session, message, tabId, docGenerationTask.mode)
                 }
 
                 else -> null
@@ -756,8 +764,7 @@ class DocController(
                 is PrepareDocGenerationState -> state.filePaths
                 else -> emptyList()
             }
-            sendDocGenerationTelemetry(filePaths, session)
-            broadcastQEvent(QFeatureEvent.INVOCATION)
+            sendDocGenerationTelemetry(filePaths, session, docGenerationTask)
 
             if (filePaths.isNotEmpty()) {
                 processOpenDiff(
@@ -765,13 +772,7 @@ class DocController(
                 )
             }
         } catch (err: Exception) {
-            // For non edit mode lock the chat input until they explicitly click one of the follow-ups
-            var isEnableChatInput = false
-            if (err is DocException && Mode.EDIT == mode) {
-                isEnableChatInput = err.remainingIterations != null && err.remainingIterations > 0
-            }
-
-            processErrorChatMessage(err, session, tabId, isEnableChatInput)
+            processErrorChatMessage(err, session, tabId)
         }
     }
 
@@ -779,20 +780,25 @@ class DocController(
         messenger.sendUpdatePromptProgress(tabId = followUpMessage.tabId, inProgress(progress = 10, message("amazonqDoc.progress_message.scanning")))
 
         val session = getSessionInfo(followUpMessage.tabId)
+        val docGenerationTask = docGenerationTasks.getTask(followUpMessage.tabId)
 
         messenger.sendAnswer(
-            message = docGenerationProgressMessage(DocGenerationStep.UPLOAD_TO_S3, this.mode),
+            message = docGenerationProgressMessage(DocGenerationStep.UPLOAD_TO_S3, docGenerationTask.mode),
             messageType = DocMessageType.AnswerPart,
             tabId = followUpMessage.tabId,
         )
 
         try {
-            val sessionMessage: String = when (mode) {
+            val sessionMessage: String = when (docGenerationTask.mode) {
                 Mode.CREATE -> message("amazonqDoc.session.create")
                 else -> message("amazonqDoc.session.sync")
             }
 
             session.send(sessionMessage)
+            session.sendDocMetricData(
+                MetricDataOperationName.StartDocGeneration,
+                MetricDataResult.Success
+            )
 
             val filePaths: List<NewFileZipInfo> = when (val state = session.sessionState) {
                 is PrepareDocGenerationState -> state.filePaths ?: emptyList()
@@ -821,10 +827,10 @@ class DocController(
                 return
             }
 
-            sendDocGenerationTelemetry(filePaths, session)
+            sendDocGenerationTelemetry(filePaths, session, docGenerationTask)
 
             messenger.sendAnswer(
-                message = docGenerationProgressMessage(DocGenerationStep.COMPLETE, mode),
+                message = docGenerationProgressMessage(DocGenerationStep.COMPLETE, docGenerationTask.mode),
                 messageType = DocMessageType.AnswerPart,
                 tabId = followUpMessage.tabId,
             )
@@ -853,7 +859,11 @@ class DocController(
                 message = IncomingDocMessage.OpenDiff(tabId = followUpMessage.tabId, filePath = filePaths[0].zipFilePath, deleted = false)
             )
         } catch (err: Exception) {
-            processErrorChatMessage(err, session, tabId = followUpMessage.tabId, false)
+            session.sendDocMetricData(
+                MetricDataOperationName.EndDocGeneration,
+                session.getMetricResult(err)
+            )
+            processErrorChatMessage(err, session, tabId = followUpMessage.tabId)
         } finally {
             messenger.sendUpdatePlaceholder(
                 tabId = followUpMessage.tabId,
@@ -872,6 +882,10 @@ class DocController(
                 messenger.sendChatInputEnabledMessage(tabId = followUpMessage.tabId, enabled = false) // Lock chat input until a follow-up is clicked.
             }
         }
+        session.sendDocMetricData(
+            MetricDataOperationName.EndDocGeneration,
+            MetricDataResult.Success
+        )
     }
 
     private suspend fun handleEmptyFiles(
@@ -907,7 +921,6 @@ class DocController(
 
     private suspend fun retryRequests(tabId: String) {
         var session: DocSession? = null
-        docGenerationTask = DocGenerationTask()
         try {
             messenger.sendAsyncEventProgress(
                 tabId = tabId,
@@ -941,19 +954,10 @@ class DocController(
         }
     }
 
-    private fun isFolderPathInProjectModules(project: Project, folderPath: String): Boolean {
-        val path = Paths.get(folderPath)
-        val virtualFile = LocalFileSystem.getInstance().findFileByIoFile(path.toFile()) ?: return false
-
-        val projectFileIndex = ProjectRootManager.getInstance(project).fileIndex
-
-        return projectFileIndex.isInProject(virtualFile)
-    }
-
     private suspend fun modifyDefaultSourceFolder(tabId: String) {
         val session = getSessionInfo(tabId)
-        val currentSourceFolder = session.context.selectedSourceFolder
-        val projectRoot = session.context.projectRoot
+        val workspaceRoot = session.context.workspaceRoot
+        val docGenerationTask = docGenerationTasks.getTask(tabId)
 
         withContext(EDT) {
             messenger.sendAnswer(
@@ -962,7 +966,7 @@ class DocController(
                 message = message("amazonqDoc.prompt.choose_folder_to_continue")
             )
 
-            val selectedFolder = selectFolder(context.project, currentSourceFolder)
+            val selectedFolder = selectFolder(context.project, workspaceRoot)
 
             // No folder was selected
             if (selectedFolder == null) {
@@ -975,9 +979,7 @@ class DocController(
                 return@withContext
             }
 
-            val isFolderPathInProject = isFolderPathInProjectModules(context.project, selectedFolder.path)
-
-            if (!isFolderPathInProject) {
+            if (!selectedFolder.path.startsWith(workspaceRoot.path)) {
                 logger.info { "Selected folder not in workspace: ${selectedFolder.path}" }
 
                 messenger.sendAnswer(
@@ -999,7 +1001,7 @@ class DocController(
                 return@withContext
             }
 
-            if (selectedFolder.path == projectRoot.path) {
+            if (selectedFolder.path == workspaceRoot.path) {
                 docGenerationTask.folderLevel = DocFolderLevel.ENTIRE_WORKSPACE
             } else {
                 docGenerationTask.folderLevel = DocFolderLevel.SUB_FOLDER
@@ -1007,7 +1009,7 @@ class DocController(
 
             logger.info { "Selected correct folder inside workspace: ${selectedFolder.path}" }
 
-            session.context.selectedSourceFolder = selectedFolder
+            session.context.selectionRoot = selectedFolder
 
             promptForDocTarget(tabId)
 
@@ -1017,7 +1019,7 @@ class DocController(
         }
     }
 
-    private fun sendDocGenerationTelemetry(filePaths: List<NewFileZipInfo>, session: DocSession) {
+    private fun sendDocGenerationTelemetry(filePaths: List<NewFileZipInfo>, session: DocSession, docGenerationTask: DocGenerationTask) {
         docGenerationTask.conversationId = session.conversationId
         val (totalGeneratedChars, totalGeneratedLines, totalGeneratedFiles) = session.countedGeneratedContent(filePaths, docGenerationTask.interactionType)
         docGenerationTask.numberOfGeneratedChars = totalGeneratedChars
@@ -1030,6 +1032,7 @@ class DocController(
 
     private fun sendDocAcceptanceTelemetry(tabId: String) {
         val session = getSessionInfo(tabId)
+        val docGenerationTask = docGenerationTasks.getTask(tabId)
         var filePaths: List<NewFileZipInfo> = emptyList()
 
         when (val state = session.sessionState) {
@@ -1045,6 +1048,34 @@ class DocController(
 
         val docAcceptanceEvent = docGenerationTask.docAcceptanceEventBase()
         session.sendDocTelemetryEvent(null, docAcceptanceEvent)
+    }
+
+    private fun previewReadmeFile(tabId: String) {
+        val session = getSessionInfo(tabId)
+        var filePaths: List<NewFileZipInfo> = emptyList()
+
+        when (val state = session.sessionState) {
+            is PrepareDocGenerationState -> {
+                filePaths = state.filePaths
+            }
+        }
+
+        if (filePaths.isNotEmpty()) {
+            val filePath = filePaths[0].zipFilePath
+            val existingDiff = diffVirtualFiles[filePath]
+
+            val newFilePath = session.context.addressableRoot.toNioPath().resolve(filePath)
+            val readmeVirtualFile = LocalFileSystem.getInstance().refreshAndFindFileByPath(newFilePath.toString())
+
+            runInEdt {
+                if (existingDiff != null) {
+                    FileEditorManager.getInstance(getProject()).closeFile(existingDiff)
+                }
+                if (readmeVirtualFile != null) {
+                    TextEditorWithPreview.openPreviewForFile(getProject(), readmeVirtualFile)
+                }
+            }
+        }
     }
 
     fun getProject() = context.project

@@ -15,10 +15,6 @@ phases:
   install:
     commands:
       - startDocker.sh
-      # login to DockerHub so we don't get throttled
-      - export DOCKER_USERNAME=`echo $DOCKER_HUB_TOKEN | jq -r '.username'`
-      - export DOCKER_PASSWORD=`echo $DOCKER_HUB_TOKEN | jq -r '.password'`
-      - docker login --username $DOCKER_USERNAME --password $DOCKER_PASSWORD || true
       # should probably be managed as an extension/rule in any tests that need a screen available
       - /usr/bin/Xvfb :22 -screen 0 1920x1080x24 &
 

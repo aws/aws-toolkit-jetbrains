@@ -35,19 +35,14 @@ dependencies {
     intellijPlatform {
         localPlugin(project(":plugin-core"))
 
-        when (providers.gradleProperty("ideProfileName").get()) {
-            "2023.3", "2024.1" -> {}
-            else -> {
-                bundledModule("intellij.platform.vcs.dvcs.impl")
-                bundledModule("intellij.libraries.microba")
-            }
-        }
+        bundledModule("intellij.platform.vcs.dvcs.impl")
+        bundledModule("intellij.libraries.microba")
     }
 }
 
 val changelog = tasks.register<GeneratePluginChangeLog>("pluginChangeLog") {
     includeUnreleased.set(true)
-    changeLogFile.set(project.file("$buildDir/changelog/change-notes.xml"))
+    changeLogFile.set(project.layout.buildDirectory.file("changelog/change-notes.xml"))
 }
 
 tasks.compileJava {
@@ -61,7 +56,9 @@ PatchPluginXmlTask.register(project)
 val patchPluginXml = tasks.named<PatchPluginXmlTask>("patchPluginXml")
 patchPluginXml.configure {
     val buildSuffix = if (!project.isCi()) "+${buildMetadata()}" else ""
-    pluginVersion.set("$toolkitVersion-${ideProfile.shortName}$buildSuffix")
+    pluginVersion.set("$toolkitVersion.${ideProfile.shortName}$buildSuffix")
+    sinceBuild.set(ideProfile.sinceVersion)
+    untilBuild.set(ideProfile.untilVersion)
 }
 
 tasks.jar {
@@ -84,6 +81,8 @@ tasks.integrationTest {
 val gatewayPluginXml = tasks.register<PatchPluginXmlTask>("pluginXmlForGateway") {
     val buildSuffix = if (!project.isCi()) "+${buildMetadata()}" else ""
     pluginVersion.set("GW-$toolkitVersion-${ideProfile.shortName}$buildSuffix")
+    sinceBuild.set(ideProfile.sinceVersion)
+    untilBuild.set(ideProfile.untilVersion)
 }
 
 val patchGatewayPluginXml by tasks.registering {
@@ -118,7 +117,7 @@ val gatewayArtifacts by configurations.creating {
     extendsFrom(configurations["implementation"], configurations["runtimeOnly"])
 }
 
-val gatewayJar = tasks.create<Jar>("gatewayJar") {
+val gatewayJar = tasks.register<Jar>("gatewayJar") {
     // META-INF/plugin.xml is a duplicate?
     // unclear why the exclude() statement didn't work
     duplicatesStrategy = DuplicatesStrategy.WARN

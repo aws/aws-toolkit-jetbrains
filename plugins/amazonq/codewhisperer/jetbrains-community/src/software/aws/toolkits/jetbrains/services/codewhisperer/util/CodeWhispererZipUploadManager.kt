@@ -8,6 +8,7 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.util.io.HttpRequests
 import org.apache.commons.codec.digest.DigestUtils
+import software.amazon.awssdk.awscore.exception.AwsServiceException
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeAnalysisUploadContext
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeFixUploadContext
 import software.amazon.awssdk.services.codewhispererruntime.model.CreateUploadUrlRequest
@@ -21,6 +22,8 @@ import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.services.amazonq.RetryableOperation
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
+import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanServerException
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanSession.Companion.APPLICATION_ZIP
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanSession.Companion.AWS_KMS
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanSession.Companion.CONTENT_MD5
@@ -32,7 +35,11 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.codeScanS
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.invalidSourceZipError
 import software.aws.toolkits.jetbrains.services.codewhisperer.codetest.CodeTestException
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
+import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.AmazonqTelemetry
+import software.aws.toolkits.telemetry.AmazonqUploadIntent
+import software.aws.toolkits.telemetry.MetricResult
 import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
@@ -50,29 +57,67 @@ class CodeWhispererZipUploadManager(private val project: Project) {
         taskName: String,
         featureUseCase: CodeWhispererConstants.FeatureName,
     ): CreateUploadUrlResponse {
-        //  Throw error if zipFile is invalid.
-        if (!zipFile.exists()) {
-            when (featureUseCase) {
-                CodeWhispererConstants.FeatureName.CODE_REVIEW -> invalidSourceZipError()
-                CodeWhispererConstants.FeatureName.TEST_GENERATION -> testGenerationInvalidSourceZipError()
-                else -> throw IllegalArgumentException("Unsupported feature case: $featureUseCase") // Adding else for safety check
+        val startTime = System.currentTimeMillis()
+        var result: MetricResult = MetricResult.Succeeded
+        var failureReason: String? = null
+        var failureReasonDesc: String? = null
+        var requestId: String? = null
+        var requestServiceType: String? = null
+        var httpStatusCode: String? = null
+        try {
+            //  Throw error if zipFile is invalid.
+            if (!zipFile.exists()) {
+                when (featureUseCase) {
+                    CodeWhispererConstants.FeatureName.CODE_REVIEW -> invalidSourceZipError()
+                    CodeWhispererConstants.FeatureName.TEST_GENERATION -> testGenerationInvalidSourceZipError()
+                    else -> throw IllegalArgumentException("Unsupported feature case: $featureUseCase") // Adding else for safety check
+                }
+            }
+            val fileMd5: String = Base64.getEncoder().encodeToString(DigestUtils.md5(FileInputStream(zipFile)))
+            val createUploadUrlResponse = createUploadUrl(fileMd5, artifactType, taskType, taskName, featureUseCase)
+            val url = createUploadUrlResponse.uploadUrl()
+            LOG.debug { "$featureUseCase: Uploading $artifactType using the presigned URL." }
+
+            uploadArtifactToS3(
+                url,
+                createUploadUrlResponse.uploadId(),
+                zipFile,
+                fileMd5,
+                createUploadUrlResponse.kmsKeyArn(),
+                createUploadUrlResponse.requestHeaders(),
+                featureUseCase
+            )
+            return createUploadUrlResponse
+        } catch (e: Exception) {
+            result = MetricResult.Failed
+            failureReason = e.javaClass.simpleName
+            failureReasonDesc = e.message
+            if (e is CodeWhispererCodeScanServerException) {
+                requestId = e.requestId
+                requestServiceType = e.requestServiceType
+                httpStatusCode = e.httpStatusCode
+            }
+            throw e
+        } finally {
+            if (featureUseCase == CodeWhispererConstants.FeatureName.CODE_REVIEW) {
+                AmazonqTelemetry.createUpload(
+                    amazonqConversationId = "",
+                    amazonqUploadIntent = if (taskType == CodeWhispererConstants.UploadTaskType.SCAN_PROJECT) {
+                        AmazonqUploadIntent.FULLPROJECTSECURITYSCAN
+                    } else {
+                        AmazonqUploadIntent.AUTOMATICFILESECURITYSCAN
+                    },
+                    result = result,
+                    reason = failureReason,
+                    reasonDesc = failureReasonDesc,
+                    duration = (System.currentTimeMillis() - startTime).toDouble(),
+                    credentialStartUrl = getStartUrl(project),
+                    requestId = requestId,
+                    requestServiceType = requestServiceType,
+                    httpStatusCode = httpStatusCode
+                )
             }
         }
-        val fileMd5: String = Base64.getEncoder().encodeToString(DigestUtils.md5(FileInputStream(zipFile)))
-        val createUploadUrlResponse = createUploadUrl(fileMd5, artifactType, taskType, taskName, featureUseCase)
-        val url = createUploadUrlResponse.uploadUrl()
-        LOG.debug { "$featureUseCase: Uploading $artifactType using the presigned URL." }
-
-        uploadArtifactToS3(
-            url,
-            createUploadUrlResponse.uploadId(),
-            zipFile,
-            fileMd5,
-            createUploadUrlResponse.kmsKeyArn(),
-            createUploadUrlResponse.requestHeaders(),
-            featureUseCase
-        )
-        return createUploadUrlResponse
     }
 
     @Throws(IOException::class)
@@ -85,6 +130,7 @@ class CodeWhispererZipUploadManager(private val project: Project) {
         requestHeaders: Map<String, String>?,
         featureUseCase: CodeWhispererConstants.FeatureName,
     ) {
+        var connection: HttpURLConnection? = null
         RetryableOperation<Unit>().execute(
             operation = {
                 val uploadIdJson = """{"uploadId":"$uploadId"}"""
@@ -103,9 +149,9 @@ class CodeWhispererZipUploadManager(private val project: Project) {
                         }
                     }
                 }.connect {
-                    val connection = it.connection as HttpURLConnection
-                    connection.setFixedLengthStreamingMode(fileToUpload.length())
-                    IoUtils.copy(fileToUpload.inputStream(), connection.outputStream)
+                    connection = it.connection as HttpURLConnection
+                    connection?.setFixedLengthStreamingMode(fileToUpload.length())
+                    IoUtils.copy(fileToUpload.inputStream(), connection?.outputStream)
                 }
             },
             isRetryable = { e ->
@@ -118,7 +164,12 @@ class CodeWhispererZipUploadManager(private val project: Project) {
                 val errorMessage = getTelemetryErrorMessage(e, featureUseCase)
                 when (featureUseCase) {
                     CodeWhispererConstants.FeatureName.CODE_REVIEW ->
-                        codeScanServerException("CreateUploadUrlException: $errorMessage")
+                        codeScanServerException(
+                            "CreateUploadUrlException: $errorMessage",
+                            connection?.getHeaderField("x-amz-request-id"),
+                            "s3",
+                            (e as? HttpRequests.HttpStatusException)?.statusCode.toString()
+                        )
                     CodeWhispererConstants.FeatureName.TEST_GENERATION ->
                         throw CodeTestException(
                             "UploadTestArtifactToS3Error: $errorMessage",
@@ -152,6 +203,7 @@ class CodeWhispererZipUploadManager(private val project: Project) {
                             UploadContext.fromCodeAnalysisUploadContext(CodeAnalysisUploadContext.builder().codeScanName(taskName).build())
                         }
                     )
+                    .profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
                     .build()
             )
         },
@@ -162,7 +214,11 @@ class CodeWhispererZipUploadManager(private val project: Project) {
             val errorMessage = getTelemetryErrorMessage(e, featureUseCase)
             when (featureUseCase) {
                 CodeWhispererConstants.FeatureName.CODE_REVIEW ->
-                    codeScanServerException("CreateUploadUrlException after $attempts attempts: $errorMessage")
+                    codeScanServerException(
+                        "CreateUploadUrlException after $attempts attempts: $errorMessage",
+                        requestId = (e as? AwsServiceException)?.requestId(),
+                        httpStatusCode = (e as? AwsServiceException)?.statusCode().toString()
+                    )
 
                 CodeWhispererConstants.FeatureName.TEST_GENERATION ->
                     throw CodeTestException(

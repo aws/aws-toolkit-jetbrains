@@ -17,19 +17,32 @@ val codeArtifactMavenRepo = fun RepositoryHandler.(): MavenArtifactRepository? {
     } else {
         null
     }
-}.also {
-    pluginManagement {
-        repositories {
-            it()
-            gradlePluginPortal()
+}
+
+pluginManagement {
+    repositories {
+        // unfortunately pluginManagement is special, so we need to duplicate
+        val codeArtifactUrl: Provider<String> = providers.environmentVariable("CODEARTIFACT_URL")
+        val codeArtifactToken: Provider<String> = providers.environmentVariable("CODEARTIFACT_AUTH_TOKEN")
+        if (codeArtifactUrl.isPresent && codeArtifactToken.isPresent) {
+            maven {
+                url = uri(codeArtifactUrl.get())
+                credentials {
+                    username = "aws"
+                    password = codeArtifactToken.get()
+                }
+            }
         }
+
+        gradlePluginPortal()
+        maven("https://central.sonatype.com/repository/maven-snapshots/")
     }
 }
 
 plugins {
     id("com.github.burrunan.s3-build-cache") version "1.5"
     id("com.gradle.develocity") version "3.17.6"
-    id("org.jetbrains.intellij.platform.settings") version "2.1.0"
+    id("org.jetbrains.intellij.platform.settings") version "2.7.1"
 }
 
 dependencyResolutionManagement {
@@ -37,6 +50,12 @@ dependencyResolutionManagement {
     repositories {
         codeArtifactMavenRepo()
         mavenCentral()
+        maven {
+            url = uri("https://s01.oss.sonatype.org/content/repositories/snapshots/")
+            content {
+                includeGroupByRegex("org\\.mockito\\.kotlin")
+            }
+        }
 
         intellijPlatform {
             defaultRepositories()
@@ -99,11 +118,8 @@ include("ui-tests")
 include("sandbox-all")
 include("ui-tests-starter")
 when (providers.gradleProperty("ideProfileName").get()) {
-    // FIX_WHEN_MIN_IS_242: `tmp-all` test module no longer needed in 242+
-    "2023.3", "2024.1" -> {
-        include("tmp-all")
-
-        // only available 242+
+    // FIX_WHEN_MIN_IS_243
+    "2024.2" -> {
         project(":ui-tests-starter").projectDir = file("noop")
     }
 }
@@ -160,7 +176,7 @@ file("plugins").listFiles()?.forEach root@ {
             if (it.name == "jetbrains-gateway") {
                 when (providers.gradleProperty("ideProfileName").get()) {
                     // buildSrc is evaluated after settings so we can't key off of IdeVersions.kt
-                    "2023.3", "2024.1" -> {
+                    "2024.2", "2024.3" -> {
                         return@forEach
                     }
                 }

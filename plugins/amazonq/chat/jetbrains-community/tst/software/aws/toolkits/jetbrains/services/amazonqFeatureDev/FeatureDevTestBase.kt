@@ -28,10 +28,8 @@ import software.amazon.awssdk.services.codewhispererruntime.model.SendTelemetryE
 import software.amazon.awssdk.services.codewhispererruntime.model.StartTaskAssistCodeGenerationResponse
 import software.aws.toolkits.core.TokenConnectionSettings
 import software.aws.toolkits.core.credentials.ToolkitBearerTokenProvider
-import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.sso.DeviceAuthorizationGrantToken
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.clients.FeatureDevClient
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.CodeGenerationStreamResult
@@ -41,7 +39,6 @@ import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtu
 import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.addModule
 import java.io.File
-import java.time.Instant
 
 open class FeatureDevTestBase(
     @Rule @JvmField
@@ -65,6 +62,8 @@ open class FeatureDevTestBase(
     internal val otherStatus = "Other"
     internal val testTabId = "test-tab-id"
     internal val testFilePaths = mapOf(Pair("test.ts", "This is a comment"))
+    internal val testRunCommandLogPath = ".amazonq/dev/run_command.log"
+    internal val testLogPath = mapOf(Pair(testRunCommandLogPath, "This is a log"))
     internal val testDeletedFiles = listOf("deleted.ts")
     internal val testReferences = listOf(CodeReferenceGenerated())
     internal val testChecksumSha = "test-sha"
@@ -162,11 +161,7 @@ open class FeatureDevTestBase(
     open fun setup() {
         project = projectRule.project
         toolkitConnectionManager = spy(ToolkitConnectionManager.getInstance(project))
-        val accessToken = DeviceAuthorizationGrantToken(aString(), aString(), aString(), aString(), Instant.MAX, Instant.now())
-        val provider =
-            mock<BearerTokenProvider> {
-                doReturn(accessToken).whenever(it).refresh()
-            }
+        val provider = mock<BearerTokenProvider>()
         val mockBearerProvider =
             mock<ToolkitBearerTokenProvider> {
                 doReturn(provider).whenever(it).delegate

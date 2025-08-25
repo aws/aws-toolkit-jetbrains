@@ -36,9 +36,12 @@ import software.aws.toolkits.jetbrains.core.credentials.sso.DeviceAuthorizationG
 import software.aws.toolkits.jetbrains.core.credentials.sso.DiskCache
 import software.aws.toolkits.jetbrains.core.credentials.sso.PendingAuthorization
 import software.aws.toolkits.jetbrains.core.credentials.sso.SsoAccessTokenProvider
+import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener.Companion.TOPIC
+import java.time.Clock
 import java.time.Duration
-import java.time.Instant
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
+import java.util.function.Supplier
 
 internal interface BearerTokenLogoutSupport
 
@@ -47,11 +50,6 @@ interface BearerTokenProvider : SdkTokenProvider, SdkAutoCloseable, ToolkitBeare
      * @return The best available [SdkToken] to the provider without making network calls or prompting for user input
      */
     fun currentToken(): AccessToken?
-
-    /**
-     * Not meant to be invoked outside the implementation
-     */
-    fun refresh(): AccessToken
 
     /**
      * @return The authentication state of [currentToken]
@@ -72,11 +70,11 @@ interface BearerTokenProvider : SdkTokenProvider, SdkAutoCloseable, ToolkitBeare
     }
 
     companion object {
-        internal fun tokenExpired(accessToken: AccessToken) = Instant.now().isAfter(accessToken.expiresAt)
+        private fun tokenExpired(accessToken: AccessToken, clock: Clock) = clock.instant().isAfter(accessToken.expiresAt)
 
-        internal fun state(accessToken: AccessToken?) = when {
+        internal fun state(accessToken: AccessToken?, clock: Clock = Clock.systemUTC()) = when {
             accessToken == null -> BearerTokenAuthState.NOT_AUTHENTICATED
-            tokenExpired(accessToken) -> {
+            tokenExpired(accessToken, clock) -> {
                 if (accessToken.refreshToken != null) {
                     BearerTokenAuthState.NEEDS_REFRESH
                 } else {
@@ -95,6 +93,7 @@ class InteractiveBearerTokenProvider(
     val scopes: List<String>,
     override val id: String,
     cache: DiskCache = diskCache,
+    private val clock: Clock = Clock.systemUTC(),
 ) : BearerTokenProvider, BearerTokenLogoutSupport, Disposable {
     override val displayName = ToolkitBearerTokenProvider.ssoDisplayName(startUrl)
 
@@ -108,16 +107,14 @@ class InteractiveBearerTokenProvider(
             scopes = scopes
         )
 
-    private val supplier = CachedSupplier.builder { refreshToken() }.prefetchStrategy(NonBlocking("AWS SSO bearer token refresher")).build()
-    internal val lastToken = AtomicReference<AccessToken?>()
+    private var supplier = supplier()
+
     val pendingAuthorization: PendingAuthorization?
         get() = accessTokenProvider.authorization
 
     init {
-        lastToken.set(accessTokenProvider.loadAccessToken())
-
         ApplicationManager.getApplication().messageBus.connect(this).subscribe(
-            BearerTokenProviderListener.TOPIC,
+            TOPIC,
             object : BearerTokenProviderListener {
                 override fun invalidate(providerId: String) {
                     if (id == providerId) {
@@ -125,7 +122,7 @@ class InteractiveBearerTokenProvider(
                     }
                 }
 
-                override fun onChange(providerId: String, newScopes: List<String>?) {
+                override fun onProviderChange(providerId: String, newScopes: List<String>?) {
                     newScopes?.let {
                         if (id == providerId && it.toSet() != scopes.toSet()) {
                             invalidate()
@@ -136,27 +133,70 @@ class InteractiveBearerTokenProvider(
         )
     }
 
-    // we need to seed CachedSupplier with an initial value, then subsequent calls need to hit the network
-    private fun refreshToken(): RefreshResult<out SdkToken> {
-        val lastToken = lastToken.get() ?: throw NoTokenInitializedException("Token refresh started before session initialized")
-        val token = if (Duration.between(Instant.now(), lastToken.expiresAt) > Duration.ofMinutes(30)) {
-            lastToken
-        } else {
-            refresh()
+    private data class SupplierHolder(
+        val supplier: SupplierWithInitialValue,
+        val cachedSupplier: CachedSupplier<AccessToken>,
+    )
+
+    private fun supplier(initialValue: AccessToken? = null) =
+        SupplierWithInitialValue(initialValue, accessTokenProvider).let {
+            SupplierHolder(
+                it,
+                CachedSupplier.builder(it).clock(clock).prefetchStrategy(NonBlocking("AWS SSO bearer token refresher")).build()
+            )
         }
 
-        return RefreshResult.builder(token)
-            .staleTime(token.expiresAt.minus(DEFAULT_STALE_DURATION))
-            .prefetchTime(token.expiresAt.minus(DEFAULT_PREFETCH_DURATION))
-            .build()
+    private inner class SupplierWithInitialValue(
+        initial: AccessToken?,
+        val accessTokenProvider: SsoAccessTokenProvider,
+    ) : Supplier<RefreshResult<AccessToken>> {
+        private val hasCalledAtLeastOnce = AtomicBoolean(false)
+        private val initialValue = initial ?: accessTokenProvider.loadAccessToken()
+        val lastToken = AtomicReference<AccessToken?>(initialValue)
+
+        // we need to seed CachedSupplier with an initial value, then subsequent calls need to hit the network
+        override fun get(): RefreshResult<AccessToken> {
+            val token = if (hasCalledAtLeastOnce.getAndSet(true)) {
+                refresh()
+            } else {
+                // on initial call, refresh if needed
+                if (initialValue != null && initialValue.expiresAt.minus(DEFAULT_PREFETCH_DURATION) < clock.instant()) {
+                    refresh()
+                } else {
+                    initialValue ?: throw NoTokenInitializedException("Token provider initialized with no token")
+                }
+            }
+
+            return RefreshResult.builder(token)
+                .staleTime(token.expiresAt.minus(DEFAULT_STALE_DURATION))
+                .prefetchTime(token.expiresAt.minus(DEFAULT_PREFETCH_DURATION))
+                .build()
+        }
+
+        fun refresh(): AccessToken {
+            val lastToken = lastToken.get() ?: throw NoTokenInitializedException("Token refresh started before session initialized")
+            return try {
+                accessTokenProvider.refreshToken(lastToken).also {
+                    this.lastToken.set(it)
+                    ApplicationManager.getApplication().messageBus.syncPublisher(TOPIC).onTokenModified(id)
+                }
+            } catch (e: InvalidGrantException) {
+                LOG.warn { "Invalidated token due to $e" }
+                invalidate()
+
+                throw e
+            }
+        }
     }
 
+    override fun state() = BearerTokenProvider.state(currentToken(), clock)
+
     // how we expect consumers to obtain a token
-    override fun resolveToken() = supplier.get()
+    override fun resolveToken() = supplier.cachedSupplier.get()
 
     override fun close() {
         ssoOidcClient.close()
-        supplier.close()
+        supplier.cachedSupplier.close()
     }
 
     override fun dispose() {
@@ -164,21 +204,12 @@ class InteractiveBearerTokenProvider(
     }
 
     // internal nonsense so we can query the token without triggering a refresh
-    override fun currentToken() = lastToken.get()
-
-    /**
-     * Only use if you know what you're doing.
-     */
-    override fun refresh(): AccessToken {
-        val lastToken = lastToken.get() ?: throw NoTokenInitializedException("Token refresh started before session initialized")
-        return accessTokenProvider.refreshToken(lastToken).also {
-            this.lastToken.set(it)
-        }
-    }
+    override fun currentToken() = supplier.supplier.lastToken.get()
 
     override fun invalidate() {
         accessTokenProvider.invalidate()
-        lastToken.set(null)
+        supplier.cachedSupplier.close()
+        supplier = supplier()
         BearerTokenProviderListener.notifyCredUpdate(id)
     }
 
@@ -186,9 +217,14 @@ class InteractiveBearerTokenProvider(
         // we probably don't need to invalidate this, but we might as well since we need to login again anyways
         invalidate()
         accessTokenProvider.accessToken().also {
-            lastToken.set(it)
+            supplier.cachedSupplier.close()
+            supplier = supplier(it)
             BearerTokenProviderListener.notifyCredUpdate(id)
         }
+    }
+
+    companion object {
+        private val LOG = getLogger<InteractiveBearerTokenProvider>()
     }
 }
 
@@ -227,10 +263,6 @@ class ProfileSdkTokenProviderWrapper(private val sessionName: String, region: St
         )
     }
 
-    override fun refresh(): AccessToken {
-        error("Not yet implemented")
-    }
-
     override fun close() {
         sdkTokenManager.close()
         if (ssoOidcClient.isInitialized()) {
@@ -251,13 +283,6 @@ internal val DEFAULT_PREFETCH_DURATION = Duration.ofMinutes(20)
 
 val ssoOidcClientConfigurationBuilder: (ClientOverrideConfiguration.Builder) -> ClientOverrideConfiguration.Builder = { configuration ->
     configuration.nullDefaultProfileFile()
-
-    // Add InvalidGrantException to the RetryOnExceptionsCondition
-    configuration.retryStrategy { strategy ->
-        strategy.retryOnException {
-            it is InvalidGrantException
-        }
-    }
 
     configuration.addExecutionInterceptor(object : ExecutionInterceptor {
         override fun modifyException(context: Context.FailedExecution, executionAttributes: ExecutionAttributes): Throwable {
@@ -292,6 +317,7 @@ fun buildUnmanagedSsoOidcClient(region: String): SsoOidcClient =
             AnonymousCredentialsProvider.create(),
             Region.of(region),
             clientCustomizer = ToolkitClientCustomizer { _, _, _, _, configuration ->
+                configuration.apiCallTimeout(Duration.ofSeconds(12))
                 ssoOidcClientConfigurationBuilder(configuration)
             }
         )

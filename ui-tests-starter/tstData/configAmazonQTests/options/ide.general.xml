@@ -1,0 +1,7 @@
+<application>
+  <component name="Registry">
+    <entry key="performance.watcher.unresponsive.interval.ms" value="10000" />
+      <entry key="ide.browser.jcef.debug.port" value="9222"/>
+      <entry key="ide.browser.jcef.sandbox.enable" value="false"/>
+  </component>
+</application>

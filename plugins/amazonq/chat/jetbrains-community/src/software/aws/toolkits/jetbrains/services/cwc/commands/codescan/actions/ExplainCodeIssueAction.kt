@@ -3,6 +3,64 @@
 
 package software.aws.toolkits.jetbrains.services.cwc.commands.codescan.actions
 
-import software.aws.toolkits.jetbrains.services.cwc.commands.EditorContextCommand
+import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.ActionUpdateThread
+import com.intellij.openapi.actionSystem.AnAction
+import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.DataKey
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.project.DumbAware
+import kotlinx.coroutines.runBlocking
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommunicationManager
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.FlareUiMessage
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatPrompt
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_TO_PROMPT
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SendToPromptParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TriggerType
 
-class ExplainCodeIssueAction : CodeScanQActions(EditorContextCommand.ExplainCodeScanIssue)
+class ExplainCodeIssueAction : AnAction(), DumbAware {
+    override fun getActionUpdateThread() = ActionUpdateThread.BGT
+
+    override fun update(e: AnActionEvent) {
+        e.presentation.isEnabledAndVisible = e.project != null
+    }
+
+    override fun actionPerformed(e: AnActionEvent) {
+        val project = e.project ?: return
+        val issueDataKey = DataKey.create<MutableMap<String, String>>("amazonq.codescan.explainissue")
+        val issueContext = e.getData(issueDataKey) ?: return
+
+        ActionManager.getInstance().getAction("q.openchat").actionPerformed(e)
+
+        ApplicationManager.getApplication().executeOnPooledThread {
+            runBlocking {
+                // https://github.com/aws/aws-toolkit-vscode/blob/master/packages/amazonq/src/lsp/chat/commands.ts#L30
+                val codeSelection = "\n```\n${issueContext["code"]?.trimIndent()?.trim()}\n```\n"
+
+                val prompt = "Explain the issue \n\n " +
+                    "Issue:    \"${issueContext["title"]}\" \n" +
+                    "Code:    $codeSelection"
+
+                val modelPrompt = "Explain the issue ${issueContext["title"]} \n\n " +
+                    "Issue:    \"${issueContext["title"]}\" \n" +
+                    "Description:    ${issueContext["description"]} \n" +
+                    "Code:    $codeSelection and generate the code demonstrating the fix"
+
+                val params = SendToPromptParams(
+                    selection = codeSelection,
+                    triggerType = TriggerType.CONTEXT_MENU,
+                    prompt = ChatPrompt(
+                        prompt = prompt,
+                        escapedPrompt = modelPrompt,
+                        command = null
+                    ),
+                    autoSubmit = true
+                )
+
+                val uiMessage = FlareUiMessage(SEND_TO_PROMPT, params)
+                ChatCommunicationManager.getInstance(project).notifyUi(uiMessage)
+//                AsyncChatUiListener.notifyPartialMessageUpdate(project, uiMessage)
+            }
+        }
+    }
+}

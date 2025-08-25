@@ -20,6 +20,7 @@ dependencies {
     compileOnly(project(":plugin-amazonq:shared:jetbrains-ultimate"))
 
     compileOnly(project(":plugin-core:jetbrains-ultimate"))
+    testCompileOnly(project(":plugin-core:jetbrains-ultimate"))
 
     testImplementation(testFixtures(project(":plugin-amazonq:codewhisperer:jetbrains-community")))
     testImplementation(project(path = ":plugin-toolkit:jetbrains-ultimate", configuration = "testArtifacts"))
@@ -30,6 +31,7 @@ tasks.prepareTestSandbox {
     val pluginXmlJar = project(":plugin-amazonq").tasks.jar
 
     dependsOn(pluginXmlJar)
-    intoChild(intellijPlatform.projectName.map { "$it/lib" })
-        .from(pluginXmlJar)
+    from(pluginXmlJar) {
+        into(intellijPlatform.projectName.map { "$it/lib" })
+    }
 }

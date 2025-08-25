@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer
 
+import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.openapi.util.SimpleModificationTracker
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import kotlinx.coroutines.runBlocking
@@ -12,7 +13,11 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.regions.Region
+import software.amazon.awssdk.services.codewhispererruntime.model.DiagnosticSeverity
+import software.amazon.awssdk.services.codewhispererruntime.model.IdeDiagnostic
 import software.amazon.awssdk.services.codewhispererruntime.model.OptOutPreference
+import software.amazon.awssdk.services.codewhispererruntime.model.Position
+import software.amazon.awssdk.services.codewhispererruntime.model.Range
 import software.amazon.awssdk.services.ssooidc.SsoOidcClient
 import software.aws.toolkits.core.utils.test.aStringWithLineCount
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
@@ -23,10 +28,13 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getCompletionType
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getTelemetryOptOutPreference
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getUnmodifiedAcceptedCharsCount
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.convertSeverity
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.getDiagnosticDifferences
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.getDiagnosticsType
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.isWithin
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.runIfIdcConnectionOrTelemetryEnabled
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.toCodeChunk
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.truncateLineByLine
 import software.aws.toolkits.jetbrains.settings.AwsSettings
 import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
@@ -59,6 +67,54 @@ class CodeWhispererUtilTest {
     @After
     fun tearDown() {
         AwsSettings.getInstance().isTelemetryEnabled = isTelemetryEnabledDefault
+    }
+
+    @Test
+    fun `truncateLineByLine should drop the last line if max length is greater than threshold`() {
+        val input: String = """
+            ${"a".repeat(11)}
+            ${"b".repeat(11)}
+            ${"c".repeat(11)}
+            ${"d".repeat(11)}
+            ${"e".repeat(11)}
+        """.trimIndent()
+        assertThat(input.length).isGreaterThan(50)
+        val actual = truncateLineByLine(input, 50)
+        assertThat(actual).isEqualTo(
+            """
+            ${"a".repeat(11)}
+            ${"b".repeat(11)}
+            ${"c".repeat(11)}
+            ${"d".repeat(11)}
+            """.trimIndent()
+        )
+
+        val input2 = "b\n".repeat(10)
+        val actual2 = truncateLineByLine(input2, 8)
+        assertThat(actual2.length).isEqualTo(8)
+    }
+
+    @Test
+    fun `truncateLineByLine should return empty if empty string is provided`() {
+        val input = ""
+        val actual = truncateLineByLine(input, 50)
+        assertThat(actual).isEqualTo("")
+    }
+
+    @Test
+    fun `truncateLineByLine should return empty if 0 max length is provided`() {
+        val input = "aaaaa"
+        val actual = truncateLineByLine(input, 0)
+        assertThat(actual).isEqualTo("")
+    }
+
+    @Test
+    fun `truncateLineByLine should return flip the value if negative max length is provided`() {
+        val input = "aaaaa\nbbbbb"
+        val actual = truncateLineByLine(input, -6)
+        val expected1 = truncateLineByLine(input, 6)
+        assertThat(actual).isEqualTo(expected1)
+        assertThat(actual).isEqualTo("aaaaa")
     }
 
     @Test
@@ -196,50 +252,6 @@ class CodeWhispererUtilTest {
     }
 
     @Test
-    fun `test getUnmodifiedAcceptedCharsCount()`() {
-        var originalRecommendation = "foo"
-        var modifiedRecommendation = "fou"
-        var unmodifiedCharsCount = getUnmodifiedAcceptedCharsCount(originalRecommendation, modifiedRecommendation)
-        assertThat(unmodifiedCharsCount).isEqualTo(2)
-
-        originalRecommendation = "foo"
-        modifiedRecommendation = "f11111oo"
-        unmodifiedCharsCount = getUnmodifiedAcceptedCharsCount(originalRecommendation, modifiedRecommendation)
-        assertThat(unmodifiedCharsCount).isEqualTo(3)
-
-        originalRecommendation = "foo"
-        modifiedRecommendation = "fo"
-        unmodifiedCharsCount = getUnmodifiedAcceptedCharsCount(originalRecommendation, modifiedRecommendation)
-        assertThat(unmodifiedCharsCount).isEqualTo(2)
-
-        originalRecommendation = "helloworld"
-        modifiedRecommendation = "HelloWorld"
-        unmodifiedCharsCount = getUnmodifiedAcceptedCharsCount(originalRecommendation, modifiedRecommendation)
-        assertThat(unmodifiedCharsCount).isEqualTo("helloworld".length - 2)
-
-        originalRecommendation = "helloworld"
-        modifiedRecommendation = "World"
-        unmodifiedCharsCount = getUnmodifiedAcceptedCharsCount(originalRecommendation, modifiedRecommendation)
-        assertThat(unmodifiedCharsCount).isEqualTo("helloworld".length - "hello".length - 1)
-
-        originalRecommendation = "CodeWhisperer"
-        modifiedRecommendation = "CODE"
-        unmodifiedCharsCount = getUnmodifiedAcceptedCharsCount(originalRecommendation, modifiedRecommendation)
-        assertThat(unmodifiedCharsCount).isEqualTo(1)
-
-        originalRecommendation = "CodeWhisperer"
-        modifiedRecommendation = "codewhispererISBEST"
-        unmodifiedCharsCount = getUnmodifiedAcceptedCharsCount(originalRecommendation, modifiedRecommendation)
-        assertThat(unmodifiedCharsCount).isEqualTo("CodeWhisperer".length - 2)
-
-        val pythonCommentAddedByUser = "\"\"\"we don't count this comment as generated by CodeWhisperer\"\"\"\n"
-        originalRecommendation = "x, y):\n\treturn x + y"
-        modifiedRecommendation = "x, y):\n$pythonCommentAddedByUser\treturn x + y"
-        unmodifiedCharsCount = getUnmodifiedAcceptedCharsCount(originalRecommendation, modifiedRecommendation)
-        assertThat(unmodifiedCharsCount).isEqualTo(originalRecommendation.length)
-    }
-
-    @Test
     fun `test isWithin() returns true if file is within the given directory`() {
         val projectRoot = fixture.tempDirFixture.findOrCreateDir("workspace/projectA")
         val file = fixture.addFileToProject("workspace/projectA/src/Sample.java", "").virtualFile
@@ -258,5 +270,127 @@ class CodeWhispererUtilTest {
         val projectRoot = fixture.tempDirFixture.findOrCreateDir("workspace/projectA")
         val file = fixture.addFileToProject("workspace/projectA1/src/Sample.java", "").virtualFile
         assertThat(file.isWithin(projectRoot)).isFalse()
+    }
+
+    @Test
+    fun `getDiagnosticsType correctly identifies syntax errors`() {
+        val messages = listOf(
+            "Expected semicolon at end of line",
+            "Incorrect indent level",
+            "Syntax error in expression"
+        )
+
+        messages.forEach { message ->
+            assertThat(getDiagnosticsType(message)).isEqualTo("SYNTAX_ERROR")
+        }
+    }
+
+    @Test
+    fun `getDiagnosticsType correctly identifies type errors`() {
+        val messages = listOf(
+            "Cannot cast String to Int",
+            "Type mismatch: expected String but got Int"
+        )
+
+        messages.forEach { message ->
+            assertThat(getDiagnosticsType(message)).isEqualTo("TYPE_ERROR")
+        }
+    }
+
+    @Test
+    fun `getDiagnosticsType returns OTHER for unrecognized patterns`() {
+        val message = "Some random message"
+        assertThat(getDiagnosticsType(message)).isEqualTo("OTHER")
+    }
+
+    @Test
+    fun `convertSeverity correctly maps severity levels`() {
+        assertThat(convertSeverity(HighlightSeverity.ERROR)).isEqualTo(DiagnosticSeverity.ERROR)
+        assertThat(convertSeverity(HighlightSeverity.WARNING)).isEqualTo(DiagnosticSeverity.WARNING)
+        assertThat(convertSeverity(HighlightSeverity.TEXT_ATTRIBUTES)).isEqualTo(DiagnosticSeverity.HINT)
+        assertThat(convertSeverity(HighlightSeverity.INFORMATION)).isEqualTo(DiagnosticSeverity.INFORMATION)
+        assertThat(convertSeverity(HighlightSeverity.INFO)).isEqualTo(DiagnosticSeverity.INFORMATION)
+    }
+
+    @Test
+    fun `getDiagnosticDifferences correctly identifies added and removed diagnostics`() {
+        val diagnostic1 = IdeDiagnostic.builder()
+            .ideDiagnosticType("SYNTAX_ERROR")
+            .severity("ERROR")
+            .source("inspection1")
+            .range(
+                Range.builder()
+                    .start(Position.builder().line(0).character(0).build())
+                    .end(Position.builder().line(0).character(10).build())
+                    .build()
+            )
+            .build()
+
+        val diagnostic2 = IdeDiagnostic.builder()
+            .ideDiagnosticType("TYPE_ERROR")
+            .severity("WARNING")
+            .source("inspection2")
+            .range(
+                Range.builder()
+                    .start(Position.builder().line(1).character(0).build())
+                    .end(Position.builder().line(1).character(10).build())
+                    .build()
+            )
+            .build()
+
+        val oldList = listOf(diagnostic1)
+        val newList = listOf(diagnostic2)
+
+        val differences = getDiagnosticDifferences(oldList, newList)
+
+        assertThat(differences.added).containsExactly(diagnostic2)
+        assertThat(differences.removed).containsExactly(diagnostic1)
+    }
+
+    @Test
+    fun `getDiagnosticDifferences handles empty lists`() {
+        val diagnostic = IdeDiagnostic.builder()
+            .ideDiagnosticType("SYNTAX_ERROR")
+            .severity("ERROR")
+            .source("inspection1")
+            .range(
+                Range.builder()
+                    .start(Position.builder().line(0).character(0).build())
+                    .end(Position.builder().line(0).character(10).build())
+                    .build()
+            )
+            .build()
+
+        val emptyList = emptyList<IdeDiagnostic>()
+        val nonEmptyList = listOf(diagnostic)
+
+        val differencesWithEmptyOld = getDiagnosticDifferences(emptyList, nonEmptyList)
+        assertThat(differencesWithEmptyOld.added).containsExactly(diagnostic)
+        assertThat(differencesWithEmptyOld.removed).isEmpty()
+
+        val differencesWithEmptyNew = getDiagnosticDifferences(nonEmptyList, emptyList)
+        assertThat(differencesWithEmptyNew.added).isEmpty()
+        assertThat(differencesWithEmptyNew.removed).containsExactly(diagnostic)
+    }
+
+    @Test
+    fun `getDiagnosticDifferences handles identical lists`() {
+        val diagnostic = IdeDiagnostic.builder()
+            .ideDiagnosticType("SYNTAX_ERROR")
+            .severity("ERROR")
+            .source("inspection1")
+            .range(
+                Range.builder()
+                    .start(Position.builder().line(0).character(0).build())
+                    .end(Position.builder().line(0).character(10).build())
+                    .build()
+            )
+            .build()
+
+        val list = listOf(diagnostic)
+        val differences = getDiagnosticDifferences(list, list)
+
+        assertThat(differences.added).isEmpty()
+        assertThat(differences.removed).isEmpty()
     }
 }

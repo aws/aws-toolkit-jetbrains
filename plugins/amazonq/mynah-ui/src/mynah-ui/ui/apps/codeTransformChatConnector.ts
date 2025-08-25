@@ -267,8 +267,6 @@ export class CodeTransformChatConnector {
                 tabType: 'codetransform',
             })
         } else if (action.id === FormButtonIds.OpenMvnBuild) {
-            console.log('open_mvn_build')
-
             this.sendMessageToExtension({
                 command: 'codetransform-open-mvn-build',
                 tabID,
@@ -280,19 +278,24 @@ export class CodeTransformChatConnector {
                 tabID,
                 tabType: 'codetransform',
             })
-        }  else if (action.id === FormButtonIds.CodeTransformInputSkipTests) {
+        } else if (action.id === FormButtonIds.CodeTransformInputContinue) {
+            this.sendMessageToExtension({
+                command: 'codetransform-continue',
+                tabID,
+                tabType: 'codetransform',
+            })
+        } else if (action.id === FormButtonIds.CodeTransformInputSkipTests) {
             this.sendMessageToExtension({
                 command: 'codetransform-confirm-skip-tests',
                 tabID,
                 tabType: 'codetransform',
                 skipTestsSelection: action.formItemValues?.skipTestsSelection
             })
-        }  else if (action.id === FormButtonIds.CodeTransformInputOneOrMultipleDiffs) {
+        } else if (action.id === FormButtonIds.CodeTransformInputCustomDependencyVersions) {
             this.sendMessageToExtension({
-                command: 'codetransform-confirm-one-or-multiple-diffs',
+                command: 'codetransform-input-confirm-custom-dependency-versions',
                 tabID,
                 tabType: 'codetransform',
-                oneOrMultipleDiffsSelection: action.formItemValues?.oneOrMultipleDiffsSelection
             })
         } else if (action.id === FormButtonIds.OpenTransformationHub) {
             this.sendMessageToExtension({

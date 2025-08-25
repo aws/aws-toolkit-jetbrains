@@ -9,6 +9,7 @@ import com.intellij.diff.DiffManagerEx
 import com.intellij.diff.requests.SimpleDiffRequest
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
@@ -49,12 +50,14 @@ import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
-import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.coroutines.EDT
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
+import software.aws.toolkits.jetbrains.core.credentials.sono.isInternalUser
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionReference
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionReferencePosition
+import software.aws.toolkits.jetbrains.services.amazonq.messages.AmazonQMessage
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.amazonq.project.RelevantDocument
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.CodeWhispererUTGChatManager
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.ConversationState
@@ -74,8 +77,6 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendA
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.QFeatureEvent
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.broadcastQEvent
 import software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.isWithin
 import software.aws.toolkits.jetbrains.services.cwc.ChatConstants
@@ -92,12 +93,14 @@ import software.aws.toolkits.jetbrains.services.cwc.editor.context.ExtractionTri
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.file.FileContext
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
+import software.aws.toolkits.jetbrains.ui.feedback.TestGenFeedbackDialog
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AmazonqTelemetry
 import software.aws.toolkits.telemetry.FeatureId
 import software.aws.toolkits.telemetry.InteractionType
 import software.aws.toolkits.telemetry.MetricResult
+import software.aws.toolkits.telemetry.Status
 import software.aws.toolkits.telemetry.UiTelemetry
 import java.io.File
 import java.nio.file.Files
@@ -107,6 +110,12 @@ import java.time.Instant
 import java.util.UUID
 import software.amazon.awssdk.services.codewhispererstreaming.model.Position as StreamingPosition
 import software.amazon.awssdk.services.codewhispererstreaming.model.Range as StreamingRange
+
+data class TestCommandMessage(
+    val sender: String = "codetest",
+    val command: String = "test",
+    val type: String = "addAnswer",
+) : AmazonQMessage
 
 class CodeTestChatController(
     private val context: AmazonQAppInitContext,
@@ -167,13 +176,14 @@ class CodeTestChatController(
     override suspend fun processStartTestGen(message: IncomingCodeTestMessage.StartTestGen) {
         codeTestChatHelper.setActiveCodeTestTabId(message.tabId)
         val session = codeTestChatHelper.getActiveSession()
+        if (session.isGeneratingTests) {
+            return
+        }
+        sessionCleanUp(session.tabId)
         // check if IDE has active file open, yes return (fileName and filePath) else return null
         val project = context.project
         val fileInfo = checkActiveFileInIDE(project, message) ?: return
         session.programmingLanguage = fileInfo.fileLanguage
-        if (session.isGeneratingTests === true) {
-            return
-        }
         session.startTimeOfTestGeneration = Instant.now().toEpochMilli().toDouble()
         session.isGeneratingTests = true
 
@@ -241,26 +251,22 @@ class CodeTestChatController(
                     })
                 }
                 .build()
+            if (!fileInfo.fileInWorkspace) {
+                val messageContent =
+                    "<span style=\"color: #EE9D28;\">&#9888;<b> I can't generate tests for ${fileInfo.fileName}" +
+                        " because it's outside the project directory.</b><br></span> " +
+                        "I can still provide examples, instructions and code suggestions."
 
-            val messageContent = if (fileInfo.fileInWorkspace) {
-                "<span style=\"color: #EE9D28;\">&#9888;<b> ${fileInfo.fileLanguage.languageId} is not a " +
-                    "language I support specialized unit test generation for at the moment.</b><br></span>The languages " +
-                    "I support now are Python and Java. I can still provide examples, instructions and code suggestions."
-            } else {
-                "<span style=\"color: #EE9D28;\">&#9888;<b> I can't generate tests for ${fileInfo.fileName}" +
-                    " because it's outside the project directory.</b><br></span> " +
-                    "I can still provide examples, instructions and code suggestions."
+                codeTestChatHelper.addNewMessage(
+                    CodeTestChatMessageContent(
+                        message = messageContent,
+                        type = ChatMessageType.Answer,
+                        canBeVoted = false
+                    ),
+                    message.tabId,
+                    false
+                )
             }
-
-            codeTestChatHelper.addNewMessage(
-                CodeTestChatMessageContent(
-                    message = messageContent,
-                    type = ChatMessageType.Answer,
-                    canBeVoted = false
-                ),
-                message.tabId,
-                false
-            )
             testResponseMessageId = codeTestChatHelper.addAnswer(
                 CodeTestChatMessageContent(
                     message = "",
@@ -272,9 +278,6 @@ class CodeTestChatController(
                 promptInputDisabledState = true,
             )
             // Send Request to Sync UTG API
-            val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
-                // this should never happen because it should have been handled upstream by [AuthController]
-                ?: error("connection was found to be null")
             val contextExtractor = ActiveFileContextExtractor.create(fqnWebviewAdapter = null, project = project)
             val activeFileContext = ActiveFileContext(
                 fileContext = FileContext(
@@ -296,7 +299,7 @@ class CodeTestChatController(
                 useRelevantDocuments = false,
             )
 
-            val client = AwsClientManager.getInstance().getClient<CodeWhispererStreamingAsyncClient>(connection.getConnectionSettings())
+            val client = QRegionProfileManager.getInstance().getQClient<CodeWhispererStreamingAsyncClient>(project)
             val request = requestData.toChatRequest()
             client.generateAssistantResponse(request, responseHandler).await()
             // TODO: Need to send isCodeBlockSelected field
@@ -310,7 +313,8 @@ class CodeTestChatController(
                     credentialStartUrl = getStartUrl(project),
                     result = MetricResult.Succeeded,
                     perfClientLatency = (Instant.now().toEpochMilli() - session.startTimeOfTestGeneration),
-                    requestId = id
+                    requestId = id,
+                    status = Status.ACCEPTED,
                 )
             }
             session.isGeneratingTests = false
@@ -408,6 +412,7 @@ class CodeTestChatController(
             .build()
         return GenerateAssistantResponseRequest.builder()
             .conversationState(conversationState)
+            .profileArn(QRegionProfileManager.getInstance().activeProfile(context.project)?.arn)
             .build()
     }
 
@@ -563,7 +568,7 @@ class CodeTestChatController(
                     session.linesOfCodeGenerated = lineDifference.coerceAtLeast(0)
                     session.charsOfCodeGenerated = charDifference.coerceAtLeast(0)
                     session.latencyOfTestGeneration = (Instant.now().toEpochMilli() - session.startTimeOfTestGeneration)
-                    UiTelemetry.click(null as Project?, "unitTestGeneration_viewDiff")
+                    UiTelemetry.click(context.project, "unitTestGeneration_viewDiff")
 
                     val buttonList = mutableListOf<Button>()
                     buttonList.add(
@@ -623,22 +628,37 @@ class CodeTestChatController(
                     val manager = CodeWhispererCodeReferenceManager.getInstance(context.project)
                     references.forEach { ref ->
                         var referenceContentSpan: Span? = null
-                        ref.recommendationContentSpan?.let {
-                            referenceContentSpan = Span.builder().start(ref.recommendationContentSpan.start).end(ref.recommendationContentSpan.end).build()
+                        ref.recommendationContentSpan()?.let {
+                            referenceContentSpan = Span.builder().start(ref.recommendationContentSpan().start())
+                                .end(ref.recommendationContentSpan().end()).build()
                         }
                         val reference = Reference.builder().url(
-                            ref.url
-                        ).licenseName(ref.licenseName).repository(ref.repository).recommendationContentSpan(referenceContentSpan).build()
+                            ref.url()
+                        ).licenseName(ref.licenseName()).repository(ref.repository()).recommendationContentSpan(referenceContentSpan).build()
                         var originalContent: String? = null
-                        ref.recommendationContentSpan?.let {
+                        ref.recommendationContentSpan()?.let {
                             originalContent = session.generatedTestDiffs.values.first().substring(
-                                ref.recommendationContentSpan.start,
-                                ref.recommendationContentSpan.end
+                                ref.recommendationContentSpan().start(),
+                                ref.recommendationContentSpan().end()
                             )
                         }
                         LOG.debug { "Original code content from reference span: $originalContent" }
                         withContext(EDT) {
-                            manager.addReferenceLogPanelEntry(reference = reference, null, null, originalContent?.split("\n"))
+                            // TODO flare: hook /test references with flare correctly, this is only a compile error fix which is not tested
+                            manager.addReferenceLogPanelEntry(
+                                reference = InlineCompletionReference(
+                                    referenceName = reference.repository(),
+                                    referenceUrl = reference.url(),
+                                    licenseName = reference.licenseName(),
+                                    position = InlineCompletionReferencePosition(
+                                        startCharacter = reference.recommendationContentSpan().start(),
+                                        endCharacter = reference.recommendationContentSpan().end()
+                                    )
+                                ),
+                                null,
+                                null,
+                                originalContent?.split("\n")
+                            )
                             manager.toolWindow?.show()
                         }
                     }
@@ -660,7 +680,7 @@ class CodeTestChatController(
                         testGenerationEventResponse.responseMetadata().requestId()}"
                 }
 
-                UiTelemetry.click(null as Project?, "unitTestGeneration_acceptDiff")
+                UiTelemetry.click(context.project, "unitTestGeneration_acceptDiff")
 
                 AmazonqTelemetry.utgGenerateTests(
                     cwsprChatProgrammingLanguage = session.programmingLanguage.languageId,
@@ -682,16 +702,17 @@ class CodeTestChatController(
                     artifactsUploadDuration = session.artifactUploadDuration,
                     buildPayloadBytes = session.srcPayloadSize,
                     buildZipFileBytes = session.srcZipFileSize,
-                    requestId = session.startTestGenerationRequestId
+                    requestId = session.startTestGenerationRequestId,
+                    status = Status.ACCEPTED,
                 )
                 codeTestChatHelper.addAnswer(
                     CodeTestChatMessageContent(
                         message = message("testgen.message.success"),
                         type = ChatMessageType.Answer,
-                        canBeVoted = false
+                        canBeVoted = false,
+                        buttons = this.showFeedbackButton()
                     )
                 )
-                sessionCleanUp(session.tabId)
                 codeTestChatHelper.updateUI(
                     promptInputDisabledState = false,
                     promptInputPlaceholder = message("testgen.placeholder.enter_slash_quick_actions"),
@@ -837,7 +858,8 @@ class CodeTestChatController(
                     CodeTestChatMessageContent(
                         message = message("testgen.message.success"),
                         type = ChatMessageType.Answer,
-                        canBeVoted = false
+                        canBeVoted = false,
+                        buttons = this.showFeedbackButton()
                     )
                 )
                 val testGenerationEventResponse = client.sendTestGenerationEvent(
@@ -878,9 +900,13 @@ class CodeTestChatController(
                     artifactsUploadDuration = session.artifactUploadDuration,
                     buildPayloadBytes = session.srcPayloadSize,
                     buildZipFileBytes = session.srcZipFileSize,
-                    requestId = session.startTestGenerationRequestId
+                    requestId = session.startTestGenerationRequestId,
+                    status = Status.REJECTED,
                 )
-                sessionCleanUp(message.tabId)
+            }
+            "utg_feedback" -> {
+                sendFeedback()
+                UiTelemetry.click(context.project, "unitTestGeneration_provideFeedback")
             }
             "utg_skip_and_finish" -> {
                 codeTestChatHelper.addAnswer(
@@ -1293,7 +1319,6 @@ class CodeTestChatController(
                 "Processing message: $message " +
                 "tabId: $tabId"
         }
-        broadcastQEvent(QFeatureEvent.INVOCATION)
         when (session.conversationState) {
             ConversationState.WAITING_FOR_BUILD_COMMAND_INPUT -> handleBuildCommandInput(session, message)
             ConversationState.WAITING_FOR_REGENERATE_INPUT -> handleRegenerateInput(session, message)
@@ -1367,6 +1392,33 @@ class CodeTestChatController(
             promptInputDisabledState = true,
         )
         println(message)
+    }
+
+    private fun sendFeedback() {
+        runInEdt {
+            TestGenFeedbackDialog(
+                context.project,
+                codeTestChatHelper.getActiveSession().startTestGenerationRequestId,
+                codeTestChatHelper.getActiveSession().testGenerationJob
+            ).show()
+        }
+    }
+
+    private fun showFeedbackButton(): MutableList<Button> {
+        val buttonList = mutableListOf<Button>()
+        if (isInternalUser(getStartUrl(context.project))) {
+            buttonList.add(
+                Button(
+                    "utg_feedback",
+                    message("testgen.button.feedback"),
+                    keepCardAfterClick = true,
+                    position = "outside",
+                    status = "info",
+                    icon = "comment"
+                ),
+            )
+        }
+        return buttonList
     }
 
     companion object {

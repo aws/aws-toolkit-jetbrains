@@ -23,6 +23,9 @@ import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileWatcher
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.amazonq.gettingstarted.QActionGroups.Q_SIGNED_OUT_ACTION_GROUP
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileSelectedListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomizationListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.QStatusBarLoggedInActionGroup
@@ -53,7 +56,7 @@ class CodeWhispererStatusBarWidget(project: Project) :
         ApplicationManager.getApplication().messageBus.connect(this).subscribe(
             BearerTokenProviderListener.TOPIC,
             object : BearerTokenProviderListener {
-                override fun onChange(providerId: String, newScopes: List<String>?) {
+                override fun onProviderChange(providerId: String, newScopes: List<String>?) {
                     statusBar.updateWidget(ID)
                 }
             }
@@ -73,6 +76,20 @@ class CodeWhispererStatusBarWidget(project: Project) :
             object : ToolkitConnectionManagerListener {
                 override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
                     statusBar.updateWidget(ID)
+                }
+            }
+        )
+
+        ApplicationManager.getApplication().messageBus.connect(this).subscribe(
+            QRegionProfileSelectedListener.TOPIC,
+            object : QRegionProfileSelectedListener {
+                override fun onProfileSelected(
+                    project: Project,
+                    profile: QRegionProfile?,
+                ) {
+                    if (project == this@CodeWhispererStatusBarWidget.project) {
+                        statusBar.updateWidget(ID)
+                    }
                 }
             }
         )
@@ -121,7 +138,7 @@ class CodeWhispererStatusBarWidget(project: Project) :
     }
 
     override fun getIcon(): Icon =
-        if (isQExpired(project)) {
+        if (isQExpired(project) || QRegionProfileManager.getInstance().isPendingProfileSelection(project)) {
             AllIcons.General.BalloonWarning
         } else if (!isQConnected(project)) {
             AllIcons.RunConfigurations.TestState.Run

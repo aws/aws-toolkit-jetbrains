@@ -24,3 +24,13 @@ dependencies {
 
     testFixturesApi(testFixtures(project(":plugin-core:jetbrains-community")))
 }
+
+// hack because our test structure currently doesn't make complete sense
+tasks.prepareTestSandbox {
+    val pluginXmlJar = project(":plugin-amazonq").tasks.jar
+
+    dependsOn(pluginXmlJar)
+    from(pluginXmlJar) {
+        into(intellijPlatform.projectName.map { "$it/lib" })
+    }
+}

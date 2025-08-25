@@ -8,8 +8,8 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtil
 import software.aws.toolkits.jetbrains.common.util.resolveAndCreateOrUpdateFile
 import software.aws.toolkits.jetbrains.common.util.resolveAndDeleteFile
-import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
+import software.aws.toolkits.jetbrains.services.amazonq.project.FeatureDevSessionContext
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CODE_GENERATION_RETRY_LIMIT
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ConversationIdNotFoundException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FEATURE_NAME
@@ -130,14 +130,13 @@ class Session(val tabID: String, val project: Project) {
     ) {
         val newFilePaths = filePaths.filter { !it.rejected && !it.changeApplied }
         val newDeletedFiles = deletedFiles.filter { !it.rejected && !it.changeApplied }
-        val selectedSourceFolder = context.selectedSourceFolder.toNioPath()
 
         runCatching {
             var insertedLines = 0
             var insertedCharacters = 0
             filePaths.forEach { file ->
                 // FIXME: Ideally, the before content should be read from the uploaded context instead of from disk, to avoid drift
-                val before = selectedSourceFolder
+                val before = context.addressableRoot.toNioPath()
                     .resolve(file.zipFilePath)
                     .toFile()
                     .let { f ->
@@ -174,7 +173,7 @@ class Session(val tabID: String, val project: Project) {
         ReferenceLogController.addReferenceLog(references, project)
 
         // Taken from https://intellij-support.jetbrains.com/hc/en-us/community/posts/206118439-Refresh-after-external-changes-to-project-structure-and-sources
-        VfsUtil.markDirtyAndRefresh(true, true, true, context.selectedSourceFolder)
+        VfsUtil.markDirtyAndRefresh(true, true, true, context.addressableRoot)
     }
 
 // Suppressing because insertNewFiles needs to be a suspend function in order to be tested
@@ -182,10 +181,8 @@ class Session(val tabID: String, val project: Project) {
     suspend fun insertNewFiles(
         filePaths: List<NewFileZipInfo>,
     ) {
-        val selectedSourceFolder = context.selectedSourceFolder.toNioPath()
-
         filePaths.forEach {
-            resolveAndCreateOrUpdateFile(selectedSourceFolder, it.zipFilePath, it.fileContent)
+            resolveAndCreateOrUpdateFile(context.addressableRoot.toNioPath(), it.zipFilePath, it.fileContent)
             it.changeApplied = true
         }
     }
@@ -195,10 +192,8 @@ class Session(val tabID: String, val project: Project) {
     suspend fun applyDeleteFiles(
         deletedFiles: List<DeletedFileInfo>,
     ) {
-        val selectedSourceFolder = context.selectedSourceFolder.toNioPath()
-
         deletedFiles.forEach {
-            resolveAndDeleteFile(selectedSourceFolder, it.zipFilePath)
+            resolveAndDeleteFile(context.addressableRoot.toNioPath(), it.zipFilePath)
             it.changeApplied = true
         }
     }

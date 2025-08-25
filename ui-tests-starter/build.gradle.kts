@@ -9,16 +9,26 @@ plugins {
     id("toolkit-kotlin-conventions")
     id("toolkit-intellij-plugin")
 
-    id("org.jetbrains.intellij.platform.base")
+    id("org.jetbrains.intellij.platform")
 }
 
 val ideProfile = IdeVersions.ideProfile(project)
+val testPlugins by configurations.registering
 
-// Add our source sets per IDE profile version (i.e. src-211)
 sourceSets {
     test {
-        java.srcDirs(findFolders(project, "tst", ideProfile))
-        resources.srcDirs(findFolders(project, "tst-resources", ideProfile))
+        java.setSrcDirs(findFolders(project, "tst-prep", ideProfile))
+        resources.setSrcDirs(findFolders(project, "tst-resources", ideProfile))
+    }
+}
+
+val uiTestSource = sourceSets.create("uiTest") {
+    java.setSrcDirs(findFolders(project, "tst", ideProfile))
+}
+
+idea {
+    module {
+        testSources.from(uiTestSource.allSource.srcDirs)
     }
 }
 
@@ -27,25 +37,40 @@ intellijPlatform {
     instrumentCode = false
 }
 
-tasks.initializeIntellijPlatformPlugin {
-    enabled = false
+val uiTestImplementation by configurations.getting
+val uiTestRuntimeOnly by configurations.getting
+
+configurations.getByName(uiTestSource.compileClasspathConfigurationName) {
+    extendsFrom(uiTestImplementation)
 }
 
-tasks.verifyPluginProjectConfiguration {
-    runtimeDirectory.set(null as File?)
-    enabled = false
+configurations.getByName(uiTestSource.runtimeClasspathConfigurationName) {
+    extendsFrom(uiTestImplementation)
 }
-
-val testPlugins by configurations.registering
 
 dependencies {
     // should really be set by the BOM, but too much work to figure out right now
-    testImplementation("org.kodein.di:kodein-di-jvm:7.20.2")
+    uiTestImplementation("org.kodein.di:kodein-di-jvm:7.20.2")
+    uiTestImplementation(platform(libs.junit5.bom))
+    uiTestImplementation(libs.junit5.jupiter)
+    uiTestImplementation(libs.assertj)
+
+    // not sure why not coming in transitively for starter
+    uiTestRuntimeOnly(libs.kotlin.coroutines)
+
     intellijPlatform {
-        // shouldn't be needed? but IsolationException
         val version = ideProfile.community.sdkVersion
         intellijIdeaCommunity(version, !version.contains("SNAPSHOT"))
-        testFramework(TestFrameworkType.Starter)
+
+        localPlugin(project(":plugin-core"))
+        testImplementation(project(":plugin-core:core"))
+        testImplementation(project(":plugin-core:jetbrains-community"))
+        testImplementation(testFixtures(project(":plugin-core:jetbrains-community")))
+
+        testFramework(TestFrameworkType.Bundled)
+        testFramework(TestFrameworkType.JUnit5)
+
+        testFramework(TestFrameworkType.Starter, configurationName = uiTestImplementation.name)
     }
 
     testPlugins(project(":plugin-amazonq", "pluginZip"))
@@ -53,12 +78,29 @@ dependencies {
 }
 
 tasks.test {
+    enabled = false
+}
+
+val prepareAmazonQTest by intellijPlatformTesting.testIde.registering {
+    task {
+        useJUnitPlatform()
+    }
+}
+
+tasks.register<Test>("uiTest") {
+    testClassesDirs = uiTestSource.output.classesDirs
+    classpath = uiTestSource.runtimeClasspath
+
+    dependsOn(prepareAmazonQTest)
     dependsOn(testPlugins)
-
-    useJUnitPlatform()
-
     systemProperty("ui.test.plugins", testPlugins.get().asPath)
     systemProperty("org.gradle.project.ideProfileName", ideProfile.name)
+    val testSuite = System.getenv("TEST_DIR") ?: ""
+    if (testSuite.isNotBlank()) {
+        filter {
+            includeTestsMatching(testSuite)
+        }
+    }
 }
 
 // hack to disable ui tests in ./gradlew check

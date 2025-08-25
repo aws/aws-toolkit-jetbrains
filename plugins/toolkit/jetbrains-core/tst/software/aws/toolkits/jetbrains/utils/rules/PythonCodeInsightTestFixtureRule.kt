@@ -118,7 +118,7 @@ internal class PlatformPythonModuleType : PythonModuleTypeBase<EmptyModuleBuilde
 }
 
 class PyTestSdk private constructor(private val version: LanguageLevel) : ProjectJdkImpl("PySdk $version", PyTestSdkType(version)) {
-    override fun getVersionString(): String = "FakeCPython $version"
+    override fun getVersionString(): String = version.toString()
 
     override fun getSdkAdditionalData(): SdkAdditionalData = PythonSdkAdditionalData(PyFlavorAndData(PyFlavorData.Empty, FakeCPython(version)))
 

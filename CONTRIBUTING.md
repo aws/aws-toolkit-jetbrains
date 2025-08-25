@@ -24,6 +24,7 @@ reported the issue. Please try to include as much information as you can. Detail
 
 * [Java 21](https://docs.aws.amazon.com/corretto/latest/corretto-21-ug/downloads-list.html)
 * [Git](https://git-scm.com/)
+  * If you run into a build issue on first build, ensure Git is configured to handle longer paths (common with Windows - run command as Admin): `git config --system core.longpaths true`
 * .NET 6
   * In theory, you can use a higher version, however we build with .NET 6 in CI
   * macOS steps:
@@ -31,6 +32,7 @@ reported the issue. Please try to include as much information as you can. Detail
     brew install dotnet@6
     ```
   * If Gradle cannot find `dotnet`, run `./gradlew --stop` and `./gradlew projects` to reload the daemon. Note that this should be done in your terminal as invoking Gradle through the IDE will use the IDE's cached PATH.
+* It is recommended to [launch your IDE from the terminal](https://www.jetbrains.com/help/idea/working-with-the-ide-features-from-command-line.html) due to a known issue with Gradle/Java 21 where the Gradle daemon does not respect your PATH variable when the IDE is started from the desktop/Toolbox.
 
 ### Instructions
 

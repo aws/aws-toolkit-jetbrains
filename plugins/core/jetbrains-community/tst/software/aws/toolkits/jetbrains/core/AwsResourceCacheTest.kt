@@ -9,7 +9,7 @@ import com.intellij.testFramework.RuleChain
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Before
@@ -243,7 +243,7 @@ class AwsResourceCacheTest {
         whenever(mockResource.fetch(any())).thenReturn("hello")
         val viewResource = Resource.view(mockResource) { toList() }
 
-        val filteredAndMapped = viewResource.filter { it != 'l' }.map { it.toUpperCase() }
+        val filteredAndMapped = viewResource.filter { it != 'l' }.map { it.uppercaseChar() }
         assertThat(sut.getResource(filteredAndMapped, connectionSettings)).hasValue(listOf('H', 'E', 'O'))
 
         val find = viewResource.find { it == 'l' }
@@ -484,7 +484,7 @@ class AwsResourceCacheTest {
         whenever(mockResource.fetch(any())).then {
             latch.await()
             // exception gets thrown fast enough where the second fetchIfNeeded check occurs after the first call throws
-            runBlockingTest {
+            runTest {
                 delay(500)
             }
             throw RuntimeException("Boom")

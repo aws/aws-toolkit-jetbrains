@@ -133,7 +133,7 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
         project.messageBus.connect(toolWindow.disposable).subscribe(
             BearerTokenProviderListener.TOPIC,
             object : BearerTokenProviderListener {
-                override fun onChange(providerId: String, newScopes: List<String>?) {
+                override fun onProviderChange(providerId: String, newScopes: List<String>?) {
                     if (ToolkitConnectionManager.getInstance(project)
                             .connectionStateForFeature(CodeCatalystConnection.getInstance()) == BearerTokenAuthState.AUTHORIZED
                     ) {

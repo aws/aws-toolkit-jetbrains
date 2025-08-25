@@ -6,7 +6,6 @@ package software.aws.toolkits.jetbrains.gateway.connection.workflow
 import com.jetbrains.gateway.api.GatewayConnectionHandle
 import com.jetbrains.gateway.thinClientLink.LinkedClientManager
 import com.jetbrains.rd.util.lifetime.LifetimeDefinition
-import com.jetbrains.rd.util.lifetime.onTermination
 import com.jetbrains.rd.util.reactive.adviseEternal
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -50,8 +49,11 @@ class StartBackend(
         val clientHandle = ThinClientTrackerService.getInstance().associate(envId) {
             val start = System.currentTimeMillis()
             val thinClientHandle = try {
-                LinkedClientManager.getInstance()
-                    .startNewClient(lifetime, localLink, URLEncoder.encode(message("caws.workspace.backend.title"), Charsets.UTF_8)) {
+                LinkedClientManager.getInstance().startNewClient(
+                    lifetime,
+                    localLink,
+                    URLEncoder.encode(message("caws.workspace.backend.title"), Charsets.UTF_8),
+                    onStarted = {
                         CodecatalystTelemetry.devEnvironmentWorkflowStatistic(
                             project = null,
                             userId = lazilyGetUserId(),
@@ -59,7 +61,9 @@ class StartBackend(
                             duration = System.currentTimeMillis() - start.toDouble(),
                             codecatalystDevEnvironmentWorkflowStep = "startThinClient",
                         )
-                    }
+                    },
+                    enableBeforeRunHooks = true
+                )
             } catch (e: Throwable) {
                 CodecatalystTelemetry.devEnvironmentWorkflowStatistic(
                     project = null,

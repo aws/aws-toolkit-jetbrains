@@ -8,20 +8,21 @@ import { Connector } from '../connector'
 import { TabType, TabsStorage } from '../storages/tabsStorage'
 import { WelcomeFollowupType } from '../apps/amazonqCommonsConnector'
 import { AuthFollowUpType } from './generator'
+import {MynahUIRef} from "../main";
 
 export interface FollowUpInteractionHandlerProps {
-    mynahUI: MynahUI
+    mynahUIRef: MynahUIRef
     connector: Connector
     tabsStorage: TabsStorage
 }
 
 export class FollowUpInteractionHandler {
-    private mynahUI: MynahUI
+    private mynahUIRef: MynahUIRef
     private connector: Connector
     private tabsStorage: TabsStorage
 
     constructor(props: FollowUpInteractionHandlerProps) {
-        this.mynahUI = props.mynahUI
+        this.mynahUIRef = props.mynahUIRef
         this.connector = props.connector
         this.tabsStorage = props.tabsStorage
     }
@@ -50,16 +51,16 @@ export class FollowUpInteractionHandler {
         // which will cause an api call
         // then we can set the loading state to true
         if (followUp.prompt !== undefined) {
-            this.mynahUI.updateStore(tabID, {
+            this.mynahUI?.updateStore(tabID, {
                 loadingChat: true,
                 cancelButtonWhenLoading: false,
                 promptInputDisabledState: true,
             })
-            this.mynahUI.addChatItem(tabID, {
+            this.mynahUI?.addChatItem(tabID, {
                 type: ChatItemType.PROMPT,
                 body: followUp.prompt,
             })
-            this.mynahUI.addChatItem(tabID, {
+            this.mynahUI?.addChatItem(tabID, {
                 type: ChatItemType.ANSWER_STREAM,
                 body: '',
             })
@@ -79,7 +80,7 @@ export class FollowUpInteractionHandler {
 
     public onWelcomeFollowUpClicked(tabID: string, welcomeFollowUpType: WelcomeFollowupType) {
         if (welcomeFollowUpType === 'continue-to-chat') {
-            this.mynahUI.addChatItem(tabID, {
+            this.mynahUI?.addChatItem(tabID, {
                 type: ChatItemType.ANSWER,
                 body: 'Ok, please write your question below.',
             })
@@ -107,15 +108,15 @@ export class FollowUpInteractionHandler {
         // which will cause an api call
         // then we can set the loading state to true
         if (followUp.prompt !== undefined) {
-            this.mynahUI.updateStore(tabID, {
+            this.mynahUI?.updateStore(tabID, {
                 loadingChat: true,
                 promptInputDisabledState: true,
             })
-            this.mynahUI.addChatItem(tabID, {
+            this.mynahUI?.addChatItem(tabID, {
                 type: ChatItemType.PROMPT,
                 body: followUp.prompt,
             })
-            this.mynahUI.addChatItem(tabID, {
+            this.mynahUI?.addChatItem(tabID, {
                 type: ChatItemType.ANSWER_STREAM,
                 body: '',
             })
@@ -130,5 +131,9 @@ export class FollowUpInteractionHandler {
             }
         }
         this.connector.onFollowUpClicked(tabID, messageId, followUp)
+    }
+
+    private get mynahUI(): MynahUI | undefined {
+        return this.mynahUIRef.mynahUI
     }
 }

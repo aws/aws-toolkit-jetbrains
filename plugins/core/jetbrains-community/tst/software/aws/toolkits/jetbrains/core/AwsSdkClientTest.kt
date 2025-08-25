@@ -122,6 +122,7 @@ class AwsSdkClientTest {
         val selfSignedJks = AwsSdkClientTest::class.java.getResource("/selfSigned.jks")
         return WireMockRule(
             wireMockConfig()
+                .httpDisabled(true)
                 .dynamicHttpsPort()
                 .keystorePath(selfSignedJks.toString())
                 .keystorePassword("changeit")

@@ -16,6 +16,6 @@ class FeatureDevFeedbackDialog(project: Project) : FeedbackDialog(project) {
     }
 
     init {
-        title = message("feedback.title.amazonq.feature_dev")
+        title = message("feedback.title.amazonq.send_feedback")
     }
 }

@@ -8,6 +8,12 @@ env:
 phases:
   install:
     commands:
+      # force install java21 while we work through path issues
+      - |
+        $javaName = "C:\Program Files\Amazon Corretto" | ForEach-Object {
+          ls $_ | Where-Object {$_ -Like "jdk*"} | Sort-Object -Descending -Property Name | Select-Object -first 1 -expandproperty Name
+        }
+        $JAVA_HOME = "C:\Program Files\Amazon Corretto\$javaName"
       - |
         if(-Not($Env:CODE_COV_TOKEN -eq $null)) {
             [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12;
@@ -21,6 +27,8 @@ phases:
         # See https://github.com/NuGet/NuGet.Client/pull/4259
         $Env:NUGET_EXPERIMENTAL_CHAIN_BUILD_RETRY_POLICY = "3,1000"
 
+        $Env:JAVA_HOME = $JAVA_HOME
+
         if ($Env:CODEARTIFACT_DOMAIN_NAME -and $Env:CODEARTIFACT_REPO_NAME) {
           $Env:CODEARTIFACT_URL=aws codeartifact get-repository-endpoint --domain $Env:CODEARTIFACT_DOMAIN_NAME --repository $Env:CODEARTIFACT_REPO_NAME --format maven --query repositoryEndpoint --output text
           # $Env:CODEARTIFACT_NUGET_URL=aws codeartifact get-repository-endpoint --domain $Env:CODEARTIFACT_DOMAIN_NAME --repository $Env:CODEARTIFACT_REPO_NAME --format nuget --query repositoryEndpoint --output text
@@ -28,7 +36,7 @@ phases:
         }
 
          # Rider is very expensive (spikes our CI jobs to 50% CPU, so let it do the prep work in parallel, but run tests later
-        ./gradlew -PideProfileName="$Env:ALTERNATIVE_IDE_PROFILE_NAME" :plugin-toolkit:intellij-standalone:check :plugin-toolkit:jetbrains-rider:compileTestKotlin --info --console plain --continue
+        ./gradlew -PideProfileName="$Env:ALTERNATIVE_IDE_PROFILE_NAME" :plugin-toolkit:intellij-standalone:check :plugin-toolkit:jetbrains-rider:compileTestKotlin -x :plugin-toolkit:jetbrains-rider:check --info --console plain --continue
         if ($LastExitCode -ne 0) {
           Write-Host "Command failed with exit code $LastExitCode"
           exit -1

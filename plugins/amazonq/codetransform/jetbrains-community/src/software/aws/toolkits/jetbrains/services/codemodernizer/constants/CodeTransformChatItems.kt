@@ -44,6 +44,14 @@ private val cancelUserSelectionButton = Button(
     id = CodeTransformButtonId.CancelTransformation.id,
 )
 
+// used to continue transformation without providing custom YAML file
+private val continueTransformationButton = Button(
+    keepCardAfterClick = false,
+    waitMandatoryFormItems = false,
+    text = "Continue without this",
+    id = CodeTransformButtonId.ContinueTransformation.id,
+)
+
 private val confirmUserSelectionLanguageUpgradeButton = Button(
     keepCardAfterClick = false,
     waitMandatoryFormItems = true,
@@ -72,11 +80,11 @@ private val confirmSkipTestsSelectionButton = Button(
     id = CodeTransformButtonId.ConfirmSkipTests.id,
 )
 
-private val confirmOneOrMultipleDiffsSelectionButton = Button(
-    keepCardAfterClick = false,
+private val confirmCustomDependencyVersionsButton = Button(
+    keepCardAfterClick = true,
     waitMandatoryFormItems = true,
-    text = message("codemodernizer.chat.message.button.confirm"),
-    id = CodeTransformButtonId.ConfirmOneOrMultipleDiffs.id,
+    text = "Select file",
+    id = CodeTransformButtonId.ConfirmCustomDependencyVersions.id,
 )
 
 private val openMvnBuildButton = Button(
@@ -215,22 +223,6 @@ private val selectSkipTestsFlagFormItem = FormItem(
     )
 )
 
-private val selectOneOrMultipleDiffsFlagFormItem = FormItem(
-    id = CodeTransformFormItemId.SelectOneOrMultipleDiffsFlag.id,
-    title = message("codemodernizer.chat.form.user_selection.item.choose_one_or_multiple_diffs_option"),
-    mandatory = true,
-    options = listOf(
-        FormItemOption(
-            label = message("codemodernizer.chat.message.one_or_multiple_diffs_form.one_diff"),
-            value = message("codemodernizer.chat.message.one_or_multiple_diffs_form.one_diff"),
-        ),
-        FormItemOption(
-            label = message("codemodernizer.chat.message.one_or_multiple_diffs_form.multiple_diffs"),
-            value = message("codemodernizer.chat.message.one_or_multiple_diffs_form.multiple_diffs"),
-        )
-    )
-)
-
 private fun getUserLanguageUpgradeSelectionFormattedMarkdown(moduleName: String, targetJdkVersion: String): String = """
         ### ${message("codemodernizer.chat.prompt.title.details")}
         -------------
@@ -267,8 +259,8 @@ fun buildChooseTransformationObjectiveChatContent() = CodeTransformChatMessageCo
     type = CodeTransformChatMessageType.FinalizedAnswer,
 )
 
-fun buildObjectiveChosenChatContent(objective: String) = CodeTransformChatMessageContent(
-    message = objective,
+fun buildUserReplyChatContent(reply: String) = CodeTransformChatMessageContent(
+    message = reply,
     type = CodeTransformChatMessageType.Prompt,
 )
 
@@ -323,30 +315,10 @@ fun buildUserInputSkipTestsFlagChatContent(): CodeTransformChatMessageContent =
         formItems = listOf(selectSkipTestsFlagFormItem),
         type = CodeTransformChatMessageType.FinalizedAnswer,
     )
-fun buildUserInputOneOrMultipleDiffsChatIntroContent(version: String): CodeTransformChatMessageContent =
-    CodeTransformChatMessageContent(
-        message = message("codemodernizer.chat.message.one_or_multiple_diffs", version.substring(4)), // extract "17" / "21" from "JDK_17" / "JDK_21"
-        type = CodeTransformChatMessageType.FinalizedAnswer,
-    )
-fun buildUserInputOneOrMultipleDiffsFlagChatContent(): CodeTransformChatMessageContent =
-    CodeTransformChatMessageContent(
-        message = message("codemodernizer.chat.form.user_selection.title"),
-        buttons = listOf(
-            confirmOneOrMultipleDiffsSelectionButton,
-            cancelUserSelectionButton,
-        ),
-        formItems = listOf(selectOneOrMultipleDiffsFlagFormItem),
-        type = CodeTransformChatMessageType.FinalizedAnswer,
-    )
 
 fun buildUserSkipTestsFlagSelectionChatContent(skipTestsSelection: String) = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.FinalizedAnswer,
     message = message("codemodernizer.chat.message.skip_tests_form.response", skipTestsSelection.lowercase())
-)
-
-fun buildUserOneOrMultipleDiffsSelectionChatContent(oneOrMultipleDiffsSelection: String) = CodeTransformChatMessageContent(
-    type = CodeTransformChatMessageType.FinalizedAnswer,
-    message = message("codemodernizer.chat.message.one_or_multiple_diffs_form.response", oneOrMultipleDiffsSelection.lowercase())
 )
 
 fun buildUserInputLanguageUpgradeChatContent(project: Project, validationResult: ValidationResult): CodeTransformChatMessageContent {
@@ -372,6 +344,37 @@ fun buildUserInputSQLConversionMetadataChatContent() = CodeTransformChatMessageC
         confirmUserSelectionSQLConversionMetadataButton,
         cancelUserSelectionButton,
     ),
+    type = CodeTransformChatMessageType.FinalizedAnswer,
+)
+
+fun buildUserInputCustomDependencyVersionsChatContent(message: String) = CodeTransformChatMessageContent(
+    message = message,
+    buttons = listOf(
+        confirmCustomDependencyVersionsButton,
+        continueTransformationButton,
+    ),
+    type = CodeTransformChatMessageType.PendingAnswer,
+)
+
+fun buildPromptTargetJDKNameChatContent(version: String, currentJdkName: String?): CodeTransformChatMessageContent {
+    var message = message("codemodernizer.chat.message.enter_jdk_name", version)
+    if (currentJdkName != null) {
+        message += "\n\ncurrent: `$currentJdkName`"
+    }
+    return CodeTransformChatMessageContent(
+        message = message,
+        type = CodeTransformChatMessageType.FinalizedAnswer,
+    )
+}
+
+fun buildInvalidTargetJdkNameChatContent(jdkName: String) = CodeTransformChatMessageContent(
+    message = message("codemodernizer.chat.message.enter_jdk_name_error", jdkName),
+    type = CodeTransformChatMessageType.FinalizedAnswer,
+    followUps = listOf(startNewTransformFollowUp)
+)
+
+fun buildCustomDependencyVersionsFileValidChatContent() = CodeTransformChatMessageContent(
+    message = message("codemodernizer.chat.message.custom_dependency_upgrades_valid"),
     type = CodeTransformChatMessageType.FinalizedAnswer,
 )
 
@@ -416,6 +419,11 @@ fun buildSQLMetadataValidationErrorChatContent(errorReason: String) = CodeTransf
     message = errorReason,
 )
 
+fun buildCustomDependencyVersionsFileInvalidChatContent(missingKey: String) = CodeTransformChatMessageContent(
+    type = CodeTransformChatMessageType.FinalizedAnswer,
+    message = message("codemodernizer.chat.message.custom_dependency_upgrades_invalid", missingKey),
+)
+
 fun buildUserCancelledChatContent() = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.FinalizedAnswer,
     message = message("codemodernizer.chat.message.transform_cancelled_by_user"),
@@ -449,6 +457,11 @@ fun buildUserSQLConversionSelectionSummaryChatContent(moduleName: String, schema
 fun buildUserLanguageUpgradeSelectionSummaryChatContent(moduleName: String, targetJdkVersion: String) = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.Prompt,
     message = getUserLanguageUpgradeSelectionFormattedMarkdown(moduleName, targetJdkVersion)
+)
+
+fun buildContinueTransformationChatContent() = CodeTransformChatMessageContent(
+    type = CodeTransformChatMessageType.FinalizedAnswer,
+    message = message("codemodernizer.chat.message.custom_dependency_upgrades_continue"),
 )
 
 fun buildCompileLocalInProgressChatContent() = CodeTransformChatMessageContent(
@@ -547,7 +560,7 @@ fun buildTransformResumingChatContent() = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.PendingAnswer,
 )
 
-fun buildTransformResultChatContent(result: CodeModernizerJobCompletedResult, totalPatchFiles: Int? = null): CodeTransformChatMessageContent {
+fun buildTransformResultChatContent(result: CodeModernizerJobCompletedResult): CodeTransformChatMessageContent {
     val resultMessage = when (result) {
         is CodeModernizerJobCompletedResult.JobAbortedZipTooLarge -> {
             "${message(
@@ -561,18 +574,10 @@ fun buildTransformResultChatContent(result: CodeModernizerJobCompletedResult, to
             buildZipUploadFailedChatMessage(result.failureReason)
         }
         is CodeModernizerJobCompletedResult.JobCompletedSuccessfully -> {
-            if (totalPatchFiles == 1) {
-                message("codemodernizer.chat.message.result.success")
-            } else {
-                message("codemodernizer.chat.message.result.success.multiple_diffs")
-            }
+            message("codemodernizer.chat.message.result.success")
         }
         is CodeModernizerJobCompletedResult.JobPartiallySucceeded -> {
-            if (totalPatchFiles == 1) {
-                message("codemodernizer.chat.message.result.partially_success")
-            } else {
-                message("codemodernizer.chat.message.result.partially_success.multiple_diffs")
-            }
+            message("codemodernizer.chat.message.result.partially_success")
         }
         is CodeModernizerJobCompletedResult.JobFailed -> {
             message("codemodernizer.chat.message.result.fail_with_known_reason", result.failureReason)
@@ -599,7 +604,7 @@ fun buildTransformResultChatContent(result: CodeModernizerJobCompletedResult, to
         type = CodeTransformChatMessageType.FinalizedAnswer,
         message = resultMessage,
         buttons = if (result is CodeModernizerJobCompletedResult.JobPartiallySucceeded || result is CodeModernizerJobCompletedResult.JobCompletedSuccessfully) {
-            listOf(createViewDiffButton(if (totalPatchFiles == 1) "View diff" else "View diff 1/$totalPatchFiles"), viewSummaryButton)
+            listOf(createViewDiffButton("View diff"), viewSummaryButton)
         } else if (result is CodeModernizerJobCompletedResult.JobFailedInitialBuild && result.hasBuildLog) {
             listOf(viewBuildLog)
         } else {
@@ -763,13 +768,7 @@ fun buildDownloadFailureChatContent(downloadFailureReason: DownloadFailureReason
     return CodeTransformChatMessageContent(
         type = CodeTransformChatMessageType.FinalizedAnswer,
         message = "$message\n\n${message("codemodernizer.chat.message.validation.error.more_info", docLink)}",
-        buttons = if (downloadFailureReason.artifactType == TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS &&
-            (downloadFailureReason is DownloadFailureReason.OTHER || downloadFailureReason is DownloadFailureReason.SSL_HANDSHAKE_ERROR)
-        ) {
-            listOf(viewDiffButton, viewSummaryButton)
-        } else {
-            null
-        },
+        buttons = listOf(viewDiffButton, viewSummaryButton)
     )
 }
 
@@ -778,4 +777,5 @@ fun getDownloadedArtifactTextFromType(artifactType: TransformationDownloadArtifa
         TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS -> "upgraded code"
         TransformationDownloadArtifactType.LOGS -> "build log"
         TransformationDownloadArtifactType.UNKNOWN_TO_SDK_VERSION -> "code"
+        TransformationDownloadArtifactType.GENERATED_CODE -> "code"
     }
