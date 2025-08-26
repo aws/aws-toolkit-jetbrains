@@ -441,6 +441,26 @@ class TelemetryHelper(private val project: Project, private val sessionStorage: 
                     .credentialStartUrl(startUrl)
             }
         }
+
+        fun recordTelemetryIssueCommandAction(
+            findingId: String,
+            detectorId: String,
+            ruleId: String,
+            autoDetected: String,
+            startUrl: String,
+            metricName: String,
+            result: String,
+        ) {
+            Telemetry.amazonq.codeReviewTool.use {
+                it.reason(metricName)
+                    .setAttribute("findingId", findingId)
+                    .setAttribute("detectorId", detectorId)
+                    .setAttribute("ruleId", ruleId)
+                    .setAttribute("credentialStartUrl", startUrl)
+                    .setAttribute("autoDetected", autoDetected)
+                    .setAttribute("result", result)
+            }
+        }
     }
 }
 

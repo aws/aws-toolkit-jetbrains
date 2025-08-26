@@ -34,8 +34,8 @@ enum class EditorContextCommand(
         verb = "sendToPrompt",
         actionId = "aws.amazonq.sendToPrompt",
     ),
-    ExplainCodeScanIssue(
-        verb = "ExplainIssue",
-        actionId = "aws.amazonq.explainCodeScanIssue",
+    HandleCodeScanIssue(
+        verb = "HandleCodeScanIssue",
+        actionId = "aws.amazonq.handleCodeScanIssueCommand",
     ),
 }

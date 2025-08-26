@@ -10,9 +10,13 @@ import com.google.gson.Gson
 import com.intellij.ide.BrowserUtil
 import com.intellij.ide.util.RunOnceUtil
 import com.intellij.openapi.application.runInEdt
+import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.LocalFileSystem
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.jcef.JBCefJSQuery.Response
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
@@ -71,6 +75,8 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_TAB_BAR_ACTIONS
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_TAB_CHANGE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_TAB_REMOVE
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CODE_REVIEW_FINDINGS_SUFFIX
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.DISPLAY_FINDINGS_SUFFIX
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedQuickActionChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GET_SERIALIZED_CHAT_REQUEST_METHOD
@@ -107,10 +113,17 @@ import software.aws.toolkits.jetbrains.services.amazonqCodeTest.auth.isCodeTestA
 import software.aws.toolkits.jetbrains.services.amazonqDoc.auth.isDocAvailable
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.auth.isFeatureDevAvailable
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isCodeTransformAvailable
+import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanIssue
+import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanManager
+import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.Description
+import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.Recommendation
+import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.SuggestedFix
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererConfigurable
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.settings.MeetQSettings
 import software.aws.toolkits.telemetry.MetricResult
 import software.aws.toolkits.telemetry.Telemetry
+import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionException
 import java.util.function.Function
@@ -568,6 +581,32 @@ class BrowserConnector(
         }
     }
 
+    data class FlareCodeScanIssue(
+        val startLine: Int,
+        val endLine: Int,
+        val comment: String?,
+        val title: String,
+        val description: Description,
+        val detectorId: String,
+        val detectorName: String,
+        val findingId: String,
+        val ruleId: String?,
+        val relatedVulnerabilities: List<String>,
+        val severity: String,
+        val recommendation: Recommendation,
+        val suggestedFixes: List<SuggestedFix>,
+        val scanJobId: String,
+        val language: String,
+        val autoDetected: Boolean,
+        val filePath: String,
+        val findingContext: String,
+    )
+
+    data class AggregatedCodeScanIssue(
+        val filePath: String,
+        val issues: List<FlareCodeScanIssue>,
+    )
+
     private fun showResult(
         result: CompletableFuture<String>,
         partialResultToken: String,
@@ -581,10 +620,14 @@ class BrowserConnector(
                     throw error
                 }
                 chatCommunicationManager.removePartialChatMessage(partialResultToken)
+                val decryptedMessage = Gson().fromJson(value?.let { encryptionManager?.decrypt(it) }.orEmpty(), Map::class.java)
+                    as Map<String, *>
+                parseFindingsMessages(decryptedMessage)
+
                 val messageToChat = ChatCommunicationManager.convertToJsonToSendToChat(
                     SEND_CHAT_COMMAND_PROMPT,
                     tabId,
-                    value?.let { encryptionManager?.decrypt(it) }.orEmpty(),
+                    Gson().toJson(decryptedMessage),
                     isPartialResult = false
                 )
                 browser.postChat(messageToChat)
@@ -595,6 +638,85 @@ class BrowserConnector(
                 LOG.warn(e) { "Failed to send chat message" }
                 browser.postChat(chatCommunicationManager.getErrorUiMessage(tabId, e, partialResultToken))
             }
+        }
+    }
+
+    fun parseFindingsMessages(messagesMap: Map<String, *>) {
+        try {
+            val additionalMessages = messagesMap["additionalMessages"] as? MutableList<Map<String, Any>>
+            val findingsMessages = additionalMessages?.filter { message ->
+                if (message.contains("messageId")) {
+                    (message["messageId"] as String).endsWith(CODE_REVIEW_FINDINGS_SUFFIX) ||
+                        (message["messageId"] as String).endsWith(DISPLAY_FINDINGS_SUFFIX)
+                } else {
+                    false
+                }
+            }
+            val scannedFiles = mutableListOf<VirtualFile>()
+            if (findingsMessages != null) {
+                for (findingsMessage in findingsMessages) {
+                    additionalMessages.remove(findingsMessage)
+                    val gson = Gson()
+                    val jsonFindings = gson.fromJson(findingsMessage["body"] as String, List::class.java)
+                    val mappedFindings = mutableListOf<CodeWhispererCodeScanIssue>()
+                    for (aggregatedIssueUnformatted in jsonFindings) {
+                        val aggregatedIssue = gson.fromJson(gson.toJson(aggregatedIssueUnformatted), AggregatedCodeScanIssue::class.java)
+                        val file = LocalFileSystem.getInstance().findFileByIoFile(
+                            Path.of(aggregatedIssue.filePath).toFile()
+                        )
+                        if (file?.isDirectory == false) {
+                            scannedFiles.add(file)
+                            runReadAction {
+                                FileDocumentManager.getInstance().getDocument(file)
+                            }?.let { document ->
+                                for (issue in aggregatedIssue.issues) {
+                                    val endLineInDocument = minOf(maxOf(0, issue.endLine - 1), document.lineCount - 1)
+                                    val endCol = document.getLineEndOffset(endLineInDocument) - document.getLineStartOffset(endLineInDocument) + 1
+                                    val isIssueIgnored = CodeWhispererCodeScanManager.getInstance(project)
+                                        .isIgnoredIssue(issue.title, document, file, issue.startLine - 1)
+                                    if (isIssueIgnored) {
+                                        continue
+                                    }
+                                    mappedFindings.add(
+                                        CodeWhispererCodeScanIssue(
+                                            startLine = issue.startLine,
+                                            startCol = 1,
+                                            endLine = issue.endLine,
+                                            endCol = endCol,
+                                            file = file,
+                                            project = project,
+                                            title = issue.title,
+                                            description = issue.description,
+                                            detectorId = issue.detectorId,
+                                            detectorName = issue.detectorName,
+                                            findingId = issue.findingId,
+                                            ruleId = issue.ruleId,
+                                            relatedVulnerabilities = issue.relatedVulnerabilities,
+                                            severity = issue.severity,
+                                            recommendation = issue.recommendation,
+                                            suggestedFixes = issue.suggestedFixes,
+                                            codeSnippet = emptyList(),
+                                            isVisible = true,
+                                            autoDetected = issue.autoDetected,
+                                            scanJobId = issue.scanJobId,
+                                        ),
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    CodeWhispererCodeScanManager.getInstance(project)
+                        .addOnDemandIssues(
+                            mappedFindings,
+                            scannedFiles,
+                            CodeWhispererConstants.CodeAnalysisScope.AGENTIC
+                        )
+                    CodeWhispererCodeScanManager.getInstance(project).showCodeScanUI()
+                }
+            }
+        } catch (e: Exception) {
+            LOG.error { "Failed to parse findings message $e" }
         }
     }
 
