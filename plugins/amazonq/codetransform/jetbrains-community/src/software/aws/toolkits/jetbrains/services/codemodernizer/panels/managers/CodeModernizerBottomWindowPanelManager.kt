@@ -245,7 +245,12 @@ class CodeModernizerBottomWindowPanelManager(private val project: Project) : JPa
         return actionManager.createActionToolbar(ACTION_PLACE, group, false)
     }
 
-    fun handleJobTransition(new: TransformationStatus, plan: TransformationPlan?, sessionContext: CodeModernizerSessionContext, transformType: CodeTransformType) = invokeLater {
+    fun handleJobTransition(
+        new: TransformationStatus,
+        plan: TransformationPlan?,
+        sessionContext: CodeModernizerSessionContext,
+        transformType: CodeTransformType,
+    ) = invokeLater {
         if (new in listOf(
                 TransformationStatus.PLANNED,
                 TransformationStatus.TRANSFORMING,
