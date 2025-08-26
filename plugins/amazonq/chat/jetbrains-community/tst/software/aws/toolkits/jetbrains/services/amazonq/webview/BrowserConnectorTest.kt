@@ -30,6 +30,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.Descripti
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.Recommendation
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.SuggestedFix
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
+import software.aws.toolkits.jetbrains.utils.satisfiesKt
 
 class BrowserConnectorTest : AmazonQTestBase() {
     private lateinit var browserConnector: BrowserConnector
@@ -102,7 +103,15 @@ class BrowserConnectorTest : AmazonQTestBase() {
             }
         """.trimIndent()
 
-        browserConnector.parseFindingsMessages(findingsMessage)
+        assertThat(browserConnector.deserializeFindings(findingsMessage))
+            .singleElement()
+            .satisfiesKt {
+                assertThat(it.messageId).isEqualTo("test_codeReviewFindings")
+                assertThat(it.body).singleElement()
+                    .satisfiesKt { finding ->
+                        assertThat(finding.filePath).isEqualTo("/test/file.kt")
+                    }
+            }
     }
 
     @Test
@@ -122,7 +131,15 @@ class BrowserConnectorTest : AmazonQTestBase() {
             }
         """.trimIndent()
 
-        browserConnector.parseFindingsMessages(findingsMessage)
+        assertThat(browserConnector.deserializeFindings(findingsMessage))
+            .singleElement()
+            .satisfiesKt {
+                assertThat(it.messageId).isEqualTo("test_displayFindings")
+                assertThat(it.body).singleElement()
+                    .satisfiesKt { finding ->
+                        assertThat(finding.filePath).isEqualTo("/test/file.kt")
+                    }
+            }
     }
 
     @Test
@@ -145,7 +162,7 @@ class BrowserConnectorTest : AmazonQTestBase() {
                 whenever(mockFileDocumentManager.getDocument(mockVirtualFile)) doReturn mockDocument
                 whenever(mockCodeScanManager.isIgnoredIssue(any(), any(), any(), any())) doReturn false
 
-                val issue = BrowserConnector.FlareCodeScanIssue(
+                val issue = FlareCodeScanIssue(
                     startLine = 1, endLine = 1, comment = "Test comment", title = "Test Issue",
                     description = Description("Test description", "Test text"), detectorId = "test-detector",
                     detectorName = "Test Detector", findingId = "test-finding-id", ruleId = "test-rule",
@@ -156,13 +173,17 @@ class BrowserConnectorTest : AmazonQTestBase() {
                     filePath = "/test/file.kt", findingContext = "test context"
                 )
 
-                val aggregatedIssue = BrowserConnector.AggregatedCodeScanIssue("/test/file.kt", listOf(issue))
+                val aggregatedIssue = AggregatedCodeScanIssue("/test/file.kt", listOf(issue))
                 val findingsMessage = """
                 {
                     "additionalMessages": [
                         {
                             "messageId": "test_codeReviewFindings",
                             "body": ${jacksonObjectMapper().writeValueAsString(listOf(aggregatedIssue))}
+                        },
+                        {
+                            "messageId": "other_message",
+                            "body": "other content"
                         }
                     ]
                 }
@@ -191,7 +212,7 @@ class BrowserConnectorTest : AmazonQTestBase() {
             localFileSystemMock.`when`<LocalFileSystem> { LocalFileSystem.getInstance() } doReturn mockLocalFileSystem
             whenever(mockLocalFileSystem.findFileByIoFile(any())) doReturn mockDirectoryFile
 
-            val issue = BrowserConnector.FlareCodeScanIssue(
+            val issue = FlareCodeScanIssue(
                 startLine = 1, endLine = 1, comment = null, title = "Test Issue",
                 description = Description("Test description", "Test text"), detectorId = "test-detector",
                 detectorName = "Test Detector", findingId = "test-finding-id", ruleId = null,
@@ -201,13 +222,17 @@ class BrowserConnectorTest : AmazonQTestBase() {
                 filePath = "/test/directory", findingContext = "test context"
             )
 
-            val aggregatedIssue = BrowserConnector.AggregatedCodeScanIssue("/test/directory", listOf(issue))
+            val aggregatedIssue = AggregatedCodeScanIssue("/test/directory", listOf(issue))
             val findingsMessage = """
             {
                 "additionalMessages": [
                     {
                         "messageId": "test_displayFindings",
                         "body": ${jacksonObjectMapper().writeValueAsString(listOf(aggregatedIssue))}
+                    },
+                    {
+                        "messageId": "other_message",
+                        "body": "other content"
                     }
                 ]
             }

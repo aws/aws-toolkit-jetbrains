@@ -117,9 +117,6 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.auth.isFeature
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isCodeTransformAvailable
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanIssue
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanManager
-import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.Description
-import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.Recommendation
-import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.SuggestedFix
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererConfigurable
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.settings.MeetQSettings
@@ -583,48 +580,6 @@ class BrowserConnector(
         }
     }
 
-    /**
-     * Solely used to extract the aggregated findings from the response
-     */
-    // TODO: move to software.aws.toolkits.jetbrains.services.amazonq.lsp.model
-    data class FlareAdditionalMessages(
-        val additionalMessages: List<FlareAggregatedFindings>?,
-    )
-
-    // TODO: move to software.aws.toolkits.jetbrains.services.amazonq.lsp.model
-    data class FlareAggregatedFindings(
-        val messageId: String,
-        val body: List<AggregatedCodeScanIssue>,
-    )
-
-    // TODO: move to software.aws.toolkits.jetbrains.services.amazonq.lsp.model
-    data class FlareCodeScanIssue(
-        val startLine: Int,
-        val endLine: Int,
-        val comment: String?,
-        val title: String,
-        val description: Description,
-        val detectorId: String,
-        val detectorName: String,
-        val findingId: String,
-        val ruleId: String?,
-        val relatedVulnerabilities: List<String>,
-        val severity: String,
-        val recommendation: Recommendation,
-        val suggestedFixes: List<SuggestedFix>,
-        val scanJobId: String,
-        val language: String,
-        val autoDetected: Boolean,
-        val filePath: String,
-        val findingContext: String,
-    )
-
-    // TODO: move to software.aws.toolkits.jetbrains.services.amazonq.lsp.model
-    data class AggregatedCodeScanIssue(
-        val filePath: String,
-        val issues: List<FlareCodeScanIssue>,
-    )
-
     private fun showResult(
         result: CompletableFuture<String>,
         partialResultToken: String,
@@ -658,18 +613,23 @@ class BrowserConnector(
         }
     }
 
+    fun deserializeFindings(@Language("JSON") responsePayload: String): List<FlareAggregatedFindings> {
+        val additionalMessages = serializer.objectMapper.readValue<FlareAdditionalMessages>(responsePayload).additionalMessages
+            ?: return emptyList()
+
+        return additionalMessages.filter { message ->
+            message.messageId.endsWith(CODE_REVIEW_FINDINGS_SUFFIX) ||
+                message.messageId.endsWith(DISPLAY_FINDINGS_SUFFIX)
+        }
+    }
+
     fun parseFindingsMessages(@Language("JSON") responsePayload: String) {
         try {
-            val additionalMessages = serializer.objectMapper.readValue<FlareAdditionalMessages>(responsePayload).additionalMessages
-            val findingsMessages = additionalMessages?.filter { message ->
-                message.messageId.endsWith(CODE_REVIEW_FINDINGS_SUFFIX) ||
-                    message.messageId.endsWith(DISPLAY_FINDINGS_SUFFIX)
-            } ?: return
-
+            val findings = deserializeFindings(responsePayload)
             val scannedFiles = mutableListOf<VirtualFile>()
             val mappedFindings = buildList {
-                for (findingsMessage in findingsMessages) {
-                    for (aggregatedIssue in findingsMessage.body) {
+                for (finding in findings) {
+                    for (aggregatedIssue in finding.body) {
                         val file = LocalFileSystem.getInstance().findFileByIoFile(
                             Path.of(aggregatedIssue.filePath).toFile()
                         )
@@ -728,7 +688,7 @@ class BrowserConnector(
                 CodeWhispererCodeScanManager.getInstance(project).showCodeScanUI()
             }
         } catch (e: Exception) {
-            LOG.error { "Failed to parse findings message $e" }
+            LOG.error(e) { "Failed to parse findings message" }
         }
     }
 
