@@ -133,7 +133,7 @@ val prepareBundledFlare by tasks.registering(Copy::class) {
 }
 
 tasks.withType<PrepareSandboxTask>().configureEach {
-    from(file("contrib/QCT-Maven-8-26.jar")) {
+    from(file("contrib/QCT-Maven-1-0-156-0.jar")) {
         into(intellijPlatform.projectName.map { "$it/lib" })
     }
     from(prepareBundledFlare) {
