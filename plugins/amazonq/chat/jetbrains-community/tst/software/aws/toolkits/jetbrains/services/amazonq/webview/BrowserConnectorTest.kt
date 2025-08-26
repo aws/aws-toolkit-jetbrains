@@ -53,54 +53,76 @@ class BrowserConnectorTest : AmazonQTestBase() {
     }
 
     @Test
-    fun `parseFindingsMessages should handle empty additionalMessages`() {
-        val messagesMap = mapOf<String, Any>()
-
-        browserConnector.parseFindingsMessages(messagesMap)
+    fun `parseFindingsMessages should handle no additionalMessages`() {
+        browserConnector.parseFindingsMessages("""""")
 
         verify(mockCodeScanManager, never()).addOnDemandIssues(any(), any(), any())
     }
 
     @Test
     fun `parseFindingsMessages should handle null additionalMessages`() {
-        val messagesMap = mapOf("additionalMessages" to null)
+        browserConnector.parseFindingsMessages(
+            """
+            {
+              "additionalMessages": null
+            }
+            """.trimIndent()
+        )
 
-        browserConnector.parseFindingsMessages(messagesMap)
+        verify(mockCodeScanManager, never()).addOnDemandIssues(any(), any(), any())
+    }
+
+    @Test
+    fun `parseFindingsMessages should handle empty additionalMessages`() {
+        browserConnector.parseFindingsMessages(
+            """
+            {
+              "additionalMessages": []
+            }
+            """.trimIndent()
+        )
 
         verify(mockCodeScanManager, never()).addOnDemandIssues(any(), any(), any())
     }
 
     @Test
     fun `parseFindingsMessages should filter messages with CODE_REVIEW_FINDINGS_SUFFIX`() {
-        val findingsMessage = mapOf(
-            "messageId" to "test_codeReviewFindings",
-            "body" to """[{"filePath": "/test/file.kt", "issues": []}]"""
-        )
-        val otherMessage = mapOf(
-            "messageId" to "other_message",
-            "body" to "other content"
-        )
-        val additionalMessages = mutableListOf<Map<String, Any>>(findingsMessage, otherMessage)
-        val messagesMap = mapOf("additionalMessages" to additionalMessages)
+        val findingsMessage = """
+            {
+                "additionalMessages": [
+                    {
+                        "messageId": "test_codeReviewFindings",
+                        "body": [{"filePath": "/test/file.kt", "issues": []}]
+                    },
+                    {
+                        "messageId": "other_message",
+                        "body": "other content"
+                    }
+                ]
+            }
+        """.trimIndent()
 
-        browserConnector.parseFindingsMessages(messagesMap)
-
-        assertThat(additionalMessages.size == 1)
-        assertThat(additionalMessages[0] == otherMessage)
+        browserConnector.parseFindingsMessages(findingsMessage)
     }
 
     @Test
     fun `parseFindingsMessages should filter messages with DISPLAY_FINDINGS_SUFFIX`() {
-        val findingsMessage = mapOf(
-            "messageId" to "test_displayFindings",
-            "body" to """[{"filePath": "/test/file.kt", "issues": []}]"""
-        )
-        val additionalMessages = mutableListOf<Map<String, Any>>(findingsMessage)
-        val messagesMap = mapOf("additionalMessages" to additionalMessages)
+        val findingsMessage = """
+            {
+                "additionalMessages": [
+                    {
+                        "messageId": "test_displayFindings",
+                        "body": [{"filePath": "/test/file.kt", "issues": []}]
+                    },
+                    {
+                        "messageId": "other_message",
+                        "body": "other content"
+                    }
+                ]
+            }
+        """.trimIndent()
 
-        browserConnector.parseFindingsMessages(messagesMap)
-
-        assertThat(additionalMessages).isEmpty()
+        browserConnector.parseFindingsMessages(findingsMessage)
     }
 
     @Test
@@ -135,14 +157,18 @@ class BrowserConnectorTest : AmazonQTestBase() {
                 )
 
                 val aggregatedIssue = BrowserConnector.AggregatedCodeScanIssue("/test/file.kt", listOf(issue))
-                val findingsMessage = mapOf(
-                    "messageId" to "test_codeReviewFindings",
-                    "body" to jacksonObjectMapper().writeValueAsString(listOf(aggregatedIssue))
-                )
-                val additionalMessages = mutableListOf<Map<String, Any>>(findingsMessage)
-                val messagesMap = mapOf("additionalMessages" to additionalMessages)
+                val findingsMessage = """
+                {
+                    "additionalMessages": [
+                        {
+                            "messageId": "test_codeReviewFindings",
+                            "body": ${jacksonObjectMapper().writeValueAsString(listOf(aggregatedIssue))}
+                        }
+                    ]
+                }
+                """.trimIndent()
 
-                browserConnector.parseFindingsMessages(messagesMap)
+                browserConnector.parseFindingsMessages(findingsMessage)
 
                 val issuesCaptor = argumentCaptor<List<CodeWhispererCodeScanIssue>>()
                 verify(mockCodeScanManager).addOnDemandIssues(
@@ -151,7 +177,6 @@ class BrowserConnectorTest : AmazonQTestBase() {
                     eq(CodeWhispererConstants.CodeAnalysisScope.AGENTIC)
                 )
 
-                assertThat(additionalMessages).isEmpty()
                 assertThat(issuesCaptor.firstValue.isNotEmpty())
                 assertThat(issuesCaptor.firstValue[0].title == "Test Issue")
             }
@@ -177,38 +202,42 @@ class BrowserConnectorTest : AmazonQTestBase() {
             )
 
             val aggregatedIssue = BrowserConnector.AggregatedCodeScanIssue("/test/directory", listOf(issue))
-            val findingsMessage = mapOf(
-                "messageId" to "test_displayFindings",
-                "body" to jacksonObjectMapper().writeValueAsString(listOf(aggregatedIssue))
-            )
-            val additionalMessages = mutableListOf<Map<String, Any>>(findingsMessage)
-            val messagesMap = mapOf("additionalMessages" to additionalMessages)
+            val findingsMessage = """
+            {
+                "additionalMessages": [
+                    {
+                        "messageId": "test_displayFindings",
+                        "body": ${jacksonObjectMapper().writeValueAsString(listOf(aggregatedIssue))}
+                    }
+                ]
+            }
+            """.trimIndent()
 
-            browserConnector.parseFindingsMessages(messagesMap)
+            browserConnector.parseFindingsMessages(findingsMessage)
 
-            val issuesCaptor = argumentCaptor<List<CodeWhispererCodeScanIssue>>()
-            verify(mockCodeScanManager).addOnDemandIssues(
-                issuesCaptor.capture(),
+            verify(mockCodeScanManager, never()).addOnDemandIssues(
+                any(),
                 any(),
                 eq(CodeWhispererConstants.CodeAnalysisScope.AGENTIC)
             )
-
-            assertThat(issuesCaptor.firstValue.isEmpty())
-            assertThat(additionalMessages).isEmpty()
         }
     }
 
     @Test
     fun `parseFindingsMessages should handle invalid JSON gracefully`() {
-        val findingsMessage = mapOf(
-            "messageId" to "test_codeReviewFindings",
-            "body" to "invalid json"
-        )
-        val additionalMessages = mutableListOf<Map<String, Any>>(findingsMessage)
-        val messagesMap = mapOf("additionalMessages" to additionalMessages)
+        val findingsMessage = """
+            {
+                "additionalMessages": [
+                    {
+                        "messageId": "test_codeReviewFindings",
+                        "body": "invalid json"
+                    }
+                ]
+            }
+        """.trimIndent()
 
-        browserConnector.parseFindingsMessages(messagesMap)
+        browserConnector.parseFindingsMessages(findingsMessage)
 
-        assertThat(additionalMessages).isEmpty()
+        verify(mockCodeScanManager, never()).addOnDemandIssues(any(), any(), any())
     }
 }
