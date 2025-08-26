@@ -25,7 +25,9 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LSPAny
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.AuthFollowUpClickedParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.AuthFollowupType
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_ERROR_PARAMS
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CODE_REVIEW_FINDINGS_SUFFIX
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatMessage
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.DISPLAY_FINDINGS_SUFFIX
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ErrorParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_CHAT_COMMAND_PROMPT
@@ -140,6 +142,18 @@ class ChatCommunicationManager(private val project: Project, private val cs: Cor
             val partialResultMap: Any = tryOrNull {
                 Gson().fromJson(partialChatResult, Map::class.java)
             } ?: partialChatResult
+
+            if (partialResultMap is Map<*, *>) {
+                val additionalMessages = partialResultMap["additionalMessages"] as? MutableList<Map<String, Any>>
+                additionalMessages?.removeAll {
+                    val messageId = it["messageId"] as? String
+                    messageId != null &&
+                        (
+                            messageId.endsWith(CODE_REVIEW_FINDINGS_SUFFIX) ||
+                                messageId.endsWith(DISPLAY_FINDINGS_SUFFIX)
+                            )
+                }
+            }
 
             notifyUi(
                 FlareUiMessage(
