@@ -93,7 +93,7 @@ private fun runMavenJar(
     logger: Logger,
 ): TransformRunnable {
     logBuilder.appendLine("Command Run: IntelliJ IDEA bundled Maven JAR")
-    val jarPath = AwsToolkit.PLUGINS_INFO[AwsPlugin.Q]?.path?.resolve("lib/QCT-Maven-6-16.jar")
+    val jarPath = AwsToolkit.PLUGINS_INFO[AwsPlugin.Q]?.path?.resolve("lib/QCT-Maven-8-26.jar")
 
     val commandList = listOf(
         "-Dmaven.ext.class.path=$jarPath",
