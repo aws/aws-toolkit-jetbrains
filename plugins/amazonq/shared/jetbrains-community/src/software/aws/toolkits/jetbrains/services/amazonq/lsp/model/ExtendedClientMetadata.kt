@@ -28,6 +28,8 @@ data class QCapabilities(
     val imageContextEnabled: Boolean,
     val compaction: Boolean,
     val reroute: Boolean,
+    val codeReviewInChat: Boolean,
+    val displayFindings: Boolean,
     val workspaceFilePath: String?,
 )
 
@@ -73,6 +75,8 @@ fun createExtendedClientMetadata(project: Project): ExtendedClientMetadata {
                     imageContextEnabled = true,
                     compaction = true,
                     reroute = true,
+                    codeReviewInChat = true,
+                    displayFindings = true,
                     workspaceFilePath = project.workspaceFile?.path,
                 ),
                 window = WindowCapabilities(
