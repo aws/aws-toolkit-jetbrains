@@ -15,6 +15,8 @@ data class ChatOptions(
     val export: Boolean,
     val mcpServers: Boolean,
     val reroute: Boolean,
+    val codeReviewInChat: Boolean,
+    val displayFindings: Boolean,
     val showLogs: Boolean,
 )
 
