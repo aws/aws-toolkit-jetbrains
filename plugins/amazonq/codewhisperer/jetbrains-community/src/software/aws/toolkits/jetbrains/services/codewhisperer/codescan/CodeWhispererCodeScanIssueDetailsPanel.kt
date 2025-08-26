@@ -15,14 +15,10 @@ import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.openapi.project.Project
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.util.Alarm
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.context.CodeScanIssueDetailsDisplayType
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.additionBackgroundColor
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.additionForegroundColor
-import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.applySuggestedFix
+import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.applyFix
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.codeBlockBackgroundColor
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.codeBlockBorderColor
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.codeBlockForegroundColor
@@ -34,15 +30,12 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.get
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.metaBackgroundColor
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.metaForegroundColor
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.openDiff
-import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.sendCodeFixGeneratedTelemetryToServiceAPI
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.truncateIssueTitle
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.getHexString
-import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.Component
-import software.aws.toolkits.telemetry.MetricResult
 import java.awt.BorderLayout
 import java.awt.Dimension
 import java.awt.datatransfer.StringSelection
@@ -57,115 +50,13 @@ import javax.swing.ScrollPaneConstants
 import javax.swing.event.HyperlinkEvent
 import javax.swing.text.html.HTMLEditorKit
 
-private val logger = getLogger<CodeWhispererCodeScanIssueDetailsPanel>()
 internal class CodeWhispererCodeScanIssueDetailsPanel(
     private val project: Project,
     issue: CodeWhispererCodeScanIssue,
-    private val defaultScope: CoroutineScope,
 ) : JPanel(BorderLayout()) {
     private val kit = HTMLEditorKit()
     private val doc = kit.createDefaultDocument()
-    private val amazonQCodeFixSession = AmazonQCodeFixSession(project)
     private val codeScanManager = CodeWhispererCodeScanManager.getInstance(project)
-
-    private suspend fun handleGenerateFix(issue: CodeWhispererCodeScanIssue, isRegenerate: Boolean = false) {
-        if (issue.ruleId == "sbom-software-assurance-services") {
-            logger.warn { "GenerateFix is not available for SAS findings." }
-            return
-        }
-        editorPane.text = getCodeScanIssueDetailsHtml(
-            issue, CodeScanIssueDetailsDisplayType.DetailsPane, CodeWhispererConstants.FixGenerationState.GENERATING,
-            project = project
-        )
-        editorPane.revalidate()
-        editorPane.repaint()
-        runInEdt {
-            editorPane.scrollToReference("fixLoadingSection")
-        }
-
-        val codeFixResponse: AmazonQCodeFixSession.CodeFixResponse = amazonQCodeFixSession.runCodeFixWorkflow(issue)
-        if (codeFixResponse.failureResponse != null) {
-            editorPane.apply {
-                text = getCodeScanIssueDetailsHtml(
-                    issue, CodeScanIssueDetailsDisplayType.DetailsPane, CodeWhispererConstants.FixGenerationState.FAILED,
-                    project = project
-                )
-                revalidate()
-                repaint()
-                runInEdt {
-                    scrollToReference("fixFailureSection")
-                }
-            }
-            CodeWhispererTelemetryService.getInstance().sendCodeScanIssueGenerateFix(
-                Component.Webview,
-                issue,
-                isRegenerate,
-                MetricResult.Failed,
-                codeFixResponse.failureResponse
-            )
-        } else {
-            val isReferenceAllowed = CodeWhispererSettings.getInstance().isIncludeCodeWithReference()
-            var suggestedFix = SuggestedFix(
-                code = "",
-                description = ""
-            )
-            codeFixResponse.getCodeFixJobResponse?.suggestedFix()?.let {
-                it.codeDiff()?.let { codeDiff ->
-                    // TODO: enable later
-                    if (it.references() == null || it.references()?.isEmpty() == true) {
-                        suggestedFix = SuggestedFix(
-                            code = codeDiff.split("\n").drop(2).joinToString("\n"), // drop first two comment lines
-                            description = it.description(),
-                            codeFixJobId = codeFixResponse.jobId,
-                            references = it.references(),
-                        )
-                    }
-                }
-            }
-
-            val showReferenceWarning = !isReferenceAllowed && suggestedFix.references.isNotEmpty()
-            if (suggestedFix.code.isNotEmpty() && !showReferenceWarning) {
-                issue.suggestedFixes = listOf(suggestedFix)
-                codeScanManager.updateIssue(issue)
-            }
-
-            editorPane.apply {
-                text = getCodeScanIssueDetailsHtml(
-                    issue, CodeScanIssueDetailsDisplayType.DetailsPane, project = project,
-                    showReferenceWarning = showReferenceWarning
-                )
-                revalidate()
-                repaint()
-                runInEdt {
-                    scrollToReference("codeFixActions")
-                }
-            }
-
-            buttonPane.apply {
-                removeAll()
-                if (issue.suggestedFixes.isNotEmpty()) add(applyFixButton)
-                add(regenerateFixButton)
-                add(explainIssueButton)
-                add(ignoreIssueButton)
-                add(ignoreIssuesButton)
-                add(Box.createHorizontalGlue())
-                revalidate()
-                repaint()
-            }
-            ApplicationManager.getApplication().executeOnPooledThread {
-                if (suggestedFix.code.isNotBlank()) {
-                    sendCodeFixGeneratedTelemetryToServiceAPI(issue, false)
-                }
-                CodeWhispererTelemetryService.getInstance().sendCodeScanIssueGenerateFix(
-                    Component.Webview,
-                    issue,
-                    isRegenerate,
-                    MetricResult.Succeeded,
-                    includesFix = suggestedFix.code.isNotBlank()
-                )
-            }
-        }
-    }
 
     private val editorPane = JEditorPane().apply {
         contentType = "text/html"
@@ -235,26 +126,8 @@ internal class CodeWhispererCodeScanIssueDetailsPanel(
         font = font.deriveFont(16f)
     }
     private val applyFixButton = JButton(message("codewhisperer.codescan.apply_fix_button_label")).apply {
-        putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
         addActionListener {
-            applySuggestedFix(project, issue)
-        }
-    }
-    private val generateFixButton = JButton(message("codewhisperer.codescan.generate_fix_button_label")).apply {
-        putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
-        isEnabled = issue.ruleId != "sbom-software-assurance-services"
-        addActionListener {
-            defaultScope.launch {
-                handleGenerateFix(issue)
-            }
-        }
-    }
-    private val regenerateFixButton = JButton(message("codewhisperer.codescan.regenerate_fix_button_label")).apply {
-        putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
-        addActionListener {
-            defaultScope.launch {
-                handleGenerateFix(issue, isRegenerate = true)
-            }
+            applyFix(issue)
         }
     }
     private val explainIssueButton = JButton(message("codewhisperer.codescan.explain_button_label")).apply {
@@ -298,9 +171,8 @@ internal class CodeWhispererCodeScanIssueDetailsPanel(
     private val buttonPane = JPanel().apply {
         layout = BoxLayout(this, BoxLayout.X_AXIS)
         preferredSize = Dimension(this.width, 30)
-        if (issue.suggestedFixes.isNotEmpty()) add(applyFixButton)
-        if (issue.suggestedFixes.isNotEmpty()) add(regenerateFixButton) else add(generateFixButton)
         add(explainIssueButton)
+        add(applyFixButton)
         add(ignoreIssueButton)
         add(ignoreIssuesButton)
         add(Box.createHorizontalGlue())
@@ -333,10 +205,5 @@ internal class CodeWhispererCodeScanIssueDetailsPanel(
         add(BorderLayout.SOUTH, buttonPane)
         isVisible = true
         revalidate()
-        if (issue.suggestedFixes.isEmpty()) {
-            defaultScope.launch {
-                handleGenerateFix(issue)
-            }
-        }
     }
 }
