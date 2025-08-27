@@ -22,6 +22,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.Transformation
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerJobCompletedResult
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerSessionContext
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformType
 import software.aws.toolkits.jetbrains.services.codemodernizer.panels.CodeModernizerBanner
 import software.aws.toolkits.jetbrains.services.codemodernizer.panels.CodeModernizerJobHistoryTablePanel
@@ -244,7 +245,12 @@ class CodeModernizerBottomWindowPanelManager(private val project: Project) : JPa
         return actionManager.createActionToolbar(ACTION_PLACE, group, false)
     }
 
-    fun handleJobTransition(new: TransformationStatus, plan: TransformationPlan?, sourceJdk: JavaSdkVersion, transformType: CodeTransformType) = invokeLater {
+    fun handleJobTransition(
+        new: TransformationStatus,
+        plan: TransformationPlan?,
+        sessionContext: CodeModernizerSessionContext,
+        transformType: CodeTransformType,
+    ) = invokeLater {
         if (new in listOf(
                 TransformationStatus.PLANNED,
                 TransformationStatus.TRANSFORMING,
@@ -252,12 +258,12 @@ class CodeModernizerBottomWindowPanelManager(private val project: Project) : JPa
                 TransformationStatus.PAUSED,
                 TransformationStatus.COMPLETED,
                 TransformationStatus.PARTIALLY_COMPLETED
-            ) && transformType == CodeTransformType.LANGUAGE_UPGRADE && isPlanComplete(plan)
+            ) && transformType == CodeTransformType.LANGUAGE_UPGRADE && isPlanComplete(plan, sessionContext)
         ) {
             addPlanToBanner()
         }
         buildProgressSplitterPanelManager.apply {
-            handleProgressStateChanged(new, plan, sourceJdk, transformType)
+            handleProgressStateChanged(new, plan, sessionContext.sourceJavaVersion, transformType)
             if (timer == null) {
                 timer = Timer()
                 timer?.scheduleAtFixedRate(
