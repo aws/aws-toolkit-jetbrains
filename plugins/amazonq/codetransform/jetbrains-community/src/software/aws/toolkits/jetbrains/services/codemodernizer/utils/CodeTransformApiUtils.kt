@@ -47,6 +47,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.constants.BILLING
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.JOB_STATISTICS_TABLE_KEY
 import software.aws.toolkits.jetbrains.services.codemodernizer.ideMaven.runClientSideBuild
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerArtifact.Companion.MAPPER
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerSessionContext
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformType
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.PlanTable
@@ -286,8 +287,12 @@ fun findDownloadArtifactProgressUpdate(transformationSteps: List<TransformationS
                 update.downloadArtifacts()?.firstOrNull()?.downloadArtifactId() != null
         }
 
-// once dependency changes table (key of "1") available, plan is complete
-fun isPlanComplete(plan: TransformationPlan?) = plan?.transformationSteps()?.get(0)?.progressUpdates()?.any { update -> update.name() == "1" } == true
+// plan is complete once dependency changes table (key of "1") available, or as soon as it's available for min JDK upgrades
+fun isPlanComplete(plan: TransformationPlan?, sessionContext: CodeModernizerSessionContext): Boolean {
+    val isDepChangesTablePresent = plan?.transformationSteps()?.get(0)?.progressUpdates()?.any { update -> update.name() == "1" } == true
+    val isMinJdkUpgrade = sessionContext.sourceJavaVersion.name != sessionContext.targetJavaVersion.name
+    return isDepChangesTablePresent || isMinJdkUpgrade
+}
 
 // "name" holds the ID of the corresponding plan step (where table will go) and "description" holds the plan data
 fun getTableMapping(stepZeroProgressUpdates: List<TransformationProgressUpdate>): Map<String, List<String>> =
