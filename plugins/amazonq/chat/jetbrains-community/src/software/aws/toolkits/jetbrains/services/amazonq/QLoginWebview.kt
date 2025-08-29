@@ -22,7 +22,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import org.cef.CefApp
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
@@ -37,8 +36,8 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.core.webview.BrowserMessage
 import software.aws.toolkits.jetbrains.core.webview.BrowserState
+import software.aws.toolkits.jetbrains.core.webview.LocalAssetJBCefRequestHandler
 import software.aws.toolkits.jetbrains.core.webview.LoginBrowser
-import software.aws.toolkits.jetbrains.core.webview.WebviewResourceHandlerFactory
 import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QProfileSwitchIntent
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
@@ -131,25 +130,14 @@ class QWebviewPanel private constructor(val project: Project, private val scope:
 class QWebviewBrowser(val project: Project, private val parentDisposable: Disposable) :
     LoginBrowser(
         project,
-        QWebviewBrowser.DOMAIN,
-        QWebviewBrowser.WEB_SCRIPT_URI
     ),
     Disposable {
     // TODO: confirm if we need such configuration or the default is fine
     override val jcefBrowser = createBrowser(parentDisposable)
     private val query = JBCefJSQuery.create(jcefBrowser)
+    private val assetHandler = LocalAssetJBCefRequestHandler(jcefBrowser)
 
     init {
-        CefApp.getInstance()
-            .registerSchemeHandlerFactory(
-                "http",
-                domain,
-                WebviewResourceHandlerFactory(
-                    domain = "http://$domain/",
-                    assetUri = "/webview/assets/"
-                ),
-            )
-
         loadWebView(query)
 
         query.addHandler(jcefHandler)
@@ -332,7 +320,12 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
     }
 
     override fun loadWebView(query: JBCefJSQuery) {
-        jcefBrowser.loadHTML(getWebviewHTML(webScriptUri, query))
+        val webScriptUri = assetHandler.createResource(
+            WEB_SCRIPT,
+            QWebviewBrowser::class.java.getResourceAsStream("/webview/assets/$WEB_SCRIPT")
+        )
+
+        jcefBrowser.loadURL(assetHandler.createResource("content.html", getWebviewHTML(webScriptUri, query)))
     }
 
     private fun handleListProfilesMessage() {
@@ -383,7 +376,6 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
 
     companion object {
         private val LOG = getLogger<QWebviewBrowser>()
-        private const val WEB_SCRIPT_URI = "http://webview/js/getStart.js"
-        private const val DOMAIN = "webview"
+        private const val WEB_SCRIPT = "js/getStart.js"
     }
 }

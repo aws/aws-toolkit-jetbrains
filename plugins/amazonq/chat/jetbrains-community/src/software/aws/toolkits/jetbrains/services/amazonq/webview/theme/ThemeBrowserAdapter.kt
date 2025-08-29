@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.webview.theme
 
-import kotlinx.coroutines.CompletableDeferred
 import org.cef.browser.CefBrowser
 import java.awt.Color
 import java.awt.Font
@@ -19,13 +18,12 @@ class ThemeBrowserAdapter {
         browser.executeJavaScript("window.changeTheme(${theme.darkMode})", browser.url, 0)
     }
 
-    suspend fun updateThemeInBrowser(browser: CefBrowser, theme: AmazonQTheme, uiReady: CompletableDeferred<Boolean>) {
-        uiReady.await()
+    fun updateThemeInBrowser(browser: CefBrowser, theme: AmazonQTheme) {
         val codeToUpdateTheme = buildJsCodeToUpdateTheme(theme)
         browser.executeJavaScript(codeToUpdateTheme, browser.url, 0)
     }
 
-    private fun buildJsCodeToUpdateTheme(theme: AmazonQTheme) = buildString {
+    fun buildJsCodeToUpdateTheme(theme: AmazonQTheme) = buildString {
         val (bg, altBg, inputBg) = determineInputAndBgColor(theme)
         appendDarkMode(theme.darkMode)
 

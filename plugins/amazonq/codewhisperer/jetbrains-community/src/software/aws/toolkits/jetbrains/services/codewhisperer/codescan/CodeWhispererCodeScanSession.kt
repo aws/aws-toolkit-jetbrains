@@ -31,6 +31,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.StartCodeAnaly
 import software.amazon.awssdk.services.codewhispererruntime.model.StartCodeAnalysisResponse
 import software.aws.toolkits.core.utils.Waiters.waitUntil
 import software.aws.toolkits.core.utils.debug
+import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
@@ -291,7 +292,7 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
                 .build()
         )
     } catch (e: Exception) {
-        LOG.debug { "Getting code review failed: ${e.message}" }
+        LOG.error(e) { "Getting code review failed: ${e.message}" }
         val errorMessage = getTelemetryErrorMessage(e, featureUseCase = CodeWhispererConstants.FeatureName.CODE_REVIEW)
         throw codeScanServerException("GetCodeReviewException: $errorMessage")
     }

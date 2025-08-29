@@ -217,7 +217,7 @@ class FeatureDevController(
         logger.debug { "$FEATURE_NAME: Processing InsertCodeAtCursorPosition: $message" }
 
         withContext(EDT) {
-            val editor: Editor = FileEditorManager.getInstance(context.project).selectedTextEditor ?: return@withContext
+            val editor: Editor = FileEditorManager.getInstance(context.project).selectedTextEditorWithRemotes.firstOrNull() ?: return@withContext
 
             val caret: Caret = editor.caretModel.primaryCaret
             val offset: Int = caret.offset

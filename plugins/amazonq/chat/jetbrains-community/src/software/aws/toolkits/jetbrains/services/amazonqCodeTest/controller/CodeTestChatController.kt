@@ -10,6 +10,8 @@ import com.intellij.diff.requests.SimpleDiffRequest
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
+import com.intellij.openapi.editor.EditorFactory
+import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
@@ -94,6 +96,7 @@ import software.aws.toolkits.jetbrains.services.cwc.editor.context.file.FileCont
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.jetbrains.ui.feedback.TestGenFeedbackDialog
+import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AmazonqTelemetry
@@ -139,7 +142,7 @@ class CodeTestChatController(
 
         ApplicationManager.getApplication().invokeAndWait {
             selectionRange = ApplicationManager.getApplication().runReadAction<Range?> {
-                val editor = FileEditorManager.getInstance(project).selectedTextEditor
+                val editor = FileEditorManager.getInstance(project).selectedTextEditorWithRemotes.firstOrNull()
                 editor?.let {
                     val selectionModel = it.selectionModel
                     val startOffset = selectionModel.selectionStart
@@ -1260,9 +1263,22 @@ class CodeTestChatController(
         message: IncomingCodeTestMessage.StartTestGen,
     ): ActiveFileInfo? {
         try {
-            val fileEditorManager = FileEditorManager.getInstance(project)
-            val activeEditor = fileEditorManager.selectedEditor
-            val activeFile = fileEditorManager.selectedFiles.firstOrNull()
+            val (activeEditor, activeFile) = when {
+                isRunningOnRemoteBackend() -> {
+                    val editors = EditorFactory.getInstance().allEditors
+                    val editor = editors.firstOrNull()
+                    val file = editor?.document?.let { document ->
+                        FileDocumentManager.getInstance().getFile(document)
+                    }
+                    Pair(editor, file)
+                }
+                else -> {
+                    val fileEditorManager = FileEditorManager.getInstance(project)
+                    val editor = fileEditorManager.selectedEditor
+                    val file = fileEditorManager.selectedFiles.firstOrNull()
+                    Pair(editor, file)
+                }
+            }
             val projectRoot = project.basePath?.let { Path.of(it) }?.toFile()?.toVirtualFile() ?: run {
                 project.guessProjectDir() ?: error("Cannot guess base directory for project ${project.name}")
             }

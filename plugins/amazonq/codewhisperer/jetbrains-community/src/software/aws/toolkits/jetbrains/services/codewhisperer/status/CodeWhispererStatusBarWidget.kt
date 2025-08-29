@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.status
 
 import com.intellij.icons.AllIcons
 import com.intellij.ide.DataManager
-import com.intellij.idea.AppMode
 import com.intellij.openapi.actionSystem.ActionGroup
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.application.ApplicationManager
@@ -35,6 +34,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispe
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.reconnectCodeWhisperer
 import software.aws.toolkits.jetbrains.utils.isQConnected
 import software.aws.toolkits.jetbrains.utils.isQExpired
+import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.resources.message
 import java.awt.event.MouseEvent
 import javax.swing.Icon
@@ -150,7 +150,7 @@ class CodeWhispererStatusBarWidget(project: Project) :
             }
         ) {
             // AnimatedIcon can't serialize over remote host
-            if (!AppMode.isRemoteDevHost()) {
+            if (!isRunningOnRemoteBackend()) {
                 AnimatedIcon.Default()
             } else {
                 AllIcons.Actions.Download

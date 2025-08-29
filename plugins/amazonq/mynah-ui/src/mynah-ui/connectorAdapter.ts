@@ -7,15 +7,6 @@ import { isTabType } from './ui/storages/tabsStorage'
 import { WebviewUIHandler } from './ui/main'
 import { TabDataGenerator } from './ui/tabs/generator'
 import { ChatClientAdapter, ChatEventHandler } from '@aws/chat-client'
-import { FqnExtractor } from "./fqn/extractor";
-
-export * from "./ui/main";
-
-declare global {
-    interface Window { fqnExtractor: FqnExtractor; }
-}
-
-window.fqnExtractor = new FqnExtractor();
 
 export const initiateAdapter = (showWelcomePage: boolean,
                              disclaimerAcknowledged: boolean,
@@ -25,10 +16,11 @@ export const initiateAdapter = (showWelcomePage: boolean,
                              isCodeScanEnabled: boolean,
                              isCodeTestEnabled: boolean,
                              ideApiPostMessage: (message: any) => void,
-                             profileName?: string) : HybridChatAdapter => {
-    return new HybridChatAdapter(showWelcomePage, disclaimerAcknowledged, isFeatureDevEnabled, isCodeTransformEnabled, isDocEnabled, isCodeScanEnabled, isCodeTestEnabled, ideApiPostMessage, profileName)
+                             highlightCommand?: QuickActionCommand,
+                             profileName?: string,
+) : HybridChatAdapter => {
+    return new HybridChatAdapter(showWelcomePage, disclaimerAcknowledged, isFeatureDevEnabled, isCodeTransformEnabled, isDocEnabled, isCodeScanEnabled, isCodeTestEnabled, ideApiPostMessage, highlightCommand, profileName)
 }
-
 
 // Ref: https://github.com/aws/aws-toolkit-vscode/blob/e9ea8082ffe0b9968a873437407d0b6b31b9e1a5/packages/core/src/amazonq/webview/ui/connectorAdapter.ts#L14
 export class HybridChatAdapter implements ChatClientAdapter {
@@ -46,6 +38,7 @@ export class HybridChatAdapter implements ChatClientAdapter {
         private isCodeScanEnabled: boolean,
         private isCodeTestEnabled: boolean,
         private ideApiPostMessage: (message: any) => void,
+        private highlightCommand?: QuickActionCommand,
         private profileName?: string,
 
     ) {}
@@ -67,6 +60,7 @@ export class HybridChatAdapter implements ChatClientAdapter {
             isDocEnabled: this.isDocEnabled,
             isCodeScanEnabled: this.isCodeScanEnabled,
             isCodeTestEnabled: this.isCodeTestEnabled,
+            highlightCommand: this.highlightCommand,
             profileName: this.profileName,
             hybridChat: true,
         })

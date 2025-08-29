@@ -18,6 +18,7 @@ import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.FullyQual
 import software.aws.toolkits.jetbrains.services.cwc.controller.ChatController
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.file.util.LanguageExtractor
 import software.aws.toolkits.jetbrains.utils.computeOnEdt
+import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import java.awt.Point
 import kotlin.math.min
 
@@ -25,8 +26,12 @@ class FocusAreaContextExtractor(private val fqnWebviewAdapter: FqnWebviewAdapter
 
     private val languageExtractor: LanguageExtractor = LanguageExtractor()
     suspend fun extract(): FocusAreaContext? {
+        val editorManager = FileEditorManager.getInstance(project)
         val editor = computeOnEdt {
-            FileEditorManager.getInstance(project).selectedTextEditor
+            when {
+                isRunningOnRemoteBackend() -> editorManager.selectedTextEditorWithRemotes.firstOrNull()
+                else -> editorManager.selectedTextEditor
+            }
         } ?: return null
 
         if (editor.document.text.isBlank()) return null
@@ -109,7 +114,7 @@ class FocusAreaContextExtractor(private val fqnWebviewAdapter: FqnWebviewAdapter
             languageExtractor.extractLanguageNameFromCurrentFile(editor)
         }
         val fileText = editor.document.text
-        val fileName = FileEditorManager.getInstance(project).selectedFiles.first().name
+        val fileName = editor.virtualFile.name
 
         // Offset the selection range to the start of the trimmedFileText
         val selectionInsideTrimmedFileTextRange = codeSelectionRange.let {

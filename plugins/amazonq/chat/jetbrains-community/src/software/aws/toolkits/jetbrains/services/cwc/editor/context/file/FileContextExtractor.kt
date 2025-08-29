@@ -13,12 +13,18 @@ import software.aws.toolkits.jetbrains.services.amazonq.webview.FqnWebviewAdapte
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.file.util.LanguageExtractor
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.file.util.MatchPolicyExtractor
 import software.aws.toolkits.jetbrains.utils.computeOnEdt
+import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 
 class FileContextExtractor(private val fqnWebviewAdapter: FqnWebviewAdapter?, private val project: Project) {
     private val languageExtractor: LanguageExtractor = LanguageExtractor()
     suspend fun extract(): FileContext? {
+        val editorManager = FileEditorManager.getInstance(project)
+
         val editor = computeOnEdt {
-            FileEditorManager.getInstance(project).selectedTextEditor
+            when {
+                isRunningOnRemoteBackend() -> editorManager.selectedTextEditorWithRemotes.firstOrNull()
+                else -> editorManager.selectedTextEditor
+            }
         } ?: return null
 
         val fileLanguage = computeOnEdt {

@@ -5,6 +5,10 @@ package software.aws.toolkits.jetbrains.utils
 
 import com.intellij.idea.AppMode
 import com.intellij.ui.jcef.JBCefApp
+import software.aws.toolkits.core.utils.exists
+import software.aws.toolkits.core.utils.tryOrNull
+import software.aws.toolkits.jetbrains.isDeveloperMode
+import java.nio.file.Paths
 
 /**
  * @return true if running in any type of remote environment
@@ -16,4 +20,20 @@ fun isRunningOnRemoteBackend() = AppMode.isRemoteDevHost()
  */
 fun isCodeCatalystDevEnv() = System.getenv("__DEV_ENVIRONMENT_ID") != null
 
-fun isQWebviewsAvailable() = JBCefApp.isSupported() && !isRunningOnRemoteBackend()
+/**
+ * @return low fidelity "is internal compute". is not exact and may fail at any time
+ */
+private val isInternalAmznLinuxCompute by lazy {
+    tryOrNull {
+        Paths.get("/apollo").exists()
+    } ?: false
+}
+
+/**
+ * On remote, only enabled experimentally and for internal
+ */
+fun isQWebviewsAvailable() = JBCefApp.isSupported() && if (!isRunningOnRemoteBackend()) {
+    true
+} else {
+    isDeveloperMode() || isInternalAmznLinuxCompute
+}

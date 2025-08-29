@@ -79,7 +79,6 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.parseXmlDep
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.setDependencyVersionInPom
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.tryGetJdk
 import software.aws.toolkits.jetbrains.ui.feedback.CodeTransformFeedbackDialog
-import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.jetbrains.utils.notifyStickyError
 import software.aws.toolkits.jetbrains.utils.notifyStickyInfo
 import software.aws.toolkits.resources.message
@@ -153,14 +152,6 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
 
     fun validate(project: Project, transformationType: CodeTransformType): ValidationResult {
         fun validateCore(project: Project): ValidationResult {
-            if (isRunningOnRemoteBackend()) {
-                return ValidationResult(
-                    false,
-                    InvalidTelemetryReason(
-                        CodeTransformPreValidationError.RemoteRunProject,
-                    )
-                )
-            }
             if (!isCodeTransformAvailable(project)) {
                 return ValidationResult(
                     false,
