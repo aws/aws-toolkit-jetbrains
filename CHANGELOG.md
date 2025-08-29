@@ -1,3 +1,9 @@
+# _3.91_ (2025-08-28)
+- **(Feature)** Enabling dynamic model fetching capabilities in Amazon Q chat
+- **(Feature)** Enable agentic code review
+- **(Feature)** Amazon Q: Support for configuring and utilizing remote MCP servers.
+- **(Deprecation)** An upcoming release will remove support for JetBrains Gateway version 2025.1 and for IDEs based on the 2024.2 platform
+
 # _3.90_ (2025-08-22)
 - **(Feature)** Amazon Q supports admin control for MCP servers to restrict MCP server usage
 - **(Bug Fix)** Fix incompatible version warning for AWS Toolkit in 2025.2
