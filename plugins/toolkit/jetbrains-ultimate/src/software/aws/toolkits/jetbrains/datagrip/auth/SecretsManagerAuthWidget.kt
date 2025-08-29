@@ -4,7 +4,8 @@
 package software.aws.toolkits.jetbrains.datagrip.auth
 
 import com.intellij.database.dataSource.DataSourceUiUtil
-import com.intellij.database.dataSource.LocalDataSource
+import com.intellij.database.dataSource.DatabaseConnectionConfig
+import com.intellij.database.dataSource.DatabaseConnectionPoint
 import com.intellij.ui.components.JBCheckBox
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextField
@@ -38,28 +39,28 @@ class SecretsManagerAuthWidget : AwsAuthWidget(userFieldEnabled = false) {
         return panel
     }
 
-    override fun save(dataSource: LocalDataSource, copyCredentials: Boolean) {
-        super.save(dataSource, copyCredentials)
+    override fun save(config: DatabaseConnectionConfig, copyCredentials: Boolean) {
+        super.save(config, copyCredentials)
 
         DataSourceUiUtil.putOrRemove(
-            dataSource.additionalProperties,
+            config.additionalProperties,
             SECRET_ID_PROPERTY,
             secretIdSelector.text.nullize()
         )
 
         DataSourceUiUtil.putOrRemove(
-            dataSource.additionalProperties,
+            config.additionalProperties,
             GET_URL_FROM_SECRET,
             urlFromSecret.isSelected.toString()
         )
     }
 
-    override fun reset(dataSource: LocalDataSource, resetCredentials: Boolean) {
-        super.reset(dataSource, resetCredentials)
-        dataSource.additionalProperties[SECRET_ID_PROPERTY]?.nullize()?.let {
+    override fun reset(config: DatabaseConnectionPoint, resetCredentials: Boolean) {
+        super.reset(config, resetCredentials)
+        config.additionalProperties[SECRET_ID_PROPERTY]?.nullize()?.let {
             secretIdSelector.text = it
         }
-        dataSource.additionalProperties[GET_URL_FROM_SECRET]?.nullize()?.let {
+        config.additionalProperties[GET_URL_FROM_SECRET]?.nullize()?.let {
             urlFromSecret.isSelected = it.toBoolean()
         }
     }
