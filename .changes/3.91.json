@@ -1,0 +1,17 @@
+{
+  "date" : "2025-08-28",
+  "version" : "3.91",
+  "entries" : [ {
+    "type" : "feature",
+    "description" : "Enabling dynamic model fetching capabilities in Amazon Q chat"
+  }, {
+    "type" : "feature",
+    "description" : "Enable agentic code review"
+  }, {
+    "type" : "feature",
+    "description" : "Amazon Q: Support for configuring and utilizing remote MCP servers."
+  }, {
+    "type" : "deprecation",
+    "description" : "An upcoming release will remove support for JetBrains Gateway version 2025.1 and for IDEs based on the 2024.2 platform"
+  } ]
+}
