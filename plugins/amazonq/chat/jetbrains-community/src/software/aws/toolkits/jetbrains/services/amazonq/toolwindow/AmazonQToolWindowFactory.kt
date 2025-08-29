@@ -20,6 +20,8 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
+import software.aws.toolkits.jetbrains.core.notifications.BannerContent
+import software.aws.toolkits.jetbrains.core.notifications.NotificationDismissalState
 import software.aws.toolkits.jetbrains.core.notifications.NotificationPanel
 import software.aws.toolkits.jetbrains.core.notifications.ProcessNotificationsBase
 import software.aws.toolkits.jetbrains.core.webview.BrowserState
@@ -32,6 +34,8 @@ import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileSe
 import software.aws.toolkits.jetbrains.utils.isQConnected
 import software.aws.toolkits.jetbrains.utils.isQExpired
 import software.aws.toolkits.jetbrains.utils.isQWebviewsAvailable
+import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
+import software.aws.toolkits.resources.AmazonQBundle
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.FeatureId
 import java.awt.event.ComponentAdapter
@@ -42,7 +46,18 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         val mainPanel = BorderLayoutPanel()
         val qPanel = Wrapper()
-        val notificationPanel = NotificationPanel()
+        val notificationPanel = NotificationPanel().apply {
+            if (isRunningOnRemoteBackend() && !NotificationDismissalState.getInstance().isDismissed(REMOTE_RESIZE_NOTIFICATION_ID)) {
+                updateNotificationPanel(
+                    BannerContent(
+                        REMOTE_RESIZE_NOTIFICATION_ID,
+                        AmazonQBundle.message("amazonq.resize.panel"),
+                        // message is not used for banner
+                        "",
+                    )
+                )
+            }
+        }
 
         mainPanel.addToTop(notificationPanel)
         mainPanel.add(qPanel)
@@ -161,5 +176,6 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
         private val LOG = getLogger<AmazonQToolWindowFactory>()
         const val WINDOW_ID = AMAZON_Q_WINDOW_ID
         private const val MINIMUM_TOOLWINDOW_WIDTH = 325
+        private const val REMOTE_RESIZE_NOTIFICATION_ID = "resize.amazon.q.toolwindow.if.remote"
     }
 }
