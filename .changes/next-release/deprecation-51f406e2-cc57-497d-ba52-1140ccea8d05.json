@@ -1,4 +1,0 @@
-{
-  "type" : "deprecation",
-  "description" : "An upcoming release will remove support for JetBrains Gateway version 2025.1 and for IDEs based on the 2024.2 platform"
-}
