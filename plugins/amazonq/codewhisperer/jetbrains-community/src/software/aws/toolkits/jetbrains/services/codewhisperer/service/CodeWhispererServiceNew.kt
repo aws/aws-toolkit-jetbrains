@@ -569,6 +569,8 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
                         else -> InlineCompletionTriggerKind.Invoke
                     }
                 ),
+                documentChangeParams = null,
+                openTabFilepaths = null,
             ).apply {
                 textDocument = TextDocumentIdentifier(toUriString(editor.virtualFile))
                 position = Position(
