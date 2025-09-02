@@ -24,6 +24,13 @@ class HandleIssueCommandAction : AnAction(), DumbAware {
     val contextDataKey = DataKey.create<MutableMap<String, String>>("amazonq.codescan.handleIssueCommandContext")
     val actionDataKey = DataKey.create<String>("amazonq.codescan.handleIssueCommandAction")
 
+    private val EXPLAIN_CONTEXT_PROMPT = "Provide a small description of the issue. You must not attempt to fix the issue. " +
+        "You should only give a small summary of it to the user. " +
+        "You must start with the information stored in the recommendation.text field if it is present."
+    private val APPLY_FIX_CONTEXT_PROMPT = "Generate a fix for the following code issue." +
+        " You must not explain the issue, just generate and explain the fix. " +
+        "The user should have the option to accept or reject the fix before any code is changed."
+
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
 
     override fun update(e: AnActionEvent) {
@@ -62,11 +69,11 @@ class HandleIssueCommandAction : AnAction(), DumbAware {
                 // https://github.com/aws/aws-toolkit-vscode/blob/master/packages/amazonq/src/lsp/chat/commands.ts#L30
                 val codeSelection = "\n```\n${context["code"]?.trimIndent()?.trim()}\n```\n"
                 val actionString = if (action == "explainIssue") "Explain" else "Fix"
+                val contextPrompt = if (action == "explainIssue") EXPLAIN_CONTEXT_PROMPT else APPLY_FIX_CONTEXT_PROMPT
 
                 val prompt = "$actionString ${context["title"]} issue in ${context["fileName"]} at ${createLineRangeText(context)}"
 
-                val modelPrompt = "$actionString ${context["title"]} issue in ${context["fileName"]} at ${createLineRangeText(context)}" +
-                    "Issue: \"${context}\" \n"
+                val modelPrompt = "$contextPrompt Issue: \"${context}\" \n"
 
                 val params = SendToPromptParams(
                     selection = codeSelection,
