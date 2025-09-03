@@ -18,7 +18,7 @@ class InlineChatFileListener(project: Project, private val controller: InlineCha
     private var selectionListener: InlineChatSelectionListener? = null
 
     init {
-        val editor = project.let { FileEditorManager.getInstance(it).selectedTextEditor }
+        val editor = project.let { FileEditorManager.getInstance(it).selectedTextEditorWithRemotes.firstOrNull() }
         if (editor != null) {
             setupListenersForEditor(editor)
             currentEditor = editor
