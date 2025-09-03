@@ -19,7 +19,7 @@ import software.aws.toolkits.jetbrains.utils.extensions.SsoLogin
 import software.aws.toolkits.jetbrains.utils.extensions.SsoLoginExtension
 
 @ExtendWith(ApplicationExtension::class, SsoLoginExtension::class)
-@SsoLogin("amazonq-test-account")
+@SsoLogin("single_profile_user")
 class PreAmazonQUiTest {
 
     @TestDisposable
