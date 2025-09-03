@@ -213,7 +213,8 @@ class BrowserConnector(
         themeSource
             .distinctUntilChanged()
             .onEach {
-                themeBrowserAdapter.updateThemeInBrowser(chatBrowser, it, uiReady)
+                uiReady.await()
+                themeBrowserAdapter.updateThemeInBrowser(chatBrowser, it)
             }
             .launchIn(this)
     }
@@ -713,7 +714,7 @@ class BrowserConnector(
                     $isDocAvailable,
                     $isCodeScanAvailable,
                     $isCodeTestAvailable,
-                    { postMessage: () => {} }
+                    { postMessage: () => {} },
                 );
                 
                 const commands = tempConnector.initialQuickActions?.slice(0, 2) || [];
