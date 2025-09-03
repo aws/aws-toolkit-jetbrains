@@ -123,8 +123,9 @@ data class NotificationActionList(
 )
 
 data class BannerContent(
+    val id: String,
     val title: String,
     val message: String,
-    val actions: List<NotificationActionList>,
-    val id: String,
+    val actions: List<NotificationActionList> = emptyList(),
+    val severity: NotificationSeverity = NotificationSeverity.INFO,
 )
