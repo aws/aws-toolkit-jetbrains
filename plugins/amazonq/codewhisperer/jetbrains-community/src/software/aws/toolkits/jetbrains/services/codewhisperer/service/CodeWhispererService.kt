@@ -540,7 +540,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                 openTabFilepaths = editor.project?.let { project ->
                     com.intellij.openapi.fileEditor.FileEditorManager.getInstance(project)
                         .openFiles.mapNotNull { toUriString(it) }
-                } ?: emptyList(),
+                }.orEmpty(),
             ).apply {
                 textDocument = TextDocumentIdentifier(toUriString(editor.virtualFile))
                 position = Position(
