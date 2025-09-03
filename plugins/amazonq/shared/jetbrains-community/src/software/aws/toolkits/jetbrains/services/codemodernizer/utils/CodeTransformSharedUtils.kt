@@ -9,7 +9,6 @@ import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.lazyIsUnauthedBearerConnection
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
-import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import java.time.Instant
 
 fun calculateTotalLatency(startTime: Instant, endTime: Instant) = (endTime.toEpochMilli() - startTime.toEpochMilli()).toInt()
@@ -27,6 +26,5 @@ fun isValidCodeTransformConnection(project: Project): Boolean {
 }
 fun isCodeTransformAvailable(project: Project): Boolean {
     if (!isIntellij()) return false
-    if (isRunningOnRemoteBackend()) return false
     return isValidCodeTransformConnection(project)
 }

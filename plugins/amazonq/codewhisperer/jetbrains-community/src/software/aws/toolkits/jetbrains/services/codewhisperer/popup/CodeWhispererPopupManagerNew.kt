@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer.popup
 
 import com.intellij.codeInsight.lookup.LookupManager
-import com.intellij.idea.AppMode
 import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_BACKSPACE
 import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_ENTER
 import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_ESCAPE
@@ -67,6 +66,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispe
 import software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererColorUtil.POPUP_DIM_HEX
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.POPUP_INFO_TEXT_SIZE
+import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.resources.message
 import java.awt.Point
 import java.awt.Rectangle
@@ -275,12 +275,12 @@ class CodeWhispererPopupManagerNew {
         // TODO: visibleAreaChanged listener is not getting triggered in remote environment when scrolling
         if (popup.isVisible) {
             // Changing the position of BackendBeAbstractPopup does not work
-            if (!shouldHidePopup && !AppMode.isRemoteDevHost()) {
+            if (!shouldHidePopup && !isRunningOnRemoteBackend()) {
                 popup.setLocation(relativePopupLocationToEditor.screenPoint)
                 popup.size = popup.preferredContentSize
             }
         } else {
-            if (!AppMode.isRemoteDevHost()) {
+            if (!isRunningOnRemoteBackend()) {
                 if (force && !shouldHidePopup) {
                     popup.show(relativePopupLocationToEditor)
                 }
