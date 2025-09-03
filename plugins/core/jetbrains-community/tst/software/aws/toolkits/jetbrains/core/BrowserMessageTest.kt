@@ -22,7 +22,7 @@ import software.aws.toolkits.jetbrains.core.webview.BrowserMessage
 import software.aws.toolkits.jetbrains.core.webview.BrowserState
 import software.aws.toolkits.jetbrains.core.webview.LoginBrowser
 
-class NoOpLoginBrowser(project: Project, domain: String = "", url: String = "") : LoginBrowser(project, domain, url) {
+class NoOpLoginBrowser(project: Project) : LoginBrowser(project) {
     override val jcefBrowser: JBCefBrowserBase = mock()
 
     override fun prepareBrowser(state: BrowserState) {}
