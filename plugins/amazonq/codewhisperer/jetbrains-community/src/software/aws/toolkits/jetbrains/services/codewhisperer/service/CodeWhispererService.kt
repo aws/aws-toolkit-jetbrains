@@ -24,8 +24,11 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.eclipse.lsp4j.DidChangeTextDocumentParams
 import org.eclipse.lsp4j.Position
+import org.eclipse.lsp4j.TextDocumentContentChangeEvent
 import org.eclipse.lsp4j.TextDocumentIdentifier
+import org.eclipse.lsp4j.VersionedTextDocumentIdentifier
 import org.eclipse.lsp4j.jsonrpc.JsonRpcException
 import org.eclipse.lsp4j.jsonrpc.messages.Either
 import software.amazon.awssdk.core.exception.SdkServiceException
@@ -520,6 +523,24 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                         else -> InlineCompletionTriggerKind.Invoke
                     }
                 ),
+                documentChangeParams =
+                if (triggerTypeInfo.automatedTriggerType == CodeWhispererAutomatedTriggerType.IntelliSense()) {
+                    DidChangeTextDocumentParams(
+                        VersionedTextDocumentIdentifier(),
+                        listOf(
+                            TextDocumentContentChangeEvent(
+                                null,
+                                CodeWhispererAutomatedTriggerType.IntelliSense().toString()
+                            )
+                        ),
+                    )
+                } else {
+                    null
+                },
+                openTabFilepaths = editor.project?.let { project ->
+                    com.intellij.openapi.fileEditor.FileEditorManager.getInstance(project)
+                        .openFiles.mapNotNull { toUriString(it) }
+                }.orEmpty(),
             ).apply {
                 textDocument = TextDocumentIdentifier(toUriString(editor.virtualFile))
                 position = Position(
