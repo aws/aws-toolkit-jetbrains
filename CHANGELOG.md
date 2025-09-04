@@ -1,3 +1,5 @@
+# _3.92_ (2025-09-04)
+
 # _3.91_ (2025-08-28)
 - **(Feature)** Enabling dynamic model fetching capabilities in Amazon Q chat
 - **(Feature)** Enable agentic code review
