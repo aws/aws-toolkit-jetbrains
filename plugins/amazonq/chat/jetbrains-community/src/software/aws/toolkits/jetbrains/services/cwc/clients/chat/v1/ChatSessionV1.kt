@@ -51,6 +51,7 @@ import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.Suggested
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.Suggestion
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.TriggerType
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.ActiveFileContext
+import java.util.UUID
 
 class ChatSessionV1(
     private val project: Project,
@@ -62,13 +63,13 @@ class ChatSessionV1(
         var requestId: String = ""
         var statusCode: Int = 0
         val responseHandler = GenerateAssistantResponseResponseHandler.builder()
-            .onResponse {
-                requestId = it.responseMetadata().requestId()
-                statusCode = it.sdkHttpResponse().statusCode()
-                conversationId = it.conversationId()
+            .onResponse { response ->
+                requestId = response.responseMetadata().requestId()
+                statusCode = response.sdkHttpResponse().statusCode()
+                conversationId = response.conversationId().takeIf { !it.isNullOrBlank() } ?: "client-inline-${UUID.randomUUID()}"
 
                 logger.info {
-                    val metadata = it.responseMetadata()
+                    val metadata = response.responseMetadata()
                     "Response to tab: ${data.tabId}, conversationId: $conversationId, requestId: ${metadata.requestId()}, metadata: $metadata"
                 }
             }
