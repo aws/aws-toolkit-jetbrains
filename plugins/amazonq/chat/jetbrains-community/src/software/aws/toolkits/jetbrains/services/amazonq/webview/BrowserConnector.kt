@@ -595,12 +595,12 @@ class BrowserConnector(
                 }
                 chatCommunicationManager.removePartialChatMessage(partialResultToken)
                 val decryptedMessage = value?.let { encryptionManager?.decrypt(it) }.orEmpty()
-                parseFindingsMessages(decryptedMessage)
+                val filteredMessage = parseFindingsMessages(decryptedMessage)
 
                 val messageToChat = ChatCommunicationManager.convertToJsonToSendToChat(
                     SEND_CHAT_COMMAND_PROMPT,
                     tabId,
-                    decryptedMessage,
+                    filteredMessage,
                     isPartialResult = false
                 )
                 browser.postChat(messageToChat)
@@ -618,13 +618,10 @@ class BrowserConnector(
         val additionalMessages = serializer.objectMapper.readValue<FlareAdditionalMessages>(responsePayload).additionalMessages
             ?: return emptyList()
 
-        return additionalMessages.filter { message ->
-            message.messageId.endsWith(CODE_REVIEW_FINDINGS_SUFFIX) ||
-                message.messageId.endsWith(DISPLAY_FINDINGS_SUFFIX)
-        }
+        return additionalMessages
     }
 
-    fun parseFindingsMessages(@Language("JSON") responsePayload: String) {
+    fun parseFindingsMessages(@Language("JSON") responsePayload: String): String {
         try {
             val findings = deserializeFindings(responsePayload)
             val scannedFiles = mutableListOf<VirtualFile>()
@@ -687,9 +684,17 @@ class BrowserConnector(
                         CodeWhispererConstants.CodeAnalysisScope.AGENTIC
                     )
                 CodeWhispererCodeScanManager.getInstance(project).showCodeScanUI()
+                
+                // Remove findings messages from response payload
+                val rootNode = serializer.objectMapper.readTree(responsePayload) as ObjectNode
+                rootNode.remove("additionalMessages")
+                return serializer.objectMapper.writeValueAsString(rootNode)
             }
+            
+            return responsePayload
         } catch (e: Exception) {
             LOG.error(e) { "Failed to parse findings message" }
+            return responsePayload
         }
     }
 
