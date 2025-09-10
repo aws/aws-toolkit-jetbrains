@@ -77,8 +77,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_TAB_BAR_ACTIONS
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_TAB_CHANGE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_TAB_REMOVE
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CODE_REVIEW_FINDINGS_SUFFIX
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.DISPLAY_FINDINGS_SUFFIX
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedQuickActionChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GET_SERIALIZED_CHAT_REQUEST_METHOD
@@ -684,13 +682,13 @@ class BrowserConnector(
                         CodeWhispererConstants.CodeAnalysisScope.AGENTIC
                     )
                 CodeWhispererCodeScanManager.getInstance(project).showCodeScanUI()
-                
+
                 // Remove findings messages from response payload
                 val rootNode = serializer.objectMapper.readTree(responsePayload) as ObjectNode
                 rootNode.remove("additionalMessages")
                 return serializer.objectMapper.writeValueAsString(rootNode)
             }
-            
+
             return responsePayload
         } catch (e: Exception) {
             LOG.error(e) { "Failed to parse findings message" }
