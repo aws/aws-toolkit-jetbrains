@@ -9,7 +9,10 @@ import com.fasterxml.jackson.annotation.Nulls
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.JsonDeserializer
+import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.Description
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.Recommendation
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.SuggestedFix
@@ -55,10 +58,17 @@ data class AggregatedCodeScanIssue(
 )
 
 class FlareAggregatedFindingsDeserializer : JsonDeserializer<FlareAggregatedFindings>() {
+    private val objectMapper = jacksonObjectMapper()
+
     override fun deserialize(p: JsonParser, ctxt: DeserializationContext): FlareAggregatedFindings? =
-        // drop values that do not look like FlareAggregatedFindings
         try {
-            ctxt.readValue(p, FlareAggregatedFindings::class.java)
+            val node = p.readValueAsTree<JsonNode>()
+            val messageId = node.get("messageId")?.asText() ?: return null
+            val bodyNode = node.get("body") ?: return null
+
+            val body = objectMapper.readValue<List<AggregatedCodeScanIssue>>(bodyNode.asText())
+
+            FlareAggregatedFindings(messageId, body)
         } catch (_: Exception) {
             null
         }
