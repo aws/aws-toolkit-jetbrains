@@ -6,10 +6,6 @@ dependencyResolutionManagement {
         maybeCreate("libs").apply {
             // pull value from IJ library list: https://github.com/JetBrains/intellij-community/blob/<mv>/.idea/libraries/kotlinx_coroutines_core.xml
             val version = when (providers.gradleProperty("ideProfileName").getOrNull() ?: return@apply) {
-                "2024.2" -> {
-                    "1.8.0-intellij-9"
-                }
-
                 "2024.3", "2025.1" -> {
                     "1.8.0-intellij-11"
                 }
