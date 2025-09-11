@@ -27,44 +27,6 @@ object IdeVersions {
 
     private val ideProfiles = listOf(
         Profile(
-            name = "2024.2",
-            community = ProductProfile(
-                sdkVersion = "2024.2",
-                bundledPlugins = commonPlugins + listOf(
-                    "com.intellij.java",
-                    "com.intellij.gradle",
-                    "org.jetbrains.idea.maven",
-                    "com.jetbrains.codeWithMe",
-                ),
-                marketplacePlugins = listOf(
-                    "org.toml.lang:242.20224.155",
-                    "PythonCore:242.20224.300",
-                    "Docker:242.20224.237"
-                )
-            ),
-            ultimate = ProductProfile(
-                sdkVersion = "2024.2",
-                bundledPlugins = commonPlugins + listOf(
-                    "JavaScript",
-                    "JavaScriptDebugger",
-                    "com.intellij.database",
-                    "com.jetbrains.codeWithMe",
-                ),
-                marketplacePlugins = listOf(
-                    "org.toml.lang:242.20224.155",
-                    "PythonCore:242.20224.300",
-                    "org.jetbrains.plugins.go:242.20224.300",
-                )
-            ),
-            rider = RiderProfile(
-                sdkVersion = "2024.2",
-                bundledPlugins = commonPlugins,
-                netFrameworkTarget = "net472",
-                rdGenVersion = "2024.1.1",
-                nugetVersion = " 2024.2.0"
-            )
-        ),
-        Profile(
             name = "2024.3",
             community = ProductProfile(
                 sdkVersion = "2024.3",
@@ -106,10 +68,6 @@ object IdeVersions {
         ),
         Profile(
             name = "2025.1",
-            gateway = ProductProfile(
-                sdkVersion = "2025.1",
-                bundledPlugins = listOf("org.jetbrains.plugins.terminal")
-            ),
             community = ProductProfile(
                 sdkVersion = "2025.1",
                 bundledPlugins = commonPlugins + listOf(
