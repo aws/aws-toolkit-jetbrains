@@ -93,7 +93,7 @@ class BrowserConnectorTest : AmazonQTestBase() {
                 "additionalMessages": [
                     {
                         "messageId": "test_codeReviewFindings",
-                        "body": [{"filePath": "/test/file.kt", "issues": []}]
+                        "body": "[{\"filePath\": \"/test/file.kt\", \"issues\": []}]"
                     },
                     {
                         "messageId": "other_message",
@@ -121,7 +121,7 @@ class BrowserConnectorTest : AmazonQTestBase() {
                 "additionalMessages": [
                     {
                         "messageId": "test_displayFindings",
-                        "body": [{"filePath": "/test/file.kt", "issues": []}]
+                        "body": "[{\"filePath\": \"/test/file.kt\", \"issues\": []}]"
                     },
                     {
                         "messageId": "other_message",
@@ -179,7 +179,7 @@ class BrowserConnectorTest : AmazonQTestBase() {
                     "additionalMessages": [
                         {
                             "messageId": "test_codeReviewFindings",
-                            "body": ${jacksonObjectMapper().writeValueAsString(listOf(aggregatedIssue))}
+                            "body": "${jacksonObjectMapper().writeValueAsString(listOf(aggregatedIssue)).replace("\"", "\\\"")}"
                         },
                         {
                             "messageId": "other_message",
@@ -228,7 +228,7 @@ class BrowserConnectorTest : AmazonQTestBase() {
                 "additionalMessages": [
                     {
                         "messageId": "test_displayFindings",
-                        "body": ${jacksonObjectMapper().writeValueAsString(listOf(aggregatedIssue))}
+                        "body": "${jacksonObjectMapper().writeValueAsString(listOf(aggregatedIssue)).replace("\"", "\\\"")}"
                     },
                     {
                         "messageId": "other_message",
@@ -255,6 +255,9 @@ class BrowserConnectorTest : AmazonQTestBase() {
                 "additionalMessages": [
                     {
                         "messageId": "test_codeReviewFindings",
+                        "body": "invalid json"
+                    },
+                    {
                         "body": "invalid json"
                     }
                 ]
