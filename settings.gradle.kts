@@ -117,12 +117,6 @@ include("detekt-rules")
 include("ui-tests")
 include("sandbox-all")
 include("ui-tests-starter")
-when (providers.gradleProperty("ideProfileName").get()) {
-    // FIX_WHEN_MIN_IS_243
-    "2024.2" -> {
-        project(":ui-tests-starter").projectDir = file("noop")
-    }
-}
 
 /*
 plugins/
@@ -176,7 +170,7 @@ file("plugins").listFiles()?.forEach root@ {
             if (it.name == "jetbrains-gateway") {
                 when (providers.gradleProperty("ideProfileName").get()) {
                     // buildSrc is evaluated after settings so we can't key off of IdeVersions.kt
-                    "2024.2", "2024.3" -> {
+                    "2024.3" -> {
                         return@forEach
                     }
                 }
