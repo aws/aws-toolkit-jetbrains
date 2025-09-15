@@ -243,12 +243,12 @@ export class Connector {
             canBeVoted: false,
         })
 
-        this.onChatAnswerReceived(messageData.tabID, {
-            type: ChatItemType.SYSTEM_PROMPT,
-            body: undefined,
-            followUp: this.followUpGenerator.generateAuthFollowUps('doc', messageData.authType),
-            canBeVoted: false,
-        })
+        // this.onChatAnswerReceived(messageData.tabID, {
+        //     type: ChatItemType.SYSTEM_PROMPT,
+        //     body: undefined,
+        //     followUp: this.followUpGenerator.generateAuthFollowUps('doc', messageData.authType),
+        //     canBeVoted: false,
+        // })
 
         return
     }
@@ -321,12 +321,12 @@ export class Connector {
         }
 
         if (messageData.type === 'authNeededException') {
-            this.processAuthNeededException(messageData)
+            // this.processAuthNeededException(messageData)
             return
         }
 
         if (messageData.type === 'openNewTabMessage') {
-            this.onNewTab('doc')
+            // this.onNewTab('doc')
             return
         }
 
