@@ -1,4 +1,0 @@
-{
-  "type" : "bugfix",
-  "description" : "Fix handling of code review findings so they are properly sent to CodeIssues Panel"
-}
