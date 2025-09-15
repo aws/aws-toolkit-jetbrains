@@ -50,7 +50,6 @@ export class Connector {
     private readonly chatInputEnabled
     private readonly onUpdateAuthentication
     private readonly followUpGenerator: FollowUpGenerator
-    // private readonly onNewTab
     private readonly onFileComponentUpdate
 
     constructor(props: ConnectorProps) {
@@ -64,7 +63,6 @@ export class Connector {
         this.chatInputEnabled = props.onChatInputEnabled
         this.onUpdateAuthentication = props.onUpdateAuthentication
         this.followUpGenerator = new FollowUpGenerator()
-        // this.onNewTab = props.onNewTab
         this.onFileComponentUpdate = props.onFileComponentUpdate
     }
 

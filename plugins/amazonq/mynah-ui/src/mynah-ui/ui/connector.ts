@@ -13,18 +13,13 @@ import {
     ChatPrompt, QuickActionCommand,
 } from '@aws/mynah-ui-chat'
 import { Connector as CWChatConnector } from './apps/cwChatConnector'
-// import { Connector as FeatureDevChatConnector } from './apps/featureDevChatConnector'
-// import { Connector as DocChatConnector } from './apps/docChatConnector'
 import { Connector as AmazonQCommonsConnector } from './apps/amazonqCommonsConnector'
 import { ExtensionMessage } from './commands'
 import { TabType, TabsStorage } from './storages/tabsStorage'
 import { WelcomeFollowupType } from './apps/amazonqCommonsConnector'
 import { AuthFollowUpType } from './followUps/generator'
 import { CodeTransformChatConnector } from './apps/codeTransformChatConnector'
-// import { isFormButtonCodeTest, isFormButtonCodeScan, isFormButtonCodeTransform } from './forms/constants'
 import { DiffTreeFileInfo } from './diffTree/types'
-// import { CodeScanChatConnector } from "./apps/codeScanChatConnector";
-// import { CodeTestChatConnector } from './apps/codeTestChatConnector'
 
 export interface CodeReference {
     licenseName?: string
@@ -101,11 +96,7 @@ export class Connector {
     private readonly sendMessageToExtension
     private readonly onMessageReceived
     private readonly cwChatConnector
-    // private readonly featureDevChatConnector
     private readonly codeTransformChatConnector: CodeTransformChatConnector
-    // private readonly docChatConnector
-    // private readonly codeScanChatConnector: CodeScanChatConnector
-    // private readonly codeTestChatConnector: CodeTestChatConnector
     private readonly tabsStorage
     private readonly amazonqCommonsConnector: AmazonQCommonsConnector
 
@@ -115,11 +106,7 @@ export class Connector {
         this.sendMessageToExtension = props.sendMessageToExtension
         this.onMessageReceived = props.onMessageReceived
         this.cwChatConnector = new CWChatConnector(props as ConnectorProps)
-        // this.featureDevChatConnector = new FeatureDevChatConnector(props)
         this.codeTransformChatConnector = new CodeTransformChatConnector(props)
-        // this.docChatConnector = new DocChatConnector(props)
-        // this.codeScanChatConnector = new CodeScanChatConnector(props)
-        // this.codeTestChatConnector = new CodeTestChatConnector(props)
         this.amazonqCommonsConnector = new AmazonQCommonsConnector({
             sendMessageToExtension: this.sendMessageToExtension,
             onWelcomeFollowUpClicked: props.onWelcomeFollowUpClicked,
@@ -202,18 +189,6 @@ export class Connector {
                 break
         }
     }
-
-    // scan = (tabID: string): void => {
-    //     switch (this.tabsStorage.getTab(tabID)?.type) {
-    //         default:
-    //             this.codeScanChatConnector.scan(tabID)
-    //             break
-    //     }
-    // }
-
-    // startTestGen = (tabID: string, prompt: string): void => {
-    //     this.codeTestChatConnector.startTestGen(tabID, prompt)
-    // }
 
     handleMessageReceive = async (message: MessageEvent): Promise<void> => {
         if (message.data === undefined) {
