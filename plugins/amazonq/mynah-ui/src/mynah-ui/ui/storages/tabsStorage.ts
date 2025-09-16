@@ -6,11 +6,7 @@
 export type TabStatus = 'free' | 'busy' | 'dead'
 const TabTypes = [
     'cwc',
-    'featuredev',
     'codetransform',
-    'doc',
-    'codescan',
-    'codetest',
     'agentWalkthrough',
     'welcome',
     'unknown',
@@ -22,16 +18,8 @@ export function isTabType(value: string): value is TabType {
 
 export function getTabCommandFromTabType(tabType: TabType): string {
     switch (tabType) {
-        case 'featuredev':
-            return '/dev'
         case 'codetransform':
             return '/transform'
-        case 'doc':
-            return '/doc'
-        case 'codescan':
-            return '/review'
-        case 'codetest':
-            return '/test'
         default:
             return ''
     }

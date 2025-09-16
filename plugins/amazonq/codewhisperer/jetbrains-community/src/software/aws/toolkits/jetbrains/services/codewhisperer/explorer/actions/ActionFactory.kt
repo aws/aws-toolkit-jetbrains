@@ -20,7 +20,6 @@ interface ActionProvider<T> {
     val openChatPanel: T
     val pauseAutoScans: T
     val resumeAutoScans: T
-    val runScan: T
     val sendFeedback: T
     val connectOnGithub: T
     val documentation: T
@@ -53,7 +52,6 @@ fun <T> buildActionListForCodeScan(project: Project, actionProvider: ActionProvi
                 add(actionProvider.resumeAutoScans)
             }
         }
-        add(actionProvider.runScan)
     }
 
 fun <T> buildActionListForOtherFeatures(project: Project, actionProvider: ActionProvider<T>): List<T> =
