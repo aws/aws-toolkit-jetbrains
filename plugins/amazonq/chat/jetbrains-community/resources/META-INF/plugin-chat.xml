@@ -23,10 +23,6 @@
 
     <extensions defaultExtensionNs="amazon.q">
         <appFactory implementation="software.aws.toolkits.jetbrains.services.cwc.AppFactory" />
-        <appFactory implementation="software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevAppFactory" />
-        <appFactory implementation="software.aws.toolkits.jetbrains.services.amazonqDoc.DocAppFactory" />
-        <appFactory implementation="software.aws.toolkits.jetbrains.services.amazonqCodeScan.CodeScanChatAppFactory" />
-        <appFactory implementation="software.aws.toolkits.jetbrains.services.amazonqCodeTest.CodeTestChatAppFactory" />
     </extensions>
 
     <actions>
