@@ -217,11 +217,7 @@ export class WebviewUIHandler {
                 for (const tabID of authenticatingTabIDs) {
                     const tabType = this.tabsStorage.getTab(tabID)?.type
                     if (
-                        (tabType === 'featuredev' && featureDevEnabled) ||
-                        (tabType === 'codetransform' && codeTransformEnabled) ||
-                        (tabType === 'doc' && docEnabled) ||
-                        (tabType === 'codetransform' && codeTransformEnabled) ||
-                        (tabType === 'codetest' && codeTestEnabled)
+                        (tabType === 'codetransform' && codeTransformEnabled)
                     ) {
                         this.mynahUI?.addChatItem(tabID, {
                             type: ChatItemType.ANSWER,
@@ -672,30 +668,11 @@ export class WebviewUIHandler {
                     return
                 }
 
-                if (this.tabsStorage.getTab(tabID)?.type === 'featuredev') {
-                    this.mynahUI?.addChatItem(tabID, {
-                        type: ChatItemType.ANSWER_STREAM,
-                    })
-                } else if (this.tabsStorage.getTab(tabID)?.type === 'codetransform') {
+                if (this.tabsStorage.getTab(tabID)?.type === 'codetransform') {
                     this.connector?.requestAnswer(tabID, {
                         chatMessage: prompt.prompt ?? ''
                     })
                     return
-                } else if (this.tabsStorage.getTab(tabID)?.type === 'codetest') {
-                    if(prompt.command !== undefined && prompt.command.trim() !== '' && prompt.command !== '/test') {
-                        this.quickActionHandler?.handleCommand(prompt, tabID, eventId)
-                        return
-                    } else {
-                        this.connector?.requestAnswer(tabID, {
-                            chatMessage: prompt.prompt ?? ''
-                        })
-                        return
-                    }
-                } else if (this.tabsStorage.getTab(tabID)?.type === 'codescan') {
-                    if(prompt.command !== undefined && prompt.command.trim() !== '') {
-                        this.quickActionHandler?.handleCommand(prompt, tabID, eventId)
-                        return
-                    }
                 }
 
                 if (this.tabsStorage.getTab(tabID)?.type === 'welcome') {

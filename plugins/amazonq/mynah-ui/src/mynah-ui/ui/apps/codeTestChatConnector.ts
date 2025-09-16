@@ -1,14 +1,13 @@
-// Copyright 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
-// SPDX-License-Identifier: Apache-2.0
+/*!
+ * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 import {ExtensionMessage} from "../commands";
 import {ChatPayload, ConnectorProps} from "../connector";
 import {FormButtonIds} from "../forms/constants";
 import {ChatItem, ChatItemAction, ChatItemType, FeedbackPayload, MynahIcons, MynahUIDataModel} from '@aws/mynah-ui-chat'
 import {CodeReference} from "./amazonqCommonsConnector";
-import {Status} from "@aws/mynah-ui-chat/dist/static";
-import {EmptyMynahUIDataModel} from "@aws/mynah-ui-chat/dist/helper/store";
-import {doesNotMatch} from "node:assert";
 
 export interface ICodeTestChatConnectorProps {
     sendMessageToExtension: (message: ExtensionMessage) => void
