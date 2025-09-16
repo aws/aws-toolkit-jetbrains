@@ -145,23 +145,7 @@ class CodeWhispererCodeScanManager(val project: Project, private val defaultScop
      */
     fun isOnDemandScanInProgress(): Boolean = isOnDemandScanInProgress.get()
 
-    /**
-     * Code scan job is active when the [Job] is started and is in active state.
-     */
-    fun isCodeScanJobActive(): Boolean = this::codeScanJob.isInitialized && codeScanJob.isActive && isOnDemandScanInProgress()
-
-    fun getRunActionButtonIcon(): Icon = if (isOnDemandScanInProgress()) AllIcons.Process.Step_1 else AllIcons.Actions.Execute
-
     fun getActionButtonIconForExplorerNode(): Icon = if (isOnDemandScanInProgress()) AllIcons.Actions.Suspend else AllIcons.Actions.Execute
-
-    fun getActionButtonText(): String = if (!isOnDemandScanInProgress()) {
-        message(
-            "codewhisperer.codescan.run_scan",
-            INACTIVE_TEXT_COLOR
-        )
-    } else {
-        message("codewhisperer.codescan.stop_scan")
-    }
 
     private fun isIgnoredIssueTitle(title: String) = getIgnoredIssueTitles().contains(title)
 
