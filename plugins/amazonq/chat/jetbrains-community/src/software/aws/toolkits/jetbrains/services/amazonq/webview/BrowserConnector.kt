@@ -77,8 +77,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_TAB_BAR_ACTIONS
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_TAB_CHANGE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_TAB_REMOVE
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CODE_REVIEW_FINDINGS_SUFFIX
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.DISPLAY_FINDINGS_SUFFIX
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedQuickActionChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GET_SERIALIZED_CHAT_REQUEST_METHOD
@@ -213,7 +211,8 @@ class BrowserConnector(
         themeSource
             .distinctUntilChanged()
             .onEach {
-                themeBrowserAdapter.updateThemeInBrowser(chatBrowser, it, uiReady)
+                uiReady.await()
+                themeBrowserAdapter.updateThemeInBrowser(chatBrowser, it)
             }
             .launchIn(this)
     }
@@ -594,12 +593,12 @@ class BrowserConnector(
                 }
                 chatCommunicationManager.removePartialChatMessage(partialResultToken)
                 val decryptedMessage = value?.let { encryptionManager?.decrypt(it) }.orEmpty()
-                parseFindingsMessages(decryptedMessage)
+                val filteredMessage = parseFindingsMessages(decryptedMessage)
 
                 val messageToChat = ChatCommunicationManager.convertToJsonToSendToChat(
                     SEND_CHAT_COMMAND_PROMPT,
                     tabId,
-                    decryptedMessage,
+                    filteredMessage,
                     isPartialResult = false
                 )
                 browser.postChat(messageToChat)
@@ -617,13 +616,10 @@ class BrowserConnector(
         val additionalMessages = serializer.objectMapper.readValue<FlareAdditionalMessages>(responsePayload).additionalMessages
             ?: return emptyList()
 
-        return additionalMessages.filter { message ->
-            message.messageId.endsWith(CODE_REVIEW_FINDINGS_SUFFIX) ||
-                message.messageId.endsWith(DISPLAY_FINDINGS_SUFFIX)
-        }
+        return additionalMessages
     }
 
-    fun parseFindingsMessages(@Language("JSON") responsePayload: String) {
+    fun parseFindingsMessages(@Language("JSON") responsePayload: String): String {
         try {
             val findings = deserializeFindings(responsePayload)
             val scannedFiles = mutableListOf<VirtualFile>()
@@ -686,9 +682,17 @@ class BrowserConnector(
                         CodeWhispererConstants.CodeAnalysisScope.AGENTIC
                     )
                 CodeWhispererCodeScanManager.getInstance(project).showCodeScanUI()
+
+                // Remove findings messages from response payload
+                val rootNode = serializer.objectMapper.readTree(responsePayload) as ObjectNode
+                rootNode.remove("additionalMessages")
+                return serializer.objectMapper.writeValueAsString(rootNode)
             }
+
+            return responsePayload
         } catch (e: Exception) {
             LOG.error(e) { "Failed to parse findings message" }
+            return responsePayload
         }
     }
 
@@ -713,7 +717,7 @@ class BrowserConnector(
                     $isDocAvailable,
                     $isCodeScanAvailable,
                     $isCodeTestAvailable,
-                    { postMessage: () => {} }
+                    { postMessage: () => {} },
                 );
                 
                 const commands = tempConnector.initialQuickActions?.slice(0, 2) || [];

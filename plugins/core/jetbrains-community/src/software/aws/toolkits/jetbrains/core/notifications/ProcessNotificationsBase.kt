@@ -88,7 +88,7 @@ class ProcessNotificationsBase(
         if (shouldShow) {
             LOG.info { "Showing notification with id: ${notificationData.id}" }
             val notificationContent = notificationData.content.locale
-            val severity = notificationData.severity
+            val severity = checkSeverity(notificationData.severity)
             val followupActions = NotificationManager.createActions(
                 project,
                 notificationData.actions,
@@ -99,11 +99,11 @@ class ProcessNotificationsBase(
                 notificationContent.title,
                 notificationContent.description,
                 NotificationManager.buildNotificationActions(followupActions),
-                checkSeverity(severity),
+                severity,
                 notificationData.id
             )
-            if (severity == "Critical") {
-                val bannerContent = BannerContent(notificationContent.title, notificationContent.description, followupActions, notificationData.id)
+            if (severity == NotificationSeverity.CRITICAL) {
+                val bannerContent = BannerContent(notificationData.id, notificationContent.title, notificationContent.description, followupActions, severity)
                 BannerNotificationService.getInstance().addNotification(notificationData.id, bannerContent)
                 notifyListenerForNotification(bannerContent)
             }

@@ -10,7 +10,6 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isUserBuilderId
-import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 
 interface ActionProvider<T> {
     val pause: T
@@ -21,7 +20,6 @@ interface ActionProvider<T> {
     val openChatPanel: T
     val pauseAutoScans: T
     val resumeAutoScans: T
-    val runScan: T
     val sendFeedback: T
     val connectOnGithub: T
     val documentation: T
@@ -54,14 +52,11 @@ fun <T> buildActionListForCodeScan(project: Project, actionProvider: ActionProvi
                 add(actionProvider.resumeAutoScans)
             }
         }
-        add(actionProvider.runScan)
     }
 
 fun <T> buildActionListForOtherFeatures(project: Project, actionProvider: ActionProvider<T>): List<T> =
     buildList {
-        if (!isRunningOnRemoteBackend()) {
-            add(actionProvider.openChatPanel)
-        }
+        add(actionProvider.openChatPanel)
 
         val isIdC = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance()).let { conn ->
             conn != null && !conn.isSono()
