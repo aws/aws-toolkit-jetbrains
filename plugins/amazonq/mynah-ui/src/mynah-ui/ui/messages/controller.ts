@@ -42,7 +42,7 @@ export class MessageController {
 
     public sendSelectedCodeToTab(message: ChatItem): string | undefined {
         const selectedTab = { ...this.tabsStorage.getSelectedTab() }
-        if (selectedTab?.id === undefined || selectedTab?.type === 'featuredev') {
+        if (selectedTab?.id === undefined ) {
             // Create a new tab if there's none
             const newTabID: string | undefined = this.mynahUI?.updateStore(
                 '',

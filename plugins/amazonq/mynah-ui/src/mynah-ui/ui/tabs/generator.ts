@@ -28,20 +28,12 @@ export class TabDataGenerator {
     private tabTitle: Map<TabType, string> = new Map([
         ['unknown', 'Chat'],
         ['cwc', 'Chat'],
-        ['featuredev', 'Q - Dev'],
         ['codetransform', 'Q - Transform'],
-        ['doc', 'Q - Documentation'],
-        ['codescan', 'Q - Review'],
-        ['codetest', 'Q - Test'],
     ])
 
     private tabInputPlaceholder: Map<TabType, string> = new Map([
         ['unknown', 'Ask a question or enter "/" for quick commands'],
         ['cwc', 'Ask a question or enter "/" for quick commands'],
-        ['featuredev', 'Describe your task or issue in detail'],
-        ['doc', 'Ask Amazon Q to generate documentation for your project'],
-        ['codescan', 'Waiting for your inputs...'],
-        ['codetest', 'Specify a function(s) in the current file(optional)'],
     ])
 
     private tabWelcomeMessage: Map<TabType, string> = new Map([
@@ -58,25 +50,9 @@ export class TabDataGenerator {
         You can enter \`/\` to see a list of quick actions. Add @workspace at the beginning of your message to enhance Q response with entire workspace files.`,
         ],
         [
-            'featuredev',
-            `Hi! I'm the Amazon Q Developer Agent for software development. 
-
-I can generate code to implement new functionality across your workspace. To get started, describe the task you're trying to accomplish, and I'll generate code to implement it. If you want to make changes to the code, you can tell me what to improve and I'll generate new code based on your feedback. 
-
-What would you like to work on?`,
-        ],
-        [
             'codetransform',
             `Welcome to Code Transformation! **You can also run transformations from the command line. To install the tool, see the [documentation](https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/run-CLI-transformations.html).**`,
         ],
-        [
-            'doc',
-         `Welcome to doc generation!\n\nI can help generate documentation for your code. To get started, choose what type of doc update you'd like to make.`,
-        ],
-        [
-            'codetest',
-            `Welcome to Amazon Q Unit Test Generation. I can help you generate unit tests for your active file.`,
-        ]
     ])
 
     private tabContextCommand: Map<TabType, QuickActionCommandGroup[]> = new Map([
