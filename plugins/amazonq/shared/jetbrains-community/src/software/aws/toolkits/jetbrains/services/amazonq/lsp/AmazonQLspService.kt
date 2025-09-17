@@ -31,6 +31,7 @@ import com.intellij.util.net.ssl.CertificateManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.delay
@@ -125,6 +126,17 @@ internal class LSPProcessListener : ProcessListener {
 
     override fun processTerminated(event: ProcessEvent) {
         LOG.info { "LSP process terminated with exit code ${event.exitCode}" }
+        
+        // Check for CPU profile file after process termination
+        val processId = ProcessHandle.current().pid()
+        val profileDir = System.getProperty("java.io.tmpdir").trimEnd('/')
+        val profilePath = "$profileDir/node-profile-$processId.cpuprofile"
+        if (Files.exists(Path.of(profilePath))) {
+            LOG.info { "CPU profile file created: $profilePath" }
+        } else {
+            LOG.warn { "CPU profile file not found at: $profilePath" }
+        }
+        
         try {
             this.outputStreamWriter.close()
             this.outputStream.close()
@@ -463,8 +475,17 @@ private class AmazonQServerInstance(private val project: Project, private val cs
         val nodePath = getNodeRuntimePath(artifact.resolve(node))
         val emptyFile = Files.createTempFile("empty", null).toAbsolutePath().toString()
 
+        val processId = ProcessHandle.current().pid()
+        val profileDir = System.getProperty("java.io.tmpdir").trimEnd('/')
+        val profilePath = "node-profile-$processId"
+        LOG.info { "Node.js CPU profile will be saved to: $profileDir $profilePath" }
+
         val cmd = NodeExePatcher.patch(nodePath)
             .withParameters(
+                "--cpu-prof",
+                "--cpu-prof-dir=$profileDir",
+                "--cpu-prof-name=$profilePath",
+             //   "--cpu-prof-name=node-profile-$processId.cpuprofile",
                 LspSettings.getInstance().getArtifactPath() ?: artifact.resolve("aws-lsp-codewhisperer.js").toString(),
                 "--stdio",
                 "--set-credentials-encryption-key",
@@ -721,18 +742,28 @@ private class AmazonQServerInstance(private val project: Project, private val cs
                 // otherwise can deadlock waiting for frozen flare process
                 cs.launch {
                     languageServer.apply {
-                        withTimeout(2000) {
+                        withTimeout(5000) {
                             shutdown().await()
                             exit()
                         }
                     }
                 }.asCompletableFuture()
-                    .get(3000, TimeUnit.MILLISECONDS)
+                    .get(6000, TimeUnit.MILLISECONDS)
+            } catch (e: CancellationException) {
+                // Expected during shutdown, proceed with cleanup
+                launcherHandler.process.destroy()
+                Thread.sleep(500)
             } catch (e: Exception) {
                 LOG.warn(e) { "LSP shutdown failed" }
-                launcherHandler.killProcess()
+                launcherHandler.process.destroy()
+                Thread.sleep(500)
+            } finally {
+                if (!launcherHandler.isProcessTerminated) {
+                    launcherHandler.killProcess()
+                }
             }
         } else if (!launcherHandler.isProcessTerminated) {
+            Thread.sleep(500)
             launcherHandler.killProcess()
         }
     }
