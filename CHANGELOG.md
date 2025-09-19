@@ -1,3 +1,6 @@
+# _3.94_ (2025-09-19)
+- **(Feature)** Improve the explain and apply fix messages
+
 # _3.93_ (2025-09-11)
 - **(Bug Fix)** Fix handling of code review findings so they are properly sent to CodeIssues Panel
 - **(Removal)** Removed support for 2024.2.x IDEs and Gateway 2025.1
