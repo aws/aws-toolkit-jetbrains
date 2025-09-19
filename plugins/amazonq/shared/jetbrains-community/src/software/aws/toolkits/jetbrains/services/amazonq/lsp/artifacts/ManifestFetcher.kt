@@ -28,7 +28,7 @@ class ManifestFetcher {
 
         private fun getManifestEndpoint(): String {
             val endpoint = Registry.get("amazon.q.flare.endpoint").asString()
-            return endpoint.ifBlank { "https://aws-toolkit-language-servers.amazonaws.com/qAgenticChatServer/0/manifest.json" }
+            return endpoint.ifBlank { "https://github.com/aws/language-servers/releases/download/agentic-alpha/manifest.json" }
         }
 
         private val DEFAULT_MANIFEST_PATH: Path = getToolkitsCommonCacheRoot()

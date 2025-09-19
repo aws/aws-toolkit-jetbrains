@@ -60,7 +60,7 @@ tasks.check {
 }
 
 val downloadFlareManifest by tasks.registering(Download::class) {
-    src("https://aws-toolkit-language-servers.amazonaws.com/qAgenticChatServer/0/manifest.json")
+    src("https://github.com/aws/language-servers/releases/download/agentic-alpha/manifest.json")
     dest(layout.buildDirectory.file("flare/manifest.json"))
     onlyIfModified(true)
     useETag(true)
