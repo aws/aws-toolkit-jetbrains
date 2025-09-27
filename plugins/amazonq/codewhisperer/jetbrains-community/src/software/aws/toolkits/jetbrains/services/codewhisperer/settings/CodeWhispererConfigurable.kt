@@ -295,24 +295,15 @@ class CodeWhispererConfigurable(private val project: Project) :
                         ToolkitConnectionManagerListener.TOPIC,
                         object : ToolkitConnectionManagerListener {
                             override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
-                                enabled(isCodeWhispererEnabled(project) && !isSso)
+                                enabled(isCodeWhispererEnabled(project))
                             }
                         }
                     )
 
-                    enabled(invoke && !isSso)
+                    enabled(invoke)
 
-                    if (isSso) {
-                        bindSelected({ false }, {})
-                    } else {
-                        bindSelected(codeWhispererSettings::isMetricOptIn, codeWhispererSettings::toggleMetricOptIn)
-                    }
+                    bindSelected(codeWhispererSettings::isMetricOptIn, codeWhispererSettings::toggleMetricOptIn)
                 }.comment(message("aws.settings.codewhisperer.configurable.opt_out.tooltip"))
-                if (isSso) {
-                    label(message("aws.settings.codewhisperer.configurable.controlled_by_admin")).applyToComponent {
-                        font = font.deriveFont(Font.ITALIC).deriveFont((font.size - 1).toFloat())
-                    }.enabled(false)
-                }
             }
         }
     }.also {
