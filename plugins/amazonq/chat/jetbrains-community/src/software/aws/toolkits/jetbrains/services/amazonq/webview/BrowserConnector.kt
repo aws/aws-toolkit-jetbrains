@@ -682,14 +682,11 @@ class BrowserConnector(
                         CodeWhispererConstants.CodeAnalysisScope.AGENTIC
                     )
                 CodeWhispererCodeScanManager.getInstance(project).showCodeScanUI()
-
-                // Remove findings messages from response payload
-                val rootNode = serializer.objectMapper.readTree(responsePayload) as ObjectNode
-                rootNode.remove("additionalMessages")
-                return serializer.objectMapper.writeValueAsString(rootNode)
             }
-
-            return responsePayload
+            // Remove findings messages from response payload
+            val rootNode = serializer.objectMapper.readTree(responsePayload) as ObjectNode
+            rootNode.remove("additionalMessages")
+            return serializer.objectMapper.writeValueAsString(rootNode)
         } catch (e: Exception) {
             LOG.error(e) { "Failed to parse findings message" }
             return responsePayload
