@@ -1,4 +1,4 @@
 {
   "type" : "bugfix",
-  "description" : "fix displayFinding tool handling"
+  "description" : "fix findings not being populated in the display panel"
 }
