@@ -674,7 +674,6 @@ class BrowserConnector(
                 }
             }
 
-
             if (mappedFindings.isNotEmpty()) {
                 CodeWhispererCodeScanManager.getInstance(project)
                     .addOnDemandIssues(
