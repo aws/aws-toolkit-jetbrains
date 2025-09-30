@@ -674,14 +674,16 @@ class BrowserConnector(
                 }
             }
 
-            CodeWhispererCodeScanManager.getInstance(project)
-                .addOnDemandIssues(
-                    mappedFindings,
-                    scannedFiles,
-                    CodeWhispererConstants.CodeAnalysisScope.AGENTIC
-                )
-            CodeWhispererCodeScanManager.getInstance(project).showCodeScanUI()
 
+            if (mappedFindings.isNotEmpty()) {
+                CodeWhispererCodeScanManager.getInstance(project)
+                    .addOnDemandIssues(
+                        mappedFindings,
+                        scannedFiles,
+                        CodeWhispererConstants.CodeAnalysisScope.AGENTIC
+                    )
+                CodeWhispererCodeScanManager.getInstance(project).showCodeScanUI()
+            }
             // Remove findings messages from response payload
             val rootNode = serializer.objectMapper.readTree(responsePayload) as ObjectNode
             rootNode.remove("additionalMessages")
