@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "DisplayFindings tool findings were not being populated in the display panel, instead sending json to chat"
+}
