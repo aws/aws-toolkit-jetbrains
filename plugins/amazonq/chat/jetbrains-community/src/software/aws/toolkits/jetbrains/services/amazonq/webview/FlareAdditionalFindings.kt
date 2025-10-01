@@ -49,7 +49,7 @@ data class FlareCodeScanIssue(
     val language: String,
     val autoDetected: Boolean,
     val filePath: String,
-    val findingContext: String,
+    val findingContext: String?,
 )
 
 data class AggregatedCodeScanIssue(
