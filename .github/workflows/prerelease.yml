@@ -56,6 +56,8 @@ jobs:
 
   generate_changelog:
     runs-on: ubuntu-latest
+    env:
+      TAG_NAME: ${{ github.event.inputs.tag_name }}
     outputs:
       feature: ${{ steps.assign_output.outputs.feature }}
       tagname: ${{ steps.assign_output.outputs.tagname }}
@@ -71,7 +73,7 @@ jobs:
 
       - if: github.event_name == 'workflow_dispatch'
         run: |
-          echo "TAG_NAME=${{ github.event.inputs.tag_name }}" >> $GITHUB_ENV
+          echo "TAG_NAME=${TAG_NAME}" >> $GITHUB_ENV
       - if: github.ref_name != 'main'
         run: |
           TAG_NAME=${{ github.ref_name }}
