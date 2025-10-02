@@ -1,4 +1,0 @@
-{
-  "type" : "bugfix",
-  "description" : "remove findings message from chat even when all issues are ignored"
-}
