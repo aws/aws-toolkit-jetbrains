@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat
 data class Model(
     val id: String,
     val name: String,
+    val description: String? = null,
 )
 
 data class ListAvailableModelsParams(
