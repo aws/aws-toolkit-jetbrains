@@ -111,6 +111,14 @@ class CodeWhispererConfigurable(private val project: Project) :
                     .resizableColumn()
                     .align(Align.FILL)
             }
+            row {
+                checkBox("Enable CPU profiling")
+                    .bindSelected(
+                        { LspSettings.getInstance().isCpuProfilingEnabled() },
+                        { LspSettings.getInstance().setCpuProfilingEnabled(it) }
+                    )
+                    .comment("Enable CPU profiling for the LSP server to help diagnose performance issues")
+            }
         }
 
         group(message("aws.settings.codewhisperer.group.general")) {
