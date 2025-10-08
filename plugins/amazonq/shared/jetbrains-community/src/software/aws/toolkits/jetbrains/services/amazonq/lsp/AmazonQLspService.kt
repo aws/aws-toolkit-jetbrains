@@ -28,10 +28,10 @@ import com.intellij.util.io.DigestUtil
 import com.intellij.util.net.HttpConfigurable
 import com.intellij.util.net.JdkProxyProvider
 import com.intellij.util.net.ssl.CertificateManager
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.delay
@@ -126,17 +126,19 @@ internal class LSPProcessListener : ProcessListener {
 
     override fun processTerminated(event: ProcessEvent) {
         LOG.info { "LSP process terminated with exit code ${event.exitCode}" }
-        
-        // Check for CPU profile file after process termination
-        val processId = ProcessHandle.current().pid()
-        val profileDir = System.getProperty("java.io.tmpdir").trimEnd('/')
-        val profilePath = "$profileDir/node-profile-$processId.cpuprofile"
-        if (Files.exists(Path.of(profilePath))) {
-            LOG.info { "CPU profile file created: $profilePath" }
-        } else {
-            LOG.warn { "CPU profile file not found at: $profilePath" }
+
+        // Check for CPU profile file after process termination only if profiling was enabled
+        if (LspSettings.getInstance().isCpuProfilingEnabled()) {
+            val processId = ProcessHandle.current().pid()
+            val profileDir = System.getProperty("java.io.tmpdir").trimEnd('/')
+            val profilePath = "$profileDir/node-profile-$processId.cpuprofile"
+            if (Files.exists(Path.of(profilePath))) {
+                LOG.info { "CPU profile file created: $profilePath" }
+            } else {
+                LOG.warn { "CPU profile file not found at: $profilePath" }
+            }
         }
-        
+
         try {
             this.outputStreamWriter.close()
             this.outputStream.close()
@@ -475,20 +477,22 @@ private class AmazonQServerInstance(private val project: Project, private val cs
         val nodePath = getNodeRuntimePath(artifact.resolve(node))
         val emptyFile = Files.createTempFile("empty", null).toAbsolutePath().toString()
 
-        val processId = ProcessHandle.current().pid()
-        val profileDir = System.getProperty("java.io.tmpdir").trimEnd('/')
-        val profilePath = "node-profile-$processId"
-        LOG.info { "Node.js CPU profile will be saved to: $profileDir $profilePath" }
-
         val cmd = NodeExePatcher.patch(nodePath)
             .withParameters(
-                "--cpu-prof",
-                "--cpu-prof-dir=$profileDir",
-                "--cpu-prof-name=$profilePath.cpuprofile",
-             //   "--cpu-prof-name=node-profile-$processId.cpuprofile",
-                LspSettings.getInstance().getArtifactPath() ?: artifact.resolve("aws-lsp-codewhisperer.js").toString(),
-                "--stdio",
-                "--set-credentials-encryption-key",
+                buildList {
+                    if (LspSettings.getInstance().isCpuProfilingEnabled()) {
+                        val processId = ProcessHandle.current().pid()
+                        val profileDir = System.getProperty("java.io.tmpdir").trimEnd('/')
+                        val profilePath = "node-profile-$processId.cpuprofile.cpuprofile"
+                        LOG.info { "Node.js CPU profile will be saved to: $profileDir $profilePath" }
+                        add("--cpu-prof")
+                        add("--cpu-prof-dir=$profileDir")
+                        add("--cpu-prof-name=$profilePath")
+                    }
+                    add(LspSettings.getInstance().getArtifactPath() ?: artifact.resolve("aws-lsp-codewhisperer.js").toString())
+                    add("--stdio")
+                    add("--set-credentials-encryption-key")
+                }
             ).withEnvironment(
                 buildMap {
                     extraCaCerts?.let {
