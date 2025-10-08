@@ -487,7 +487,7 @@ private class AmazonQServerInstance(private val project: Project, private val cs
                         LOG.info { "Node.js CPU profile will be saved to: $profileDir $profilePath" }
                         add("--cpu-prof")
                         add("--cpu-prof-dir=$profileDir")
-                        add("--cpu-prof-name=$profilePath")
+                        add("--cpu-prof-name=$profilePath.cpuprofile")
                     }
                     add(LspSettings.getInstance().getArtifactPath() ?: artifact.resolve("aws-lsp-codewhisperer.js").toString())
                     add("--stdio")
