@@ -483,11 +483,11 @@ private class AmazonQServerInstance(private val project: Project, private val cs
                     if (LspSettings.getInstance().isCpuProfilingEnabled()) {
                         val processId = ProcessHandle.current().pid()
                         val profileDir = System.getProperty("java.io.tmpdir").trimEnd('/')
-                        val profilePath = "node-profile-$processId.cpuprofile.cpuprofile"
+                        val profilePath = "node-profile-$processId.cpuprofile"
                         LOG.info { "Node.js CPU profile will be saved to: $profileDir $profilePath" }
                         add("--cpu-prof")
                         add("--cpu-prof-dir=$profileDir")
-                        add("--cpu-prof-name=$profilePath.cpuprofile")
+                        add("--cpu-prof-name=$profilePath")
                     }
                     add(LspSettings.getInstance().getArtifactPath() ?: artifact.resolve("aws-lsp-codewhisperer.js").toString())
                     add("--stdio")
