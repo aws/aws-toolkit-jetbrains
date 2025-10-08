@@ -484,7 +484,7 @@ private class AmazonQServerInstance(private val project: Project, private val cs
             .withParameters(
                 "--cpu-prof",
                 "--cpu-prof-dir=$profileDir",
-                "--cpu-prof-name=$profilePath",
+                "--cpu-prof-name=$profilePath.cpuprofile",
              //   "--cpu-prof-name=node-profile-$processId.cpuprofile",
                 LspSettings.getInstance().getArtifactPath() ?: artifact.resolve("aws-lsp-codewhisperer.js").toString(),
                 "--stdio",
