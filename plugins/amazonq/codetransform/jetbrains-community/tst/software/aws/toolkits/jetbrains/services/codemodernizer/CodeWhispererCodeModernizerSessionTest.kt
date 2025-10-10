@@ -335,13 +335,14 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
     }
 
     @Test
-    fun `CodeModernizerSession can create zip and excludes idea folder and github folder`() {
+    fun `CodeModernizerSession can create zip and excludes idea folder and github folder and git folder`() {
         addFilesToProjectModule(
             "pom.xml",
             "src/tmp.java",
             ".idea/smth.iml",
             "someModule/pom.xml",
             "someModule/.idea/smthelse.iml",
+            "someModule/.git/testing.txt",
             "someModule/.github/test.txt"
         )
         // get project.projectFile because project.projectFile can not be null
