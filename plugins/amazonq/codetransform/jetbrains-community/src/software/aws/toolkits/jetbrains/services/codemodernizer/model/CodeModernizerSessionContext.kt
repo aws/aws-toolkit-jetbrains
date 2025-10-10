@@ -58,6 +58,7 @@ const val MAVEN_BUILD_SKIP_UNIT_TESTS = "clean test-compile"
 const val MAVEN_DEFAULT_BUILD_DIRECTORY_NAME = "target"
 const val IDEA_DIRECTORY_NAME = ".idea"
 const val GIT_DIRECTORY_NAME = ".git"
+const val GITHUB_DIRECTORY_NAME = ".github"
 const val DS_STORE_FILE_NAME = ".DS_Store"
 const val INVALID_SUFFIX_SHA = "sha1"
 const val INVALID_SUFFIX_REPOSITORIES = "repositories"
@@ -96,10 +97,12 @@ data class CodeModernizerSessionContext(
 
     private fun File.isGitFolder(): Boolean = this.isDirectory && this.name == GIT_DIRECTORY_NAME
 
+    private fun File.isGithubFolder(): Boolean = this.isDirectory && this.name == GITHUB_DIRECTORY_NAME
+
     private fun findDirectoriesToExclude(sourceFolder: File): List<File> {
         val excluded = mutableListOf<File>()
         sourceFolder.walkTopDown().onEnter {
-            if (it.isMavenTargetFolder() || it.isIdeaFolder() || it.isGitFolder()) {
+            if (it.isMavenTargetFolder() || it.isIdeaFolder() || it.isGitFolder() || it.isGithubFolder()) {
                 excluded.add(it)
                 return@onEnter false
             }
