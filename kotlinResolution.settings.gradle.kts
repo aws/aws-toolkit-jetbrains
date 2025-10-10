@@ -14,6 +14,10 @@ dependencyResolutionManagement {
                     "1.10.1-intellij-5"
                 }
 
+                "2025.3" -> {
+                    "1.10.1-intellij-5"
+                }
+
                 else -> { error("not set") }
             }
 
