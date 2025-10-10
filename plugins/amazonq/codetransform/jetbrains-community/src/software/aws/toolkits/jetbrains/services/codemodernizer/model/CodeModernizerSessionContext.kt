@@ -93,16 +93,12 @@ data class CodeModernizerSessionContext(
         return isMavenTargetDirName && hasPomSibling
     }
 
-    private fun File.isIdeaFolder(): Boolean = this.isDirectory && this.name == IDEA_DIRECTORY_NAME
-
-    private fun File.isGitFolder(): Boolean = this.isDirectory && this.name == GIT_DIRECTORY_NAME
-
-    private fun File.isGithubFolder(): Boolean = this.isDirectory && this.name == GITHUB_DIRECTORY_NAME
+    private fun File.isInvalidFolder(): Boolean = this.isDirectory && this.name in listOf(IDEA_DIRECTORY_NAME, GIT_DIRECTORY_NAME, GITHUB_DIRECTORY_NAME)
 
     private fun findDirectoriesToExclude(sourceFolder: File): List<File> {
         val excluded = mutableListOf<File>()
         sourceFolder.walkTopDown().onEnter {
-            if (it.isMavenTargetFolder() || it.isIdeaFolder() || it.isGitFolder() || it.isGithubFolder()) {
+            if (it.isMavenTargetFolder() || it.isInvalidFolder()) {
                 excluded.add(it)
                 return@onEnter false
             }
