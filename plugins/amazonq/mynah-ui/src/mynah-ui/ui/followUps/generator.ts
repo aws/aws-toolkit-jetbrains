@@ -42,43 +42,7 @@ export class FollowUpGenerator {
 
     public generateWelcomeBlockForTab(tabType: TabType): FollowUpsBlock {
         switch (tabType) {
-            case 'featuredev':
-                return {
-                    text: 'Ask a follow up question',
-                    options: [
-                        {
-                            pillText: 'What are some examples of tasks?',
-                            type: 'DevExamples',
-                        },
-                    ],
-                }
-            case 'doc':
-                return {
-                    text: 'Select one of the following...',
-                    options: [
-                        {
-                            pillText: 'Create a README',
-                            prompt: 'Create a README',
-                            type: 'CreateDocumentation',
-                        },
-                        {
-                            pillText: 'Update an existing README',
-                            prompt: 'Update an existing README',
-                            type: 'UpdateDocumentation',
-                        },
-                    ],
-                }
             case 'codetransform':
-                return {
-                    text: '',
-                    options: [],
-                }
-            case 'codescan':
-                return {
-                    text: '',
-                    options: []
-                }
-            case 'codetest':
                 return {
                     text: '',
                     options: [],

@@ -4,6 +4,8 @@
 package software.aws.toolkits.jetbrains.services.codemodernizer
 
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.projectRoots.JavaSdkVersion
 import com.intellij.testFramework.LightVirtualFile
 import io.mockk.every
 import io.mockk.just
@@ -16,6 +18,7 @@ import org.jetbrains.yaml.YAMLFileType
 import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito
+import org.mockito.Mockito.mock
 import org.mockito.kotlin.any
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
@@ -28,6 +31,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.Transformation
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStep
 import software.amazon.awssdk.services.ssooidc.model.InvalidGrantException
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerArtifact.Companion.MAPPER
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerSessionContext
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformType
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.PlanTable
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.combineTableRows
@@ -52,6 +56,8 @@ class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase
     override fun setup() {
         super.setup()
     }
+
+    private val mockProject: Project = mock(Project::class.java)
 
     @Test
     fun `can poll for updates`() {
@@ -254,7 +260,6 @@ class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase
 
     @Test
     fun `isPlanComplete returns true when plan has progress update with name '1'`() {
-        // Arrange
         val plan = TransformationPlan.builder()
             .transformationSteps(
                 listOf(
@@ -270,7 +275,15 @@ class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase
                 )
             )
             .build()
-        val result = isPlanComplete(plan)
+
+        // dependency upgrade
+        val sessionContext = CodeModernizerSessionContext(
+            project = mockProject,
+            sourceJavaVersion = JavaSdkVersion.JDK_17,
+            targetJavaVersion = JavaSdkVersion.JDK_17
+        )
+
+        val result = isPlanComplete(plan, sessionContext)
         assertThat(result).isTrue()
     }
 
@@ -283,7 +296,7 @@ class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase
                         .progressUpdates(
                             listOf(
                                 TransformationProgressUpdate.builder()
-                                    .name("2")
+                                    .name("not-1")
                                     .build()
                             )
                         )
@@ -291,8 +304,45 @@ class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase
                 )
             )
             .build()
-        val result = isPlanComplete(plan)
+
+        // dependency upgrade
+        val sessionContext = CodeModernizerSessionContext(
+            project = mockProject,
+            sourceJavaVersion = JavaSdkVersion.JDK_17,
+            targetJavaVersion = JavaSdkVersion.JDK_17
+        )
+
+        val result = isPlanComplete(plan, sessionContext)
         assertThat(result).isFalse()
+    }
+
+    @Test
+    fun `isPlanComplete returns true when doing a min JDK upgrade`() {
+        val plan = TransformationPlan.builder()
+            .transformationSteps(
+                listOf(
+                    TransformationStep.builder()
+                        .progressUpdates(
+                            listOf(
+                                TransformationProgressUpdate.builder()
+                                    .name("not-1")
+                                    .build()
+                            )
+                        )
+                        .build()
+                )
+            )
+            .build()
+
+        // min JDK upgrade
+        val sessionContext = CodeModernizerSessionContext(
+            project = mockProject,
+            sourceJavaVersion = JavaSdkVersion.JDK_1_8,
+            targetJavaVersion = JavaSdkVersion.JDK_17
+        )
+
+        val result = isPlanComplete(plan, sessionContext)
+        assertThat(result).isTrue()
     }
 
     @Test

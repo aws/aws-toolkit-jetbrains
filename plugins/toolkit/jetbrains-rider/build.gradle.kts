@@ -80,7 +80,7 @@ dependencies {
 
         // FIX_WHEN_MIN_IS_251: https://github.com/JetBrains/intellij-platform-gradle-plugin/issues/1774
         when (providers.gradleProperty("ideProfileName").get()) {
-            "2024.2", "2024.3", "2025.1" -> {
+            "2024.3", "2025.1" -> {
                 bundledModule("intellij.rider")
             }
         }

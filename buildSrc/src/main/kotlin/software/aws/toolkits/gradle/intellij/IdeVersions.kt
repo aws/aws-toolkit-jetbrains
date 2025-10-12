@@ -22,47 +22,10 @@ object IdeVersions {
     private val commonPlugins = listOf(
         "Git4Idea",
         "org.jetbrains.plugins.terminal",
-        "org.jetbrains.plugins.yaml"
+        "org.jetbrains.plugins.yaml",
     )
 
     private val ideProfiles = listOf(
-        Profile(
-            name = "2024.2",
-            community = ProductProfile(
-                sdkVersion = "2024.2",
-                bundledPlugins = commonPlugins + listOf(
-                    "com.intellij.java",
-                    "com.intellij.gradle",
-                    "org.jetbrains.idea.maven",
-                ),
-                marketplacePlugins = listOf(
-                    "org.toml.lang:242.20224.155",
-                    "PythonCore:242.20224.300",
-                    "Docker:242.20224.237"
-                )
-            ),
-            ultimate = ProductProfile(
-                sdkVersion = "2024.2",
-                bundledPlugins = commonPlugins + listOf(
-                    "JavaScript",
-                    "JavaScriptDebugger",
-                    "com.intellij.database",
-                    "com.jetbrains.codeWithMe",
-                ),
-                marketplacePlugins = listOf(
-                    "org.toml.lang:242.20224.155",
-                    "PythonCore:242.20224.300",
-                    "org.jetbrains.plugins.go:242.20224.300",
-                )
-            ),
-            rider = RiderProfile(
-                sdkVersion = "2024.2",
-                bundledPlugins = commonPlugins,
-                netFrameworkTarget = "net472",
-                rdGenVersion = "2024.1.1",
-                nugetVersion = " 2024.2.0"
-            )
-        ),
         Profile(
             name = "2024.3",
             community = ProductProfile(
@@ -71,6 +34,7 @@ object IdeVersions {
                     "com.intellij.java",
                     "com.intellij.gradle",
                     "org.jetbrains.idea.maven",
+                    "com.jetbrains.codeWithMe",
                 ),
                 marketplacePlugins = listOf(
                     "org.toml.lang:243.21565.122",
@@ -104,16 +68,13 @@ object IdeVersions {
         ),
         Profile(
             name = "2025.1",
-            gateway = ProductProfile(
-                sdkVersion = "2025.1",
-                bundledPlugins = listOf("org.jetbrains.plugins.terminal")
-            ),
             community = ProductProfile(
                 sdkVersion = "2025.1",
                 bundledPlugins = commonPlugins + listOf(
                     "com.intellij.java",
                     "com.intellij.gradle",
                     "org.jetbrains.idea.maven",
+                    "com.jetbrains.codeWithMe",
                 ),
                 marketplacePlugins = listOf(
                     "org.toml.lang:251.26927.47",
@@ -160,6 +121,7 @@ object IdeVersions {
                     "com.intellij.java",
                     "com.intellij.gradle",
                     "org.jetbrains.idea.maven",
+                    "com.jetbrains.codeWithMe",
                     "com.intellij.properties"
                 ),
                 marketplacePlugins = listOf(
@@ -184,11 +146,11 @@ object IdeVersions {
                 )
             ),
             rider = RiderProfile(
-                sdkVersion = "2025.2-SNAPSHOT",
+                sdkVersion = "2025.2",
                 bundledPlugins = commonPlugins,
                 netFrameworkTarget = "net472",
                 rdGenVersion = "2025.2.2",
-                nugetVersion = "2025.2.0-rc02"
+                nugetVersion = "2025.2.0"
             )
         )
     ).associateBy { it.name }

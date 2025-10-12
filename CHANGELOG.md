@@ -1,3 +1,24 @@
+# _3.96_ (2025-10-02)
+- **(Bug Fix)** remove findings message from chat even when all issues are ignored
+- **(Bug Fix)** DisplayFindings tool findings were not being populated in the display panel, instead sending json to chat
+
+# _3.95_ (2025-09-29)
+
+# _3.94_ (2025-09-19)
+- **(Feature)** Improve the explain and apply fix messages
+
+# _3.93_ (2025-09-11)
+- **(Bug Fix)** Fix handling of code review findings so they are properly sent to CodeIssues Panel
+- **(Removal)** Removed support for 2024.2.x IDEs and Gateway 2025.1
+
+# _3.92_ (2025-09-04)
+
+# _3.91_ (2025-08-28)
+- **(Feature)** Enabling dynamic model fetching capabilities in Amazon Q chat
+- **(Feature)** Enable agentic code review
+- **(Feature)** Amazon Q: Support for configuring and utilizing remote MCP servers.
+- **(Deprecation)** An upcoming release will remove support for JetBrains Gateway version 2025.1 and for IDEs based on the 2024.2 platform
+
 # _3.90_ (2025-08-22)
 - **(Feature)** Amazon Q supports admin control for MCP servers to restrict MCP server usage
 - **(Bug Fix)** Fix incompatible version warning for AWS Toolkit in 2025.2

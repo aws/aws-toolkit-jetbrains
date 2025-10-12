@@ -86,20 +86,8 @@ export class Connector {
     private processUserGuideLink(tabType: TabType, actionId: string) {
         let userGuideLink = ''
         switch (tabType) {
-            case 'codescan':
-                userGuideLink = codeScanUserGuide
-                break
-            case 'codetest':
-                userGuideLink = codeTestUserGuide
-                break
             case 'codetransform':
                 userGuideLink = codeTransformUserGuide
-                break
-            case 'doc':
-                userGuideLink = docUserGuide
-                break
-            case 'featuredev':
-                userGuideLink = featureDevUserGuide
                 break
         }
 

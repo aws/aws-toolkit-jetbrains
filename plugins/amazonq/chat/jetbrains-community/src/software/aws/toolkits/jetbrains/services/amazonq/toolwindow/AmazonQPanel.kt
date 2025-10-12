@@ -4,13 +4,13 @@
 package software.aws.toolkits.jetbrains.services.amazonq.toolwindow
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.intellij.idea.AppMode
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.components.JBLoadingPanel
 import com.intellij.ui.components.JBTextArea
+import com.intellij.ui.components.ProgressBarLoadingDecorator
 import com.intellij.ui.components.panels.Wrapper
 import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.AlignX
@@ -45,6 +45,7 @@ import software.aws.toolkits.jetbrains.services.amazonqCodeTest.auth.isCodeTestA
 import software.aws.toolkits.jetbrains.services.amazonqDoc.auth.isDocAvailable
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.auth.isFeatureDevAvailable
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isCodeTransformAvailable
+import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.resources.message
 import java.awt.datatransfer.DataFlavor
 import java.awt.dnd.DropTarget
@@ -92,8 +93,8 @@ class AmazonQPanel(val project: Project, private val scope: CoroutineScope) : Di
     init {
         if (!JBCefApp.isSupported()) {
             // Fallback to an alternative browser-less solution
-            if (AppMode.isRemoteDevHost()) {
-                webviewContainer.add(JBTextArea("Amazon Q chat is not supported in remote dev environment."))
+            if (isRunningOnRemoteBackend()) {
+                webviewContainer.add(JBTextArea("Amazon Q chat is not supported in this remote dev environment because it lacks JCEF webview support."))
             } else {
                 webviewContainer.add(JBTextArea("JCEF not supported"))
             }
@@ -102,7 +103,14 @@ class AmazonQPanel(val project: Project, private val scope: CoroutineScope) : Di
             webviewContainer.add(JBTextArea("${message("q.unavailable")}\n ${message("q.unavailable.node")}"))
             browser.complete(null)
         } else {
-            val loadingPanel = JBLoadingPanel(null, this)
+            val loadingPanel = if (isRunningOnRemoteBackend()) {
+                JBLoadingPanel(null) {
+                    ProgressBarLoadingDecorator(it, this, -1)
+                }
+            } else {
+                JBLoadingPanel(null, this)
+            }
+
             val wrapper = Wrapper()
             loadingPanel.startLoading()
 
@@ -110,13 +118,13 @@ class AmazonQPanel(val project: Project, private val scope: CoroutineScope) : Di
             wrapper.setContent(loadingPanel)
 
             scope.launch {
-                val webUri = service<ArtifactManager>().fetchArtifact(project).resolve("amazonq-ui.js").toUri()
+                val mynahAsset = service<ArtifactManager>().fetchArtifact(project).resolve("amazonq-ui.js")
                 // wait for server to be running
                 AmazonQLspService.getInstance(project).instanceFlow.first()
 
                 withContext(EDT) {
                     browser.complete(
-                        Browser(this@AmazonQPanel, webUri, project).also { browserInstance ->
+                        Browser(this@AmazonQPanel, mynahAsset, project).also { browserInstance ->
                             wrapper.setContent(browserInstance.component())
 
                             // Register direct callback instead of using message bus

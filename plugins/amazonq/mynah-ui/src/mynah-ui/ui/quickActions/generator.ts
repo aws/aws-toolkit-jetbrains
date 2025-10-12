@@ -7,6 +7,7 @@ import { QuickActionCommand, QuickActionCommandGroup } from '@aws/mynah-ui-chat/
 import { TabType } from '../storages/tabsStorage'
 import {MynahIcons} from "@aws/mynah-ui-chat";
 
+// TODO: Need to remove legacy code of isCodeScanEnabled, isCodeTestEnabled, isDocEnabled and isFeatureDevEnabled in followup PR
 export interface QuickActionGeneratorProps {
     isFeatureDevEnabled: boolean
     isCodeTransformEnabled: boolean
@@ -39,44 +40,6 @@ export class QuickActionGenerator {
         const quickActionCommands = [
             {
                 commands: [
-                    ...(this.isFeatureDevEnabled
-                        ? [
-                              {
-                                  command: '/dev',
-                                  icon: MynahIcons.CODE_BLOCK,
-                                  placeholder: 'Describe your task or issue in as much detail as possible',
-                                  description: 'Generate code to make a change in your project',
-                              },
-                          ]
-                        : []),
-                        ...(this.isDocEnabled
-                            ? [
-                                {
-                                    command: '/doc',
-                                    icon: MynahIcons.FILE,
-                                    description: 'Generate documentation for your code',
-                                },
-                            ]
-                            : []),
-                    ...(this.isCodeScanEnabled
-                        ? [
-                            {
-                                command: '/review',
-                                icon: MynahIcons.BUG,
-                                description: 'Identify and fix code issues before committing'
-                            }
-                        ]
-                        : []),
-                    ...(this.isCodeTestEnabled
-                        ? [
-                            {
-                                command: '/test',
-                                icon: MynahIcons.CHECK_LIST,
-                                placeholder: 'Specify a function(s) in the current file(optional)',
-                                description: 'Generate unit tests',
-                            },
-                        ]
-                        : []),
                     ...(this.isCodeTransformEnabled
                         ? [
                             {
@@ -101,24 +64,8 @@ export class QuickActionGenerator {
                 description: '',
                 unavailableItems: [],
             },
-            featuredev: {
-                description: "This command isn't available in /dev",
-                unavailableItems: ['/dev', '/transform', '/doc', '/help', '/clear', '/review', '/test'],
-            },
             codetransform: {
                 description: "This command isn't available in /transform",
-                unavailableItems: ['/help', '/clear'],
-            },
-            codescan: {
-                description: "This command isn't available in /review",
-                unavailableItems: ['/help', '/clear'],
-            },
-            codetest: {
-                description: "This command isn't available in /test",
-                unavailableItems: ['/help', '/clear'],
-            },
-            doc: {
-                description: "This command isn't available in /doc",
                 unavailableItems: ['/help', '/clear'],
             },
             welcome: {

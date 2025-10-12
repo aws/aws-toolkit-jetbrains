@@ -18,7 +18,7 @@ jobs:
     strategy:
       matrix:
         build_target: [ ':plugin-core:buildPlugin', ':plugin-toolkit:intellij-standalone:buildPlugin', ':plugin-amazonq:buildPlugin' ]
-        version: [ '2024.2', '2024.3', '2025.1', '2025.2' ]
+        version: [ '2024.3', '2025.1', '2025.2' ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -56,6 +56,8 @@ jobs:
 
   generate_changelog:
     runs-on: ubuntu-latest
+    env:
+      TAG_NAME: ${{ github.event.inputs.tag_name }}
     outputs:
       feature: ${{ steps.assign_output.outputs.feature }}
       tagname: ${{ steps.assign_output.outputs.tagname }}
@@ -71,7 +73,7 @@ jobs:
 
       - if: github.event_name == 'workflow_dispatch'
         run: |
-          echo "TAG_NAME=${{ github.event.inputs.tag_name }}" >> $GITHUB_ENV
+          echo "TAG_NAME=${TAG_NAME}" >> $GITHUB_ENV
       - if: github.ref_name != 'main'
         run: |
           TAG_NAME=${{ github.ref_name }}
