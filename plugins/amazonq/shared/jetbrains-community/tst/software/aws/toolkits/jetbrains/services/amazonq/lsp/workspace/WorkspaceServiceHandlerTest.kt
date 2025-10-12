@@ -819,6 +819,10 @@ class WorkspaceServiceHandlerTest {
     }
 
     // for windows unit tests
+    private val windowsDrive: String
+        get() = java.nio.file.Paths.get("").toAbsolutePath().root
+            ?.toString()?.firstOrNull()?.uppercaseChar()?.toString() ?: "C"
+
     private fun normalizeFileUri(uri: String): String {
         if (!System.getProperty("os.name").lowercase().contains("windows")) {
             return uri
@@ -829,6 +833,6 @@ class WorkspaceServiceHandlerTest {
         }
 
         val path = uri.substringAfter("file:///")
-        return "file:///C:/$path"
+        return "file:///$windowsDrive:/$path"
     }
 }
