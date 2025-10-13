@@ -28,7 +28,7 @@ plugins {
 }
 
 intellijToolkit {
-    ideFlavor.set(IdeFlavor.IC)
+    ideFlavor.set(IdeFlavor.IU)
 }
 
 dependencies {
