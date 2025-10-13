@@ -45,7 +45,8 @@ tasks.compileKotlin {
 }
 
 intellijToolkit {
-    ideFlavor.set(IdeFlavor.IC)
+    // For 2025.3+, use IU (Ultimate) as the unified platform since IC (Community) was discontinued
+    ideFlavor.set(IdeFlavor.IU)
 }
 
 // expose intellij test framework to fixture consumers
