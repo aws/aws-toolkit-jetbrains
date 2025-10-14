@@ -95,7 +95,7 @@ dependencies {
 
             create(type, version, useInstaller = false)
         } else {
-            create(IntelliJPlatformType.Gateway, version, useInstaller = false)
+            create(IntelliJPlatformType.Gateway, version)
         }
 
         bundledPlugins(toolkitIntelliJ.productProfile().map { it.bundledPlugins })

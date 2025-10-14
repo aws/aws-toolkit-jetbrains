@@ -8,7 +8,7 @@ plugins {
 }
 
 intellijToolkit {
-    ideFlavor.set(IdeFlavor.IU)
+    ideFlavor.set(IdeFlavor.IC)
 }
 
 dependencies {
