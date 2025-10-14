@@ -21,8 +21,7 @@ when {
     }
 
     else -> {
-        // For 2025.3+, use IU as default since IC (Community) was discontinued
-        intellijToolkit.ideFlavor.set(IdeFlavor.IU)
+        intellijToolkit.ideFlavor.set(IdeFlavor.IC)
     }
 }
 
