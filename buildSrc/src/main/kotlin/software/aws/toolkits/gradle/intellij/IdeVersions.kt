@@ -172,7 +172,7 @@ object IdeVersions {
                     "org.toml.lang:253.25908.29",
                     "PythonCore:253.25908.13",
                     "Docker:253.25908.29",
-                    "com.intellij.modules.json:253.520.21"
+                    "com.intellij.modules.json:253.25908.13"
                 )
             ),
             ultimate = ProductProfile(
@@ -186,7 +186,7 @@ object IdeVersions {
                     // "com.jetbrains.codeWithMe", // TODO: add back when available in 2025.3
                     "Pythonid:253.25908.13",
                     "org.jetbrains.plugins.go:253.25908.13",
-                    "com.intellij.modules.json:253.520.21"
+                    "com.intellij.modules.json:253.25908.13"
                 )
             ),
             rider = RiderProfile(
