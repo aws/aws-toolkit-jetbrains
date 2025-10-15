@@ -95,12 +95,7 @@ dependencies {
 
             create(type, version, useInstaller = false)
         } else {
-            val gatewayVersion = version.get()
-            if (gatewayVersion.startsWith("253")) {
-                create(IntelliJPlatformType.Gateway, version, useInstaller = false)
-            } else {
-                create(IntelliJPlatformType.Gateway, version) 
-            }
+            create(IntelliJPlatformType.Gateway, version)
         }
 
         bundledPlugins(toolkitIntelliJ.productProfile().map { it.bundledPlugins })
