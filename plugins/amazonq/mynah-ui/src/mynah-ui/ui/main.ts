@@ -28,7 +28,6 @@ import { getActions, getDetails } from './diffTree/actions'
 import { DiffTreeFileInfo } from './diffTree/types'
 import './styles.css'
 import {welcomeScreenTabData} from "./walkthrough/welcome";
-import { agentWalkthroughDataModel } from './walkthrough/agent'
 import {createClickTelemetry, createOpenAgentTelemetry} from "./telemetry/actions";
 import {disclaimerAcknowledgeButtonId, disclaimerCard} from "./texts/disclaimer";
 
@@ -811,20 +810,6 @@ export class WebviewUIHandler {
                     })
 
                     postMessage.postMessage(createClickTelemetry('amazonq-welcome-quick-start-button'))
-                    return
-                }
-
-                if (action.id === 'explore') {
-                    const newTabId = this.mynahUI?.updateStore('', agentWalkthroughDataModel)
-                    if (newTabId === undefined) {
-                        this.mynahUI?.notify({
-                            content: uiComponentsTexts.noMoreTabsTooltip,
-                            type: NotificationType.WARNING,
-                        })
-                        return
-                    }
-                    this.tabsStorage.updateTabTypeFromUnknown(newTabId, 'agentWalkthrough')
-                    postMessage.postMessage(createClickTelemetry('amazonq-welcome-explore-button'))
                     return
                 }
 

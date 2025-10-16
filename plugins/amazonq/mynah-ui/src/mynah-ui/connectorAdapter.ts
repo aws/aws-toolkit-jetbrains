@@ -86,10 +86,6 @@ export class HybridChatAdapter implements ChatClientAdapter {
 
     isSupportedQuickAction(command: string): boolean {
         return (
-            command === '/dev' ||
-            command === '/test' ||
-            command === '/review' ||
-            command === '/doc' ||
             command === '/transform'
         )
     }

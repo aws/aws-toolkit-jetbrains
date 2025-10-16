@@ -109,9 +109,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.util.tabType
 import software.aws.toolkits.jetbrains.services.amazonq.webview.theme.AmazonQTheme
 import software.aws.toolkits.jetbrains.services.amazonq.webview.theme.ThemeBrowserAdapter
 import software.aws.toolkits.jetbrains.services.amazonqCodeScan.auth.isCodeScanAvailable
-import software.aws.toolkits.jetbrains.services.amazonqCodeTest.auth.isCodeTestAvailable
-import software.aws.toolkits.jetbrains.services.amazonqDoc.auth.isDocAvailable
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.auth.isFeatureDevAvailable
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isCodeTransformAvailable
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanIssue
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanManager
@@ -694,11 +691,8 @@ class BrowserConnector(
     }
 
     private suspend fun updateQuickActionsInBrowser(browser: Browser) {
-        val isFeatureDevAvailable = isFeatureDevAvailable(project)
         val isCodeTransformAvailable = isCodeTransformAvailable(project)
-        val isDocAvailable = isDocAvailable(project)
         val isCodeScanAvailable = isCodeScanAvailable(project)
-        val isCodeTestAvailable = isCodeTestAvailable(project)
 
         val serverCapabilities = AmazonQLspService.getInstance(project).instanceFlow.first().initializeResult.await().awsServerCapabilities
 
@@ -709,11 +703,8 @@ class BrowserConnector(
                 const tempConnector = connectorAdapter.initiateAdapter(
                     false, 
                     true, // the two values are not used here, needed for constructor
-                    $isFeatureDevAvailable,
                     $isCodeTransformAvailable,
-                    $isDocAvailable,
                     $isCodeScanAvailable,
-                    $isCodeTestAvailable,
                     { postMessage: () => {} },
                 );
                 

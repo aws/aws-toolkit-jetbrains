@@ -7,7 +7,6 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionReference
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionReferencePosition
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.CodeReferenceGenerated
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretPosition
 import software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceManager
@@ -36,24 +35,6 @@ object ReferenceLogController {
                 editor,
                 inlineChatStartPosition ?: CodeWhispererEditorUtil.getCaretPosition(editor),
             )
-        }
-    }
-
-    fun addReferenceLog(codeReferences: List<CodeReferenceGenerated>?, project: Project) {
-        val manager = CodeWhispererCodeReferenceManager.getInstance(project)
-
-        // TODO flare: hook /dev references with flare correctly, this is only a compile error fix which is not tested
-        codeReferences?.forEach { reference ->
-            val cwReferences = InlineCompletionReference(
-                referenceName = reference.repository.orEmpty(),
-                referenceUrl = reference.url.orEmpty(),
-                licenseName = reference.licenseName.orEmpty(),
-                position = InlineCompletionReferencePosition(
-                    startCharacter = reference.recommendationContentSpan?.start ?: 0,
-                    endCharacter = reference.recommendationContentSpan?.end ?: 0,
-                )
-            )
-            manager.addReferenceLogPanelEntry(reference = cwReferences, null, null, null)
         }
     }
 }

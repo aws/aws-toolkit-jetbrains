@@ -19,9 +19,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.messages.AmazonQMessage
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileSelectedListener
 import software.aws.toolkits.jetbrains.services.amazonqCodeScan.auth.isCodeScanAvailable
-import software.aws.toolkits.jetbrains.services.amazonqCodeTest.auth.isCodeTestAvailable
-import software.aws.toolkits.jetbrains.services.amazonqDoc.auth.isDocAvailable
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.auth.isFeatureDevAvailable
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformActionMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformMessageListener
 import software.aws.toolkits.jetbrains.services.codemodernizer.controller.CodeTransformChatController
@@ -113,11 +110,8 @@ class CodeTransformChatApp : AmazonQApp {
                     // Notify tabs about restoring authentication
                     context.messagesFromAppToUi.publish(
                         AuthenticationUpdateMessage(
-                            featureDevEnabled = isFeatureDevAvailable(context.project),
                             codeTransformEnabled = isCodeTransformAvailable(context.project),
                             codeScanEnabled = isCodeScanAvailable(context.project),
-                            codeTestEnabled = isCodeTestAvailable(context.project),
-                            docEnabled = isDocAvailable(context.project),
                             authenticatingTabIDs = chatSessionStorage.getAuthenticatingSessions().map { it.tabId },
                         )
                     )
