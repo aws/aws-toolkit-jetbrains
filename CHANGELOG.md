@@ -1,3 +1,5 @@
+# _3.97_ (2025-10-16)
+
 # _3.96_ (2025-10-02)
 - **(Bug Fix)** remove findings message from chat even when all issues are ignored
 - **(Bug Fix)** DisplayFindings tool findings were not being populated in the display panel, instead sending json to chat
