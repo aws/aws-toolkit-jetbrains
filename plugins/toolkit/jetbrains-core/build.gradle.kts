@@ -38,6 +38,8 @@ dependencies {
         bundledModule("intellij.platform.vcs.dvcs.impl")
         bundledModule("intellij.libraries.microba")
     }
+
+    testImplementation(project(":plugin-amazonq:shared"))
 }
 
 val changelog = tasks.register<GeneratePluginChangeLog>("pluginChangeLog") {

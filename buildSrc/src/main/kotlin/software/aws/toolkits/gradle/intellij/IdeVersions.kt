@@ -152,6 +152,50 @@ object IdeVersions {
                 rdGenVersion = "2025.2.2",
                 nugetVersion = "2025.2.0"
             )
+        ),
+        Profile(
+            name = "2025.3",
+            gateway = ProductProfile(
+                sdkVersion = "253.25908.25",
+                bundledPlugins = listOf("org.jetbrains.plugins.terminal")
+            ),
+            community = ProductProfile(
+                sdkVersion = "253.25908-EAP-CANDIDATE-SNAPSHOT",
+                bundledPlugins = commonPlugins + listOf(
+                    "com.intellij.java",
+                    "com.intellij.gradle",
+                    "org.jetbrains.idea.maven",
+                    "com.intellij.properties"
+                ),
+                marketplacePlugins = listOf(
+                    // "com.jetbrains.codeWithMe", // TODO: add back when available in 2025.3
+                    "org.toml.lang:253.25908.29",
+                    "PythonCore:253.25908.13",
+                    "Docker:253.25908.29",
+                    "com.intellij.modules.json:253.25908.13"
+                )
+            ),
+            ultimate = ProductProfile(
+                sdkVersion = "253.25908-EAP-CANDIDATE-SNAPSHOT",
+                bundledPlugins = commonPlugins + listOf(
+                    "JavaScript",
+                    "JavaScriptDebugger",
+                    "com.intellij.database"
+                ),
+                marketplacePlugins = listOf(
+                    // "com.jetbrains.codeWithMe", // TODO: add back when available in 2025.3
+                    "Pythonid:253.25908.13",
+                    "org.jetbrains.plugins.go:253.25908.13",
+                    "com.intellij.modules.json:253.25908.13"
+                )
+            ),
+            rider = RiderProfile(
+                sdkVersion = "2025.3-SNAPSHOT",
+                bundledPlugins = commonPlugins,
+                netFrameworkTarget = "net472",
+                rdGenVersion = "2025.3.0",
+                nugetVersion = "2025.3.0-eap03"
+            )
         )
     ).associateBy { it.name }
 
