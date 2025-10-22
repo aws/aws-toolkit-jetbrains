@@ -7,7 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.exc.MismatchedInputException
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.openapi.project.Project
-import com.intellij.testFramework.ProjectExtension
+import com.intellij.testFramework.ProjectRule
 import com.intellij.ui.jcef.JBCefBrowserBase
 import com.intellij.ui.jcef.JBCefJSQuery
 import org.assertj.core.api.Assertions.assertThat
@@ -38,7 +38,7 @@ class BrowserMessageTest {
     companion object {
         @JvmField
         @RegisterExtension
-        val projectExtension = ProjectExtension()
+        val projectExtension = ProjectRule()
     }
 
     private inline fun <reified T : BrowserMessage> assertDeserializedInstanceOf(jsonStr: String): ObjectAssert<BrowserMessage> {

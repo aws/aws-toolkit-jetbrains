@@ -4,7 +4,7 @@
 package software.aws.toolkits.jetbrains.core
 
 import com.intellij.openapi.project.Project
-import com.intellij.testFramework.ProjectExtension
+import com.intellij.testFramework.ProjectRule
 import com.intellij.ui.jcef.JBCefBrowserBase
 import com.intellij.ui.jcef.JBCefJSQuery
 import org.assertj.core.api.Assertions.assertThat
@@ -48,7 +48,7 @@ class LoginBrowserTest {
     companion object {
         @JvmField
         @RegisterExtension
-        val projectExtension = ProjectExtension()
+        val projectExtension = ProjectRule()
     }
 
     @BeforeEach

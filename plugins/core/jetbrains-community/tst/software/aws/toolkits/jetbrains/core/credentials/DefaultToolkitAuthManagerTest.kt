@@ -6,7 +6,6 @@ package software.aws.toolkits.jetbrains.core.credentials
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.testFramework.ProjectExtension
 import com.intellij.testFramework.ProjectRule
 import com.intellij.testFramework.junit5.TestDisposable
 import com.intellij.testFramework.replaceService
@@ -471,7 +470,8 @@ class DefaultToolkitAuthManagerTest {
     }
 
     private companion object {
-        @ExtendWith(ProjectExtension::class)
+        @JvmField
+        @RegisterExtension
         val projectRule = ProjectRule()
     }
 }

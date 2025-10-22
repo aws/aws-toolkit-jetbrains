@@ -11,7 +11,7 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.rd.createNestedDisposable
-import com.intellij.openapi.rd.util.launchChildSyncIOBackground
+import com.intellij.openapi.rd.util.launchIOBackground
 import com.intellij.openapi.rd.util.launchIOBackground
 import com.intellij.openapi.rd.util.launchOnUiAnyModality
 import com.intellij.openapi.rd.util.startUnderBackgroundProgressAsync
@@ -249,7 +249,7 @@ class CawsConnectionProvider : GatewayConnectionProvider {
                                     duration = timeTakenToCheckInstallation.toDouble()
                                 )
 
-                                launchChildSyncIOBackground {
+                                lifetime.launchIOBackground {
                                     environmentActions.stopEnvironment()
                                     GatewayUI.getInstance().connect(parameters)
                                 }

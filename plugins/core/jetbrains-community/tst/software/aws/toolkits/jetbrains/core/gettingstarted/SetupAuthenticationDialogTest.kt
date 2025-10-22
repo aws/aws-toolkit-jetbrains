@@ -5,7 +5,7 @@ package software.aws.toolkits.jetbrains.core.gettingstarted
 
 import com.intellij.openapi.ui.TestDialog
 import com.intellij.openapi.ui.TestDialogManager
-import com.intellij.testFramework.ProjectExtension
+import com.intellij.testFramework.ProjectRule
 import com.intellij.testFramework.runInEdtAndWait
 import io.mockk.every
 import io.mockk.junit5.MockKExtension
@@ -46,7 +46,7 @@ class SetupAuthenticationDialogTest {
     companion object {
         @JvmField
         @RegisterExtension
-        val projectExtension = ProjectExtension()
+        val projectExtension = ProjectRule()
     }
 
     @JvmField

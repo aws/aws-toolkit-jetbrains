@@ -36,3 +36,4 @@ ui-tests/bin
 #CodeWhispererChat
 node_modules
 !mynah-ui/package-lock.json
+.amazonq/

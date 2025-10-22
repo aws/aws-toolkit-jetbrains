@@ -9,7 +9,7 @@ import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.observable.properties.PropertyGraph
 import com.intellij.openapi.rd.createNestedDisposable
 import com.intellij.openapi.rd.util.launchOnUi
-import com.intellij.openapi.rd.util.startChildSyncIOBackgroundAsync
+import com.intellij.openapi.rd.util.launchIOBackground
 import com.intellij.openapi.rd.util.startWithModalProgressAsync
 import com.intellij.openapi.rd.util.withUiContext
 import com.intellij.openapi.ui.DialogPanel
@@ -471,8 +471,11 @@ class EnvironmentDetailsPanel(private val context: CawsSettings, lifetime: Lifet
                                 projectProperty.afterChange {
                                     lifetime.launchOnUi {
                                         loadingPanel.startLoading()
-                                        val panel = startChildSyncIOBackgroundAsync { content(it?.space) }.await()
-                                        wrapper.setContent(panel)
+                                        var panel: JComponent? = null
+                                        lifetime.launchIOBackground { 
+                                            panel = content(it?.space)
+                                        }
+                                        panel?.let { wrapper.setContent(it) }
                                         loadingPanel.stopLoading()
                                     }
                                 }
