@@ -14,7 +14,6 @@ import software.aws.toolkits.jetbrains.services.cwc.messages.CodeReference
 
 object ReferenceLogController {
     fun addReferenceLog(originalCode: String, codeReferences: List<CodeReference>?, editor: Editor, project: Project, inlineChatStartPosition: CaretPosition?) {
-        // TODO flare: hook /dev references with flare correctly, this is only a compile error fix which is not tested
         codeReferences?.let { references ->
             val cwReferences = references.map { reference ->
                 InlineCompletionReference(
