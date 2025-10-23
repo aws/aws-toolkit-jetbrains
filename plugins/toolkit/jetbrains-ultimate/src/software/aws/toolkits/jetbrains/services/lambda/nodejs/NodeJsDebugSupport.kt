@@ -15,8 +15,8 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.xdebugger.XDebugProcess
 import com.intellij.xdebugger.XDebugProcessStarter
 import com.intellij.xdebugger.XDebugSession
-import com.jetbrains.debugger.wip.WipLocalVmConnection
-import com.jetbrains.nodeJs.NodeChromeDebugProcess
+// TODO: Re-enable when NodeJS plugin APIs are available in 2025.3
+// import com.jetbrains.nodeJs.NodeJsDebugProcessUtil
 import compat.com.intellij.lang.javascript.JavascriptLanguage
 import org.jetbrains.io.LocalFileFinder
 import software.aws.toolkits.core.lambda.LambdaRuntime
@@ -80,26 +80,9 @@ object NodeJsDebugUtils {
             val mappings = createBiMapMappings(state.pathMappings)
             val fileFinder = RemoteDebuggingFileFinder(mappings, LocalFileSystemFileFinder())
 
-            val connection = WipLocalVmConnection()
-
-            val process = NodeChromeDebugProcess(session, fileFinder, connection, null)
-
-            val processHandler = process.processHandler
-            val socketAddress = InetSocketAddress(debugHost, debugPorts.first())
-
-            if (processHandler.isStartNotified) {
-                connection.open(socketAddress)
-            } else {
-                processHandler.addProcessListener(
-                    object : ProcessAdapter() {
-                        override fun startNotified(event: ProcessEvent) {
-                            connection.open(socketAddress)
-                        }
-                    }
-                )
-            }
-
-            return process
+            // TODO: Re-enable when NodeJS plugin APIs are available in 2025.3
+            // val process = NodeJsDebugProcessUtil.createDebugProcess(session, fileFinder, null)
+            throw UnsupportedOperationException("NodeJS debugging temporarily disabled in 2025.3 - NodeJS plugin APIs moved")
         }
     }
 

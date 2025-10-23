@@ -106,6 +106,8 @@
     <depends optional="true" config-file="ext-java.xml">com.intellij.modules.java</depends>
     <depends optional="true" config-file="ext-python.xml">com.intellij.modules.python</depends>
     <depends optional="true" config-file="ext-gateway.xml">com.jetbrains.gateway</depends>
+    <depends optional="true" config-file="ext-go.xml">org.jetbrains.plugins.go</depends>
+    <depends optional="true" config-file="ext-nodejs.xml">NodeJS</depends>
 
     <xi:include href="services/caws.xml" xpointer="xpointer(/idea-plugin/*)">
         <xi:fallback/>

@@ -18,6 +18,24 @@ intellijToolkit {
 dependencies {
     intellijPlatform {
         localPlugin(project(":plugin-core"))
+        
+        // Gateway API (core plugin + modules)
+        bundledPlugin("com.jetbrains.gateway")
+        bundledModule("intellij.platform.collaborationTools.auth.base")
+        
+        // Gateway modules found in 2025.3
+        bundledModule("intellij.gateway.station")
+        
+        // RD platform module found in 2025.3
+        bundledModule("intellij.rd.platform")
+        
+        // Go Plugin (as Marketplace dependency with specific version)
+        plugin("org.jetbrains.plugins.go:253.27642.30")
+        
+        // JavaScript Debugging Suite
+        bundledPlugin("JavaScript")
+        bundledPlugin("JavaScriptDebugger")
+        bundledPlugin("NodeJS")
     }
     compileOnlyApi(project(":plugin-toolkit:jetbrains-core"))
     compileOnlyApi(project(":plugin-core:jetbrains-ultimate"))

@@ -6,7 +6,8 @@ package software.aws.toolkits.jetbrains.remoteDev.caws
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.StartupActivity
 import com.intellij.openapi.ui.MessageDialogBuilder
-import com.jetbrains.rdserver.unattendedHost.UnattendedStatusUtil
+// TODO: Re-enable when Gateway APIs are available in 2025.3
+// import com.intellij.gateway.core.GatewayConnectionUtil
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -59,9 +60,9 @@ class DevEnvStatusWatcher : StartupActivity {
             }
             val inactivityTimeoutInSeconds = inactivityTimeout * 60
 
-            // ensure the JetBrains inactivity tracker and the activity api are in sync
-            val jbActivityStatusJson = UnattendedStatusUtil.getStatus()
-            val jbActivityStatus = jbActivityStatusJson.projects?.first()?.secondsSinceLastControllerActivity ?: 0
+            // TODO: Re-enable when Gateway APIs are available in 2025.3
+            // val jbActivityStatus = GatewayConnectionUtil.getInstance().getSecondsSinceLastControllerActivity()
+            val jbActivityStatus = 0L // Temporary fallback
             notifyBackendOfActivity((getActivityTime(jbActivityStatus).toString()))
             var secondsSinceLastControllerActivity = jbActivityStatus
 
@@ -125,9 +126,9 @@ class DevEnvStatusWatcher : StartupActivity {
     fun getLastRecordedApiActivity(): String? = CawsEnvironmentClient.getInstance().getActivity()?.timestamp
 
     fun getJbRecordedActivity(): Long {
-        val statusJson = UnattendedStatusUtil.getStatus()
-        val lastActivityTime = statusJson.projects?.first()?.secondsSinceLastControllerActivity ?: 0
-        return lastActivityTime
+        // TODO: Re-enable when Gateway APIs are available in 2025.3
+        // return GatewayConnectionUtil.getInstance().getSecondsSinceLastControllerActivity()
+        return 0L // Temporary fallback
     }
 
     fun notifyBackendOfActivity(timestamp: String = Instant.now().toEpochMilli().toString()) {

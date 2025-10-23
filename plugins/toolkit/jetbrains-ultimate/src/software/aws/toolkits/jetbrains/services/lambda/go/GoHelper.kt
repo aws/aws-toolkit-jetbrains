@@ -3,9 +3,9 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.go
 
-import com.goide.dlv.DlvDebugProcess
+// TODO: Re-enable when Go plugin APIs are available in 2025.3
+// import com.goide.dlv.DlvDebugProcessUtil
 import com.goide.dlv.DlvDisconnectOption
-import com.goide.dlv.DlvRemoteVmConnection
 import com.goide.execution.GoRunUtil
 import com.intellij.execution.process.ProcessAdapter
 import com.intellij.execution.process.ProcessEvent
@@ -65,42 +65,9 @@ object GoDebugHelper {
         context: Context,
     ): XDebugProcessStarter = object : XDebugProcessStarter() {
         override fun start(session: XDebugSession): XDebugProcess {
-            val process = DlvDebugProcess(session, DlvRemoteVmConnection(DlvDisconnectOption.KILL), null, true)
-
-            val processHandler = process.processHandler
-            val socketAddress = InetSocketAddress(debugHost, debugPorts.first())
-
-            val scope = projectCoroutineScope(session.project)
-            processHandler.addProcessListener(
-                object : ProcessAdapter() {
-                    override fun startNotified(event: ProcessEvent) {
-                        scope.launch {
-                            val samProcessHandler = context.pollingGet(SamRunnerStep.SAM_PROCESS_HANDLER)
-                            val debuggerConnector = object : ProcessAdapter() {
-                                val connected = AtomicBoolean(false)
-
-                                // If we don't wait, then then debugger will try to attach to
-                                // the container before it starts Devle. So, we have to poll output
-                                // See https://youtrack.jetbrains.com/issue/GO-10279
-                                // TODO revisit this to see if higher IDE versions help FIX_WHEN_MIN_IS_211 (?)
-                                override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
-                                    if (event.text.contains(SamExecutable.goStartMessage) && !connected.getAndSet(true)) {
-                                        process.connect(socketAddress)
-                                    }
-                                }
-                            }
-                            samProcessHandler.addProcessListener(debuggerConnector)
-                            delay(Registry.intValue("aws.sam.goMaxAttachDelay", 60000).toLong())
-                            // attach anyway if we never get the correct output and the process hasn't terminated
-                            val hasConnected = debuggerConnector.connected.getAndSet(true)
-                            if (!hasConnected && !samProcessHandler.isProcessTerminated) {
-                                process.connect(socketAddress)
-                            }
-                        }
-                    }
-                }
-            )
-            return process
+            // TODO: Re-enable when Go plugin APIs are available in 2025.3
+            // val process = DlvDebugProcessUtil.createDlvDebugProcess(session, DlvDisconnectOption.KILL, null, true)
+            throw UnsupportedOperationException("Go debugging temporarily disabled in 2025.3 - Go plugin APIs moved")
         }
     }
 
