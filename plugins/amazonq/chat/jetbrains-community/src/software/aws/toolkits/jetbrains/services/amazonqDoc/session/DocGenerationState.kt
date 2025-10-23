@@ -27,9 +27,7 @@ import software.aws.toolkits.jetbrains.services.amazonqDoc.WorkspaceEmptyExcepti
 import software.aws.toolkits.jetbrains.services.amazonqDoc.controller.DocGenerationStep
 import software.aws.toolkits.jetbrains.services.amazonqDoc.controller.Mode
 import software.aws.toolkits.jetbrains.services.amazonqDoc.controller.docGenerationProgressMessage
-import software.aws.toolkits.jetbrains.services.amazonqDoc.inProgress
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendAnswerPart
-import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendUpdatePromptProgress
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevOperation
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.CodeGenerationResult
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.Interaction
@@ -139,8 +137,6 @@ private suspend fun DocGenerationState.generateCode(codeGenerationId: String, mo
                 val newFileInfo = registerNewFiles(newFileContents = codeGenerationStreamResult.newFileContents)
                 val deletedFileInfo = registerDeletedFiles(deletedFiles = codeGenerationStreamResult.deletedFiles.orEmpty())
 
-                messenger.sendUpdatePromptProgress(tabId = tabID, progressField = null)
-
                 return CodeGenerationResult(
                     newFiles = newFileInfo,
                     deletedFiles = deletedFileInfo,
@@ -153,14 +149,6 @@ private suspend fun DocGenerationState.generateCode(codeGenerationId: String, mo
             CodeGenerationWorkflowStatus.IN_PROGRESS -> {
                 if (codeGenerationResultState.codeGenerationStatusDetail() != null) {
                     val progress = getFileSummaryPercentage(codeGenerationResultState.codeGenerationStatusDetail())
-
-                    messenger.sendUpdatePromptProgress(
-                        tabID,
-                        inProgress(
-                            progress.toInt(),
-                            message(if (progress >= 100) "amazonqDoc.inprogress_message.generating" else "amazonqDoc.progress_message.summarizing")
-                        )
-                    )
 
                     messenger.sendAnswerPart(
                         tabId = tabID,
@@ -183,7 +171,6 @@ private suspend fun DocGenerationState.generateCode(codeGenerationId: String, mo
             }
 
             CodeGenerationWorkflowStatus.FAILED -> {
-                messenger.sendUpdatePromptProgress(tabId = tabID, progressField = null)
                 val remainingIterations = codeGenerationResultState.codeGenerationRemainingIterationCount()
 
                 when (true) {

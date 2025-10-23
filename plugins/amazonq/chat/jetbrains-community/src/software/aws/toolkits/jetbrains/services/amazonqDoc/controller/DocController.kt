@@ -40,7 +40,6 @@ import software.aws.toolkits.jetbrains.services.amazonqDoc.FEATURE_NAME
 import software.aws.toolkits.jetbrains.services.amazonqDoc.InboundAppMessagesHandler
 import software.aws.toolkits.jetbrains.services.amazonqDoc.MetricDataOperationName
 import software.aws.toolkits.jetbrains.services.amazonqDoc.MetricDataResult
-import software.aws.toolkits.jetbrains.services.amazonqDoc.cancellingProgressField
 import software.aws.toolkits.jetbrains.services.amazonqDoc.createUserFacingErrorMessage
 import software.aws.toolkits.jetbrains.services.amazonqDoc.denyListedErrors
 import software.aws.toolkits.jetbrains.services.amazonqDoc.inProgress
@@ -64,7 +63,6 @@ import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendMonthlyL
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendRetryChangeFolderMessage
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendSystemPrompt
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendUpdatePlaceholder
-import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendUpdatePromptProgress
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.updateFileComponent
 import software.aws.toolkits.jetbrains.services.amazonqDoc.session.DocSession
 import software.aws.toolkits.jetbrains.services.amazonqDoc.session.PrepareDocGenerationState
@@ -216,11 +214,6 @@ class DocController(
     }
 
     override suspend fun processStopDocGeneration(message: IncomingDocMessage.StopDocGeneration) {
-        messenger.sendUpdatePromptProgress(
-            tabId = message.tabId,
-            progressField = cancellingProgressField
-        )
-
         messenger.sendAnswer(
             tabId = message.tabId,
             message("amazonqFeatureDev.code_generation.stopping_code_generation"),
@@ -542,8 +535,6 @@ class DocController(
             message = message("amazonqFeatureDev.chat_message.ask_for_new_task")
         )
 
-        messenger.sendUpdatePromptProgress(tabId, null)
-
         messenger.sendUpdatePlaceholder(
             tabId = tabId,
             newPlaceholder = message("amazonqFeatureDev.placeholder.after_code_generation")
@@ -600,7 +591,6 @@ class DocController(
 
     private suspend fun processErrorChatMessage(err: Exception, session: DocSession?, tabId: String) {
         logger.warn(err) { "Encountered ${err.message} for tabId: $tabId" }
-        messenger.sendUpdatePromptProgress(tabId, null)
         val docGenerationMode = docGenerationTasks.getTask(tabId).mode
         val isEnableChatInput = docGenerationMode == Mode.EDIT &&
             (err as? DocClientException)?.remainingIterations?.let { it > 0 } ?: false
@@ -777,8 +767,6 @@ class DocController(
     }
 
     private suspend fun onDocsGeneration(followUpMessage: IncomingDocMessage.FollowupClicked) {
-        messenger.sendUpdatePromptProgress(tabId = followUpMessage.tabId, inProgress(progress = 10, message("amazonqDoc.progress_message.scanning")))
-
         val session = getSessionInfo(followUpMessage.tabId)
         val docGenerationTask = docGenerationTasks.getTask(followUpMessage.tabId)
 

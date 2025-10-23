@@ -5,8 +5,6 @@ package software.aws.toolkits.jetbrains.services.amazonqDoc.messages
 
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthNeededState
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
-import software.aws.toolkits.jetbrains.services.amazonqCodeTest.messages.ProgressField
-import software.aws.toolkits.jetbrains.services.amazonqCodeTest.messages.PromptProgressMessage
 import software.aws.toolkits.jetbrains.services.amazonqDoc.ui.NEW_SESSION_FOLLOWUPS
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.CodeReferenceGenerated
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.DeletedFileInfo
@@ -250,11 +248,5 @@ suspend fun MessagePublisher.sendRetryChangeFolderMessage(
 ) {
     this.publish(
         RetryChangeFolderMessage(tabId = tabId, message = message, followUps = followUps)
-    )
-}
-
-suspend fun MessagePublisher.sendUpdatePromptProgress(tabId: String, progressField: ProgressField?) {
-    this.publish(
-        PromptProgressMessage(tabId, progressField)
     )
 }

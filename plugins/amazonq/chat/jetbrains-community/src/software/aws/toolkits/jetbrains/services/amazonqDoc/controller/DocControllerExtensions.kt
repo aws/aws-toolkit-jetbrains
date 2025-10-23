@@ -17,7 +17,6 @@ import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendChatInpu
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendCodeResult
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendSystemPrompt
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendUpdatePlaceholder
-import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendUpdatePromptProgress
 import software.aws.toolkits.jetbrains.services.amazonqDoc.session.DocSession
 import software.aws.toolkits.jetbrains.services.amazonqDoc.session.PrepareDocGenerationState
 import software.aws.toolkits.jetbrains.services.amazonqDoc.util.getFollowUpOptions
@@ -30,7 +29,6 @@ import software.aws.toolkits.resources.message
 suspend fun DocController.onCodeGeneration(session: DocSession, message: String, tabId: String, mode: Mode) {
     try {
         messenger.sendAsyncEventProgress(tabId, inProgress = true)
-        messenger.sendUpdatePromptProgress(tabId, inProgress(progress = 10, message("amazonqDoc.progress_message.scanning")))
         messenger.sendAnswer(
             message = docGenerationProgressMessage(DocGenerationStep.UPLOAD_TO_S3, mode),
             messageType = DocMessageType.AnswerPart,

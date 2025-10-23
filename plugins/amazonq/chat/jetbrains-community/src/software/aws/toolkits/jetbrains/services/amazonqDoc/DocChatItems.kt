@@ -3,8 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.amazonqDoc
 
-import software.aws.toolkits.jetbrains.services.amazonqCodeTest.messages.Button
-import software.aws.toolkits.jetbrains.services.amazonqCodeTest.messages.ProgressField
 import software.aws.toolkits.resources.message
 
 val cancellingProgressField = ProgressField(
@@ -43,3 +41,24 @@ fun inProgress(progress: Int, message: String? = null): ProgressField? {
         actions = listOf(cancelTestGenButton)
     )
 }
+
+data class Button(
+    val id: String,
+    val text: String,
+    val description: String? = null,
+    val icon: String? = null,
+    val keepCardAfterClick: Boolean? = false,
+    val disabled: Boolean? = false,
+    val waitMandatoryFormItems: Boolean? = false,
+    val position: String = "inside",
+    val status: String = "primary",
+)
+
+data class ProgressField(
+    val title: String? = null,
+    val value: Int? = null,
+    val valueText: String? = null,
+    val status: String? = null,
+    val actions: List<Button>? = null,
+    val text: String? = null,
+)
