@@ -123,11 +123,8 @@ class Browser(parent: Disposable, private val mynahAsset: Path, val project: Pro
                     const hybridChatConnector = connectorAdapter.initiateAdapter(
                         ${MeetQSettings.getInstance().reinvent2024OnboardingCount < MAX_ONBOARDING_PAGE_COUNT},
                         ${MeetQSettings.getInstance().disclaimerAcknowledged},
-                        true,
                         $isCodeTransformAvailable,
-                        true,
                         $isCodeScanAvailable,
-                        true,
                         {
                             postMessage: message => { $postMessageToJavaJsCode }
                         },
