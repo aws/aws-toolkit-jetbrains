@@ -11,9 +11,9 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.rd.createNestedDisposable
-import com.intellij.openapi.rd.util.launchIOBackground
-import com.intellij.openapi.rd.util.launchIOBackground
-import com.intellij.openapi.rd.util.launchOnUiAnyModality
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import com.intellij.openapi.rd.util.launchOnUi
 import com.intellij.openapi.rd.util.startUnderBackgroundProgressAsync
 import com.intellij.openapi.rd.util.startUnderModalProgressAsync
 import com.intellij.openapi.ui.DialogBuilder
@@ -199,7 +199,7 @@ class CawsConnectionProvider : GatewayConnectionProvider {
                                 )
                             }
 
-                            lifetime.launchIOBackground {
+                            lifetime.launch(Dispatchers.IO) {
                                 ApplicationManager.getApplication().messageBus.syncPublisher(WorkspaceNotifications.TOPIC)
                                     .environmentStarted(
                                         WorkspaceListStateChangeContext(
@@ -249,7 +249,7 @@ class CawsConnectionProvider : GatewayConnectionProvider {
                                     duration = timeTakenToCheckInstallation.toDouble()
                                 )
 
-                                lifetime.launchIOBackground {
+                                lifetime.launch(Dispatchers.IO) {
                                     environmentActions.stopEnvironment()
                                     GatewayUI.getInstance().connect(parameters)
                                 }
@@ -460,7 +460,7 @@ class CawsConnectionProvider : GatewayConnectionProvider {
 
         val promise = AsyncPromise<Unit>()
         fun start() {
-            lifetime.launchOnUiAnyModality {
+            lifetime.launchOnUi {
                 view.removeAll()
             }
 

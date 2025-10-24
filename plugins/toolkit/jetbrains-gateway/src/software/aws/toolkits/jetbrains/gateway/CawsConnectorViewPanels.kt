@@ -9,7 +9,8 @@ import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.observable.properties.PropertyGraph
 import com.intellij.openapi.rd.createNestedDisposable
 import com.intellij.openapi.rd.util.launchOnUi
-import com.intellij.openapi.rd.util.launchIOBackground
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import com.intellij.openapi.rd.util.startWithModalProgressAsync
 import com.intellij.openapi.rd.util.withUiContext
 import com.intellij.openapi.ui.DialogPanel
@@ -472,7 +473,7 @@ class EnvironmentDetailsPanel(private val context: CawsSettings, lifetime: Lifet
                                     lifetime.launchOnUi {
                                         loadingPanel.startLoading()
                                         var panel: JComponent? = null
-                                        lifetime.launchIOBackground { 
+                                        lifetime.launch(Dispatchers.IO) {
                                             panel = content(it?.space)
                                         }
                                         panel?.let { wrapper.setContent(it) }
