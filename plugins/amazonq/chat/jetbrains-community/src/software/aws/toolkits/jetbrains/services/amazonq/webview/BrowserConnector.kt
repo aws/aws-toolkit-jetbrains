@@ -703,11 +703,8 @@ class BrowserConnector(
                 const tempConnector = connectorAdapter.initiateAdapter(
                     false, 
                     true, // the two values are not used here, needed for constructor
-                    true,
                     $isCodeTransformAvailable,
-                    true,
                     $isCodeScanAvailable,
-                    true,
                     { postMessage: () => {} },
                 );
                 

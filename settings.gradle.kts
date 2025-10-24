@@ -134,9 +134,6 @@ plugins/
         codemodernizer/         ...
             community/          ...
             ultimate/
-        featuredev/
-            community/
-            ultimate/
         mynah-ui/               :plugin-amazonq:mynah-ui
  */
 file("plugins").listFiles()?.forEach root@ {

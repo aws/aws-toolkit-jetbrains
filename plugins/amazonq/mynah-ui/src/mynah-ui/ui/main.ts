@@ -38,11 +38,8 @@ export const createMynahUI = (
     ideApi: any,
     showWelcomePage: boolean,
     disclaimerAcknowledged: boolean,
-    isFeatureDevEnabled: boolean,
     isCodeTransformEnabled: boolean,
-    isDocEnabled: boolean,
     isCodeScanEnabled: boolean,
-    isCodeTestEnabled: boolean,
     highlightCommand?: QuickActionCommand,
     profileName?: string,
 
@@ -52,11 +49,8 @@ export const createMynahUI = (
         mynahUIRef: { mynahUI: undefined },
         showWelcomePage,
         disclaimerAcknowledged,
-        isFeatureDevEnabled,
         isCodeTransformEnabled,
-        isDocEnabled,
         isCodeScanEnabled,
-        isCodeTestEnabled,
         highlightCommand,
         profileName,
         hybridChat: false,
@@ -72,11 +66,8 @@ export class WebviewUIHandler {
     postMessage: any
     showWelcomePage: boolean
     disclaimerAcknowledged: boolean
-    isFeatureDevEnabled: boolean
     isCodeTransformEnabled: boolean
-    isDocEnabled: boolean
     isCodeScanEnabled: boolean
-    isCodeTestEnabled: boolean
     highlightCommand?: QuickActionCommand
     profileName?: string
     responseMetadata: Map<string, string[]>
@@ -100,11 +91,8 @@ export class WebviewUIHandler {
                     mynahUIRef,
                     showWelcomePage,
                     disclaimerAcknowledged,
-                    isFeatureDevEnabled,
                     isCodeTransformEnabled,
-                    isDocEnabled,
                     isCodeScanEnabled,
-                    isCodeTestEnabled,
                     highlightCommand,
                     profileName,
                     hybridChat,
@@ -114,11 +102,8 @@ export class WebviewUIHandler {
         mynahUIRef: { mynahUI: MynahUI | undefined }
         showWelcomePage: boolean,
         disclaimerAcknowledged: boolean,
-        isFeatureDevEnabled: boolean
         isCodeTransformEnabled: boolean
-        isDocEnabled: boolean
         isCodeScanEnabled: boolean
-        isCodeTestEnabled: boolean
         highlightCommand?: QuickActionCommand,
         profileName?: string,
         hybridChat?: boolean
@@ -129,11 +114,8 @@ export class WebviewUIHandler {
         this.mynahUIRef = mynahUIRef
         this.showWelcomePage = showWelcomePage;
         this.disclaimerAcknowledged = disclaimerAcknowledged
-        this.isFeatureDevEnabled = isFeatureDevEnabled
         this.isCodeTransformEnabled = isCodeTransformEnabled
-        this.isDocEnabled = isDocEnabled
         this.isCodeScanEnabled = isCodeScanEnabled
-        this.isCodeTestEnabled = isCodeTestEnabled
         this.profileName = profileName
         this.responseMetadata = new Map<string, string[]>()
         this.disclaimerCardActive = !disclaimerAcknowledged
@@ -153,11 +135,8 @@ export class WebviewUIHandler {
         })
 
         this.tabDataGenerator = new TabDataGenerator({
-            isFeatureDevEnabled,
             isCodeTransformEnabled,
-            isDocEnabled,
             isCodeScanEnabled,
-            isCodeTestEnabled,
             highlightCommand,
             profileName
         })
@@ -171,42 +150,30 @@ export class WebviewUIHandler {
                 this.quickActionHandler?.handleCommand(chatPrompt, tabId)
             },
             onUpdateAuthentication: (
-                featureDevEnabled: boolean,
                 codeTransformEnabled: boolean,
-                docEnabled: boolean,
                 codeScanEnabled: boolean,
-                codeTestEnabled: boolean,
                 authenticatingTabIDs: string[]
             ): void => {
-                isFeatureDevEnabled = featureDevEnabled
                 isCodeTransformEnabled = codeTransformEnabled
-                isDocEnabled = docEnabled
                 isCodeScanEnabled = codeScanEnabled
-                isCodeTestEnabled = codeTestEnabled
 
                 this.quickActionHandler = new QuickActionHandler({
                     mynahUIRef: this.mynahUIRef,
                     connector: this.connector!,
                     tabsStorage: this.tabsStorage,
-                    isFeatureDevEnabled: this.isFeatureDevEnabled,
                     isCodeTransformEnabled: this.isCodeTransformEnabled,
-                    isDocEnabled: this.isDocEnabled,
                     isCodeScanEnabled: this.isCodeScanEnabled,
-                    isCodeTestEnabled: this.isCodeTestEnabled,
                     hybridChat
                 })
 
                 this.tabDataGenerator = new TabDataGenerator({
-                    isFeatureDevEnabled,
                     isCodeTransformEnabled,
-                    isDocEnabled,
                     isCodeScanEnabled,
-                    isCodeTestEnabled,
                     highlightCommand,
                     profileName
                 })
 
-                // Set the new defaults for the quick action commands in all tabs now that isFeatureDevEnabled and isCodeTransformEnabled were enabled/disabled
+                // Set the new defaults for the quick action commands in all tabs now that isCodeTransformEnabled was enabled/disabled
                 for (const tab of this.tabsStorage.getTabs()) {
                     this.mynahUI?.updateStore(tab.id, {
                         quickActionCommands: this.tabDataGenerator.quickActionsGenerator.generateForTab(tab.type),
@@ -438,11 +405,6 @@ export class WebviewUIHandler {
                         promptInputDisabledState: this.tabsStorage.isTabDead(tabID),
                     })
                     this.tabsStorage.updateTabStatus(tabID, 'free')
-                }
-            },
-            onRunTestMessageReceived: (tabID: string, shouldRunTestMessage: boolean) => {
-                if (shouldRunTestMessage) {
-                    this.quickActionHandler?.handleCommand({ command: '/test' }, tabID)
                 }
             },
             onMessageReceived: (tabID: string, messageData: MynahUIDataModel) => {
@@ -861,21 +823,15 @@ export class WebviewUIHandler {
             mynahUIRef: this.mynahUIRef,
             connector: this.connector,
             tabsStorage: this.tabsStorage,
-            isFeatureDevEnabled,
             isCodeTransformEnabled,
-            isDocEnabled,
             isCodeScanEnabled,
-            isCodeTestEnabled,
         })
         this.quickActionHandler = new QuickActionHandler({
             mynahUIRef: this.mynahUIRef,
             connector: this.connector!,
             tabsStorage: this.tabsStorage,
-            isFeatureDevEnabled: this.isFeatureDevEnabled,
             isCodeTransformEnabled: this.isCodeTransformEnabled,
-            isDocEnabled: this.isDocEnabled,
             isCodeScanEnabled: this.isCodeScanEnabled,
-            isCodeTestEnabled: this.isCodeTestEnabled,
             hybridChat
         })
 
