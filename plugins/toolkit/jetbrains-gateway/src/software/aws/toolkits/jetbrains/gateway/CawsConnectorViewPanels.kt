@@ -469,12 +469,12 @@ class EnvironmentDetailsPanel(private val context: CawsSettings, lifetime: Lifet
                                     .onReset { getDialogPanel().reset() }
                                     .onIsModified { getDialogPanel().isModified() }
 
-                                projectProperty.afterChange {
+                                projectProperty.afterChange { project ->
                                     lifetime.launchOnUi {
                                         loadingPanel.startLoading()
                                         var panel: JComponent? = null
                                         lifetime.launch(Dispatchers.IO) {
-                                            panel = content(it?.space)
+                                            panel = content(project?.space)
                                         }
                                         panel?.let { wrapper.setContent(it) }
                                         loadingPanel.stopLoading()
