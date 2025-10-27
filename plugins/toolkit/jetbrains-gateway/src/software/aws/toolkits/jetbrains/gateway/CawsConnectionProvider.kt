@@ -11,8 +11,6 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.rd.createNestedDisposable
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import com.intellij.openapi.rd.util.launchOnUi
 import com.intellij.openapi.rd.util.startUnderBackgroundProgressAsync
 import com.intellij.openapi.rd.util.startUnderModalProgressAsync
@@ -36,6 +34,8 @@ import com.jetbrains.rd.framework.util.launch
 import com.jetbrains.rd.util.lifetime.Lifetime
 import com.jetbrains.rd.util.lifetime.LifetimeDefinition
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.coroutineScope
 import org.jetbrains.concurrency.AsyncPromise
 import org.jetbrains.concurrency.await
@@ -92,6 +92,8 @@ import software.aws.toolkits.telemetry.Result as TelemetryResult
 
 @ExperimentalTime
 class CawsConnectionProvider : GatewayConnectionProvider {
+    private val scope = CoroutineScope(getCoroutineBgContext() + SupervisorJob())
+
     companion object {
         val CAWS_CONNECTION_PARAMETERS = AttributeBagKey.create<Map<String, String>>("CAWS_CONNECTION_PARAMETERS")
         private val LOG = getLogger<CawsConnectionProvider>()
@@ -199,7 +201,7 @@ class CawsConnectionProvider : GatewayConnectionProvider {
                                 )
                             }
 
-                            lifetime.launch(Dispatchers.IO) {
+                            scope.launch {
                                 ApplicationManager.getApplication().messageBus.syncPublisher(WorkspaceNotifications.TOPIC)
                                     .environmentStarted(
                                         WorkspaceListStateChangeContext(
@@ -249,7 +251,7 @@ class CawsConnectionProvider : GatewayConnectionProvider {
                                     duration = timeTakenToCheckInstallation.toDouble()
                                 )
 
-                                lifetime.launch(Dispatchers.IO) {
+                                scope.launch {
                                     environmentActions.stopEnvironment()
                                     GatewayUI.getInstance().connect(parameters)
                                 }
