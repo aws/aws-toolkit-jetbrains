@@ -9,8 +9,8 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.util.SystemInfoRt
-import com.intellij.util.io.HttpRequests
 import com.intellij.serviceContainer.NonInjectable
+import com.intellij.util.io.HttpRequests
 import io.opentelemetry.api.common.AttributeKey
 import io.opentelemetry.api.common.Attributes
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
