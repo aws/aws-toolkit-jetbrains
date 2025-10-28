@@ -18,20 +18,20 @@ intellijToolkit {
 dependencies {
     intellijPlatform {
         localPlugin(project(":plugin-core"))
-        
+
         // Gateway API (core plugin + modules) - only for 2025.3+
         bundledPlugin("com.jetbrains.gateway")
-        
+
         // 2025.3+ specific modules that don't exist in earlier versions
         if (providers.gradleProperty("ideProfileName").get() == "2025.3") {
             bundledModule("intellij.platform.collaborationTools.auth.base")
             bundledModule("intellij.gateway.station")
             bundledModule("intellij.rd.platform")
         }
-        
+
         // Go Plugin (as Marketplace dependency with specific version)
         plugin("org.jetbrains.plugins.go:253.27642.30")
-        
+
         // JavaScript Debugging Suite
         bundledPlugin("JavaScript")
         bundledPlugin("JavaScriptDebugger")

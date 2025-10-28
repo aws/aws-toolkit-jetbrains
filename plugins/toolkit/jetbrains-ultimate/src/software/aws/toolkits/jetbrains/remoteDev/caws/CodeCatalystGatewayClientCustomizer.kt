@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.remoteDev.caws
 
-import com.intellij.openapi.extensions.ExtensionNotApplicableException
 // TODO: Re-enable when Gateway APIs are available in 2025.3
 // import com.intellij.gateway.GatewayClientCustomizationProvider
 
@@ -17,7 +16,7 @@ class CodeCatalystGatewayClientCustomizer : GatewayClientCustomizationProvider {
     }
 
     override fun getIcon() = AwsIcons.Logos.AWS_SMILE_SMALL
-    
+
     override fun getTitle() = message("caws.gateway.title")
 }
 */
