@@ -6,13 +6,22 @@ package software.aws.toolkits.jetbrains.services.lambda.nodejs
 import com.google.common.collect.BiMap
 import com.google.common.collect.HashBiMap
 import com.intellij.execution.runners.ExecutionEnvironment
+import com.intellij.execution.ui.ExecutionConsole
 import com.intellij.javascript.debugger.LocalFileSystemFileFinder
 import com.intellij.javascript.debugger.RemoteDebuggingFileFinder
+import com.intellij.openapi.fileTypes.FileType
+import com.intellij.openapi.fileTypes.PlainTextFileType
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiFile
 import com.intellij.xdebugger.XDebugProcess
 import com.intellij.xdebugger.XDebugProcessStarter
 import com.intellij.xdebugger.XDebugSession
+import com.intellij.xdebugger.evaluation.XDebuggerEditorsProviderBase
+import javax.swing.JComponent
+import javax.swing.JLabel
 import compat.com.intellij.lang.javascript.JavascriptLanguage
 import org.jetbrains.io.LocalFileFinder
 import software.aws.toolkits.core.lambda.LambdaRuntime
@@ -66,6 +75,12 @@ class NodeJs20ImageDebug : NodeJsImageDebugSupport() {
 object NodeJsDebugUtils {
     private const val NODE_MODULES = "node_modules"
 
+    // Noop editors provider for disabled NodeJS debugging in 2025.3
+    private class NoopXDebuggerEditorsProvider : XDebuggerEditorsProviderBase() {
+        override fun getFileType(): FileType = PlainTextFileType.INSTANCE
+        override fun createExpressionCodeFragment(project: Project, text: String, context: PsiElement?, isPhysical: Boolean): PsiFile? = null
+    }
+
     fun createDebugProcess(
         state: SamRunningState,
         @Suppress("UNUSED_PARAMETER") debugHost: String,
@@ -78,17 +93,13 @@ object NodeJsDebugUtils {
             val fileFinder = RemoteDebuggingFileFinder(mappings, LocalFileSystemFileFinder())
 
             // STUB IMPLEMENTATION: NodeJS debugging temporarily disabled
-            // NodeJsDebugProcessUtil was deprecated in 2025.3 - replaced with generic debugger APIs
-            // This is a non-functional stub to prevent build failures
-            // TODO: Implement proper NodeJS debugging using modern XDebugProcess APIs
             return object : XDebugProcess(session) {
-                override fun getEditorsProvider() = null
+                override fun getEditorsProvider() = NoopXDebuggerEditorsProvider()
                 override fun doGetProcessHandler() = null
-                override fun createConsole() = null
-
-                override fun sessionInitialized() {
-                    // Report to user that debugging is disabled
-                    super.sessionInitialized()
+                override fun createConsole() = object : ExecutionConsole {
+                    override fun getComponent(): JComponent = JLabel("NodeJS debugging disabled in 2025.3")
+                    override fun getPreferredFocusableComponent(): JComponent? = null
+                    override fun dispose() {}
                 }
             }
         }
