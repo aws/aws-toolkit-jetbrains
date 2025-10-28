@@ -20,8 +20,6 @@ import com.intellij.xdebugger.XDebugProcess
 import com.intellij.xdebugger.XDebugProcessStarter
 import com.intellij.xdebugger.XDebugSession
 import com.intellij.xdebugger.evaluation.XDebuggerEditorsProviderBase
-import javax.swing.JComponent
-import javax.swing.JLabel
 import compat.com.intellij.lang.javascript.JavascriptLanguage
 import org.jetbrains.io.LocalFileFinder
 import software.aws.toolkits.core.lambda.LambdaRuntime
@@ -30,6 +28,8 @@ import software.aws.toolkits.jetbrains.services.lambda.execution.sam.ImageDebugS
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.RuntimeDebugSupport
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamRunningState
 import software.aws.toolkits.jetbrains.utils.execution.steps.Context
+import javax.swing.JComponent
+import javax.swing.JLabel
 
 class NodeJsRuntimeDebugSupport : RuntimeDebugSupport {
     override suspend fun createDebugProcess(

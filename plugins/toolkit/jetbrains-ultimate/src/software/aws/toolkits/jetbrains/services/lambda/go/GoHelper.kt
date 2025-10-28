@@ -47,7 +47,7 @@ fun inferSourceRoot(project: Project, virtualFile: VirtualFile): VirtualFile? {
 
 object GoDebugHelper {
     // TODO see https://youtrack.jetbrains.com/issue/GO-10775 for "Debugger disconnected unexpectedly" when the lambda finishes
-    suspend fun createGoDebugProcess(
+    fun createGoDebugProcess(
         @Suppress("UNUSED_PARAMETER") debugHost: String,
         @Suppress("UNUSED_PARAMETER") debugPorts: List<Int>,
         @Suppress("UNUSED_PARAMETER") context: Context,
