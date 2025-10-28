@@ -198,6 +198,20 @@ class CodeWhispererConfigurable(private val project: Project) :
                 }.comment(message("aws.settings.codewhisperer.project_context.tooltip"))
             }
 
+            row(message("aws.settings.codewhisperer.project_context_cache_dir")) {
+                val fileChooserDescriptor = FileChooserDescriptorFactory.createSingleFolderDescriptor()
+                fileChooserDescriptor.isForcedToUseIdeaFileChooser = true
+
+                textFieldWithBrowseButton(fileChooserDescriptor = fileChooserDescriptor)
+                    .bindText(
+                        { codeWhispererSettings.getProjectContextCacheDir() },
+                        { codeWhispererSettings.setProjectContextCacheDir(it) }
+                    )
+                    .resizableColumn()
+                    .align(Align.FILL)
+                    .comment(message("aws.settings.codewhisperer.project_context_cache_dir.tooltip"))
+            }
+
             row(message("aws.settings.codewhisperer.project_context_index_thread")) {
                 intTextField(
                     range = CodeWhispererSettings.CONTEXT_INDEX_THREADS
