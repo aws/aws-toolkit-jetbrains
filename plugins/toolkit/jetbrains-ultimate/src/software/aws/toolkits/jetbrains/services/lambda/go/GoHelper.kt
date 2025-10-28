@@ -5,28 +5,16 @@ package software.aws.toolkits.jetbrains.services.lambda.go
 
 // TODO: Re-enable when Go plugin APIs are available in 2025.3
 // import com.goide.dlv.DlvDebugProcessUtil
-import com.goide.dlv.DlvDisconnectOption
 import com.goide.execution.GoRunUtil
-import com.intellij.execution.process.ProcessAdapter
-import com.intellij.execution.process.ProcessEvent
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ProjectFileIndex
-import com.intellij.openapi.util.Key
-import com.intellij.openapi.util.registry.Registry
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.xdebugger.XDebugProcess
 import com.intellij.xdebugger.XDebugProcessStarter
 import com.intellij.xdebugger.XDebugSession
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
-import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
-import software.aws.toolkits.jetbrains.services.lambda.steps.SamRunnerStep
 import software.aws.toolkits.jetbrains.utils.execution.steps.Context
-import java.net.InetSocketAddress
 import java.nio.file.Files
-import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * "Light" ides like Goland do not rely on marking folders as source root, so infer it based on
@@ -60,9 +48,9 @@ fun inferSourceRoot(project: Project, virtualFile: VirtualFile): VirtualFile? {
 object GoDebugHelper {
     // TODO see https://youtrack.jetbrains.com/issue/GO-10775 for "Debugger disconnected unexpectedly" when the lambda finishes
     suspend fun createGoDebugProcess(
-        debugHost: String,
-        debugPorts: List<Int>,
-        context: Context,
+        @Suppress("UNUSED_PARAMETER") debugHost: String,
+        @Suppress("UNUSED_PARAMETER") debugPorts: List<Int>,
+        @Suppress("UNUSED_PARAMETER") context: Context,
     ): XDebugProcessStarter = object : XDebugProcessStarter() {
         override fun start(session: XDebugSession): XDebugProcess {
             // TODO: Re-enable when Go plugin APIs are available in 2025.3

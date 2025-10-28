@@ -6,8 +6,6 @@ package software.aws.toolkits.jetbrains.remoteDev.caws
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.StartupActivity
 import com.intellij.openapi.ui.MessageDialogBuilder
-// TODO: Re-enable when Gateway APIs are available in 2025.3
-// import com.intellij.gateway.core.GatewayConnectionUtil
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -125,11 +123,11 @@ class DevEnvStatusWatcher : StartupActivity {
 
     fun getLastRecordedApiActivity(): String? = CawsEnvironmentClient.getInstance().getActivity()?.timestamp
 
-    fun getJbRecordedActivity(): Long {
-        // TODO: Re-enable when Gateway APIs are available in 2025.3
-        // return GatewayConnectionUtil.getInstance().getSecondsSinceLastControllerActivity()
-        return 0L // Temporary fallback
-    }
+    // TODO: Re-enable when Gateway APIs are available in 2025.3
+    // Original: GatewayConnectionUtil.getInstance().getSecondsSinceLastControllerActivity()
+    private val fallbackActivityTime = 0L
+
+    fun getJbRecordedActivity(): Long = fallbackActivityTime
 
     fun notifyBackendOfActivity(timestamp: String = Instant.now().toEpochMilli().toString()) {
         val request = UpdateActivityRequest(
