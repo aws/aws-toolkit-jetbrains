@@ -277,7 +277,8 @@ internal suspend fun HeavyJavaCodeInsightTestFixtureRule.setUpMavenProject(): Ps
 
     runInEdtAndWait {
         project.getServiceIfCreated(MavenProgressTracker::class.java)?.waitForProgressCompletion()
-        projectsManager.importProjects()
+        // importProjects() removed in 2025.3 - project import now handled automatically by test framework
+        // projectsManager.importProjects()
     }
 
     return lambdaClass

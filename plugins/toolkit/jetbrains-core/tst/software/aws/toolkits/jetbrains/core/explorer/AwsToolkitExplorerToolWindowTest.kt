@@ -5,7 +5,7 @@ package software.aws.toolkits.jetbrains.core.explorer
 
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.wm.ToolWindowManager
-import com.intellij.testFramework.ProjectExtension
+import com.intellij.testFramework.ProjectRule
 import com.intellij.testFramework.runInEdtAndGet
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -17,7 +17,7 @@ class AwsToolkitExplorerToolWindowTest {
     companion object {
         @JvmField
         @RegisterExtension
-        val projectExtension = ProjectExtension()
+        val projectExtension = ProjectRule()
     }
 
     @Test

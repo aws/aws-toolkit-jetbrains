@@ -4,7 +4,7 @@
 package software.aws.toolkits.jetbrains.core.gettingstarted
 
 import com.intellij.configurationStore.getPersistentStateComponentStorageLocation
-import com.intellij.testFramework.ProjectExtension
+import com.intellij.testFramework.ProjectRule
 import io.mockk.every
 import io.mockk.junit5.MockKExtension
 import io.mockk.mockkObject
@@ -26,7 +26,7 @@ class GettingStartedOnStartupTest {
     companion object {
         @JvmField
         @RegisterExtension
-        val projectExtension = ProjectExtension()
+        val projectExtension = ProjectRule()
     }
 
     @JvmField
