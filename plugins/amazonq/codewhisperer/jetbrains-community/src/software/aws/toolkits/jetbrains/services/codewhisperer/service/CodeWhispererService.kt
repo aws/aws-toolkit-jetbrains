@@ -542,7 +542,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                         .openFiles.mapNotNull { toUriString(it) }
                 }.orEmpty(),
             ).apply {
-                textDocument = TextDocumentIdentifier(toUriString(editor.virtualFile))
+                textDocument = TextDocumentIdentifier(toUriString(editor.virtualFile ?: return@compute null))
                 position = Position(
                     editor.caretModel.primaryCaret.logicalPosition.line,
                     editor.caretModel.primaryCaret.logicalPosition.column
