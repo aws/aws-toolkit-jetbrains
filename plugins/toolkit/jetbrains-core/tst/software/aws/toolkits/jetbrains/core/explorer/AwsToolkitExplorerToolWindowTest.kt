@@ -5,26 +5,18 @@ package software.aws.toolkits.jetbrains.core.explorer
 
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.wm.ToolWindowManager
-import com.intellij.testFramework.ProjectRule
+import com.intellij.testFramework.HeavyPlatformTestCase
 import com.intellij.testFramework.runInEdtAndGet
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.extension.RegisterExtension
 import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.core.ToolWindowHeadlessManagerImpl
 
-class AwsToolkitExplorerToolWindowTest {
-    companion object {
-        @JvmField
-        @RegisterExtension
-        val projectExtension = ProjectRule()
-    }
+class AwsToolkitExplorerToolWindowTest : HeavyPlatformTestCase() {
 
-    @Test
-    fun `save current tab state`() {
-        (ToolWindowManager.getInstance(projectExtension.project) as ToolWindowHeadlessManagerImpl)
+    fun `test save current tab state`() {
+        (ToolWindowManager.getInstance(project) as ToolWindowHeadlessManagerImpl)
             .doRegisterToolWindow(AwsToolkitExplorerFactory.TOOLWINDOW_ID)
-        val sut = runInEdtAndGet { AwsToolkitExplorerToolWindow(projectExtension.project) }
+        val sut = runInEdtAndGet { AwsToolkitExplorerToolWindow(project) }
 
         runInEdt {
             sut.selectTab(AwsToolkitExplorerToolWindow.EXPLORER_TAB_ID)
@@ -35,11 +27,10 @@ class AwsToolkitExplorerToolWindowTest {
         }
     }
 
-    @Test
-    fun `load tab state`() {
-        (ToolWindowManager.getInstance(projectExtension.project) as ToolWindowHeadlessManagerImpl)
+    fun `test load tab state`() {
+        (ToolWindowManager.getInstance(project) as ToolWindowHeadlessManagerImpl)
             .doRegisterToolWindow(AwsToolkitExplorerFactory.TOOLWINDOW_ID)
-        val sut = runInEdtAndGet { AwsToolkitExplorerToolWindow(projectExtension.project) }
+        val sut = runInEdtAndGet { AwsToolkitExplorerToolWindow(project) }
         runInEdt {
             sut.loadState(
                 AwsToolkitExplorerToolWindowState().apply {
@@ -59,11 +50,10 @@ class AwsToolkitExplorerToolWindowTest {
         }
     }
 
-    @Test
-    fun `handles loading invalid state`() {
-        (ToolWindowManager.getInstance(projectExtension.project) as ToolWindowHeadlessManagerImpl)
+    fun `test handles loading invalid state`() {
+        (ToolWindowManager.getInstance(project) as ToolWindowHeadlessManagerImpl)
             .doRegisterToolWindow(AwsToolkitExplorerFactory.TOOLWINDOW_ID)
-        val sut = runInEdtAndGet { AwsToolkitExplorerToolWindow(projectExtension.project) }
+        val sut = runInEdtAndGet { AwsToolkitExplorerToolWindow(project) }
 
         sut.loadState(
             AwsToolkitExplorerToolWindowState().apply {

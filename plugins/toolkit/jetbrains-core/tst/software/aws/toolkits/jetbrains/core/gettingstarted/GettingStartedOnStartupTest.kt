@@ -4,16 +4,11 @@
 package software.aws.toolkits.jetbrains.core.gettingstarted
 
 import com.intellij.configurationStore.getPersistentStateComponentStorageLocation
-import com.intellij.testFramework.ProjectRule
+import com.intellij.testFramework.HeavyPlatformTestCase
 import io.mockk.every
-import io.mockk.junit5.MockKExtension
 import io.mockk.mockkObject
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.extension.ExtendWith
-import org.junit.jupiter.api.extension.RegisterExtension
 import software.aws.toolkits.core.utils.deleteIfExists
 import software.aws.toolkits.core.utils.touch
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerExtension
@@ -21,28 +16,20 @@ import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStarted
 import software.aws.toolkits.jetbrains.settings.GettingStartedSettings
 
 @ExperimentalCoroutinesApi
-@ExtendWith(MockKExtension::class)
-class GettingStartedOnStartupTest {
-    companion object {
-        @JvmField
-        @RegisterExtension
-        val projectExtension = ProjectRule()
-    }
-
-    @JvmField
-    @RegisterExtension
-    val credManagerExtension = MockCredentialManagerExtension()
-
+class GettingStartedOnStartupTest : HeavyPlatformTestCase() {
+    private val credManagerExtension = MockCredentialManagerExtension()
     private val sut = GettingStartedOnStartup()
 
-    @AfterEach
-    fun afterEach() {
-        GettingStartedSettings.getInstance().shouldDisplayPage = true
-        getPersistentStateComponentStorageLocation(GettingStartedSettings::class.java)?.deleteIfExists()
+    override fun tearDown() {
+        try {
+            GettingStartedSettings.getInstance().shouldDisplayPage = true
+            getPersistentStateComponentStorageLocation(GettingStartedSettings::class.java)?.deleteIfExists()
+        } finally {
+            super.tearDown()
+        }
     }
 
-    @Test
-    fun `does not show screen if aws settings exist and has credentials`() {
+    fun `test does not show screen if aws settings exist and has credentials`() {
         mockkObject(GettingStartedPanel.Companion)
         every { GettingStartedPanel.openPanel(any()) } returns Unit
         val fp = getPersistentStateComponentStorageLocation(GettingStartedSettings::class.java) ?: error(
@@ -50,30 +37,28 @@ class GettingStartedOnStartupTest {
         )
         try {
             fp.touch()
-            sut.runActivity(projectExtension.project)
+            sut.runActivity(project)
         } finally {
             fp.deleteIfExists()
         }
 
         verify(exactly = 0) {
-            GettingStartedPanel.openPanel(projectExtension.project)
+            GettingStartedPanel.openPanel(project)
         }
     }
 
-    @Test
-    fun `does not show screen if has previously shown screen`() {
+    fun `test does not show screen if has previously shown screen`() {
         mockkObject(GettingStartedPanel.Companion)
         every { GettingStartedPanel.openPanel(any()) } returns Unit
         GettingStartedSettings.getInstance().shouldDisplayPage = false
-        sut.runActivity(projectExtension.project)
+        sut.runActivity(project)
 
         verify(exactly = 0) {
-            GettingStartedPanel.openPanel(projectExtension.project)
+            GettingStartedPanel.openPanel(project)
         }
     }
 
-    @Test
-    fun `shows screen if aws settings exist and no credentials`() {
+    fun `test shows screen if aws settings exist and no credentials`() {
         mockkObject(GettingStartedPanel.Companion)
         every { GettingStartedPanel.openPanel(any()) } returns Unit
         credManagerExtension.clear()
@@ -82,24 +67,23 @@ class GettingStartedOnStartupTest {
         )
         try {
             fp.touch()
-            sut.runActivity(projectExtension.project)
+            sut.runActivity(project)
         } finally {
             fp.deleteIfExists()
         }
 
         verify {
-            GettingStartedPanel.openPanel(projectExtension.project, any(), any())
+            GettingStartedPanel.openPanel(project, any(), any())
         }
     }
 
-    @Test
-    fun `shows screen on first install`() {
+    fun `test shows screen on first install`() {
         mockkObject(GettingStartedPanel.Companion)
         every { GettingStartedPanel.openPanel(any()) } returns Unit
-        sut.runActivity(projectExtension.project)
+        sut.runActivity(project)
 
         verify {
-            GettingStartedPanel.openPanel(projectExtension.project, any(), any())
+            GettingStartedPanel.openPanel(project, any(), any())
         }
     }
 }
