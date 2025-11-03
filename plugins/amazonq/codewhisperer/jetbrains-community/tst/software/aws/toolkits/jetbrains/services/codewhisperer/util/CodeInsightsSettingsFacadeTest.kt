@@ -7,47 +7,34 @@ import com.intellij.codeInsight.CodeInsightSettings
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.util.Disposer
-import com.intellij.testFramework.ProjectExtension
-import com.intellij.testFramework.junit5.TestDisposable
+import com.intellij.testFramework.HeavyPlatformTestCase
 import com.intellij.testFramework.replaceService
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.extension.RegisterExtension
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 
-class CodeInsightsSettingsFacadeTest {
+class CodeInsightsSettingsFacadeTest : HeavyPlatformTestCase() {
     private lateinit var settings: CodeInsightSettings
     private lateinit var sut: CodeInsightsSettingsFacade
 
-    @TestDisposable
-    private lateinit var disposable: Disposable
-
-    companion object {
-        @JvmField
-        @RegisterExtension
-        val projectExtension = ProjectExtension()
-    }
-
-    @BeforeEach
-    fun setUp() {
+    override fun setUp() {
+        super.setUp()
         sut = spy(CodeInsightsSettingsFacade())
         settings = spy { CodeInsightSettings() }
 
         ApplicationManager.getApplication().replaceService(
             CodeInsightSettings::class.java,
             settings,
-            disposable
+            testRootDisposable
         )
     }
 
-    @Test
-    fun `disableCodeInsightUntil should revert when parent is disposed`() {
-        val myFakePopup = Disposable {}.also {
-            Disposer.register(disposable, it)
+    fun testDisableCodeInsightUntilShouldRevertWhenParentIsDisposed() {
+        val myFakePopup = object : Disposable {
+            override fun dispose() {}
         }
+        Disposer.register(testRootDisposable, myFakePopup)
 
         // assume users' enable the following two codeinsight functionalities
         settings.TAB_EXITS_BRACKETS_AND_QUOTES = true
@@ -71,14 +58,13 @@ class CodeInsightsSettingsFacadeTest {
         assertThat(settings.AUTO_POPUP_COMPLETION_LOOKUP).isTrue
     }
 
-    @Test
-    fun `revertAll should revert back all changes made by codewhisperer`() {
+    fun testRevertAllShouldRevertBackAllChangesMadeByCodewhisperer() {
         settings.TAB_EXITS_BRACKETS_AND_QUOTES = true
         assertThat(settings.TAB_EXITS_BRACKETS_AND_QUOTES).isTrue
         settings.AUTOCOMPLETE_ON_CODE_COMPLETION = true
         assertThat(settings.AUTO_POPUP_COMPLETION_LOOKUP).isTrue
 
-        sut.disableCodeInsightUntil(disposable)
+        sut.disableCodeInsightUntil(testRootDisposable)
 
         assertThat(settings.TAB_EXITS_BRACKETS_AND_QUOTES).isFalse
         assertThat(settings.AUTO_POPUP_COMPLETION_LOOKUP).isFalse
@@ -91,14 +77,16 @@ class CodeInsightsSettingsFacadeTest {
         assertThat(settings.AUTO_POPUP_COMPLETION_LOOKUP).isTrue
     }
 
-    @Test
-    fun `disableCodeInsightUntil should always flush pending reverts before making next changes`() {
-        val myFakePopup = Disposable {}.also {
-            Disposer.register(disposable, it)
+    fun testDisableCodeInsightUntilShouldAlwaysFlushPendingRevertsBeforeMakingNextChanges() {
+        val myFakePopup = object : Disposable {
+            override fun dispose() {}
         }
-        val myAnotherFakePopup = Disposable {}.also {
-            Disposer.register(disposable, it)
+        Disposer.register(testRootDisposable, myFakePopup)
+        
+        val myAnotherFakePopup = object : Disposable {
+            override fun dispose() {}
         }
+        Disposer.register(testRootDisposable, myAnotherFakePopup)
 
         // assume users' enable the following two codeinsight functionalities
         settings.TAB_EXITS_BRACKETS_AND_QUOTES = true
@@ -129,8 +117,7 @@ class CodeInsightsSettingsFacadeTest {
         assertThat(settings.AUTO_POPUP_COMPLETION_LOOKUP).isTrue
     }
 
-    @Test
-    fun `dispose should call revertAll to revert all changes made by CodeWhisperer`() {
+    fun testDisposeShouldCallRevertAllToRevertAllChangesMadeByCodeWhisperer() {
         sut.dispose()
         verify(sut).revertAll()
     }
