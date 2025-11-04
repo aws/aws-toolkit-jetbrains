@@ -190,12 +190,9 @@ data class AuthenticationNeededExceptionMessage(
 )
 data class AuthenticationUpdateMessage(
     val authenticatingTabIDs: List<String>,
-    val featureDevEnabled: Boolean,
     val codeTransformEnabled: Boolean,
     val codeScanEnabled: Boolean,
     val message: String? = null,
-    val codeTestEnabled: Boolean,
-    val docEnabled: Boolean,
 ) : CodeTransformUiMessage(
     null,
     type = "authenticationUpdateMessage",
