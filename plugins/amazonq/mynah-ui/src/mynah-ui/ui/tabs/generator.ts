@@ -10,11 +10,8 @@ import { QuickActionGenerator } from '../quickActions/generator'
 import { workspaceCommand } from '../commands'
 
 export interface TabDataGeneratorProps {
-    isFeatureDevEnabled: boolean
     isCodeTransformEnabled: boolean
-    isDocEnabled: boolean
     isCodeScanEnabled: boolean
-    isCodeTestEnabled: boolean
     highlightCommand?: QuickActionCommand
     profileName?: string
 }
@@ -62,11 +59,8 @@ export class TabDataGenerator {
     constructor(props: TabDataGeneratorProps) {
         this.followUpsGenerator = new FollowUpGenerator()
         this.quickActionsGenerator = new QuickActionGenerator({
-            isFeatureDevEnabled: props.isFeatureDevEnabled,
             isCodeTransformEnabled: props.isCodeTransformEnabled,
-            isDocEnabled: props.isDocEnabled,
             isCodeScanEnabled: props.isCodeScanEnabled,
-            isCodeTestEnabled: props.isCodeTestEnabled,
         })
         this.highlightCommand = props.highlightCommand
         this.profileName = props.profileName
