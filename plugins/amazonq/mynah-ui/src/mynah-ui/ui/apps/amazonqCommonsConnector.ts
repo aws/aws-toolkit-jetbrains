@@ -7,7 +7,7 @@ import { ChatItemAction, ChatPrompt } from '@aws/mynah-ui-chat'
 import { AuthFollowUpType } from '../followUps/generator'
 import { ExtensionMessage } from '../commands'
 import {getTabCommandFromTabType, isTabType, TabType } from '../storages/tabsStorage'
-import {codeScanUserGuide, codeTestUserGuide, codeTransformUserGuide, docUserGuide, featureDevUserGuide} from "../texts/constants";
+import {codeScanUserGuide, codeTransformUserGuide} from "../texts/constants";
 import {createClickTelemetry, createOpenAgentTelemetry, Trigger} from "../telemetry/actions";
 
 export type WelcomeFollowupType = 'continue-to-chat'

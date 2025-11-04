@@ -14,11 +14,8 @@ export interface QuickActionsHandlerProps {
     mynahUIRef: MynahUIRef
     connector: Connector
     tabsStorage: TabsStorage
-    isFeatureDevEnabled: boolean
     isCodeTransformEnabled: boolean
-    isDocEnabled: boolean
     isCodeScanEnabled: boolean
-    isCodeTestEnabled: boolean
     hybridChat?: boolean
 }
 
@@ -27,11 +24,8 @@ export class QuickActionHandler {
     private connector: Connector
     private tabsStorage: TabsStorage
     private tabDataGenerator: TabDataGenerator
-    public isFeatureDevEnabled: boolean
     public isCodeTransformEnabled: boolean
-    public isDocEnabled: boolean
     public isCodeScanEnabled: boolean
-    public isCodeTestEnabled: boolean
     private isHybridChatEnabled: boolean
 
     constructor(props: QuickActionsHandlerProps) {
@@ -39,17 +33,11 @@ export class QuickActionHandler {
         this.connector = props.connector
         this.tabsStorage = props.tabsStorage
         this.tabDataGenerator = new TabDataGenerator({
-            isFeatureDevEnabled: props.isFeatureDevEnabled,
             isCodeTransformEnabled: props.isCodeTransformEnabled,
-            isDocEnabled: props.isDocEnabled,
             isCodeScanEnabled: props.isCodeScanEnabled,
-            isCodeTestEnabled: props.isCodeTestEnabled,
         })
-        this.isFeatureDevEnabled = props.isFeatureDevEnabled
         this.isCodeTransformEnabled = props.isCodeTransformEnabled
-        this.isDocEnabled = props.isDocEnabled
         this.isCodeScanEnabled = props.isCodeScanEnabled
-        this.isCodeTestEnabled = props.isCodeTestEnabled
         this.isHybridChatEnabled = props.hybridChat ?? false
     }
 

@@ -54,7 +54,6 @@ export interface ConnectorProps {
         clearPreviousItemButtons?: boolean
     ) => void
     onCodeTransformMessageUpdate: (tabID: string, messageId: string, chatItem: Partial<ChatItem>) => void
-    onRunTestMessageReceived?: (tabID: string, showRunTestMessage: boolean) => void
     onWelcomeFollowUpClicked: (tabID: string, welcomeFollowUpType: WelcomeFollowupType) => void
     onAsyncEventProgress: (tabID: string, inProgress: boolean, message: string | undefined, cancelButtonWhenLoading?: boolean) => void
     onCWCContextCommandMessage: (message: ChatItem, command?: string) => string | undefined
@@ -72,11 +71,8 @@ export interface ConnectorProps {
     onUpdatePromptProgress: (tabID: string, progressField: ProgressField | null | undefined) => void
     onChatInputEnabled: (tabID: string, enabled: boolean) => void
     onUpdateAuthentication: (
-        featureDevEnabled: boolean,
         codeTransformEnabled: boolean,
-        docEnabled: boolean,
         codeScanEnabled: boolean,
-        codeTestEnabled: boolean,
         authenticatingTabIDs: string[]
     ) => void
     onFeatureConfigsAvailable: (
