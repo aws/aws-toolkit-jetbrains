@@ -32,9 +32,6 @@ import software.aws.toolkits.jetbrains.services.amazonqCodeScan.messages.Authent
 import software.aws.toolkits.jetbrains.services.amazonqCodeScan.messages.CODE_SCAN_TAB_NAME
 import software.aws.toolkits.jetbrains.services.amazonqCodeScan.messages.IncomingCodeScanMessage
 import software.aws.toolkits.jetbrains.services.amazonqCodeScan.storage.ChatSessionStorage
-import software.aws.toolkits.jetbrains.services.amazonqCodeTest.auth.isCodeTestAvailable
-import software.aws.toolkits.jetbrains.services.amazonqDoc.auth.isDocAvailable
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.auth.isFeatureDevAvailable
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isCodeTransformAvailable
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -90,11 +87,8 @@ class CodeScanChatApp(private val scope: CoroutineScope) : AmazonQApp {
                     // Notify tabs about restoring authentication
                     context.messagesFromAppToUi.publish(
                         AuthenticationUpdateMessage(
-                            featureDevEnabled = isFeatureDevAvailable(context.project),
                             codeTransformEnabled = isCodeTransformAvailable(context.project),
                             codeScanEnabled = isCodeScanAvailable(context.project),
-                            codeTestEnabled = isCodeTestAvailable(context.project),
-                            docEnabled = isDocAvailable(context.project),
                             authenticatingTabIDs = chatSessionStorage.getAuthenticatingSessions().map { it.tabId }
                         )
                     )

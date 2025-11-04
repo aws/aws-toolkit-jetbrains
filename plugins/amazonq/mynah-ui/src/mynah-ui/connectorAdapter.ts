@@ -10,16 +10,13 @@ import { ChatClientAdapter, ChatEventHandler } from '@aws/chat-client'
 
 export const initiateAdapter = (showWelcomePage: boolean,
                              disclaimerAcknowledged: boolean,
-                             isFeatureDevEnabled: boolean,
                              isCodeTransformEnabled: boolean,
-                             isDocEnabled: boolean,
                              isCodeScanEnabled: boolean,
-                             isCodeTestEnabled: boolean,
                              ideApiPostMessage: (message: any) => void,
                              highlightCommand?: QuickActionCommand,
                              profileName?: string,
 ) : HybridChatAdapter => {
-    return new HybridChatAdapter(showWelcomePage, disclaimerAcknowledged, isFeatureDevEnabled, isCodeTransformEnabled, isDocEnabled, isCodeScanEnabled, isCodeTestEnabled, ideApiPostMessage, highlightCommand, profileName)
+    return new HybridChatAdapter(showWelcomePage, disclaimerAcknowledged, isCodeTransformEnabled, isCodeScanEnabled, ideApiPostMessage, highlightCommand, profileName)
 }
 
 // Ref: https://github.com/aws/aws-toolkit-vscode/blob/e9ea8082ffe0b9968a873437407d0b6b31b9e1a5/packages/core/src/amazonq/webview/ui/connectorAdapter.ts#L14
@@ -32,11 +29,8 @@ export class HybridChatAdapter implements ChatClientAdapter {
 
         private showWelcomePage: boolean,
         private disclaimerAcknowledged: boolean,
-        private isFeatureDevEnabled: boolean,
         private isCodeTransformEnabled: boolean,
-        private isDocEnabled: boolean,
         private isCodeScanEnabled: boolean,
-        private isCodeTestEnabled: boolean,
         private ideApiPostMessage: (message: any) => void,
         private highlightCommand?: QuickActionCommand,
         private profileName?: string,
@@ -55,11 +49,8 @@ export class HybridChatAdapter implements ChatClientAdapter {
             mynahUIRef: this.mynahUIRef,
             showWelcomePage: this.showWelcomePage,
             disclaimerAcknowledged: this.disclaimerAcknowledged,
-            isFeatureDevEnabled: this.isFeatureDevEnabled,
             isCodeTransformEnabled: this.isCodeTransformEnabled,
-            isDocEnabled: this.isDocEnabled,
             isCodeScanEnabled: this.isCodeScanEnabled,
-            isCodeTestEnabled: this.isCodeTestEnabled,
             highlightCommand: this.highlightCommand,
             profileName: this.profileName,
             hybridChat: true,
@@ -86,10 +77,6 @@ export class HybridChatAdapter implements ChatClientAdapter {
 
     isSupportedQuickAction(command: string): boolean {
         return (
-            command === '/dev' ||
-            command === '/test' ||
-            command === '/review' ||
-            command === '/doc' ||
             command === '/transform'
         )
     }
@@ -100,11 +87,8 @@ export class HybridChatAdapter implements ChatClientAdapter {
 
     get initialQuickActions(): QuickActionCommandGroup[] {
         const tabDataGenerator = new TabDataGenerator({
-            isFeatureDevEnabled: this.isFeatureDevEnabled,
             isCodeTransformEnabled: this.isCodeTransformEnabled,
-            isDocEnabled: this.isDocEnabled,
             isCodeScanEnabled: this.isCodeScanEnabled,
-            isCodeTestEnabled: this.isCodeTestEnabled,
             profileName: this.profileName
         })
         return tabDataGenerator.quickActionsGenerator.generateForTab('cwc') ?? []
