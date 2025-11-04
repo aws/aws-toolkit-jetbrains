@@ -7,28 +7,18 @@ import { QuickActionCommand, QuickActionCommandGroup } from '@aws/mynah-ui-chat/
 import { TabType } from '../storages/tabsStorage'
 import {MynahIcons} from "@aws/mynah-ui-chat";
 
-// TODO: Need to remove legacy code of isCodeScanEnabled, isCodeTestEnabled, isDocEnabled and isFeatureDevEnabled in followup PR
 export interface QuickActionGeneratorProps {
-    isFeatureDevEnabled: boolean
     isCodeTransformEnabled: boolean
-    isDocEnabled: boolean
     isCodeScanEnabled: boolean
-    isCodeTestEnabled: boolean
 }
 
 export class QuickActionGenerator {
-    public isFeatureDevEnabled: boolean
     public isCodeTransformEnabled: boolean
-    public isDocEnabled: boolean
     public isCodeScanEnabled: boolean
-    public isCodeTestEnabled: boolean
 
     constructor(props: QuickActionGeneratorProps) {
-        this.isFeatureDevEnabled = props.isFeatureDevEnabled
         this.isCodeTransformEnabled = props.isCodeTransformEnabled
-        this.isDocEnabled = props.isDocEnabled
         this.isCodeScanEnabled = props.isCodeScanEnabled
-        this.isCodeTestEnabled = props.isCodeTestEnabled
     }
 
     public generateForTab(tabType: TabType): QuickActionCommandGroup[] {
