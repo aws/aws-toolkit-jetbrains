@@ -41,9 +41,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.webview.BrowserConnector
 import software.aws.toolkits.jetbrains.services.amazonq.webview.FqnWebviewAdapter
 import software.aws.toolkits.jetbrains.services.amazonq.webview.theme.EditorThemeAdapter
 import software.aws.toolkits.jetbrains.services.amazonqCodeScan.auth.isCodeScanAvailable
-import software.aws.toolkits.jetbrains.services.amazonqCodeTest.auth.isCodeTestAvailable
-import software.aws.toolkits.jetbrains.services.amazonqDoc.auth.isDocAvailable
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.auth.isFeatureDevAvailable
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isCodeTransformAvailable
 import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.resources.message
@@ -265,10 +262,7 @@ class AmazonQPanel(val project: Project, private val scope: CoroutineScope) : Di
     private fun connectUi(browser: Browser) {
         browser.init(
             isCodeTransformAvailable = isCodeTransformAvailable(project),
-            isFeatureDevAvailable = isFeatureDevAvailable(project),
             isCodeScanAvailable = isCodeScanAvailable(project),
-            isCodeTestAvailable = isCodeTestAvailable(project),
-            isDocAvailable = isDocAvailable(project),
             highlightCommand = highlightCommand(),
             activeProfile = QRegionProfileManager.getInstance().takeIf { it.shouldDisplayProfileInfo(project) }?.activeProfile(project)
         )

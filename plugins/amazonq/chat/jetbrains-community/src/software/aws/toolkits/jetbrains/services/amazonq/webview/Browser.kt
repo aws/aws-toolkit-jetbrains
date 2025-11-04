@@ -44,19 +44,13 @@ class Browser(parent: Disposable, private val mynahAsset: Path, val project: Pro
 
     fun init(
         isCodeTransformAvailable: Boolean,
-        isFeatureDevAvailable: Boolean,
-        isDocAvailable: Boolean,
         isCodeScanAvailable: Boolean,
-        isCodeTestAvailable: Boolean,
         highlightCommand: HighlightCommand?,
         activeProfile: QRegionProfile?,
     ) {
         loadWebView(
             isCodeTransformAvailable,
-            isFeatureDevAvailable,
-            isDocAvailable,
             isCodeScanAvailable,
-            isCodeTestAvailable,
             highlightCommand,
             activeProfile
         )
@@ -80,10 +74,7 @@ class Browser(parent: Disposable, private val mynahAsset: Path, val project: Pro
     // Load the chat web app into the jcefBrowser
     private fun loadWebView(
         isCodeTransformAvailable: Boolean,
-        isFeatureDevAvailable: Boolean,
-        isDocAvailable: Boolean,
         isCodeScanAvailable: Boolean,
-        isCodeTestAvailable: Boolean,
         highlightCommand: HighlightCommand?,
         activeProfile: QRegionProfile?,
     ) {
@@ -99,10 +90,7 @@ class Browser(parent: Disposable, private val mynahAsset: Path, val project: Pro
                 "webview/chat.html",
                 getWebviewHTML(
                     isCodeTransformAvailable,
-                    isFeatureDevAvailable,
-                    isDocAvailable,
                     isCodeScanAvailable,
-                    isCodeTestAvailable,
                     highlightCommand,
                     activeProfile,
                 )
@@ -116,10 +104,7 @@ class Browser(parent: Disposable, private val mynahAsset: Path, val project: Pro
      */
     private fun getWebviewHTML(
         isCodeTransformAvailable: Boolean,
-        isFeatureDevAvailable: Boolean,
-        isDocAvailable: Boolean,
         isCodeScanAvailable: Boolean,
-        isCodeTestAvailable: Boolean,
         highlightCommand: HighlightCommand?,
         activeProfile: QRegionProfile?,
     ): String {
@@ -138,11 +123,8 @@ class Browser(parent: Disposable, private val mynahAsset: Path, val project: Pro
                     const hybridChatConnector = connectorAdapter.initiateAdapter(
                         ${MeetQSettings.getInstance().reinvent2024OnboardingCount < MAX_ONBOARDING_PAGE_COUNT},
                         ${MeetQSettings.getInstance().disclaimerAcknowledged},
-                        $isFeatureDevAvailable,
                         $isCodeTransformAvailable,
-                        $isDocAvailable,
                         $isCodeScanAvailable,
-                        $isCodeTestAvailable,
                         {
                             postMessage: message => { $postMessageToJavaJsCode }
                         },
