@@ -4,16 +4,11 @@
 package software.aws.toolkits.jetbrains.core.credentials
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.testFramework.ProjectRule
-import com.intellij.testFramework.junit5.TestDisposable
+import com.intellij.openapi.components.service
+import com.intellij.testFramework.HeavyPlatformTestCase
 import com.intellij.testFramework.replaceService
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.extension.RegisterExtension
 import org.mockito.Mockito.mockConstruction
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
@@ -29,8 +24,10 @@ import software.amazon.awssdk.services.ssooidc.SsoOidcClient
 import software.aws.toolkits.core.telemetry.MetricEvent
 import software.aws.toolkits.core.telemetry.TelemetryBatcher
 import software.aws.toolkits.core.telemetry.TelemetryPublisher
+import software.aws.toolkits.core.ToolkitClientManager
+import software.aws.toolkits.core.utils.delegateMock
 import software.aws.toolkits.core.utils.test.aString
-import software.aws.toolkits.jetbrains.core.MockClientManagerExtension
+import software.aws.toolkits.jetbrains.core.MockClientManager
 import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileSsoSessionIdentifier
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
@@ -42,46 +39,50 @@ import software.aws.toolkits.jetbrains.utils.isInstanceOf
 import software.aws.toolkits.jetbrains.utils.isInstanceOfSatisfying
 import software.aws.toolkits.jetbrains.utils.satisfiesKt
 
-class DefaultToolkitAuthManagerTest {
+class DefaultToolkitAuthManagerTest : HeavyPlatformTestCase() {
     private class TestTelemetryService(
         publisher: TelemetryPublisher = NoOpPublisher(),
         batcher: TelemetryBatcher,
     ) : TelemetryService(publisher, batcher)
 
-    @JvmField
-    @RegisterExtension
-    val mockClientManager = MockClientManagerExtension()
-
+    private lateinit var mockClientManager: MockClientManager
     private lateinit var sut: DefaultToolkitAuthManager
     private lateinit var connectionManager: ToolkitConnectionManager
     private lateinit var batcher: TelemetryBatcher
     private lateinit var telemetryService: TelemetryService
     private var isTelemetryEnabledDefault: Boolean = false
 
-    @BeforeEach
-    fun setUp(@TestDisposable disposable: Disposable) {
-        mockClientManager.create<SsoOidcClient>()
+    override fun setUp() {
+        super.setUp()
+        mockClientManager = service<ToolkitClientManager>() as MockClientManager
+        
+        val ssoOidcClient = delegateMock<SsoOidcClient>()
+        @Suppress("DEPRECATION")
+        mockClientManager.register(SsoOidcClient::class, ssoOidcClient)
 
         sut = DefaultToolkitAuthManager()
-        ApplicationManager.getApplication().replaceService(ToolkitAuthManager::class.java, sut, disposable)
+        ApplicationManager.getApplication().replaceService(ToolkitAuthManager::class.java, sut, testRootDisposable)
 
-        connectionManager = DefaultToolkitConnectionManager(projectRule.project)
-        projectRule.project.replaceService(ToolkitConnectionManager::class.java, connectionManager, disposable)
+        connectionManager = DefaultToolkitConnectionManager(project)
+        project.replaceService(ToolkitConnectionManager::class.java, connectionManager, testRootDisposable)
 
         batcher = mock()
         telemetryService = spy(TestTelemetryService(batcher = batcher))
-        ApplicationManager.getApplication().replaceService(TelemetryService::class.java, telemetryService, disposable)
+        ApplicationManager.getApplication().replaceService(TelemetryService::class.java, telemetryService, testRootDisposable)
         isTelemetryEnabledDefault = AwsSettings.getInstance().isTelemetryEnabled
     }
 
-    @AfterEach
-    fun tearDown() {
-        telemetryService.dispose()
-        AwsSettings.getInstance().isTelemetryEnabled = isTelemetryEnabledDefault
+    override fun tearDown() {
+        try {
+            telemetryService.dispose()
+            AwsSettings.getInstance().isTelemetryEnabled = isTelemetryEnabledDefault
+        } finally {
+            super.tearDown()
+        }
     }
 
-    @Test
-    fun `creates ManagedBearerSsoConnection from ManagedSsoProfile`() {
+    
+    fun `test creates ManagedBearerSsoConnection from ManagedSsoProfile`() {
         val profile = ManagedSsoProfile(
             "us-east-1",
             aString(),
@@ -97,8 +98,8 @@ class DefaultToolkitAuthManagerTest {
         assertThat(connection.scopes).isEqualTo(profile.scopes)
     }
 
-    @Test
-    fun `creates ManagedBearerSsoConnection from serialized ManagedSsoProfile`() {
+    
+    fun `test creates ManagedBearerSsoConnection from serialized ManagedSsoProfile`() {
         val profile = ManagedSsoProfile(
             "us-east-1",
             aString(),
@@ -112,8 +113,8 @@ class DefaultToolkitAuthManagerTest {
         }
     }
 
-    @Test
-    fun `serializes ManagedSsoProfile from ManagedBearerSsoConnection`() {
+    
+    fun `test serializes ManagedSsoProfile from ManagedBearerSsoConnection`() {
         val profile = ManagedSsoProfile(
             "us-east-1",
             aString(),
@@ -136,8 +137,8 @@ class DefaultToolkitAuthManagerTest {
         }
     }
 
-    @Test
-    fun `loadState dedupes profiles`() {
+    
+    fun `test loadState dedupes profiles`() {
         val profile = ManagedSsoProfile(
             "us-east-1",
             aString(),
@@ -164,8 +165,8 @@ class DefaultToolkitAuthManagerTest {
         }
     }
 
-    @Test
-    fun `updates connection list from connection bus`() {
+    
+    fun `test updates connection list from connection bus`() {
         assertThat(sut.listConnections()).isEmpty()
 
         val scopes = listOf("scope1", "scope2")
@@ -219,8 +220,8 @@ class DefaultToolkitAuthManagerTest {
         assertThat(sut.listConnections()).isEmpty()
     }
 
-    @Test
-    fun `loginSso with an working existing connection`() {
+    
+    fun `test loginSso with an working existing connection`() {
         mockConstruction(InteractiveBearerTokenProvider::class.java) { context, _ ->
             whenever(context.state()).thenReturn(BearerTokenAuthState.AUTHORIZED)
         }.use {
@@ -232,7 +233,7 @@ class DefaultToolkitAuthManagerTest {
                 )
             )
 
-            loginSso(projectRule.project, "foo", "us-east-1", listOf("scopes"))
+            loginSso(project, "foo", "us-east-1", listOf("scopes"))
 
             val tokenProvider = it.constructed()[0]
             verify(tokenProvider).state()
@@ -240,8 +241,8 @@ class DefaultToolkitAuthManagerTest {
         }
     }
 
-    @Test
-    fun `loginSso with an existing connection but expired and refresh token is valid, should refreshToken`() {
+    
+    fun `test loginSso with an existing connection but expired and refresh token is valid, should refreshToken`() {
         mockConstruction(InteractiveBearerTokenProvider::class.java) { context, _ ->
             whenever(context.id).thenReturn("id")
             whenever(context.state()).thenReturn(BearerTokenAuthState.NEEDS_REFRESH)
@@ -255,7 +256,7 @@ class DefaultToolkitAuthManagerTest {
             )
             connectionManager.switchConnection(existingConnection)
 
-            loginSso(projectRule.project, "foo", "us-east-1", listOf("scopes"))
+            loginSso(project, "foo", "us-east-1", listOf("scopes"))
 
             val tokenProvider = it.constructed()[0]
             verify(tokenProvider).resolveToken()
@@ -263,8 +264,8 @@ class DefaultToolkitAuthManagerTest {
         }
     }
 
-    @Test
-    fun `loginSso with an existing connection that token is invalid and there's no refresh token, should re-authenticate`() {
+    
+    fun `test loginSso with an existing connection that token is invalid and there's no refresh token, should re-authenticate`() {
         mockConstruction(InteractiveBearerTokenProvider::class.java) { context, _ ->
             whenever(context.state()).thenReturn(BearerTokenAuthState.NOT_AUTHENTICATED)
         }.use {
@@ -277,7 +278,7 @@ class DefaultToolkitAuthManagerTest {
             )
             connectionManager.switchConnection(existingConnection)
 
-            loginSso(projectRule.project, "foo", "us-east-1", listOf("scopes"))
+            loginSso(project, "foo", "us-east-1", listOf("scopes"))
 
             val tokenProvider = it.constructed()[0]
             verify(tokenProvider, timeout(5000)).reauthenticate()
@@ -285,13 +286,13 @@ class DefaultToolkitAuthManagerTest {
         }
     }
 
-    @Test
-    fun `loginSso reuses connection if requested scopes are subset of existing`(@TestDisposable disposable: Disposable) {
+    
+    fun `test loginSso reuses connection if requested scopes are subset of existing`() {
         mockConstruction(InteractiveBearerTokenProvider::class.java) { context, _ ->
             whenever(context.state()).thenReturn(BearerTokenAuthState.AUTHORIZED)
         }.use {
             val connectionManager = spy(connectionManager)
-            projectRule.project.replaceService(ToolkitConnectionManager::class.java, connectionManager, disposable)
+            project.replaceService(ToolkitConnectionManager::class.java, connectionManager, testRootDisposable)
 
             val existingConnection = sut.createConnection(
                 ManagedSsoProfile(
@@ -303,7 +304,7 @@ class DefaultToolkitAuthManagerTest {
 
             connectionManager.switchConnection(existingConnection)
 
-            loginSso(projectRule.project, "foo", "us-east-1", listOf("existing1"))
+            loginSso(project, "foo", "us-east-1", listOf("existing1"))
 
             val tokenProvider = it.constructed()[0]
             verify(tokenProvider).state()
@@ -313,8 +314,8 @@ class DefaultToolkitAuthManagerTest {
         }
     }
 
-    @Test
-    fun `loginSso forces reauth if requested scopes are not complete subset`() {
+    
+    fun `test loginSso forces reauth if requested scopes are not complete subset`() {
         mockConstruction(InteractiveBearerTokenProvider::class.java) { context, _ ->
             whenever(context.state()).thenReturn(BearerTokenAuthState.AUTHORIZED)
         }.use {
@@ -327,7 +328,7 @@ class DefaultToolkitAuthManagerTest {
             )
 
             val newScopes = listOf("existing1", "new1")
-            loginSso(projectRule.project, "foo", "us-east-1", newScopes)
+            loginSso(project, "foo", "us-east-1", newScopes)
 
             assertThat(connectionManager.activeConnection() as AwsBearerTokenConnection).satisfiesKt { connection ->
                 assertThat(connection.scopes.toSet()).isEqualTo(setOf("existing1", "existing2", "existing3", "new1"))
@@ -339,18 +340,18 @@ class DefaultToolkitAuthManagerTest {
         }
     }
 
-    @Test
-    fun `loginSso with a new connection`(@TestDisposable disposable: Disposable) {
+    
+    fun `test loginSso with a new connection`() {
         mockConstruction(InteractiveBearerTokenProvider::class.java) { context, _ ->
             doNothing().whenever(context).reauthenticate()
             whenever(context.state()).thenReturn(BearerTokenAuthState.NOT_AUTHENTICATED)
         }.use {
             val connectionManager = spy(connectionManager)
-            projectRule.project.replaceService(ToolkitConnectionManager::class.java, connectionManager, disposable)
+            project.replaceService(ToolkitConnectionManager::class.java, connectionManager, testRootDisposable)
             // before
             assertThat(sut.listConnections()).hasSize(0)
 
-            loginSso(projectRule.project, "foo", "us-east-1", listOf("scope1", "scope2"))
+            loginSso(project, "foo", "us-east-1", listOf("scope1", "scope2"))
 
             // after
             assertThat(sut.listConnections()).hasSize(1)
@@ -372,8 +373,8 @@ class DefaultToolkitAuthManagerTest {
         }
     }
 
-    @Test
-    fun `logoutFromConnection should invalidate the token provider and the connection and invoke callback`(@TestDisposable disposable: Disposable) {
+    
+    fun `test logoutFromConnection should invalidate the token provider and the connection and invoke callback`() {
         val profile = ManagedSsoProfile("us-east-1", "startUrl000", listOf("scopes"))
         val connection = sut.createConnection(profile) as ManagedBearerSsoConnection
         connectionManager.switchConnection(connection)
@@ -381,7 +382,7 @@ class DefaultToolkitAuthManagerTest {
         var providerInvalidatedMessageReceived = 0
         var connectionSwitchedMessageReceived = 0
         var callbackInvoked = 0
-        ApplicationManager.getApplication().messageBus.connect(disposable).subscribe(
+        ApplicationManager.getApplication().messageBus.connect(testRootDisposable).subscribe(
             BearerTokenProviderListener.TOPIC,
             object : BearerTokenProviderListener {
                 override fun invalidate(providerId: String) {
@@ -391,7 +392,7 @@ class DefaultToolkitAuthManagerTest {
                 }
             }
         )
-        ApplicationManager.getApplication().messageBus.connect(disposable).subscribe(
+        ApplicationManager.getApplication().messageBus.connect(testRootDisposable).subscribe(
             ToolkitConnectionManagerListener.TOPIC,
             object : ToolkitConnectionManagerListener {
                 override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
@@ -400,17 +401,17 @@ class DefaultToolkitAuthManagerTest {
             }
         )
 
-        logoutFromSsoConnection(projectRule.project, connection) { callbackInvoked += 1 }
+        logoutFromSsoConnection(project, connection) { callbackInvoked += 1 }
         assertThat(providerInvalidatedMessageReceived).isEqualTo(1)
         assertThat(connectionSwitchedMessageReceived).isEqualTo(1)
         assertThat(callbackInvoked).isEqualTo(1)
     }
 
-    @Test
-    fun `loginSso telemetry contains default source ID`() {
+    
+    fun `test loginSso telemetry contains default source ID`() {
         AwsSettings.getInstance().isTelemetryEnabled = true
         loginSso(
-            project = projectRule.project,
+            project = project,
             startUrl = "foo",
             region = "us-east-1",
             requestedScopes = listOf("scopes")
@@ -421,11 +422,11 @@ class DefaultToolkitAuthManagerTest {
         }
     }
 
-    @Test
-    fun `loginSso telemetry contains no source by default`() {
+    
+    fun `test loginSso telemetry contains no source by default`() {
         AwsSettings.getInstance().isTelemetryEnabled = true
         loginSso(
-            project = projectRule.project,
+            project = project,
             startUrl = "foo",
             region = "us-east-1",
             requestedScopes = listOf("scopes")
@@ -436,11 +437,11 @@ class DefaultToolkitAuthManagerTest {
         }
     }
 
-    @Test
-    fun `loginSso telemetry contains provided source`() {
+    
+    fun `test loginSso telemetry contains provided source`() {
         AwsSettings.getInstance().isTelemetryEnabled = true
         loginSso(
-            project = projectRule.project,
+            project = project,
             startUrl = "foo",
             region = "us-east-1",
             requestedScopes = listOf("scopes"),
@@ -452,25 +453,19 @@ class DefaultToolkitAuthManagerTest {
         }
     }
 
-    @Test
-    fun `serializing LegacyManagedBearerSsoConnection does not include connectionSettings`() {
+    
+    fun `test serializing LegacyManagedBearerSsoConnection does not include connectionSettings`() {
         val profile = ManagedSsoProfile("us-east-1", "startUrl000", listOf("scopes"))
         val connection = sut.createConnection(profile) as LegacyManagedBearerSsoConnection
 
         assertThat(jacksonObjectMapper().writeValueAsString(connection)).doesNotContain("connectionSettings")
     }
 
-    @Test
-    fun `serializing ProfileSsoManagedBearerSsoConnection does not include connectionSettings`() {
+    
+    fun `test serializing ProfileSsoManagedBearerSsoConnection does not include connectionSettings`() {
         val profile = UserConfigSsoSessionProfile("sessionName", "us-east-1", "startUrl000", listOf("scopes"))
         val connection = sut.createConnection(profile) as ProfileSsoManagedBearerSsoConnection
 
         assertThat(jacksonObjectMapper().writeValueAsString(connection)).doesNotContain("connectionSettings")
-    }
-
-    private companion object {
-        @JvmField
-        @RegisterExtension
-        val projectRule = ProjectRule()
     }
 }

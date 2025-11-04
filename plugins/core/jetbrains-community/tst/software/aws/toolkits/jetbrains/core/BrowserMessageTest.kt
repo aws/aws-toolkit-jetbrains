@@ -7,16 +7,13 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.exc.MismatchedInputException
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.openapi.project.Project
-import com.intellij.testFramework.ProjectRule
+import com.intellij.testFramework.HeavyPlatformTestCase
 import com.intellij.ui.jcef.JBCefBrowserBase
 import com.intellij.ui.jcef.JBCefJSQuery
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.assertj.core.api.ObjectAssert
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
-import org.junit.jupiter.api.extension.RegisterExtension
 import org.mockito.kotlin.mock
 import software.aws.toolkits.jetbrains.core.webview.BrowserMessage
 import software.aws.toolkits.jetbrains.core.webview.BrowserState
@@ -32,14 +29,8 @@ class NoOpLoginBrowser(project: Project) : LoginBrowser(project) {
     override fun handleBrowserMessage(message: BrowserMessage?) {}
 }
 
-class BrowserMessageTest {
+class BrowserMessageTest : HeavyPlatformTestCase() {
     private lateinit var objectMapper: ObjectMapper
-
-    companion object {
-        @JvmField
-        @RegisterExtension
-        val projectExtension = ProjectRule()
-    }
 
     private inline fun <reified T : BrowserMessage> assertDeserializedInstanceOf(jsonStr: String): ObjectAssert<BrowserMessage> {
         val actual = objectMapper.readValue<BrowserMessage>(jsonStr)
@@ -52,13 +43,12 @@ class BrowserMessageTest {
         }.isInstanceOf(T::class.java)
     }
 
-    @BeforeEach
-    fun setup() {
-        objectMapper = NoOpLoginBrowser(projectExtension.project).objectMapper
+    override fun setUp() {
+        super.setUp()
+        objectMapper = NoOpLoginBrowser(project).objectMapper
     }
 
-    @Test
-    fun `exact match, deserialization return correct BrowserMessage subtype`() {
+    fun `test exact match, deserialization return correct BrowserMessage subtype`() {
         assertDeserializedInstanceOf<BrowserMessage.PrepareUi>(
             """
             {
@@ -187,8 +177,7 @@ class BrowserMessageTest {
         )
     }
 
-    @Test
-    fun `unrecognizable command - deserialize should throw MismatchedInputException`() {
+    fun `test unrecognizable command - deserialize should throw MismatchedInputException`() {
         assertDeserializedWillThrow<MismatchedInputException>(
             """
             {
@@ -214,8 +203,7 @@ class BrowserMessageTest {
         )
     }
 
-    @Test
-    fun `unknown fields - deserialize should throw MismatchedInputException`() {
+    fun `test unknown fields - deserialize should throw MismatchedInputException`() {
         assertDeserializedWillThrow<MismatchedInputException>(
             """
             {
@@ -236,8 +224,7 @@ class BrowserMessageTest {
         )
     }
 
-    @Test
-    fun `missing required fields - deserialize fail `() {
+    fun `test missing required fields - deserialize fail `() {
         assertDeserializedWillThrow<MismatchedInputException>(
             """
             {
@@ -319,8 +306,7 @@ class BrowserMessageTest {
         )
     }
 
-    @Test
-    fun `Nullable fields in sendUiClickTelemetry should not throw exception`() {
+    fun `test Nullable fields in sendUiClickTelemetry should not throw exception`() {
         assertDoesNotThrow {
             objectMapper.readValue<BrowserMessage>(
                 """

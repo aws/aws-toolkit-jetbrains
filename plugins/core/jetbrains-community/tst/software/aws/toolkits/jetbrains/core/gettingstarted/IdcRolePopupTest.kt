@@ -3,50 +3,41 @@
 
 package software.aws.toolkits.jetbrains.core.gettingstarted
 
-import com.intellij.testFramework.ProjectRule
+import com.intellij.openapi.components.service
+import com.intellij.testFramework.HeavyPlatformTestCase
 import com.intellij.testFramework.runInEdtAndWait
 import io.mockk.every
-import io.mockk.junit5.MockKExtension
 import io.mockk.justRun
 import io.mockk.mockk
 import io.mockk.verify
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.extension.ExtendWith
-import org.junit.jupiter.api.extension.RegisterExtension
 import software.amazon.awssdk.profiles.Profile
 import software.amazon.awssdk.services.sso.SsoClient
 import software.amazon.awssdk.services.sso.model.RoleInfo
+import software.aws.toolkits.core.ToolkitClientManager
+import software.aws.toolkits.core.utils.delegateMock
 import software.aws.toolkits.core.utils.test.aString
-import software.aws.toolkits.jetbrains.core.MockClientManagerExtension
+import software.aws.toolkits.jetbrains.core.MockClientManager
 import software.aws.toolkits.jetbrains.core.credentials.ConfigFilesFacade
-import software.aws.toolkits.jetbrains.core.region.MockRegionProviderExtension
 import software.aws.toolkits.jetbrains.utils.satisfiesKt
 import software.aws.toolkits.resources.AwsCoreBundle
 
-@ExtendWith(MockKExtension::class)
-class IdcRolePopupTest {
-    companion object {
-        @JvmField
-        @RegisterExtension
-        val projectExtension = ProjectRule()
+class IdcRolePopupTest : HeavyPlatformTestCase() {
+    private lateinit var mockClientManager: MockClientManager
+
+    override fun setUp() {
+        super.setUp()
+        mockClientManager = service<ToolkitClientManager>() as MockClientManager
+        
+        @Suppress("DEPRECATION")
+        mockClientManager.register(SsoClient::class, delegateMock<SsoClient>())
     }
 
-    @JvmField
-    @RegisterExtension
-    val mockClientManager = MockClientManagerExtension()
-
-    @JvmField
-    @RegisterExtension
-    val mockRegionProvider = MockRegionProviderExtension()
-
-    @Test
-    fun `validate role selected`() {
+    fun `test validate role selected`() {
         val state = IdcRolePopupState()
-        mockClientManager.create<SsoClient>()
 
         runInEdtAndWait {
-            val validation = IdcRolePopup(projectExtension.project, aString(), aString(), mockk(), state, mockk()).run {
+            val validation = IdcRolePopup(project, aString(), aString(), mockk(), state, mockk()).run {
                 try {
                     performValidateAll()
                 } finally {
@@ -61,8 +52,7 @@ class IdcRolePopupTest {
         }
     }
 
-    @Test
-    fun `success writes profile to config`() {
+    fun `test success writes profile to config`() {
         val sessionName = aString()
         val roleInfo = RoleInfo.builder()
             .roleName(aString())
@@ -76,11 +66,9 @@ class IdcRolePopupTest {
             justRun { appendProfileToConfig(any()) }
         }
 
-        mockClientManager.create<SsoClient>()
-
         runInEdtAndWait {
             val sut = IdcRolePopup(
-                projectExtension.project,
+                project,
                 region = aString(),
                 sessionName = sessionName,
                 tokenProvider = mockk(),

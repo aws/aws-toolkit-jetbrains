@@ -3,20 +3,19 @@
 
 package software.aws.toolkits.jetbrains.core.gettingstarted
 
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.components.service
 import com.intellij.openapi.ui.TestDialog
 import com.intellij.openapi.ui.TestDialogManager
-import com.intellij.testFramework.ProjectRule
+import com.intellij.testFramework.HeavyPlatformTestCase
+import com.intellij.testFramework.replaceService
 import com.intellij.testFramework.runInEdtAndWait
 import io.mockk.every
-import io.mockk.junit5.MockKExtension
 import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.verify
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import org.junit.jupiter.api.extension.ExtendWith
-import org.junit.jupiter.api.extension.RegisterExtension
 import org.mockito.kotlin.any
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.whenever
@@ -27,8 +26,10 @@ import software.amazon.awssdk.services.sts.model.GetCallerIdentityResponse
 import software.amazon.awssdk.services.sts.model.StsException
 import software.aws.toolkits.core.region.Endpoint
 import software.aws.toolkits.core.region.Service
+import software.aws.toolkits.core.ToolkitClientManager
+import software.aws.toolkits.core.utils.delegateMock
 import software.aws.toolkits.core.utils.test.aString
-import software.aws.toolkits.jetbrains.core.MockClientManagerExtension
+import software.aws.toolkits.jetbrains.core.MockClientManager
 import software.aws.toolkits.jetbrains.core.credentials.ConfigFilesFacade
 import software.aws.toolkits.jetbrains.core.credentials.UserConfigSsoSessionProfile
 import software.aws.toolkits.jetbrains.core.credentials.authAndUpdateConfig
@@ -41,24 +42,16 @@ import software.aws.toolkits.jetbrains.utils.satisfiesKt
 import software.aws.toolkits.resources.AwsCoreBundle
 import software.aws.toolkits.telemetry.FeatureId
 
-@ExtendWith(MockKExtension::class)
-class SetupAuthenticationDialogTest {
-    companion object {
-        @JvmField
-        @RegisterExtension
-        val projectExtension = ProjectRule()
+class SetupAuthenticationDialogTest : HeavyPlatformTestCase() {
+    private lateinit var mockClientManager: MockClientManager
+    private val mockRegionProvider = MockRegionProviderExtension()
+
+    override fun setUp() {
+        super.setUp()
+        mockClientManager = service<ToolkitClientManager>() as MockClientManager
     }
 
-    @JvmField
-    @RegisterExtension
-    val mockClientManager = MockClientManagerExtension()
-
-    @JvmField
-    @RegisterExtension
-    val mockRegionProvider = MockRegionProviderExtension()
-
-    @Test
-    fun `login to IdC tab`() {
+    fun `test login to IdC tab`() {
         mockkStatic(::authAndUpdateConfig)
 
         val startUrl = aString()
@@ -84,7 +77,7 @@ class SetupAuthenticationDialogTest {
 
         runInEdtAndWait {
             SetupAuthenticationDialog(
-                projectExtension.project,
+                project,
                 scopes = scopes,
                 state = state,
                 configFilesFacade = configFacade,
@@ -101,7 +94,7 @@ class SetupAuthenticationDialogTest {
 
         verify {
             authAndUpdateConfig(
-                projectExtension.project,
+                project,
                 UserConfigSsoSessionProfile("", region.id, startUrl, scopes),
                 configFacade,
                 any(),
@@ -111,8 +104,8 @@ class SetupAuthenticationDialogTest {
         }
     }
 
-    @Test
-    fun `login to IdC tab and request role`() {
+    
+    fun `test login to IdC tab and request role`() {
         mockkStatic(::authAndUpdateConfig)
 
         val startUrl = aString()
@@ -138,7 +131,7 @@ class SetupAuthenticationDialogTest {
 
         runInEdtAndWait {
             SetupAuthenticationDialog(
-                projectExtension.project,
+                project,
                 scopes = scopes,
                 state = state,
                 promptForIdcPermissionSet = true,
@@ -156,7 +149,7 @@ class SetupAuthenticationDialogTest {
 
         verify {
             authAndUpdateConfig(
-                projectExtension.project,
+                project,
                 UserConfigSsoSessionProfile("", region.id, startUrl, scopes + "sso:account:access"),
                 configFacade,
                 any(),
@@ -166,8 +159,8 @@ class SetupAuthenticationDialogTest {
         }
     }
 
-    @Test
-    fun `login to Builder ID tab`() {
+    
+    fun `test login to Builder ID tab`() {
         mockkStatic(::loginSso)
         every { loginSso(any(), any(), any(), any()) } answers { mockk() }
 
@@ -177,7 +170,7 @@ class SetupAuthenticationDialogTest {
 
         runInEdtAndWait {
             SetupAuthenticationDialog(
-                projectExtension.project,
+                project,
                 state = state,
                 sourceOfEntry = SourceOfEntry.UNKNOWN,
                 featureId = FeatureId.Unknown
@@ -191,19 +184,19 @@ class SetupAuthenticationDialogTest {
         }
 
         verify {
-            loginSso(projectExtension.project, SONO_URL, SONO_REGION, emptyList())
+            loginSso(project, SONO_URL, SONO_REGION, emptyList())
         }
     }
 
-    @Test
-    fun `validate IdC tab`() {
+    
+    fun `test validate IdC tab`() {
         val state = SetupAuthenticationDialogState().apply {
             selectedTab.set(SetupAuthenticationTabs.IDENTITY_CENTER)
         }
 
         runInEdtAndWait {
             val validation = SetupAuthenticationDialog(
-                projectExtension.project,
+                project,
                 state = state,
                 sourceOfEntry = SourceOfEntry.UNKNOWN,
                 featureId = FeatureId.Unknown
@@ -224,15 +217,15 @@ class SetupAuthenticationDialogTest {
         }
     }
 
-    @Test
-    fun `validate Builder ID tab`() {
+    
+    fun `test validate Builder ID tab`() {
         val state = SetupAuthenticationDialogState().apply {
             selectedTab.set(SetupAuthenticationTabs.BUILDER_ID)
         }
 
         runInEdtAndWait {
             val validation = SetupAuthenticationDialog(
-                projectExtension.project,
+                project,
                 state = state,
                 sourceOfEntry = SourceOfEntry.UNKNOWN,
                 featureId = FeatureId.Unknown
@@ -248,8 +241,8 @@ class SetupAuthenticationDialogTest {
         }
     }
 
-    @Test
-    fun `validate IAM tab`() {
+    
+    fun `test validate IAM tab`() {
         val state = SetupAuthenticationDialogState().apply {
             selectedTab.set(SetupAuthenticationTabs.IAM_LONG_LIVED)
             iamTabState.profileName = ""
@@ -257,7 +250,7 @@ class SetupAuthenticationDialogTest {
 
         runInEdtAndWait {
             val validation = SetupAuthenticationDialog(
-                projectExtension.project,
+                project,
                 state = state,
                 sourceOfEntry = SourceOfEntry.UNKNOWN,
                 featureId = FeatureId.Unknown
@@ -278,8 +271,9 @@ class SetupAuthenticationDialogTest {
         }
     }
 
-    @Test
-    fun `validate IAM tab fails if credentials are invalid`() {
+    
+    // TODO: Fix StsClient mock exception throwing in 2025.3 migration - this test expects an exception but mock doesn't throw
+    fun `test validate IAM tab fails if credentials are invalid`() {
         val state = SetupAuthenticationDialogState().apply {
             selectedTab.set(SetupAuthenticationTabs.IAM_LONG_LIVED)
             iamTabState.apply {
@@ -289,13 +283,16 @@ class SetupAuthenticationDialogTest {
             }
         }
 
-        mockClientManager.create<StsClient>().stub {
+        val stsClient = delegateMock<StsClient>()
+        @Suppress("DEPRECATION")
+        mockClientManager.register(StsClient::class, stsClient)
+        stsClient.stub {
             whenever(it.getCallerIdentity(any<GetCallerIdentityRequest>())).thenThrow(StsException.builder().message("Some service exception message").build())
         }
 
         runInEdtAndWait {
             val sut = SetupAuthenticationDialog(
-                projectExtension.project,
+                project,
                 state = state,
                 sourceOfEntry = SourceOfEntry.UNKNOWN,
                 featureId = FeatureId.Unknown
@@ -305,8 +302,8 @@ class SetupAuthenticationDialogTest {
         }
     }
 
-    @Test
-    fun `validate IAM tab succeeds if credentials are invalid`() {
+    
+    fun `test validate IAM tab succeeds if credentials are invalid`() {
         val state = SetupAuthenticationDialogState().apply {
             selectedTab.set(SetupAuthenticationTabs.IAM_LONG_LIVED)
             iamTabState.apply {
@@ -316,14 +313,17 @@ class SetupAuthenticationDialogTest {
             }
         }
 
-        mockClientManager.create<StsClient>().stub {
+        val stsClient = delegateMock<StsClient>()
+        @Suppress("DEPRECATION")
+        mockClientManager.register(StsClient::class, stsClient)
+        stsClient.stub {
             whenever(it.getCallerIdentity(any<GetCallerIdentityRequest>())).thenReturn(GetCallerIdentityResponse.builder().build())
         }
 
         val configFacade = mockk<ConfigFilesFacade>(relaxed = true)
         runInEdtAndWait {
             SetupAuthenticationDialog(
-                projectExtension.project,
+                project,
                 state = state,
                 configFilesFacade = configFacade,
                 sourceOfEntry = SourceOfEntry.UNKNOWN,

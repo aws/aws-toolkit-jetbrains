@@ -4,14 +4,11 @@
 package software.aws.toolkits.jetbrains.core
 
 import com.intellij.openapi.project.Project
-import com.intellij.testFramework.ProjectRule
+import com.intellij.testFramework.HeavyPlatformTestCase
 import com.intellij.ui.jcef.JBCefBrowserBase
 import com.intellij.ui.jcef.JBCefJSQuery
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.extension.RegisterExtension
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
@@ -36,28 +33,26 @@ class TestLoginBrowser(project: Project) : LoginBrowser(project) {
 }
 
 @Disabled
-class LoginBrowserTest {
+class LoginBrowserTest : HeavyPlatformTestCase() {
     private lateinit var sut: TestLoginBrowser
-    private val project: Project
-        get() = projectExtension.project
+    private val mockTelemetryService = MockTelemetryServiceExtension()
 
-    @JvmField
-    @RegisterExtension
-    val mockTelemetryService = MockTelemetryServiceExtension()
-
-    companion object {
-        @JvmField
-        @RegisterExtension
-        val projectExtension = ProjectRule()
-    }
-
-    @BeforeEach
-    fun setup() {
+    override fun setUp() {
+        super.setUp()
+        mockTelemetryService.beforeEach(null)
         sut = TestLoginBrowser(project)
     }
 
-    @Test
-    fun `publish telemetry happy path`() {
+    override fun tearDown() {
+        try {
+            mockTelemetryService.afterEach(null)
+        } finally {
+            super.tearDown()
+        }
+    }
+
+    
+    fun `test publish telemetry happy path`() {
         val load = """
             {
                 "metricName": "toolkit_didLoadModule",
@@ -74,15 +69,15 @@ class LoginBrowserTest {
             verify(mockTelemetryService.batcher()).enqueue(capture())
             val event = firstValue.data.find { it.name == "toolkit_didLoadModule" }
             assertNotNull(event)
-            assertThat(event)
+            assertThat(event!!)
                 .matches { it.metadata["module"] == "login" }
                 .matches { it.metadata["result"] == "Succeeded" }
                 .matches { it.metadata["duration"] == "0.0" }
         }
     }
 
-    @Test
-    fun `publish telemetry error path`() {
+    
+    fun `test publish telemetry error path`() {
         val load = """
             {
                 "metricName": "toolkit_didLoadModule",
@@ -99,15 +94,15 @@ class LoginBrowserTest {
             verify(mockTelemetryService.batcher()).enqueue(capture())
             val event = firstValue.data.find { it.name == "toolkit_didLoadModule" }
             assertNotNull(event)
-            assertThat(event)
+            assertThat(event!!)
                 .matches { it.metadata["module"] == "login" }
                 .matches { it.metadata["result"] == "Failed" }
                 .matches { it.metadata["reason"] == "unexpected error" }
         }
     }
 
-    @Test
-    fun `missing required field will do nothing`() {
+    
+    fun `test missing required field will do nothing`() {
         val load = """
             {
                 "metricName": "toolkit_didLoadModule"
@@ -140,8 +135,8 @@ class LoginBrowserTest {
         }
     }
 
-    @Test
-    fun `metricName doesn't match will do nothing`() {
+    
+    fun `test metricName doesn't match will do nothing`() {
         val load = """
             {
                 "metricName": "foo",
