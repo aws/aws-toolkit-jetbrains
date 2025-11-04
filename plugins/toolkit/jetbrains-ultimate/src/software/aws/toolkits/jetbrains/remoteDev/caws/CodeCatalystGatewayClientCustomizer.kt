@@ -3,11 +3,14 @@
 
 package software.aws.toolkits.jetbrains.remoteDev.caws
 
-// TODO: Re-enable when Gateway APIs are available in 2025.3
-// import com.intellij.gateway.GatewayClientCustomizationProvider
-
-// TODO: Re-enable when Gateway APIs are available in 2025.3 - Gateway APIs moved
+// TODO: GatewayClientCustomizationProvider removed in 2025.3 - investigate new Gateway customization APIs
 /*
+import com.intellij.openapi.extensions.ExtensionNotApplicableException
+import com.jetbrains.rdserver.unattendedHost.customization.controlCenter.GatewayClientCustomizationProvider
+import icons.AwsIcons
+import software.aws.toolkits.jetbrains.utils.isCodeCatalystDevEnv
+import software.aws.toolkits.resources.message
+
 class CodeCatalystGatewayClientCustomizer : GatewayClientCustomizationProvider {
     init {
         if (!isCodeCatalystDevEnv()) {
