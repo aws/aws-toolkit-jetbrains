@@ -5,8 +5,7 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp.auth
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.serviceIfCreated
-import com.intellij.openapi.project.Project
-import com.intellij.testFramework.ProjectExtension
+import com.intellij.testFramework.HeavyPlatformTestCase
 import com.intellij.testFramework.replaceService
 import com.intellij.util.messages.MessageBus
 import com.intellij.util.messages.MessageBusConnection
@@ -21,9 +20,6 @@ import io.mockk.verify
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseMessage
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.extension.RegisterExtension
 import software.aws.toolkits.core.TokenConnectionSettings
 import software.aws.toolkits.core.credentials.ToolkitBearerTokenProvider
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
@@ -43,25 +39,19 @@ import software.aws.toolkits.jetbrains.utils.isQExpired
 import java.time.Instant
 import java.util.concurrent.CompletableFuture
 
-class DefaultAuthCredentialsServiceTest {
+class DefaultAuthCredentialsServiceTest : HeavyPlatformTestCase() {
     companion object {
-        @JvmField
-        @RegisterExtension
-        val projectExtension = ProjectExtension()
-
         private const val TEST_ACCESS_TOKEN = "test-access-token"
     }
 
-    private lateinit var project: Project
     private lateinit var mockLanguageServer: AmazonQLanguageServer
     private lateinit var mockEncryptionManager: JwtEncryptionManager
     private lateinit var mockConnectionManager: ToolkitConnectionManager
     private lateinit var mockConnection: AwsBearerTokenConnection
     private lateinit var sut: DefaultAuthCredentialsService
 
-    @BeforeEach
-    fun setUp() {
-        project = spyk(projectExtension.project)
+    override fun setUp() {
+        super.setUp()
         setupMockLspService()
         setupMockMessageBus()
         setupMockConnectionManager()
@@ -151,8 +141,7 @@ class DefaultAuthCredentialsServiceTest {
         }
     }
 
-    @Test
-    fun `activeConnectionChanged updates token when connection ID matches Q connection`() = runTest {
+    fun testActiveConnectionChangedUpdatesTokenWhenConnectionIdMatchesQConnection() = runTest {
         sut = DefaultAuthCredentialsService(project, mockEncryptionManager, this)
         val newConnection = createMockConnection("new-token", "connection-id")
         every { mockConnection.id } returns "connection-id"
@@ -163,8 +152,7 @@ class DefaultAuthCredentialsServiceTest {
         verify(exactly = 1) { mockLanguageServer.updateTokenCredentials(any()) }
     }
 
-    @Test
-    fun `activeConnectionChanged does not update token when connection ID differs`() = runTest {
+    fun testActiveConnectionChangedDoesNotUpdateTokenWhenConnectionIdDiffers() = runTest {
         sut = DefaultAuthCredentialsService(project, mockEncryptionManager, this)
         val newConnection = createMockConnection("new-token", "different-id")
         every { mockConnection.id } returns "q-connection-id"
@@ -175,8 +163,7 @@ class DefaultAuthCredentialsServiceTest {
         verify(exactly = 0) { mockLanguageServer.updateTokenCredentials(any()) }
     }
 
-    @Test
-    fun `onChange updates token with new connection`() = runTest {
+    fun testOnChangeUpdatesTokenWithNewConnection() = runTest {
         sut = DefaultAuthCredentialsService(project, mockEncryptionManager, this)
         setupMockConnectionManager("updated-token")
 
@@ -186,8 +173,7 @@ class DefaultAuthCredentialsServiceTest {
         verify(exactly = 1) { mockLanguageServer.updateTokenCredentials(any()) }
     }
 
-    @Test
-    fun `init does not update token when Q is not connected`() = runTest {
+    fun testInitDoesNotUpdateTokenWhenQIsNotConnected() = runTest {
         every { isQConnected(project) } returns false
         every { isQExpired(project) } returns false
 
@@ -197,8 +183,7 @@ class DefaultAuthCredentialsServiceTest {
         verify(exactly = 0) { mockLanguageServer.updateTokenCredentials(any()) }
     }
 
-    @Test
-    fun `init does not update token when Q is expired`() = runTest {
+    fun testInitDoesNotUpdateTokenWhenQIsExpired() = runTest {
         every { isQConnected(project) } returns true
         every { isQExpired(project) } returns true
 
@@ -208,8 +193,7 @@ class DefaultAuthCredentialsServiceTest {
         verify(exactly = 0) { mockLanguageServer.updateTokenCredentials(any()) }
     }
 
-    @Test
-    fun `test updateTokenCredentials unencrypted success`() = runTest {
+    fun testUpdateTokenCredentialsUnencryptedSuccess() = runTest {
         val isEncrypted = false
         sut = DefaultAuthCredentialsService(project, mockEncryptionManager, this)
 
@@ -229,8 +213,7 @@ class DefaultAuthCredentialsServiceTest {
         }
     }
 
-    @Test
-    fun `test updateTokenCredentials encrypted success`() = runTest {
+    fun testUpdateTokenCredentialsEncryptedSuccess() = runTest {
         sut = DefaultAuthCredentialsService(project, mockEncryptionManager, this)
 
         val encryptedToken = "encryptedToken"
@@ -254,8 +237,7 @@ class DefaultAuthCredentialsServiceTest {
         }
     }
 
-    @Test
-    fun `test deleteTokenCredentials success`() = runTest {
+    fun testDeleteTokenCredentialsSuccess() = runTest {
         sut = DefaultAuthCredentialsService(project, mockEncryptionManager, this)
 
         every { mockLanguageServer.deleteTokenCredentials() } returns Unit
@@ -266,8 +248,7 @@ class DefaultAuthCredentialsServiceTest {
         verify(exactly = 1) { mockLanguageServer.deleteTokenCredentials() }
     }
 
-    @Test
-    fun `init results in token update`() = runTest {
+    fun testInitResultsInTokenUpdate() = runTest {
         every { isQConnected(any()) } returns true
         every { isQExpired(any()) } returns false
         sut = DefaultAuthCredentialsService(project, mockEncryptionManager, this)
