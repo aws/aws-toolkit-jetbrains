@@ -3,12 +3,10 @@
 
 package software.aws.toolkits.jetbrains.core.gettingstarted
 
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
 import com.intellij.openapi.ui.TestDialog
 import com.intellij.openapi.ui.TestDialogManager
 import com.intellij.testFramework.HeavyPlatformTestCase
-import com.intellij.testFramework.replaceService
 import com.intellij.testFramework.runInEdtAndWait
 import io.mockk.every
 import io.mockk.mockk
@@ -24,9 +22,9 @@ import software.amazon.awssdk.services.sts.StsClient
 import software.amazon.awssdk.services.sts.model.GetCallerIdentityRequest
 import software.amazon.awssdk.services.sts.model.GetCallerIdentityResponse
 import software.amazon.awssdk.services.sts.model.StsException
+import software.aws.toolkits.core.ToolkitClientManager
 import software.aws.toolkits.core.region.Endpoint
 import software.aws.toolkits.core.region.Service
-import software.aws.toolkits.core.ToolkitClientManager
 import software.aws.toolkits.core.utils.delegateMock
 import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.core.MockClientManager
@@ -104,7 +102,6 @@ class SetupAuthenticationDialogTest : HeavyPlatformTestCase() {
         }
     }
 
-    
     fun `test login to IdC tab and request role`() {
         mockkStatic(::authAndUpdateConfig)
 
@@ -159,7 +156,6 @@ class SetupAuthenticationDialogTest : HeavyPlatformTestCase() {
         }
     }
 
-    
     fun `test login to Builder ID tab`() {
         mockkStatic(::loginSso)
         every { loginSso(any(), any(), any(), any()) } answers { mockk() }
@@ -188,7 +184,6 @@ class SetupAuthenticationDialogTest : HeavyPlatformTestCase() {
         }
     }
 
-    
     fun `test validate IdC tab`() {
         val state = SetupAuthenticationDialogState().apply {
             selectedTab.set(SetupAuthenticationTabs.IDENTITY_CENTER)
@@ -217,7 +212,6 @@ class SetupAuthenticationDialogTest : HeavyPlatformTestCase() {
         }
     }
 
-    
     fun `test validate Builder ID tab`() {
         val state = SetupAuthenticationDialogState().apply {
             selectedTab.set(SetupAuthenticationTabs.BUILDER_ID)
@@ -241,7 +235,6 @@ class SetupAuthenticationDialogTest : HeavyPlatformTestCase() {
         }
     }
 
-    
     fun `test validate IAM tab`() {
         val state = SetupAuthenticationDialogState().apply {
             selectedTab.set(SetupAuthenticationTabs.IAM_LONG_LIVED)
@@ -271,7 +264,6 @@ class SetupAuthenticationDialogTest : HeavyPlatformTestCase() {
         }
     }
 
-    
     // TODO: Fix StsClient mock exception throwing in 2025.3 migration - this test expects an exception but mock doesn't throw
     fun `test validate IAM tab fails if credentials are invalid`() {
         val state = SetupAuthenticationDialogState().apply {
@@ -302,7 +294,6 @@ class SetupAuthenticationDialogTest : HeavyPlatformTestCase() {
         }
     }
 
-    
     fun `test validate IAM tab succeeds if credentials are invalid`() {
         val state = SetupAuthenticationDialogState().apply {
             selectedTab.set(SetupAuthenticationTabs.IAM_LONG_LIVED)

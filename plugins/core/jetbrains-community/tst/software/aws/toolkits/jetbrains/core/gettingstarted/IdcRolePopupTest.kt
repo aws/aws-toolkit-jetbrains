@@ -28,7 +28,7 @@ class IdcRolePopupTest : HeavyPlatformTestCase() {
     override fun setUp() {
         super.setUp()
         mockClientManager = service<ToolkitClientManager>() as MockClientManager
-        
+
         @Suppress("DEPRECATION")
         mockClientManager.register(SsoClient::class, delegateMock<SsoClient>())
     }

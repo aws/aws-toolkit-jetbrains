@@ -49,7 +49,6 @@ class LoginBrowserTest : HeavyPlatformTestCase() {
             super.tearDown()
         }
     }
-
     fun `test publish telemetry happy path`() {
         val load = """
             {
@@ -72,7 +71,6 @@ class LoginBrowserTest : HeavyPlatformTestCase() {
                 .matches { it.metadata["duration"] == "0.0" }
         }
     }
-
     fun `test publish telemetry error path`() {
         val load = """
             {
@@ -95,7 +93,6 @@ class LoginBrowserTest : HeavyPlatformTestCase() {
                 .matches { it.metadata["reason"] == "unexpected error" }
         }
     }
-
     fun `test missing required field will do nothing`() {
         val load = """
             {
@@ -128,7 +125,6 @@ class LoginBrowserTest : HeavyPlatformTestCase() {
             verify(mockTelemetryService.batcher(), times(0)).enqueue(capture())
         }
     }
-
     fun `test metricName doesn't match will do nothing`() {
         val load = """
             {
