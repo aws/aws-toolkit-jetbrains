@@ -3,19 +3,13 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq
 
-import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.project.Project
-import com.intellij.testFramework.ProjectExtension
-import com.intellij.testFramework.junit5.TestDisposable
+import com.intellij.testFramework.HeavyPlatformTestCase
 import com.intellij.testFramework.registerServiceInstance
 import com.intellij.testFramework.replaceService
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.extension.RegisterExtension
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doReturn
@@ -70,7 +64,7 @@ import software.aws.toolkits.telemetry.CwsprChatTriggerInteraction
 import software.aws.toolkits.telemetry.CwsprChatUserIntent
 import kotlin.test.assertNotNull
 
-class TelemetryHelperTest {
+class TelemetryHelperTest : HeavyPlatformTestCase() {
     // sut
     private lateinit var sut: TelemetryHelper
 
@@ -84,25 +78,11 @@ class TelemetryHelperTest {
     private lateinit var mockModelConfigurator: CodeWhispererModelConfigurator
 
     private lateinit var mockConnection: ToolkitConnection
-    private val project: Project
-        get() = projectExtension.project
 
-    @JvmField
-    @RegisterExtension
-    val mockClientManager = MockClientManagerExtension()
-
-    @JvmField
-    @RegisterExtension
-    val mockTelemetryService = MockTelemetryServiceExtension()
-
-    @TestDisposable
-    private lateinit var disposable: Disposable
+    private val mockClientManager = MockClientManagerExtension()
+    private val mockTelemetryService = MockTelemetryServiceExtension()
 
     companion object {
-        @JvmField
-        @RegisterExtension
-        val projectExtension = ProjectExtension()
-
         private const val mockUrl = "mockUrl"
         private const val mockRegion = "us-east-1"
         private const val tabId = "tabId"
@@ -165,8 +145,8 @@ class TelemetryHelperTest {
             }.build()
     }
 
-    @BeforeEach
-    fun setup() {
+    override fun setUp() {
+        super.setUp()
         // set up sut
         appInitContext = AmazonQAppInitContext(
             project = project,
@@ -196,7 +176,7 @@ class TelemetryHelperTest {
         mockConnectionManager = mock {
             on { activeConnectionForFeature(eq(QConnection.getInstance())) } doReturn mockConnection
         }
-        project.replaceService(ToolkitConnectionManager::class.java, mockConnectionManager, disposable)
+        project.replaceService(ToolkitConnectionManager::class.java, mockConnectionManager, testRootDisposable)
 
         // set up telemetry service
         mockBatcher = mockTelemetryService.batcher()
@@ -214,8 +194,7 @@ class TelemetryHelperTest {
         ApplicationManager.getApplication().registerServiceInstance(CodeWhispererModelConfigurator::class.java, mockModelConfigurator)
     }
 
-    @Test
-    fun recordAddMessageTest() {
+    fun testRecordAddMessage() {
         mockClient.stub {
             on {
                 sendChatAddMessageTelemetry(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any())
@@ -258,7 +237,7 @@ class TelemetryHelperTest {
             verify(mockBatcher).enqueue(capture())
             val event = firstValue.data.find { it.name == "amazonq_addMessage" }
             assertNotNull(event)
-            assertThat(event)
+            assertThat(event!!)
                 .matches({ it.metadata["cwsprChatConversationId"] == conversationId }, "conversation id doesn't match")
                 .matches({ it.metadata["cwsprChatMessageId"] == "messageId" }, "message id doesn't match")
                 .matches(
@@ -317,8 +296,7 @@ class TelemetryHelperTest {
         }
     }
 
-    @Test
-    fun `recordInteractWithMessage - ChatItemVoted`() = runTest {
+    fun `test recordInteractWithMessage - ChatItemVoted`() = runTest {
         mockClient.stub {
             on { this.sendChatInteractWithMessageTelemetry(any<ChatInteractWithMessageEvent>()) } doReturn mockSteResponse
         }
@@ -343,7 +321,7 @@ class TelemetryHelperTest {
             verify(mockBatcher).enqueue(capture())
             val event = firstValue.data.find { it.name == "amazonq_interactWithMessage" }
             assertNotNull(event)
-            assertThat(event)
+            assertThat(event!!)
                 .matches({ it.metadata["cwsprChatConversationId"] == conversationId }, "conversationId doesn't match")
                 .matches({ it.metadata["cwsprChatMessageId"] == messageId }, "messageId doesn't match")
                 .matches(
@@ -358,8 +336,7 @@ class TelemetryHelperTest {
         }
     }
 
-    @Test
-    fun `recordInteractWithMessage - FollowupClicked`() {
+    fun `test recordInteractWithMessage - FollowupClicked`() {
         mockClient.stub {
             on { this.sendChatInteractWithMessageTelemetry(any<ChatInteractWithMessageEvent>()) } doReturn mockSteResponse
         }
@@ -387,7 +364,7 @@ class TelemetryHelperTest {
             verify(mockBatcher).enqueue(capture())
             val event = firstValue.data.find { it.name == "amazonq_interactWithMessage" }
             assertNotNull(event)
-            assertThat(event)
+            assertThat(event!!)
                 .matches({ it.metadata["cwsprChatConversationId"] == conversationId }, "conversationId doesn't match")
                 .matches({ it.metadata["cwsprChatMessageId"] == messageId }, "messageId doesn't match")
                 .matches(
@@ -402,8 +379,7 @@ class TelemetryHelperTest {
         }
     }
 
-    @Test
-    fun `recordInteractWithMessage - CopyCodeToClipboard`() = runTest {
+    fun `test recordInteractWithMessage - CopyCodeToClipboard`() = runTest {
         mockClient.stub {
             on { this.sendChatInteractWithMessageTelemetry(any<ChatInteractWithMessageEvent>()) } doReturn mockSteResponse
         }
@@ -446,7 +422,7 @@ class TelemetryHelperTest {
             verify(mockBatcher).enqueue(capture())
             val event = firstValue.data.find { it.name == "amazonq_interactWithMessage" }
             assertNotNull(event)
-            assertThat(event)
+            assertThat(event!!)
                 .matches({ it.metadata["cwsprChatConversationId"] == conversationId }, "conversationId doesn't match")
                 .matches({ it.metadata["cwsprChatMessageId"] == messageId }, "messageId doesn't match")
                 .matches(
@@ -465,8 +441,7 @@ class TelemetryHelperTest {
         }
     }
 
-    @Test
-    fun `recordInteractWithMessage - InsertCodeAtCursorPosition`() = runTest {
+    fun `test recordInteractWithMessage - InsertCodeAtCursorPosition`() = runTest {
         mockClient.stub {
             on { this.sendChatInteractWithMessageTelemetry(any<ChatInteractWithMessageEvent>()) } doReturn mockSteResponse
         }
@@ -512,7 +487,7 @@ class TelemetryHelperTest {
             verify(mockBatcher).enqueue(capture())
             val event = firstValue.data.find { it.name == "amazonq_interactWithMessage" }
             assertNotNull(event)
-            assertThat(event).matches({ it.metadata["cwsprChatConversationId"] == conversationId }, "conversationId doesn't match")
+            assertThat(event!!).matches({ it.metadata["cwsprChatConversationId"] == conversationId }, "conversationId doesn't match")
                 .matches({ it.metadata["cwsprChatMessageId"] == messageId }, "messageId doesn't match")
                 .matches(
                     { it.metadata["cwsprChatInteractionType"] == CwsprChatInteractionType.InsertAtCursor.toString() },
@@ -537,8 +512,7 @@ class TelemetryHelperTest {
         }
     }
 
-    @Test
-    fun `recordInteractWithMessage - ClickedLink`() = runTest {
+    fun `test recordInteractWithMessage - ClickedLink`() = runTest {
         mockClient.stub {
             on { this.sendChatInteractWithMessageTelemetry(any<ChatInteractWithMessageEvent>()) } doReturn mockSteResponse
         }
@@ -572,7 +546,7 @@ class TelemetryHelperTest {
             verify(mockBatcher).enqueue(capture())
             val event = firstValue.data.find { it.name == "amazonq_interactWithMessage" }
             assertNotNull(event)
-            assertThat(event).matches({ it.metadata["cwsprChatConversationId"] == conversationId }, "conversationId doesn't match")
+            assertThat(event!!).matches({ it.metadata["cwsprChatConversationId"] == conversationId }, "conversationId doesn't match")
                 .matches({ it.metadata["cwsprChatMessageId"] == messageId }, "messageId doesn't match")
                 .matches(
                     { it.metadata["cwsprChatInteractionType"] == CwsprChatInteractionType.ClickLink.toString() },
@@ -587,8 +561,7 @@ class TelemetryHelperTest {
         }
     }
 
-    @Test
-    fun `recordInteractWithMessage - ChatItemFeedback`() = runTest {
+    fun `test recordInteractWithMessage - ChatItemFeedback`() = runTest {
         mockClient.stub {
             on { this.sendChatInteractWithMessageTelemetry(any<ChatInteractWithMessageEvent>()) } doReturn mockSteResponse
         }
@@ -612,7 +585,7 @@ class TelemetryHelperTest {
             verify(mockBatcher, times(2)).enqueue(capture())
             val event = firstValue.data.find { it.name == "feedback_result" }
             assertNotNull(event)
-            assertThat(event).matches { it.metadata["result"] == "Succeeded" }
+            assertThat(event!!).matches { it.metadata["result"] == "Succeeded" }
         }
     }
 }
