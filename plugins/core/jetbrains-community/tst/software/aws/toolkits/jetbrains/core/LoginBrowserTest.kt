@@ -18,7 +18,6 @@ import software.aws.toolkits.jetbrains.core.webview.BrowserMessage
 import software.aws.toolkits.jetbrains.core.webview.BrowserState
 import software.aws.toolkits.jetbrains.core.webview.LoginBrowser
 import software.aws.toolkits.jetbrains.services.telemetry.MockTelemetryServiceExtension
-import kotlin.test.assertNotNull
 
 class TestLoginBrowser(project: Project) : LoginBrowser(project) {
     // test env can't initiate a real jcef and will throw error
@@ -51,7 +50,6 @@ class LoginBrowserTest : HeavyPlatformTestCase() {
         }
     }
 
-    
     fun `test publish telemetry happy path`() {
         val load = """
             {
@@ -67,16 +65,14 @@ class LoginBrowserTest : HeavyPlatformTestCase() {
         mockTelemetryService.batcher()
         argumentCaptor<MetricEvent> {
             verify(mockTelemetryService.batcher()).enqueue(capture())
-            val event = firstValue.data.find { it.name == "toolkit_didLoadModule" }
-            assertNotNull(event)
-            assertThat(event!!)
+            val event = requireNotNull(firstValue.data.find { it.name == "toolkit_didLoadModule" })
+            assertThat(event)
                 .matches { it.metadata["module"] == "login" }
                 .matches { it.metadata["result"] == "Succeeded" }
                 .matches { it.metadata["duration"] == "0.0" }
         }
     }
 
-    
     fun `test publish telemetry error path`() {
         val load = """
             {
@@ -92,16 +88,14 @@ class LoginBrowserTest : HeavyPlatformTestCase() {
         mockTelemetryService.batcher()
         argumentCaptor<MetricEvent> {
             verify(mockTelemetryService.batcher()).enqueue(capture())
-            val event = firstValue.data.find { it.name == "toolkit_didLoadModule" }
-            assertNotNull(event)
-            assertThat(event!!)
+            val event = requireNotNull(firstValue.data.find { it.name == "toolkit_didLoadModule" })
+            assertThat(event)
                 .matches { it.metadata["module"] == "login" }
                 .matches { it.metadata["result"] == "Failed" }
                 .matches { it.metadata["reason"] == "unexpected error" }
         }
     }
 
-    
     fun `test missing required field will do nothing`() {
         val load = """
             {
@@ -135,7 +129,6 @@ class LoginBrowserTest : HeavyPlatformTestCase() {
         }
     }
 
-    
     fun `test metricName doesn't match will do nothing`() {
         val load = """
             {
