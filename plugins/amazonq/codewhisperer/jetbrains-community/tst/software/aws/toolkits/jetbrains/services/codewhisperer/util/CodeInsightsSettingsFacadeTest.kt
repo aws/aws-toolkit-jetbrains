@@ -31,9 +31,7 @@ class CodeInsightsSettingsFacadeTest : HeavyPlatformTestCase() {
     }
 
     fun testDisableCodeInsightUntilShouldRevertWhenParentIsDisposed() {
-        val myFakePopup = object : Disposable {
-            override fun dispose() {}
-        }
+        val myFakePopup = Disposable {}
         Disposer.register(testRootDisposable, myFakePopup)
 
         // assume users' enable the following two codeinsight functionalities
@@ -78,14 +76,10 @@ class CodeInsightsSettingsFacadeTest : HeavyPlatformTestCase() {
     }
 
     fun testDisableCodeInsightUntilShouldAlwaysFlushPendingRevertsBeforeMakingNextChanges() {
-        val myFakePopup = object : Disposable {
-            override fun dispose() {}
-        }
+        val myFakePopup = Disposable {}
         Disposer.register(testRootDisposable, myFakePopup)
-        
-        val myAnotherFakePopup = object : Disposable {
-            override fun dispose() {}
-        }
+
+        val myAnotherFakePopup = Disposable {}
         Disposer.register(testRootDisposable, myAnotherFakePopup)
 
         // assume users' enable the following two codeinsight functionalities
