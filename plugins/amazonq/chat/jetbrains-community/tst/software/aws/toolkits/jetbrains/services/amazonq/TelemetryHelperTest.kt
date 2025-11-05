@@ -149,12 +149,18 @@ class TelemetryHelperTest : HeavyPlatformTestCase() {
     override fun setUp() {
         super.setUp()
         // Initialize mock managers using JUnit Rule pattern
-        mockClientManager.apply(object : Statement() {
-            override fun evaluate() {}
-        }, org.junit.runner.Description.EMPTY).evaluate()
-        mockTelemetryService.apply(object : Statement() {
-            override fun evaluate() {}
-        }, org.junit.runner.Description.EMPTY).evaluate()
+        mockClientManager.apply(
+            object : Statement() {
+                override fun evaluate() {}
+            },
+            org.junit.runner.Description.EMPTY
+        ).evaluate()
+        mockTelemetryService.apply(
+            object : Statement() {
+                override fun evaluate() {}
+            },
+            org.junit.runner.Description.EMPTY
+        ).evaluate()
         // set up sut
         appInitContext = AmazonQAppInitContext(
             project = project,
@@ -245,7 +251,7 @@ class TelemetryHelperTest : HeavyPlatformTestCase() {
             verify(mockBatcher).enqueue(capture())
             val event = firstValue.data.find { it.name == "amazonq_addMessage" }
             assertNotNull(event)
-            assertThat(event!!)
+            assertThat(requireNotNull(event))
                 .matches({ it.metadata["cwsprChatConversationId"] == conversationId }, "conversation id doesn't match")
                 .matches({ it.metadata["cwsprChatMessageId"] == "messageId" }, "message id doesn't match")
                 .matches(
@@ -329,7 +335,7 @@ class TelemetryHelperTest : HeavyPlatformTestCase() {
             verify(mockBatcher).enqueue(capture())
             val event = firstValue.data.find { it.name == "amazonq_interactWithMessage" }
             assertNotNull(event)
-            assertThat(event!!)
+            assertThat(requireNotNull(event))
                 .matches({ it.metadata["cwsprChatConversationId"] == conversationId }, "conversationId doesn't match")
                 .matches({ it.metadata["cwsprChatMessageId"] == messageId }, "messageId doesn't match")
                 .matches(
@@ -372,7 +378,7 @@ class TelemetryHelperTest : HeavyPlatformTestCase() {
             verify(mockBatcher).enqueue(capture())
             val event = firstValue.data.find { it.name == "amazonq_interactWithMessage" }
             assertNotNull(event)
-            assertThat(event!!)
+            assertThat(requireNotNull(event))
                 .matches({ it.metadata["cwsprChatConversationId"] == conversationId }, "conversationId doesn't match")
                 .matches({ it.metadata["cwsprChatMessageId"] == messageId }, "messageId doesn't match")
                 .matches(
@@ -430,7 +436,7 @@ class TelemetryHelperTest : HeavyPlatformTestCase() {
             verify(mockBatcher).enqueue(capture())
             val event = firstValue.data.find { it.name == "amazonq_interactWithMessage" }
             assertNotNull(event)
-            assertThat(event!!)
+            assertThat(requireNotNull(event))
                 .matches({ it.metadata["cwsprChatConversationId"] == conversationId }, "conversationId doesn't match")
                 .matches({ it.metadata["cwsprChatMessageId"] == messageId }, "messageId doesn't match")
                 .matches(
@@ -495,7 +501,7 @@ class TelemetryHelperTest : HeavyPlatformTestCase() {
             verify(mockBatcher).enqueue(capture())
             val event = firstValue.data.find { it.name == "amazonq_interactWithMessage" }
             assertNotNull(event)
-            assertThat(event!!).matches({ it.metadata["cwsprChatConversationId"] == conversationId }, "conversationId doesn't match")
+            assertThat(requireNotNull(event)).matches({ it.metadata["cwsprChatConversationId"] == conversationId }, "conversationId doesn't match")
                 .matches({ it.metadata["cwsprChatMessageId"] == messageId }, "messageId doesn't match")
                 .matches(
                     { it.metadata["cwsprChatInteractionType"] == CwsprChatInteractionType.InsertAtCursor.toString() },
@@ -554,7 +560,7 @@ class TelemetryHelperTest : HeavyPlatformTestCase() {
             verify(mockBatcher).enqueue(capture())
             val event = firstValue.data.find { it.name == "amazonq_interactWithMessage" }
             assertNotNull(event)
-            assertThat(event!!).matches({ it.metadata["cwsprChatConversationId"] == conversationId }, "conversationId doesn't match")
+            assertThat(requireNotNull(event)).matches({ it.metadata["cwsprChatConversationId"] == conversationId }, "conversationId doesn't match")
                 .matches({ it.metadata["cwsprChatMessageId"] == messageId }, "messageId doesn't match")
                 .matches(
                     { it.metadata["cwsprChatInteractionType"] == CwsprChatInteractionType.ClickLink.toString() },
@@ -593,7 +599,7 @@ class TelemetryHelperTest : HeavyPlatformTestCase() {
             verify(mockBatcher, times(2)).enqueue(capture())
             val event = firstValue.data.find { it.name == "feedback_result" }
             assertNotNull(event)
-            assertThat(event!!).matches { it.metadata["result"] == "Succeeded" }
+            assertThat(requireNotNull(event)).matches { it.metadata["result"] == "Succeeded" }
         }
     }
 }
