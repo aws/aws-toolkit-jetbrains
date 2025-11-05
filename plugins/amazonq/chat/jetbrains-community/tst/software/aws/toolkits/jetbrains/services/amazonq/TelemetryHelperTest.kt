@@ -10,6 +10,7 @@ import com.intellij.testFramework.replaceService
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.runners.model.Statement
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doReturn
@@ -28,7 +29,7 @@ import software.amazon.awssdk.services.codewhispererstreaming.model.UserIntent
 import software.amazon.awssdk.services.ssooidc.SsoOidcClient
 import software.aws.toolkits.core.telemetry.MetricEvent
 import software.aws.toolkits.core.telemetry.TelemetryBatcher
-import software.aws.toolkits.jetbrains.core.MockClientManagerExtension
+import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.LegacyManagedBearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
@@ -56,7 +57,7 @@ import software.aws.toolkits.jetbrains.services.cwc.messages.IncomingCwcMessage
 import software.aws.toolkits.jetbrains.services.cwc.messages.LinkType
 import software.aws.toolkits.jetbrains.services.cwc.storage.ChatSessionInfo
 import software.aws.toolkits.jetbrains.services.cwc.storage.ChatSessionStorage
-import software.aws.toolkits.jetbrains.services.telemetry.MockTelemetryServiceExtension
+import software.aws.toolkits.jetbrains.services.telemetry.MockTelemetryServiceRule
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.telemetry.CwsprChatConversationType
 import software.aws.toolkits.telemetry.CwsprChatInteractionType
@@ -79,8 +80,8 @@ class TelemetryHelperTest : HeavyPlatformTestCase() {
 
     private lateinit var mockConnection: ToolkitConnection
 
-    private val mockClientManager = MockClientManagerExtension()
-    private val mockTelemetryService = MockTelemetryServiceExtension()
+    private val mockClientManager = MockClientManagerRule()
+    private val mockTelemetryService = MockTelemetryServiceRule()
 
     companion object {
         private const val mockUrl = "mockUrl"
@@ -147,6 +148,13 @@ class TelemetryHelperTest : HeavyPlatformTestCase() {
 
     override fun setUp() {
         super.setUp()
+        // Initialize mock managers using JUnit Rule pattern
+        mockClientManager.apply(object : Statement() {
+            override fun evaluate() {}
+        }, org.junit.runner.Description.EMPTY).evaluate()
+        mockTelemetryService.apply(object : Statement() {
+            override fun evaluate() {}
+        }, org.junit.runner.Description.EMPTY).evaluate()
         // set up sut
         appInitContext = AmazonQAppInitContext(
             project = project,
