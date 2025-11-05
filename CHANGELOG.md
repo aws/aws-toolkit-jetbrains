@@ -1,4 +1,5 @@
 # _3.97_ (2025-10-16)
+- **(Bug Fix)** add support for python3.13
 
 # _3.96_ (2025-10-02)
 - **(Bug Fix)** remove findings message from chat even when all issues are ignored
