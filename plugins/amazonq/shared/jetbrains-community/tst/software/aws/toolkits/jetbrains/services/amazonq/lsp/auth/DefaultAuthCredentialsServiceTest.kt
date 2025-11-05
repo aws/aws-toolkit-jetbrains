@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp.auth
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.serviceIfCreated
+import com.intellij.openapi.project.Project
 import com.intellij.testFramework.HeavyPlatformTestCase
 import com.intellij.testFramework.replaceService
 import com.intellij.util.messages.MessageBus
@@ -15,6 +16,7 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.runs
+import io.mockk.spyk
 import io.mockk.verify
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -43,6 +45,7 @@ class DefaultAuthCredentialsServiceTest : HeavyPlatformTestCase() {
         private const val TEST_ACCESS_TOKEN = "test-access-token"
     }
 
+    private lateinit var spyProject: Project
     private lateinit var mockLanguageServer: AmazonQLanguageServer
     private lateinit var mockEncryptionManager: JwtEncryptionManager
     private lateinit var mockConnectionManager: ToolkitConnectionManager
@@ -51,6 +54,7 @@ class DefaultAuthCredentialsServiceTest : HeavyPlatformTestCase() {
 
     override fun setUp() {
         super.setUp()
+        spyProject = spyk(project)
         setupMockLspService()
         setupMockMessageBus()
         setupMockConnectionManager()
@@ -82,8 +86,8 @@ class DefaultAuthCredentialsServiceTest : HeavyPlatformTestCase() {
             mockLanguageServer.updateConfiguration(any())
         } returns CompletableFuture.completedFuture(LspServerConfigurations(emptyList()))
 
-        every { project.getService(AmazonQLspService::class.java) } returns mockLspService
-        every { project.serviceIfCreated<AmazonQLspService>() } returns mockLspService
+        every { spyProject.getService(AmazonQLspService::class.java) } returns mockLspService
+        every { spyProject.serviceIfCreated<AmazonQLspService>() } returns mockLspService
     }
 
     private fun setupMockMessageBus() {
@@ -91,7 +95,7 @@ class DefaultAuthCredentialsServiceTest : HeavyPlatformTestCase() {
         val mockConnection = mockk<MessageBusConnection> {
             every { subscribe(any(), any()) } just runs
         }
-        every { project.messageBus } returns messageBus
+        every { spyProject.messageBus } returns messageBus
         every { messageBus.connect(any<Disposable>()) } returns mockConnection
     }
 
@@ -101,7 +105,7 @@ class DefaultAuthCredentialsServiceTest : HeavyPlatformTestCase() {
             every { activeConnectionForFeature(any()) } returns mockConnection
             every { connectionStateForFeature(any()) } returns BearerTokenAuthState.AUTHORIZED
         }
-        project.replaceService(ToolkitConnectionManager::class.java, mockConnectionManager, project)
+        spyProject.replaceService(ToolkitConnectionManager::class.java, mockConnectionManager, spyProject)
         mockkStatic("software.aws.toolkits.jetbrains.utils.FunctionUtilsKt")
         // these set so init doesn't always emit
         every { isQConnected(any()) } returns false
@@ -141,7 +145,7 @@ class DefaultAuthCredentialsServiceTest : HeavyPlatformTestCase() {
     }
 
     fun testActiveConnectionChangedUpdatesTokenWhenConnectionIdMatchesQConnection() = runTest {
-        sut = DefaultAuthCredentialsService(project, mockEncryptionManager, this)
+        sut = DefaultAuthCredentialsService(spyProject, mockEncryptionManager, this)
         val newConnection = createMockConnection("new-token", "connection-id")
         every { mockConnection.id } returns "connection-id"
 
@@ -152,7 +156,7 @@ class DefaultAuthCredentialsServiceTest : HeavyPlatformTestCase() {
     }
 
     fun testActiveConnectionChangedDoesNotUpdateTokenWhenConnectionIdDiffers() = runTest {
-        sut = DefaultAuthCredentialsService(project, mockEncryptionManager, this)
+        sut = DefaultAuthCredentialsService(spyProject, mockEncryptionManager, this)
         val newConnection = createMockConnection("new-token", "different-id")
         every { mockConnection.id } returns "q-connection-id"
 
@@ -163,7 +167,7 @@ class DefaultAuthCredentialsServiceTest : HeavyPlatformTestCase() {
     }
 
     fun testOnChangeUpdatesTokenWithNewConnection() = runTest {
-        sut = DefaultAuthCredentialsService(project, mockEncryptionManager, this)
+        sut = DefaultAuthCredentialsService(spyProject, mockEncryptionManager, this)
         setupMockConnectionManager("updated-token")
 
         sut.onProviderChange("providerId", listOf("new-scope"))
@@ -173,20 +177,20 @@ class DefaultAuthCredentialsServiceTest : HeavyPlatformTestCase() {
     }
 
     fun testInitDoesNotUpdateTokenWhenQIsNotConnected() = runTest {
-        every { isQConnected(project) } returns false
-        every { isQExpired(project) } returns false
+        every { isQConnected(spyProject) } returns false
+        every { isQExpired(spyProject) } returns false
 
-        sut = DefaultAuthCredentialsService(project, mockEncryptionManager, this)
+        sut = DefaultAuthCredentialsService(spyProject, mockEncryptionManager, this)
 
         advanceUntilIdle()
         verify(exactly = 0) { mockLanguageServer.updateTokenCredentials(any()) }
     }
 
     fun testInitDoesNotUpdateTokenWhenQIsExpired() = runTest {
-        every { isQConnected(project) } returns true
-        every { isQExpired(project) } returns true
+        every { isQConnected(spyProject) } returns true
+        every { isQExpired(spyProject) } returns true
 
-        sut = DefaultAuthCredentialsService(project, mockEncryptionManager, this)
+        sut = DefaultAuthCredentialsService(spyProject, mockEncryptionManager, this)
 
         advanceUntilIdle()
         verify(exactly = 0) { mockLanguageServer.updateTokenCredentials(any()) }
@@ -194,7 +198,7 @@ class DefaultAuthCredentialsServiceTest : HeavyPlatformTestCase() {
 
     fun testUpdateTokenCredentialsUnencryptedSuccess() = runTest {
         val isEncrypted = false
-        sut = DefaultAuthCredentialsService(project, mockEncryptionManager, this)
+        sut = DefaultAuthCredentialsService(spyProject, mockEncryptionManager, this)
 
         sut.updateTokenCredentials(mockConnection, isEncrypted)
 
@@ -213,7 +217,7 @@ class DefaultAuthCredentialsServiceTest : HeavyPlatformTestCase() {
     }
 
     fun testUpdateTokenCredentialsEncryptedSuccess() = runTest {
-        sut = DefaultAuthCredentialsService(project, mockEncryptionManager, this)
+        sut = DefaultAuthCredentialsService(spyProject, mockEncryptionManager, this)
 
         val encryptedToken = "encryptedToken"
         val isEncrypted = true
@@ -237,7 +241,7 @@ class DefaultAuthCredentialsServiceTest : HeavyPlatformTestCase() {
     }
 
     fun testDeleteTokenCredentialsSuccess() = runTest {
-        sut = DefaultAuthCredentialsService(project, mockEncryptionManager, this)
+        sut = DefaultAuthCredentialsService(spyProject, mockEncryptionManager, this)
 
         every { mockLanguageServer.deleteTokenCredentials() } returns Unit
 
@@ -250,7 +254,7 @@ class DefaultAuthCredentialsServiceTest : HeavyPlatformTestCase() {
     fun testInitResultsInTokenUpdate() = runTest {
         every { isQConnected(any()) } returns true
         every { isQExpired(any()) } returns false
-        sut = DefaultAuthCredentialsService(project, mockEncryptionManager, this)
+        sut = DefaultAuthCredentialsService(spyProject, mockEncryptionManager, this)
 
         advanceUntilIdle()
         verify(exactly = 1) { mockLanguageServer.updateTokenCredentials(any()) }
