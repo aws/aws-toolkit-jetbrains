@@ -16,10 +16,17 @@ import software.aws.toolkits.jetbrains.core.credentials.ReauthSource
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.reauthConnectionIfNeeded
-import software.aws.toolkits.jetbrains.core.region.MockRegionProviderExtension
+import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
 
 class CodeWhispererUtilTest : HeavyPlatformTestCase() {
-    private val mockRegionProviderExtension = MockRegionProviderExtension()
+    private val mockRegionProviderExtension = MockRegionProviderRule()
+
+    override fun setUp() {
+        super.setUp()
+        mockRegionProviderExtension.apply(object : org.junit.runners.model.Statement() {
+            override fun evaluate() {}
+        }, org.junit.runner.Description.EMPTY).evaluate()
+    }
 
     fun testReconnectCodeWhispererRespectsConnectionSettings() {
         mockkStatic(::reauthConnectionIfNeeded)
