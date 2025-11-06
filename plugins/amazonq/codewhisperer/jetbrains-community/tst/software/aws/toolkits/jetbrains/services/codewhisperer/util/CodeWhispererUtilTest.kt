@@ -23,9 +23,12 @@ class CodeWhispererUtilTest : HeavyPlatformTestCase() {
 
     override fun setUp() {
         super.setUp()
-        mockRegionProviderExtension.apply(object : org.junit.runners.model.Statement() {
-            override fun evaluate() {}
-        }, org.junit.runner.Description.EMPTY).evaluate()
+        mockRegionProviderExtension.apply(
+            object : org.junit.runners.model.Statement() {
+                override fun evaluate() {}
+            },
+            org.junit.runner.Description.EMPTY
+        ).evaluate()
     }
 
     fun testReconnectCodeWhispererRespectsConnectionSettings() {
