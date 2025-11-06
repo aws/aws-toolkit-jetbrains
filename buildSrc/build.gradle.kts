@@ -1,13 +1,5 @@
 // Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-
-buildscript {
-    // This has to be here otherwise properties are not loaded and nothing works
-    val props = `java.util`.Properties()
-    file("${project.projectDir.parent}/gradle.properties").inputStream().use { props.load(it) }
-    props.entries.forEach { project.extensions.add(it.key.toString(), it.value) }
-}
-
 plugins {
     `kotlin-dsl`
     `java-gradle-plugin`

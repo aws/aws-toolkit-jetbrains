@@ -3,11 +3,18 @@
 
 package software.aws.toolkits.gradle
 
-import org.eclipse.jgit.api.Git
 import org.gradle.api.JavaVersion
+import org.gradle.api.logging.Logging
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
+import org.gradle.api.provider.ValueSource
+import org.gradle.api.provider.ValueSourceParameters
+import org.gradle.process.ExecOperations
 import software.aws.toolkits.gradle.intellij.IdeVersions
+import java.io.ByteArrayOutputStream
+import java.io.OutputStream
+import java.nio.charset.Charset
+import javax.inject.Inject
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion as KotlinVersionEnum
 
 /**
@@ -41,21 +48,37 @@ fun<T : Any> Project.withCurrentProfileName(consumer: (String) -> T): Provider<T
     }
 }
 
-fun Project.buildMetadata() =
-    try {
-        val git = Git.open(rootDir)
-        val currentShortHash = git.repository.findRef("HEAD").objectId.abbreviate(7).name()
-        val isDirty = git.status().call().hasUncommittedChanges()
+abstract class GitHashValueSource : ValueSource<String, ValueSourceParameters.None> {
+    @get:Inject
+    abstract val execOperations: ExecOperations
 
-        buildString {
-            append(currentShortHash)
-
-            if (isDirty) {
-                append(".modified")
+    override fun obtain(): String {
+        return try {
+            val output = ByteArrayOutputStream()
+            execOperations.exec {
+                commandLine("git", "rev-parse", "--short", "HEAD")
+                standardOutput = output
             }
-        }
-    } catch(e: Exception) {
-        logger.warn("Could not determine current commit", e)
+            val currentShortHash = String(output.toByteArray(), Charset.defaultCharset())
 
-        "unknownCommit"
+            val isDirty = execOperations.exec {
+                commandLine("git", "status", "-s")
+                standardOutput = OutputStream.nullOutputStream()
+            }.exitValue != 0
+
+            buildString {
+                append(currentShortHash)
+
+                if (isDirty) {
+                    append(".modified")
+                }
+            }
+        } catch(e: Exception) {
+            Logging.getLogger(GitHashValueSource::class.java).warn("Could not determine current commit", e)
+
+            "unknownCommit"
+        }
     }
+}
+
+fun Project.buildMetadata() = providers.of(GitHashValueSource::class.java) {}
