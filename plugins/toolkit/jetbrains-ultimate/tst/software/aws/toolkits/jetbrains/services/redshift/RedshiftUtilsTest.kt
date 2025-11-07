@@ -15,10 +15,17 @@ import software.aws.toolkits.jetbrains.services.sts.StsResources
 
 class RedshiftUtilsTest : HeavyPlatformTestCase() {
     private val resourceCache = MockResourceCacheExtension()
-    private val clusterId = RuleUtils.randomName()
-    private val accountId = RuleUtils.randomName()
-    private val mockCluster = mock<Cluster> {
-        on { clusterIdentifier() } doReturn clusterId
+    private lateinit var clusterId: String
+    private lateinit var accountId: String
+    private lateinit var mockCluster: Cluster
+
+    override fun setUp() {
+        super.setUp()
+        clusterId = RuleUtils.randomName()
+        accountId = RuleUtils.randomName()
+        mockCluster = mock {
+            on { clusterIdentifier() } doReturn clusterId
+        }
     }
 
     fun testAccountIdArn() {
