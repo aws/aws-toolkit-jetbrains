@@ -4,13 +4,18 @@
 package software.aws.toolkits.jetbrains.services.amazonq
 
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.testFramework.HeavyPlatformTestCase
+import com.intellij.testFramework.fixtures.CodeInsightTestFixture
+import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory
+import com.intellij.testFramework.fixtures.impl.LightTempDirTestFixtureImpl
 import com.intellij.testFramework.registerServiceInstance
 import com.intellij.testFramework.replaceService
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.runners.model.Statement
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.RegisterExtension
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doReturn
@@ -29,7 +34,7 @@ import software.amazon.awssdk.services.codewhispererstreaming.model.UserIntent
 import software.amazon.awssdk.services.ssooidc.SsoOidcClient
 import software.aws.toolkits.core.telemetry.MetricEvent
 import software.aws.toolkits.core.telemetry.TelemetryBatcher
-import software.aws.toolkits.jetbrains.core.MockClientManagerRule
+import software.aws.toolkits.jetbrains.core.MockClientManagerExtension
 import software.aws.toolkits.jetbrains.core.credentials.LegacyManagedBearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
@@ -57,7 +62,7 @@ import software.aws.toolkits.jetbrains.services.cwc.messages.IncomingCwcMessage
 import software.aws.toolkits.jetbrains.services.cwc.messages.LinkType
 import software.aws.toolkits.jetbrains.services.cwc.storage.ChatSessionInfo
 import software.aws.toolkits.jetbrains.services.cwc.storage.ChatSessionStorage
-import software.aws.toolkits.jetbrains.services.telemetry.MockTelemetryServiceRule
+import software.aws.toolkits.jetbrains.services.telemetry.MockTelemetryServiceExtension
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.telemetry.CwsprChatConversationType
 import software.aws.toolkits.telemetry.CwsprChatInteractionType
@@ -65,7 +70,9 @@ import software.aws.toolkits.telemetry.CwsprChatTriggerInteraction
 import software.aws.toolkits.telemetry.CwsprChatUserIntent
 import kotlin.test.assertNotNull
 
-class TelemetryHelperTest : HeavyPlatformTestCase() {
+class TelemetryHelperTest {
+    private lateinit var myFixture: CodeInsightTestFixture
+    
     // sut
     private lateinit var sut: TelemetryHelper
 
@@ -80,8 +87,9 @@ class TelemetryHelperTest : HeavyPlatformTestCase() {
 
     private lateinit var mockConnection: ToolkitConnection
 
-    private val mockClientManager = MockClientManagerRule()
-    private val mockTelemetryService = MockTelemetryServiceRule()
+    // Manual initialization instead of extensions to control timing
+    private val mockClientManager = MockClientManagerExtension()
+    private val mockTelemetryService = MockTelemetryServiceExtension()
 
     companion object {
         private const val mockUrl = "mockUrl"
@@ -146,24 +154,24 @@ class TelemetryHelperTest : HeavyPlatformTestCase() {
             }.build()
     }
 
-    override fun setUp() {
-        super.setUp()
-        // Initialize mock managers using JUnit Rule pattern
-        mockClientManager.apply(
-            object : Statement() {
-                override fun evaluate() {}
-            },
-            org.junit.runner.Description.EMPTY
-        ).evaluate()
-        mockTelemetryService.apply(
-            object : Statement() {
-                override fun evaluate() {}
-            },
-            org.junit.runner.Description.EMPTY
-        ).evaluate()
+    @BeforeEach
+    fun setUp() {
+        // Create lightweight test fixture FIRST - this initializes Application
+        val factory = IdeaTestFixtureFactory.getFixtureFactory()
+        val fixtureBuilder = factory.createLightFixtureBuilder("TelemetryHelperTest")
+        myFixture = factory.createCodeInsightFixture(fixtureBuilder.fixture, LightTempDirTestFixtureImpl(true))
+        myFixture.setUp()
+        
+        // NOW manually initialize mocks - Application exists now
+        mockClientManager.beforeEach(null)
+        mockTelemetryService.beforeEach(null)
+        
+        // Enable telemetry for tests
+        software.aws.toolkits.jetbrains.settings.AwsSettings.getInstance().isTelemetryEnabled = true
+        
         // set up sut
         appInitContext = AmazonQAppInitContext(
-            project = project,
+            project = myFixture.project,
             messagesFromAppToUi = mock(),
             messagesFromUiToApp = mock(),
             messageTypeRegistry = mock(),
@@ -190,24 +198,33 @@ class TelemetryHelperTest : HeavyPlatformTestCase() {
         mockConnectionManager = mock {
             on { activeConnectionForFeature(eq(QConnection.getInstance())) } doReturn mockConnection
         }
-        project.replaceService(ToolkitConnectionManager::class.java, mockConnectionManager, testRootDisposable)
+        myFixture.project.replaceService(ToolkitConnectionManager::class.java, mockConnectionManager, myFixture.testRootDisposable)
 
         // set up telemetry service
         mockBatcher = mockTelemetryService.batcher()
 
         // set up client
         mockClient = mock()
-        // TODO: use registerService instead of replace service because it's codewhisperer package, and replaceService will fail in 232
-        project.registerServiceInstance(CodeWhispererClientAdaptor::class.java, mockClient)
+        myFixture.project.registerServiceInstance(CodeWhispererClientAdaptor::class.java, mockClient)
 
         // set up customization
         mockModelConfigurator = mock {
-            on { activeCustomization(project) } doReturn mockCustomization
+            on { activeCustomization(myFixture.project) } doReturn mockCustomization
         }
-        // TODO: use registerService instead of replace service because it's codewhisperer package, and replaceService will fail in 232
         ApplicationManager.getApplication().registerServiceInstance(CodeWhispererModelConfigurator::class.java, mockModelConfigurator)
     }
 
+    @AfterEach
+    fun tearDown() {
+        // Clean up mocks first
+        mockTelemetryService.afterEach(null)
+        mockClientManager.afterEach(null)
+        
+        // Then tear down fixture
+        myFixture.tearDown()
+    }
+
+    @Test
     fun testRecordAddMessage() {
         mockClient.stub {
             on {
@@ -310,6 +327,7 @@ class TelemetryHelperTest : HeavyPlatformTestCase() {
         }
     }
 
+    @Test
     fun `test recordInteractWithMessage - ChatItemVoted`() = runTest {
         mockClient.stub {
             on { this.sendChatInteractWithMessageTelemetry(any<ChatInteractWithMessageEvent>()) } doReturn mockSteResponse
@@ -350,6 +368,7 @@ class TelemetryHelperTest : HeavyPlatformTestCase() {
         }
     }
 
+    @Test
     fun `test recordInteractWithMessage - FollowupClicked`() {
         mockClient.stub {
             on { this.sendChatInteractWithMessageTelemetry(any<ChatInteractWithMessageEvent>()) } doReturn mockSteResponse
@@ -393,6 +412,7 @@ class TelemetryHelperTest : HeavyPlatformTestCase() {
         }
     }
 
+    @Test
     fun `test recordInteractWithMessage - CopyCodeToClipboard`() = runTest {
         mockClient.stub {
             on { this.sendChatInteractWithMessageTelemetry(any<ChatInteractWithMessageEvent>()) } doReturn mockSteResponse
@@ -455,6 +475,7 @@ class TelemetryHelperTest : HeavyPlatformTestCase() {
         }
     }
 
+    @Test
     fun `test recordInteractWithMessage - InsertCodeAtCursorPosition`() = runTest {
         mockClient.stub {
             on { this.sendChatInteractWithMessageTelemetry(any<ChatInteractWithMessageEvent>()) } doReturn mockSteResponse
@@ -526,6 +547,7 @@ class TelemetryHelperTest : HeavyPlatformTestCase() {
         }
     }
 
+    @Test
     fun `test recordInteractWithMessage - ClickedLink`() = runTest {
         mockClient.stub {
             on { this.sendChatInteractWithMessageTelemetry(any<ChatInteractWithMessageEvent>()) } doReturn mockSteResponse
@@ -575,6 +597,7 @@ class TelemetryHelperTest : HeavyPlatformTestCase() {
         }
     }
 
+    @Test
     fun `test recordInteractWithMessage - ChatItemFeedback`() = runTest {
         mockClient.stub {
             on { this.sendChatInteractWithMessageTelemetry(any<ChatInteractWithMessageEvent>()) } doReturn mockSteResponse
