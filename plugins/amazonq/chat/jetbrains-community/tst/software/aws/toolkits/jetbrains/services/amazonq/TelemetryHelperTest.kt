@@ -15,7 +15,6 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.extension.RegisterExtension
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doReturn
@@ -72,7 +71,7 @@ import kotlin.test.assertNotNull
 
 class TelemetryHelperTest {
     private lateinit var myFixture: CodeInsightTestFixture
-    
+
     // sut
     private lateinit var sut: TelemetryHelper
 
@@ -161,14 +160,14 @@ class TelemetryHelperTest {
         val fixtureBuilder = factory.createLightFixtureBuilder("TelemetryHelperTest")
         myFixture = factory.createCodeInsightFixture(fixtureBuilder.fixture, LightTempDirTestFixtureImpl(true))
         myFixture.setUp()
-        
+
         // NOW manually initialize mocks - Application exists now
         mockClientManager.beforeEach(null)
         mockTelemetryService.beforeEach(null)
-        
+
         // Enable telemetry for tests
         software.aws.toolkits.jetbrains.settings.AwsSettings.getInstance().isTelemetryEnabled = true
-        
+
         // set up sut
         appInitContext = AmazonQAppInitContext(
             project = myFixture.project,
@@ -219,7 +218,7 @@ class TelemetryHelperTest {
         // Clean up mocks first
         mockTelemetryService.afterEach(null)
         mockClientManager.afterEach(null)
-        
+
         // Then tear down fixture
         myFixture.tearDown()
     }
