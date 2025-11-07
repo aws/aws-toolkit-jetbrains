@@ -31,7 +31,8 @@ class CodeInsightsSettingsFacadeTest : HeavyPlatformTestCase() {
     }
 
     fun testDisableCodeInsightUntilShouldRevertWhenParentIsDisposed() {
-        val myFakePopup = Disposable {}
+        @Suppress("ObjectLiteralToLambda") // JUnit 3 doesn't support SAM lambdas
+        val myFakePopup = object : Disposable { override fun dispose() {} }
         Disposer.register(testRootDisposable, myFakePopup)
 
         // assume users' enable the following two codeinsight functionalities
@@ -76,10 +77,12 @@ class CodeInsightsSettingsFacadeTest : HeavyPlatformTestCase() {
     }
 
     fun testDisableCodeInsightUntilShouldAlwaysFlushPendingRevertsBeforeMakingNextChanges() {
-        val myFakePopup = Disposable {}
+        @Suppress("ObjectLiteralToLambda") // JUnit 3 doesn't support SAM lambdas
+        val myFakePopup = object : Disposable { override fun dispose() {} }
         Disposer.register(testRootDisposable, myFakePopup)
 
-        val myAnotherFakePopup = Disposable {}
+        @Suppress("ObjectLiteralToLambda") // JUnit 3 doesn't support SAM lambdas
+        val myAnotherFakePopup = object : Disposable { override fun dispose() {} }
         Disposer.register(testRootDisposable, myAnotherFakePopup)
 
         // assume users' enable the following two codeinsight functionalities
