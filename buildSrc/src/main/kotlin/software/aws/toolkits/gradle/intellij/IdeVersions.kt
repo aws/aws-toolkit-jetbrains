@@ -165,7 +165,6 @@ object IdeVersions {
                     "com.intellij.java",
                     "com.intellij.gradle",
                     "org.jetbrains.idea.maven",
-                    "com.jetbrains.codeWithMe",
                     "com.intellij.properties"
                 ),
                 marketplacePlugins = listOf(
@@ -181,7 +180,6 @@ object IdeVersions {
                     "JavaScript",
                     "JavaScriptDebugger",
                     "com.intellij.database",
-                    "com.jetbrains.codeWithMe",
                 ),
                 marketplacePlugins = listOf(
                     "Pythonid:253.28294.51",
