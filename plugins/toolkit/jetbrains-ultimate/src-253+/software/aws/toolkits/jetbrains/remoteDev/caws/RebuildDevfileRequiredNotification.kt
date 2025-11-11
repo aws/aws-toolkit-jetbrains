@@ -9,7 +9,6 @@ package software.aws.toolkits.jetbrains.remoteDev.caws
 // import com.jetbrains.rd.platform.codeWithMe.unattendedHost.metrics.MetricType
 // import com.jetbrains.rd.platform.codeWithMe.unattendedHost.metrics.MetricsStatus
 // import com.jetbrains.rd.platform.codeWithMe.unattendedHost.metrics.providers.MetricProvider
-import software.aws.toolkits.resources.message
 
 /*
 class RebuildDevfileRequiredNotification : MetricProvider {
