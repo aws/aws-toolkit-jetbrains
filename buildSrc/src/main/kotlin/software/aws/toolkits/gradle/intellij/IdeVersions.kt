@@ -156,7 +156,7 @@ object IdeVersions {
         Profile(
             name = "2025.3",
             gateway = ProductProfile(
-                sdkVersion = "253.28294-EAP-CANDIDATE-SNAPSHOT",
+                sdkVersion = "253.28086.53",
                 bundledPlugins = listOf("org.jetbrains.plugins.terminal")
             ),
             community = ProductProfile(
