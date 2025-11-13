@@ -250,7 +250,7 @@ class AmazonQStreamingClientTest : AmazonQTestBase() {
                 VfsRootAccess.allowRootAccess(Disposer.newDisposable(), "C:/Program Files")
             }
         }
-        
+
         private val VALIDATION_EXCEPTION = ValidationException.builder()
             .message("Resource validation failed")
             .build()
