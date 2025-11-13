@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.clients
 
+import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.openapi.vfs.newvfs.impl.VfsRootAccess
 import com.intellij.testFramework.RuleChain
@@ -11,6 +12,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
+import org.junit.BeforeClass
 import org.junit.Rule
 import org.junit.Test
 import org.mockito.kotlin.any
@@ -241,6 +243,14 @@ class AmazonQStreamingClientTest : AmazonQTestBase() {
     }
 
     companion object {
+        @JvmStatic
+        @BeforeClass
+        fun allowWindowsPythonPaths() {
+            if (SystemInfo.isWindows) {
+                VfsRootAccess.allowRootAccess(Disposer.newDisposable(), "C:/Program Files")
+            }
+        }
+        
         private val VALIDATION_EXCEPTION = ValidationException.builder()
             .message("Resource validation failed")
             .build()
