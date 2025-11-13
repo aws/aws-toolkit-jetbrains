@@ -3,6 +3,8 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.clients
 
+import com.intellij.openapi.util.SystemInfo
+import com.intellij.openapi.vfs.newvfs.impl.VfsRootAccess
 import com.intellij.testFramework.RuleChain
 import com.intellij.testFramework.replaceService
 import kotlinx.coroutines.runBlocking
@@ -54,6 +56,12 @@ class AmazonQStreamingClientTest : AmazonQTestBase() {
     @Before
     override fun setup() {
         super.setup()
+        
+        // Allow Python paths on Windows for test environment (Python plugin scans for interpreters)
+        if (SystemInfo.isWindows) {
+            VfsRootAccess.allowRootAccess(disposableRule.disposable, "C:/Program Files")
+        }
+        
         amazonQStreamingClient = AmazonQStreamingClient.getInstance(projectRule.project)
         ssoClient = mockClientManagerRule.create()
 
