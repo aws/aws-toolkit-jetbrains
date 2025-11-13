@@ -6,7 +6,6 @@ package software.aws.toolkits.jetbrains.core.gettingstarted
 import com.intellij.configurationStore.getPersistentStateComponentStorageLocation
 import com.intellij.testFramework.HeavyPlatformTestCase
 import io.mockk.every
-import io.mockk.junit5.MockKExtension
 import io.mockk.mockkObject
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi

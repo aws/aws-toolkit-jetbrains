@@ -452,5 +452,4 @@ class DefaultToolkitAuthManagerTest : HeavyPlatformTestCase() {
 
         assertThat(jacksonObjectMapper().writeValueAsString(connection)).doesNotContain("connectionSettings")
     }
-
 }

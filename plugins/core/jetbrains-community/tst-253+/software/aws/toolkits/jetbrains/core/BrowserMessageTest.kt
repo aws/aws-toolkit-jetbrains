@@ -32,8 +32,6 @@ class NoOpLoginBrowser(project: Project) : LoginBrowser(project) {
 class BrowserMessageTest : HeavyPlatformTestCase() {
     private lateinit var objectMapper: ObjectMapper
 
-
-
     private inline fun <reified T : BrowserMessage> assertDeserializedInstanceOf(jsonStr: String): ObjectAssert<BrowserMessage> {
         val actual = objectMapper.readValue<BrowserMessage>(jsonStr)
         return assertThat(actual).isInstanceOf(T::class.java)

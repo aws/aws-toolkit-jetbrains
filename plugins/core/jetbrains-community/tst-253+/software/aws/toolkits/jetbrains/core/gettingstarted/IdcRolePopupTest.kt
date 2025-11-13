@@ -25,7 +25,6 @@ import software.aws.toolkits.resources.AwsCoreBundle
 class IdcRolePopupTest : HeavyPlatformTestCase() {
     private lateinit var mockClientManager: MockClientManager
 
-
     override fun setUp() {
         super.setUp()
         mockClientManager = service<ToolkitClientManager>() as MockClientManager
@@ -66,7 +65,6 @@ class IdcRolePopupTest : HeavyPlatformTestCase() {
             every { readAllProfiles() } returns emptyMap()
             justRun { appendProfileToConfig(any()) }
         }
-
 
         runInEdtAndWait {
             val sut = IdcRolePopup(

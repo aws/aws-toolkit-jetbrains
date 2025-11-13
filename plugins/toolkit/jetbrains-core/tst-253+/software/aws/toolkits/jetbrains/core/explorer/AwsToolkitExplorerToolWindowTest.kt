@@ -13,7 +13,6 @@ import software.aws.toolkits.jetbrains.core.ToolWindowHeadlessManagerImpl
 
 class AwsToolkitExplorerToolWindowTest : HeavyPlatformTestCase() {
 
-
     fun `test save current tab state`() {
         (ToolWindowManager.getInstance(project) as ToolWindowHeadlessManagerImpl)
             .doRegisterToolWindow(AwsToolkitExplorerFactory.TOOLWINDOW_ID)
