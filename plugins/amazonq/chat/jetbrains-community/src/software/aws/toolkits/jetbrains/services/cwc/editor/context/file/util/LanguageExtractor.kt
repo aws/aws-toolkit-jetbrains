@@ -10,6 +10,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmi
 class LanguageExtractor {
     fun extractLanguageNameFromCurrentFile(editor: Editor): String =
         runReadAction {
-            editor.virtualFile.programmingLanguage().languageId
+            editor.virtualFile?.programmingLanguage()?.languageId ?: "plaintext"
         }
 }
