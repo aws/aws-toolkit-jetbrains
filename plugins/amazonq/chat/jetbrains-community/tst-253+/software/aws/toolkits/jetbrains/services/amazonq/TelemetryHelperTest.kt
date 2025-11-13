@@ -4,6 +4,9 @@
 package software.aws.toolkits.jetbrains.services.amazonq
 
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.util.SystemInfo
+import com.intellij.openapi.vfs.newvfs.impl.VfsRootAccess
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory
 import com.intellij.testFramework.fixtures.impl.LightTempDirTestFixtureImpl
@@ -13,6 +16,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -102,6 +106,14 @@ class TelemetryHelperTest {
         private const val steRequestId = "sendTelemetryEventRequestId"
         private const val lang = "java"
         private val mockCustomization = CodeWhispererCustomization(customizationArn, "name", "description")
+
+        @JvmStatic
+        @BeforeAll
+        fun allowWindowsPythonPaths() {
+            if (SystemInfo.isWindows) {
+                VfsRootAccess.allowRootAccess(Disposer.newDisposable(), "C:/Program Files")
+            }
+        }
         private val data = ChatRequestData(
             tabId = tabId,
             message = "foo",
