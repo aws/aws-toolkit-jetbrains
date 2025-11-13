@@ -32,6 +32,7 @@ import software.aws.toolkits.telemetry.AuthTelemetry
 import software.aws.toolkits.telemetry.CredentialSourceId
 import software.aws.toolkits.telemetry.CredentialType
 import software.aws.toolkits.telemetry.Result
+import java.time.Duration
 import java.time.Instant
 
 sealed interface ToolkitConnection {
@@ -265,6 +266,7 @@ fun reauthConnectionIfNeeded(
                         isReAuth = true,
                         result = Result.Succeeded,
                         source = source,
+                        tokenProvider = tokenProvider,
                     )
                     recordAddConnection(
                         credentialSourceId = getCredentialIdForTelemetry(connection),
@@ -282,6 +284,7 @@ fun reauthConnectionIfNeeded(
                         isReAuth = true,
                         result = result,
                         source = source,
+                        tokenProvider = tokenProvider,
                     )
                     recordAddConnection(
                         credentialSourceId = getCredentialIdForTelemetry(connection),
@@ -371,6 +374,7 @@ private fun recordLoginWithBrowser(
     isReAuth: Boolean,
     result: Result,
     source: String? = null,
+    tokenProvider: BearerTokenProvider? = null,
 ) {
     TelemetryService.getInstance().record(null as Project?) {
         datum("aws_loginWithBrowser") {
@@ -385,6 +389,9 @@ private fun recordLoginWithBrowser(
             reason?.let { metadata("reason", it) }
             metadata("result", result.toString())
             source?.let { metadata("source", it) }
+            tokenProvider?.currentToken()?.let { token ->
+                metadata("sessionDuration", Duration.between(token.createdAt, Instant.now()).toMillis().toString())
+            }
         }
     }
 }
