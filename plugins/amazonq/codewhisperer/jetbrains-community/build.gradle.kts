@@ -19,6 +19,7 @@ dependencies {
     compileOnly(project(":plugin-core:jetbrains-community"))
 
     implementation(project(":plugin-amazonq:shared:jetbrains-community"))
+    implementation(libs.lsp4j)
     // CodeWhispererTelemetryService uses a CircularFifoQueue, previously transitive from zjsonpatch
     implementation(libs.commons.collections)
 
