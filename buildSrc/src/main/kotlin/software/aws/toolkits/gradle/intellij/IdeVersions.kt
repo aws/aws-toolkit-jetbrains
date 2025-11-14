@@ -34,7 +34,6 @@ object IdeVersions {
                     "com.intellij.java",
                     "com.intellij.gradle",
                     "org.jetbrains.idea.maven",
-                    "com.jetbrains.codeWithMe",
                 ),
                 marketplacePlugins = listOf(
                     "org.toml.lang:243.21565.122",
@@ -74,7 +73,6 @@ object IdeVersions {
                     "com.intellij.java",
                     "com.intellij.gradle",
                     "org.jetbrains.idea.maven",
-                    "com.jetbrains.codeWithMe",
                 ),
                 marketplacePlugins = listOf(
                     "org.toml.lang:251.26927.47",
@@ -121,7 +119,6 @@ object IdeVersions {
                     "com.intellij.java",
                     "com.intellij.gradle",
                     "org.jetbrains.idea.maven",
-                    "com.jetbrains.codeWithMe",
                     "com.intellij.properties"
                 ),
                 marketplacePlugins = listOf(
