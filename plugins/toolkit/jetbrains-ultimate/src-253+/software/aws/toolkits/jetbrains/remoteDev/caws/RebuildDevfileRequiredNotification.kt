@@ -1,33 +1,27 @@
-// Copyright 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 package software.aws.toolkits.jetbrains.remoteDev.caws
 
-// TODO: Re-enable when RD platform APIs are available in 2025.3
-// The com.jetbrains.rd.platform.codeWithMe APIs are not available in 2025.3 EAP
-// import com.jetbrains.rd.platform.codeWithMe.unattendedHost.metrics.Metric
-// import com.jetbrains.rd.platform.codeWithMe.unattendedHost.metrics.MetricType
-// import com.jetbrains.rd.platform.codeWithMe.unattendedHost.metrics.MetricsStatus
-// import com.jetbrains.rd.platform.codeWithMe.unattendedHost.metrics.providers.MetricProvider
+import com.jetbrains.rd.platform.codeWithMe.unattendedHost.metrics.Metric
+import com.jetbrains.rd.platform.codeWithMe.unattendedHost.metrics.MetricType
+import com.jetbrains.rd.platform.codeWithMe.unattendedHost.metrics.MetricsStatus
+import com.jetbrains.rd.platform.codeWithMe.unattendedHost.metrics.providers.MetricProvider
+import software.aws.toolkits.resources.message
 
-/*
 class RebuildDevfileRequiredNotification : MetricProvider {
     override val id: String
         get() = "devfileRebuildRequired"
 
-    override fun getMetrics(): List<Metric> = listOf(
-        object : Metric {
-            override val id: String
-                get() = "devfileRebuildRequired"
-            override val type: MetricType
-                get() = MetricType.PERFORMANCE
-            override val status: MetricsStatus
-                get() = MetricsStatus.RED
+    override fun getMetrics(): Map<String, Metric> =
+        if (DevfileWatcher.getInstance().hasDevfileChanged()) {
+            mapOf(Pair("devfileRebuild", RebuildDevfileMetric))
+        } else {
+            mapOf()
         }
-    )
 
-    inner class DevfileRebuildRequiredMetric : Metric {
+    // Adding MetricStatus as Danger instead of Warning, cause Warning is overriden by other notifications provided by the client
+    object RebuildDevfileMetric : Metric(MetricType.OTHER, MetricsStatus.DANGER, true) {
         override fun toString(): String = message("caws.rebuild.workspace.notification")
     }
 }
-*/

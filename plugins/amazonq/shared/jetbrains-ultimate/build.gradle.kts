@@ -12,6 +12,9 @@ intellijToolkit {
 }
 
 dependencies {
+    intellijPlatform {
+        bundledModule("intellij.rd.platform")
+    }
     compileOnly(project(":plugin-amazonq:shared:jetbrains-community"))
     compileOnly(project(":plugin-core:jetbrains-ultimate"))
 

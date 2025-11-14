@@ -3,10 +3,12 @@
 
 package software.aws.toolkits.jetbrains.remoteDev.caws
 
-// TODO: GatewayClientCustomizationProvider removed in 2025.3 - investigate new Gateway customization APIs
-/*
 import com.intellij.openapi.extensions.ExtensionNotApplicableException
-import com.jetbrains.rdserver.unattendedHost.customization.controlCenter.GatewayClientCustomizationProvider
+import com.jetbrains.rdserver.unattendedHost.customization.DefaultGatewayExitCustomizationProvider
+import com.jetbrains.rdserver.unattendedHost.customization.GatewayClientCustomizationProvider
+import com.jetbrains.rdserver.unattendedHost.customization.GatewayExitCustomizationProvider
+import com.jetbrains.rdserver.unattendedHost.customization.controlCenter.GatewayControlCenterProvider
+import com.jetbrains.rdserver.unattendedHost.customization.controlCenter.GatewayHostnameDisplayKind
 import icons.AwsIcons
 import software.aws.toolkits.jetbrains.utils.isCodeCatalystDevEnv
 import software.aws.toolkits.resources.message
@@ -18,8 +20,16 @@ class CodeCatalystGatewayClientCustomizer : GatewayClientCustomizationProvider {
         }
     }
 
-    override fun getIcon() = AwsIcons.Logos.AWS_SMILE_SMALL
+    override val controlCenter: GatewayControlCenterProvider = object : GatewayControlCenterProvider {
+        override fun getHostnameDisplayKind() = GatewayHostnameDisplayKind.ShowHostnameOnNavbar
+        override fun getHostnameLong() = title
+        override fun getHostnameShort() = title
+    }
 
-    override fun getTitle() = message("caws.gateway.title")
+    override val icon = AwsIcons.Logos.CODE_CATALYST_SMALL
+    override val title = message("caws.workspace.backend.title")
+
+    override val exitCustomization: GatewayExitCustomizationProvider = object : GatewayExitCustomizationProvider by DefaultGatewayExitCustomizationProvider() {
+        override val isEnabled: Boolean = false
+    }
 }
-*/

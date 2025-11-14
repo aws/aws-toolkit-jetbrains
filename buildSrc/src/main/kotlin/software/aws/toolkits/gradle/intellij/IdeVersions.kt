@@ -180,6 +180,7 @@ object IdeVersions {
                     "JavaScript",
                     "JavaScriptDebugger",
                     "com.intellij.database",
+                    "com.jetbrains.codeWithMe"
                 ),
                 marketplacePlugins = listOf(
                     "Pythonid:253.28294.51",
