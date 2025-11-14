@@ -17,6 +17,7 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
+import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.jcef.JBCefJSQuery.Response
 import kotlinx.coroutines.CancellationException
@@ -103,7 +104,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SendC
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.StopResponseMessage
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TELEMETRY_EVENT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.LspEditorUtil
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.LspEditorUtil.toUriString
 import software.aws.toolkits.jetbrains.services.amazonq.util.command
 import software.aws.toolkits.jetbrains.services.amazonq.util.tabType
 import software.aws.toolkits.jetbrains.services.amazonq.webview.theme.AmazonQTheme
@@ -232,7 +232,11 @@ class BrowserConnector(
             SEND_CHAT_COMMAND_PROMPT -> {
                 val requestFromUi = serializer.deserializeChatMessages<SendChatPromptRequest>(node)
                 val editor = FileEditorManager.getInstance(project).selectedTextEditor
-                val textDocumentIdentifier = editor?.let { TextDocumentIdentifier(toUriString(it.virtualFile)) }
+                val textDocumentIdentifier = editor?.virtualFile?.let { virtualFile ->
+                    val relativePath = VfsUtilCore.getRelativePath(virtualFile, project.baseDir)
+                        ?: virtualFile.path
+                    TextDocumentIdentifier(relativePath)
+                }
                 val cursorState = editor?.let { LspEditorUtil.getCursorState(it) }
 
                 val enrichmentParams = mapOf(
@@ -362,7 +366,11 @@ class BrowserConnector(
 
             CHAT_INSERT_TO_CURSOR -> {
                 val editor = FileEditorManager.getInstance(project).selectedTextEditor
-                val textDocumentIdentifier = editor?.let { TextDocumentIdentifier(toUriString(it.virtualFile)) }
+                val textDocumentIdentifier = editor?.virtualFile?.let { virtualFile ->
+                    val relativePath = VfsUtilCore.getRelativePath(virtualFile, project.baseDir)
+                        ?: virtualFile.path
+                    TextDocumentIdentifier(relativePath)
+                }
                 val cursorPosition = editor?.let { LspEditorUtil.getCursorPosition(it) }
 
                 val enrichmentParams = mapOf(
