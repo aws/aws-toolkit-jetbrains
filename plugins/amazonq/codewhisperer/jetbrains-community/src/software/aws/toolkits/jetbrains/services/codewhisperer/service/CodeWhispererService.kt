@@ -512,8 +512,12 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         editor: Editor,
         triggerTypeInfo: TriggerTypeInfo,
         nextToken: Either<String, Int>?,
-    ): InlineCompletionWithReferencesParams =
-        ReadAction.compute<InlineCompletionWithReferencesParams, RuntimeException> {
+    ): InlineCompletionWithReferencesParams {
+        // Resolve and validate the virtualFile before entering the ReadAction
+        val virtualFile = editor.virtualFile
+            ?: error("Editor virtualFile is null for CodeWhisperer inline completion")
+
+        return ReadAction.compute<InlineCompletionWithReferencesParams, RuntimeException> {
             InlineCompletionWithReferencesParams(
                 context = InlineCompletionContext(
                     // Map the triggerTypeInfo to appropriate InlineCompletionTriggerKind
@@ -542,7 +546,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                         .openFiles.mapNotNull { toUriString(it) }
                 }.orEmpty(),
             ).apply {
-                textDocument = TextDocumentIdentifier(toUriString(editor.virtualFile))
+                textDocument = TextDocumentIdentifier(toUriString(virtualFile))
                 position = Position(
                     editor.caretModel.primaryCaret.logicalPosition.line,
                     editor.caretModel.primaryCaret.logicalPosition.column
@@ -552,6 +556,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                 }
             }
         }
+    }
 
     private fun addPopupChildDisposables(popup: JBPopup) {
         codeInsightSettingsFacade.disableCodeInsightUntil(popup)

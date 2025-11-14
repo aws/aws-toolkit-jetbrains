@@ -558,8 +558,12 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
         editor: Editor,
         triggerTypeInfo: TriggerTypeInfo,
         nextToken: Either<String, Int>?,
-    ): InlineCompletionWithReferencesParams =
-        ReadAction.compute<InlineCompletionWithReferencesParams, RuntimeException> {
+    ): InlineCompletionWithReferencesParams {
+        // Resolve and validate the virtualFile before entering the ReadAction
+        val virtualFile = editor.virtualFile
+            ?: error("Editor virtualFile is null for CodeWhisperer inline completion (new)")
+
+        return ReadAction.compute<InlineCompletionWithReferencesParams, RuntimeException> {
             InlineCompletionWithReferencesParams(
                 context = InlineCompletionContext(
                     // Map the triggerTypeInfo to appropriate InlineCompletionTriggerKind
@@ -572,7 +576,7 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
                 documentChangeParams = null,
                 openTabFilepaths = null,
             ).apply {
-                textDocument = TextDocumentIdentifier(toUriString(editor.virtualFile))
+                textDocument = TextDocumentIdentifier(toUriString(virtualFile))
                 position = Position(
                     editor.caretModel.primaryCaret.logicalPosition.line,
                     editor.caretModel.primaryCaret.logicalPosition.column
@@ -582,7 +586,7 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
                 }
             }
         }
-
+    }
     private fun logServiceInvocation(
         requestContext: RequestContextNew,
         responseContext: ResponseContext,
