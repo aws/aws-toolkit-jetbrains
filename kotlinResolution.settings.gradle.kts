@@ -10,7 +10,7 @@ dependencyResolutionManagement {
                     "1.8.0-intellij-11"
                 }
 
-                "2025.2" -> {
+                "2025.2", "2025.3" -> {
                     "1.10.1-intellij-5"
                 }
 

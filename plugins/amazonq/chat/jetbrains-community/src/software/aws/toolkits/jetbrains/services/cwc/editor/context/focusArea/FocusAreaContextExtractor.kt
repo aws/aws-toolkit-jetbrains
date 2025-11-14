@@ -114,7 +114,7 @@ class FocusAreaContextExtractor(private val fqnWebviewAdapter: FqnWebviewAdapter
             languageExtractor.extractLanguageNameFromCurrentFile(editor)
         }
         val fileText = editor.document.text
-        val fileName = editor.virtualFile.name
+        val fileName = editor.virtualFile?.name ?: "unknown"
 
         // Offset the selection range to the start of the trimmedFileText
         val selectionInsideTrimmedFileTextRange = codeSelectionRange.let {
