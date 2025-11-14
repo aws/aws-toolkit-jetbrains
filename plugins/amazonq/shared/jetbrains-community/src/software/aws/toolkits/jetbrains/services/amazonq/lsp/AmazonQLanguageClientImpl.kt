@@ -500,9 +500,11 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
         // Send the active text file path with pinned context
         val editor = FileEditorManager.getInstance(project).selectedTextEditor
         val textDocument = editor?.let {
-            val relativePath = VfsUtilCore.getRelativePath(it.virtualFile, project.baseDir)
-                ?: it.virtualFile.path // Use absolute path if not in project
-            TextDocumentIdentifier(relativePath)
+            it.virtualFile?.let { virtualFile ->
+                val relativePath = VfsUtilCore.getRelativePath(virtualFile, project.baseDir)
+                    ?: virtualFile.path // Use absolute path if not in project
+                TextDocumentIdentifier(relativePath)
+            }
         }
 
         // Create updated params with text document information
