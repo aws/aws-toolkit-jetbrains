@@ -12,7 +12,6 @@
     <incompatible-with>com.intellij.modules.java</incompatible-with>
     <incompatible-with>com.intellij.modules.mps</incompatible-with>
     <incompatible-with>com.intellij.modules.python</incompatible-with>
-    <incompatible-with>com.intellij.modules.ultimate</incompatible-with>
     <incompatible-with>com.intellij.java</incompatible-with>
 
     <extensions defaultExtensionNs="com.intellij">
