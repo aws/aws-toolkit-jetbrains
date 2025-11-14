@@ -12,6 +12,14 @@ intellijToolkit {
 }
 
 dependencies {
+    intellijPlatform {
+        // RD platform is only available in 2025.3 and later
+        when (providers.gradleProperty("ideProfileName").get()) {
+            "2025.2", "2025.3" -> {
+                bundledModule("intellij.rd.platform")
+            }
+        }
+    }
     compileOnly(project(":plugin-amazonq:shared:jetbrains-community"))
     compileOnly(project(":plugin-core:jetbrains-ultimate"))
 
