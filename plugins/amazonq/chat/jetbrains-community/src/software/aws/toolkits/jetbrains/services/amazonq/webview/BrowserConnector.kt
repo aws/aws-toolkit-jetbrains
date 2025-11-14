@@ -232,8 +232,8 @@ class BrowserConnector(
             SEND_CHAT_COMMAND_PROMPT -> {
                 val requestFromUi = serializer.deserializeChatMessages<SendChatPromptRequest>(node)
                 val editor = FileEditorManager.getInstance(project).selectedTextEditor
-                val textDocumentIdentifier = editor?.let { editor ->
-                    editor.virtualFile?.let {
+                val textDocumentIdentifier = editor?.let { e ->
+                    e.virtualFile?.let {
                         TextDocumentIdentifier(toUriString(it))
                     }
                 }
@@ -366,8 +366,8 @@ class BrowserConnector(
 
             CHAT_INSERT_TO_CURSOR -> {
                 val editor = FileEditorManager.getInstance(project).selectedTextEditor
-                val textDocumentIdentifier = editor?.let { editor ->
-                    editor.virtualFile?.let {
+                val textDocumentIdentifier = editor?.let { e ->
+                    e.virtualFile?.let {
                         TextDocumentIdentifier(toUriString(it))
                     }
                 }
