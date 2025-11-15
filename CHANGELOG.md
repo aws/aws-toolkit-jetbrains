@@ -1,3 +1,7 @@
+# _3.98_ (2025-11-14)
+- **(Feature)** Add support for 2025.3
+- **(Deprecation)** An upcoming release will remove support for JetBrains Gateway version 2025.2 and for IDEs based on the 2024.3 platform
+
 # _3.97_ (2025-10-16)
 
 # _3.96_ (2025-10-02)
