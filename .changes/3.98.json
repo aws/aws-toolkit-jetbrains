@@ -1,0 +1,11 @@
+{
+  "date" : "2025-11-14",
+  "version" : "3.98",
+  "entries" : [ {
+    "type" : "feature",
+    "description" : "Add support for 2025.3"
+  }, {
+    "type" : "deprecation",
+    "description" : "An upcoming release will remove support for JetBrains Gateway version 2025.2 and for IDEs based on the 2024.3 platform"
+  } ]
+}
