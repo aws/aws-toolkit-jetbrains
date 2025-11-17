@@ -232,7 +232,11 @@ class BrowserConnector(
             SEND_CHAT_COMMAND_PROMPT -> {
                 val requestFromUi = serializer.deserializeChatMessages<SendChatPromptRequest>(node)
                 val editor = FileEditorManager.getInstance(project).selectedTextEditor
-                val textDocumentIdentifier = editor?.let { TextDocumentIdentifier(toUriString(it.virtualFile)) }
+                val textDocumentIdentifier = editor?.let { e ->
+                    e.virtualFile?.let {
+                        TextDocumentIdentifier(toUriString(it))
+                    }
+                }
                 val cursorState = editor?.let { LspEditorUtil.getCursorState(it) }
 
                 val enrichmentParams = mapOf(
@@ -362,7 +366,11 @@ class BrowserConnector(
 
             CHAT_INSERT_TO_CURSOR -> {
                 val editor = FileEditorManager.getInstance(project).selectedTextEditor
-                val textDocumentIdentifier = editor?.let { TextDocumentIdentifier(toUriString(it.virtualFile)) }
+                val textDocumentIdentifier = editor?.let { e ->
+                    e.virtualFile?.let {
+                        TextDocumentIdentifier(toUriString(it))
+                    }
+                }
                 val cursorPosition = editor?.let { LspEditorUtil.getCursorPosition(it) }
 
                 val enrichmentParams = mapOf(

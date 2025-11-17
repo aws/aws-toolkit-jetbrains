@@ -196,10 +196,11 @@ class TextDocumentServiceHandler(
 
     private fun handleActiveEditorChange(fileEditor: FileEditor?) {
         val editor = (fileEditor as? TextEditor)?.editor ?: return
-        editor.virtualFile?.let { handleFileOpened(it) }
+        val virtualFile = editor.virtualFile ?: return // Return early if no file
+        handleFileOpened(virtualFile)
 
         // Extract text editor if it's a TextEditor, otherwise null
-        val textDocumentIdentifier = TextDocumentIdentifier(toUriString(editor.virtualFile))
+        val textDocumentIdentifier = TextDocumentIdentifier(toUriString(virtualFile))
         val cursorState = getCursorState(editor)
 
         val params = mapOf(

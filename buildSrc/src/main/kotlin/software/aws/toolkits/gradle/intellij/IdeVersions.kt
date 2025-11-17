@@ -34,7 +34,6 @@ object IdeVersions {
                     "com.intellij.java",
                     "com.intellij.gradle",
                     "org.jetbrains.idea.maven",
-                    "com.jetbrains.codeWithMe",
                 ),
                 marketplacePlugins = listOf(
                     "org.toml.lang:243.21565.122",
@@ -74,7 +73,6 @@ object IdeVersions {
                     "com.intellij.java",
                     "com.intellij.gradle",
                     "org.jetbrains.idea.maven",
-                    "com.jetbrains.codeWithMe",
                 ),
                 marketplacePlugins = listOf(
                     "org.toml.lang:251.26927.47",
@@ -121,7 +119,6 @@ object IdeVersions {
                     "com.intellij.java",
                     "com.intellij.gradle",
                     "org.jetbrains.idea.maven",
-                    "com.jetbrains.codeWithMe",
                     "com.intellij.properties"
                 ),
                 marketplacePlugins = listOf(
@@ -151,6 +148,49 @@ object IdeVersions {
                 netFrameworkTarget = "net472",
                 rdGenVersion = "2025.2.2",
                 nugetVersion = "2025.2.0"
+            )
+        ),
+        Profile(
+            name = "2025.3",
+            gateway = ProductProfile(
+                sdkVersion = "253.28086.53",
+                bundledPlugins = listOf("org.jetbrains.plugins.terminal")
+            ),
+            community = ProductProfile(
+                sdkVersion = "253.28294-EAP-CANDIDATE-SNAPSHOT",
+                bundledPlugins = commonPlugins + listOf(
+                    "com.intellij.java",
+                    "com.intellij.gradle",
+                    "org.jetbrains.idea.maven",
+                    "com.intellij.properties"
+                ),
+                marketplacePlugins = listOf(
+                    "org.toml.lang:253.28294.86",
+                    "PythonCore:253.28294.51",
+                    "Docker:253.28294.90",
+                    "com.intellij.modules.json:253.28294.51"
+                )
+            ),
+            ultimate = ProductProfile(
+                sdkVersion = "253.28294-EAP-CANDIDATE-SNAPSHOT",
+                bundledPlugins = commonPlugins + listOf(
+                    "JavaScript",
+                    "JavaScriptDebugger",
+                    "com.intellij.database",
+                    "com.jetbrains.codeWithMe"
+                ),
+                marketplacePlugins = listOf(
+                    "Pythonid:253.28294.51",
+                    "org.jetbrains.plugins.go:253.28294.51",
+                    "com.intellij.modules.json:253.28294.51"
+                )
+            ),
+            rider = RiderProfile(
+                sdkVersion = "2025.3-SNAPSHOT",
+                bundledPlugins = commonPlugins,
+                netFrameworkTarget = "net472",
+                rdGenVersion = "2025.3.1",
+                nugetVersion = "2025.3.0"
             )
         )
     ).associateBy { it.name }
