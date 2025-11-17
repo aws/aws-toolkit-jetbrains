@@ -1,6 +1,18 @@
 <!-- Copyright 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved. -->
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
-<idea-plugin>
-    <depends>aws.toolkit.core</depends>
+<idea-plugin xmlns:xi="http://www.w3.org/2001/XInclude">
+    <xi:include href="/META-INF/module-core.xml" />
+    <xi:include href="/META-INF/aws.toolkit.core.xml" />
+
+    <extensions defaultExtensionNs="com.intellij">
+        <!-- each plugin needs its own instance of these -->
+        <applicationService serviceImplementation="migration.software.aws.toolkits.jetbrains.core.coroutines.PluginCoroutineScopeTracker"/>
+        <projectService serviceImplementation="migration.software.aws.toolkits.jetbrains.core.coroutines.PluginCoroutineScopeTracker"/>
+        <postStartupActivity implementation = "software.aws.toolkits.jetbrains.core.notifications.NotificationServiceInitializer"/>
+        <postStartupActivity implementation="software.aws.toolkits.jetbrains.services.telemetry.AwsToolkitStartupMetrics"/>
+    </extensions>
+    <projectListeners>
+        <listener class="software.aws.toolkits.jetbrains.services.telemetry.OpenedFileTypesMetricsListener" topic="com.intellij.openapi.fileEditor.FileEditorManagerListener"/>
+    </projectListeners>
 </idea-plugin>

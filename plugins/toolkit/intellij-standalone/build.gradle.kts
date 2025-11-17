@@ -19,9 +19,7 @@ intellijPlatform {
 }
 
 dependencies {
-    intellijPlatform {
-        localPlugin(project(":plugin-core"))
-    }
+    implementation(project(path = ":plugin-core", configuration="shadow"))
 }
 
 tasks.prepareJarSearchableOptions {
