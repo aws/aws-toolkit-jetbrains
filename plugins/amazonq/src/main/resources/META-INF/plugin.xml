@@ -63,6 +63,8 @@
     <depends optional="true">org.jetbrains.idea.maven</depends>
     <resource-bundle>software.aws.toolkits.resources.MessagesBundle</resource-bundle>
 
+    <incompatible-with>aws.toolkit.core</incompatible-with>
+
     <depends>com.intellij.modules.lang</depends>
 
     <depends optional="true" config-file="amazonq-ext-codewithme.xml">com.jetbrains.codeWithMe</depends>
