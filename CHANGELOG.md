@@ -3,6 +3,7 @@
 - **(Deprecation)** An upcoming release will remove support for JetBrains Gateway version 2025.2 and for IDEs based on the 2024.3 platform
 
 # _3.97_ (2025-10-16)
+- **(Bug Fix)** add support for python3.13
 
 # _3.96_ (2025-10-02)
 - **(Bug Fix)** remove findings message from chat even when all issues are ignored
