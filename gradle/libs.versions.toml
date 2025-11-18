@@ -31,6 +31,7 @@ node-gradle = "7.0.2"
 telemetryGenerator = "1.0.329"
 testLogger = "4.0.0"
 testRetry = "1.5.10"
+shadow = "9.2.2"
 # test-only; platform provides slf4j transitively at runtime
 slf4j = "2.0.16"
 sshd = "2.13.2"
@@ -128,5 +129,6 @@ mockito = ["mockito-core", "mockito-junit-jupiter", "mockito-kotlin"]
 sshd = ["sshd-core", "sshd-scp", "sshd-sftp"]
 
 [plugins]
+gradleup-shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 node-gradle = { id = "com.github.node-gradle.node", version.ref = "node-gradle" }

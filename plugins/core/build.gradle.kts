@@ -4,8 +4,7 @@
 plugins {
     id("toolkit-jvm-conventions")
     id("toolkit-testing")
-    id("com.gradleup.shadow") version "9.2.2"
-    java
+    alias(libs.plugins.gradleup.shadow)
 }
 
 dependencies {
