@@ -32,10 +32,13 @@ import software.aws.toolkits.jetbrains.core.credentials.sso.PKCEAuthorizationGra
 import software.aws.toolkits.jetbrains.core.credentials.sso.PKCEClientRegistration
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.buildUnmanagedSsoOidcClient
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.SourceOfEntry
+import software.aws.toolkits.jetbrains.services.telemetry.scrubNames
 import software.aws.toolkits.resources.AwsCoreBundle
+import software.aws.toolkits.telemetry.AuthTelemetry
 import software.aws.toolkits.telemetry.AuthType
 import software.aws.toolkits.telemetry.AwsTelemetry
 import software.aws.toolkits.telemetry.MetricResult
+import software.aws.toolkits.telemetry.Result
 import java.math.BigInteger
 import java.time.Instant
 import java.util.Base64
@@ -149,15 +152,36 @@ internal class ToolkitOauthCredentialsAcquirer(
     private val redirectUri: String,
 ) : OAuthCredentialsAcquirer<AccessToken> {
     override fun acquireCredentials(code: String): OAuthCredentialsAcquirer.AcquireCredentialsResult<AccessToken> {
-        val token = buildUnmanagedSsoOidcClient(registration.region).use { client ->
-            client.createToken {
-                it.clientId(registration.clientId)
-                it.clientSecret(registration.clientSecret)
-                it.grantType("authorization_code")
-                it.redirectUri(redirectUri)
-                it.codeVerifier(codeVerifier)
-                it.code(code)
+        val grantType = "authorization_code"
+        val startTime = Instant.now()
+        val token = try {
+            buildUnmanagedSsoOidcClient(registration.region).use { client ->
+                client.createToken {
+                    it.clientId(registration.clientId)
+                    it.clientSecret(registration.clientSecret)
+                    it.grantType(grantType)
+                    it.redirectUri(redirectUri)
+                    it.codeVerifier(codeVerifier)
+                    it.code(code)
+                }.also {
+                    val duration = java.time.Duration.between(startTime, Instant.now()).toMillis().toDouble()
+                    AuthTelemetry.ssoTokenOperation(
+                        result = Result.Succeeded,
+                        grantType = grantType,
+                        duration = duration
+                    )
+                }
             }
+        } catch (e: Exception) {
+            val duration = java.time.Duration.between(startTime, Instant.now()).toMillis().toDouble()
+            AuthTelemetry.ssoTokenOperation(
+                result = Result.Failed,
+                grantType = grantType,
+                duration = duration,
+                reason = e::class.simpleName,
+                reasonDesc = e.message?.let { scrubNames(it) }
+            )
+            throw e
         }
 
         return OAuthCredentialsAcquirer.AcquireCredentialsResult.Success(
