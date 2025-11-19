@@ -73,7 +73,6 @@ dependencies {
     }
 
     testPlugins(project(":plugin-amazonq", "pluginZip"))
-    testPlugins(project(":plugin-core", "pluginZip"))
 }
 
 tasks.test {
