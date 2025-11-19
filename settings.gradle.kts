@@ -61,6 +61,10 @@ dependencyResolutionManagement {
             defaultRepositories()
             jetbrainsRuntime()
         }
+
+        maven {
+            url = uri("https://d2s4y8xcwt8bet.cloudfront.net/")
+        }
     }
 }
 
