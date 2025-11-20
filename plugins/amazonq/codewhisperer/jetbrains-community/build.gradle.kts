@@ -12,10 +12,6 @@ intellijToolkit {
 }
 
 dependencies {
-    intellijPlatform {
-        localPlugin(project(":plugin-core"))
-    }
-
     compileOnly(project(":plugin-core:jetbrains-community"))
 
     implementation(project(":plugin-amazonq:shared:jetbrains-community"))
