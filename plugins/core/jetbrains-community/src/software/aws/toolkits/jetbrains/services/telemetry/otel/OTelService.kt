@@ -10,6 +10,7 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.util.SystemInfoRt
 import com.intellij.serviceContainer.NonInjectable
+import com.intellij.util.io.HttpRequests
 import io.opentelemetry.api.common.AttributeKey
 import io.opentelemetry.api.common.Attributes
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
@@ -25,9 +26,6 @@ import io.opentelemetry.sdk.trace.SpanProcessor
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import org.apache.http.client.methods.HttpPost
-import org.apache.http.entity.ByteArrayEntity
-import org.apache.http.impl.client.HttpClients
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.amazon.awssdk.http.ContentStreamProvider
 import software.amazon.awssdk.http.HttpExecuteRequest
@@ -35,6 +33,7 @@ import software.amazon.awssdk.http.SdkHttpMethod
 import software.amazon.awssdk.http.SdkHttpRequest
 import software.amazon.awssdk.http.apache.ApacheHttpClient
 import software.amazon.awssdk.http.auth.aws.signer.AwsV4HttpSigner
+import software.aws.toolkits.jetbrains.core.AwsClientManager
 import java.io.ByteArrayOutputStream
 import java.net.ConnectException
 
@@ -54,16 +53,11 @@ private class BasicOtlpSpanProcessor(
                 val baos = ByteArrayOutputStream()
                 item.writeBinaryTo(baos)
 
-                HttpClients.createDefault().use { client ->
-                    val request = HttpPost(traceUrl).apply {
-                        entity = ByteArrayEntity(baos.toByteArray()).apply {
-                            setContentType("application/x-protobuf")
-                        }
+                HttpRequests.post(traceUrl, "application/x-protobuf")
+                    .userAgent(AwsClientManager.getUserAgent())
+                    .connect { request ->
+                        request.write(baos.toByteArray())
                     }
-                    client.execute(request).use {
-                        // Response consumed and closed
-                    }
-                }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: ConnectException) {
