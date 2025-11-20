@@ -50,10 +50,7 @@ private class BasicOtlpSpanProcessor(
         coroutineScope.launch {
             try {
                 val item = TraceRequestMarshaler.create(listOf(data))
-
-                httpPost(traceUrl, contentLength = item.binarySerializedSize.toLong(), contentType = ContentType.XProtobuf) {
-                    item.writeBinaryTo(this)
-                }
+                sendOtelTrace(traceUrl, item)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: ConnectException) {
