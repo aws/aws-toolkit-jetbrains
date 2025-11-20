@@ -25,6 +25,9 @@ import io.opentelemetry.sdk.trace.SpanProcessor
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import org.apache.http.client.methods.HttpPost
+import org.apache.http.entity.ByteArrayEntity
+import org.apache.http.impl.client.HttpClients
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.amazon.awssdk.http.ContentStreamProvider
 import software.amazon.awssdk.http.HttpExecuteRequest
@@ -48,7 +51,19 @@ private class BasicOtlpSpanProcessor(
         coroutineScope.launch {
             try {
                 val item = TraceRequestMarshaler.create(listOf(data))
-                sendOtelTrace(traceUrl, item)
+                val baos = ByteArrayOutputStream()
+                item.writeBinaryTo(baos)
+
+                HttpClients.createDefault().use { client ->
+                    val request = HttpPost(traceUrl).apply {
+                        entity = ByteArrayEntity(baos.toByteArray()).apply {
+                            setContentType("application/x-protobuf")
+                        }
+                    }
+                    client.execute(request).use {
+                        // Response consumed and closed
+                    }
+                }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: ConnectException) {
