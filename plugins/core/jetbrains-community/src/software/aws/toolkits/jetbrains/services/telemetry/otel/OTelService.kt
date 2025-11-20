@@ -9,8 +9,6 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.util.SystemInfoRt
-import com.intellij.platform.util.http.ContentType
-import com.intellij.platform.util.http.httpPost
 import com.intellij.serviceContainer.NonInjectable
 import io.opentelemetry.api.common.AttributeKey
 import io.opentelemetry.api.common.Attributes
