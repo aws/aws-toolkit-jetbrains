@@ -44,6 +44,8 @@ tasks.shadowJar {
     archiveVersion.set(rootProject.version.toString())
     archiveClassifier.set("")
 
+    exclude("/META-INF/plugin.xml")
+
     configurations = project.configurations.runtimeClasspath.map { listOf(it) }
     destinationDirectory.set(layout.buildDirectory.dir("libs"))
 }
