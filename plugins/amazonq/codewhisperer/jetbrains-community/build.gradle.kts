@@ -12,6 +12,8 @@ intellijToolkit {
 }
 
 dependencies {
+    implementation(project(path = ":plugin-core", configuration = "shadow"))
+
     compileOnly(project(":plugin-core:jetbrains-community"))
 
     implementation(project(":plugin-amazonq:shared:jetbrains-community"))

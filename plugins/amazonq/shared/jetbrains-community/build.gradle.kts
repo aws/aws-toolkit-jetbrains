@@ -17,6 +17,8 @@ dependencies {
         platformDependency(Coordinates(groupId = "com.jetbrains.intellij.rd", artifactId = "rd-platform"))
     }
 
+    implementation(project(path = ":plugin-core", configuration = "shadow"))
+
     compileOnlyApi(project(":plugin-core:jetbrains-community"))
 
     // CodeWhispererTelemetryService uses a CircularFifoQueue

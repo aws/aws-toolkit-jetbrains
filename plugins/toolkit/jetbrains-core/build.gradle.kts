@@ -36,6 +36,7 @@ dependencies {
         bundledModule("intellij.platform.vcs.dvcs.impl")
         bundledModule("intellij.libraries.microba")
     }
+    implementation(project(path = ":plugin-core", configuration = "shadow"))
 }
 
 val changelog = tasks.register<GeneratePluginChangeLog>("pluginChangeLog") {
