@@ -24,6 +24,7 @@ import io.netty.handler.codec.http.QueryStringDecoder
 import org.jetbrains.ide.BuiltInServerManager
 import org.jetbrains.ide.RestService
 import org.jetbrains.io.response
+import software.amazon.awssdk.core.exception.SdkServiceException
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.ssooidc.endpoints.SsoOidcEndpointParams
 import software.amazon.awssdk.services.ssooidc.endpoints.internal.DefaultSsoOidcEndpointProvider
@@ -179,7 +180,8 @@ internal class ToolkitOauthCredentialsAcquirer(
                 grantType = grantType,
                 duration = duration,
                 reason = e::class.simpleName,
-                reasonDesc = e.message?.let { scrubNames(it) }
+                reasonDesc = e.message?.let { scrubNames(it) },
+                httpStatusCode = (e as? SdkServiceException)?.statusCode()?.toString()
             )
             throw e
         }

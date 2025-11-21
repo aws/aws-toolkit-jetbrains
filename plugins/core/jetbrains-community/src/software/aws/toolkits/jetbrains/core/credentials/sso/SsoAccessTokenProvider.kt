@@ -11,6 +11,7 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.util.registry.Registry
 import software.amazon.awssdk.auth.token.credentials.SdkTokenProvider
 import software.amazon.awssdk.awscore.exception.AwsServiceException
+import software.amazon.awssdk.core.exception.SdkServiceException
 import software.amazon.awssdk.services.ssooidc.SsoOidcClient
 import software.amazon.awssdk.services.ssooidc.model.AuthorizationPendingException
 import software.amazon.awssdk.services.ssooidc.model.CreateTokenResponse
@@ -361,7 +362,8 @@ class SsoAccessTokenProvider(
                         grantType = DEVICE_GRANT_TYPE,
                         duration = duration,
                         reason = e::class.simpleName,
-                        reasonDesc = e.message?.let { scrubNames(it) }
+                        reasonDesc = e.message?.let { scrubNames(it) },
+                        httpStatusCode = (e as? SdkServiceException)?.statusCode()?.toString()
                     )
                     LOG.warn { "SSO token operation failed: grantType=$DEVICE_GRANT_TYPE, duration=${duration}ms, error=${e::class.simpleName}" }
                     throw e
@@ -504,7 +506,8 @@ class SsoAccessTokenProvider(
                     grantType = REFRESH_GRANT_TYPE,
                     duration = duration,
                     reason = e::class.simpleName,
-                    reasonDesc = e.message?.let { scrubNames(it) }
+                    reasonDesc = e.message?.let { scrubNames(it) },
+                    httpStatusCode = (e as? SdkServiceException)?.statusCode()?.toString()
                 )
                 LOG.warn { "SSO token operation failed: grantType=$REFRESH_GRANT_TYPE, duration=${duration}ms, error=${e::class.simpleName}" }
                 throw e
