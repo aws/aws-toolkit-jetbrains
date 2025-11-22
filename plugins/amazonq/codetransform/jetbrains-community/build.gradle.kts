@@ -12,9 +12,7 @@ intellijToolkit {
 }
 
 dependencies {
-    intellijPlatform {
-        localPlugin(project(":plugin-core"))
-    }
+    implementation(project(path = ":plugin-core", configuration = "shadow"))
 
     implementation(project(":plugin-amazonq:shared:jetbrains-community"))
     // hack because transform has a chat entrypoint

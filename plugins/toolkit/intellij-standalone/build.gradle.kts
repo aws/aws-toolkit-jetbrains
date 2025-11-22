@@ -19,15 +19,11 @@ intellijPlatform {
 }
 
 dependencies {
-    intellijPlatform {
-        localPlugin(project(":plugin-core"))
-    }
+    implementation(project(path = ":plugin-core", configuration = "shadow"))
 }
 
 tasks.prepareJarSearchableOptions {
-    val pluginXmlJar = project(":plugin-core").tasks.jar
-    dependsOn(pluginXmlJar)
-    composedJarFile.set(pluginXmlJar.flatMap { it.archiveFile })
+    enabled = false
 }
 
 tasks.check {

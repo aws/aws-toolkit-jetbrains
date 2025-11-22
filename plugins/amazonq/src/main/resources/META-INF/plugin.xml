@@ -2,6 +2,9 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
 <idea-plugin xmlns:xi="http://www.w3.org/2001/XInclude" require-restart="true">
+    <xi:include href="/META-INF/module-core.xml" />
+    <xi:include href="/META-INF/aws.toolkit.core.xml" />
+
     <id>amazon.q</id>
     <name>Amazon Q</name>
     <description><![CDATA[
@@ -60,7 +63,8 @@
     <depends optional="true">org.jetbrains.idea.maven</depends>
     <resource-bundle>software.aws.toolkits.resources.MessagesBundle</resource-bundle>
 
-    <depends>aws.toolkit.core</depends>
+    <incompatible-with>aws.toolkit.core</incompatible-with>
+
     <depends>com.intellij.modules.lang</depends>
 
     <depends optional="true" config-file="amazonq-ext-codewithme.xml">com.jetbrains.codeWithMe</depends>
@@ -104,4 +108,15 @@
     <xi:include href="/META-INF/change-notes.xml" xpointer="xpointer(/idea-plugin/*)">
         <xi:fallback/>
     </xi:include>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <!-- each plugin needs its own instance of these -->
+        <applicationService serviceImplementation="migration.software.aws.toolkits.jetbrains.core.coroutines.PluginCoroutineScopeTracker"/>
+        <projectService serviceImplementation="migration.software.aws.toolkits.jetbrains.core.coroutines.PluginCoroutineScopeTracker"/>
+        <postStartupActivity implementation = "software.aws.toolkits.jetbrains.core.notifications.NotificationServiceInitializer"/>
+        <postStartupActivity implementation="software.aws.toolkits.jetbrains.services.telemetry.AwsToolkitStartupMetrics"/>
+    </extensions>
+    <projectListeners>
+        <listener class="software.aws.toolkits.jetbrains.services.telemetry.OpenedFileTypesMetricsListener" topic="com.intellij.openapi.fileEditor.FileEditorManagerListener"/>
+    </projectListeners>
 </idea-plugin>

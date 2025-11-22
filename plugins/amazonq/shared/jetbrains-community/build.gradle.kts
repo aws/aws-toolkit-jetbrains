@@ -14,9 +14,10 @@ intellijToolkit {
 
 dependencies {
     intellijPlatform {
-        localPlugin(project(":plugin-core"))
         platformDependency(Coordinates(groupId = "com.jetbrains.intellij.rd", artifactId = "rd-platform"))
     }
+
+    implementation(project(path = ":plugin-core", configuration = "shadow"))
 
     compileOnlyApi(project(":plugin-core:jetbrains-community"))
 

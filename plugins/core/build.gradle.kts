@@ -2,10 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 plugins {
-    id("toolkit-publishing-conventions")
-    id("toolkit-publish-root-conventions")
     id("toolkit-jvm-conventions")
     id("toolkit-testing")
+    alias(libs.plugins.gradleup.shadow)
 }
 
 dependencies {
@@ -19,9 +18,34 @@ dependencies {
     implementation(libs.slf4j.jdk14)
 }
 
+configurations {
+    configureEach {
+        // IDE provides netty
+        exclude("io.netty")
+    }
+
+    // Make sure we exclude stuff we either A) ships with IDE, B) we don't use to cut down on size
+    runtimeClasspath {
+        exclude(group = "com.google.code.gson")
+        exclude(group = "org.jetbrains.kotlin")
+        exclude(group = "org.jetbrains.kotlinx")
+    }
+}
+
 tasks.check {
     val coreProject = project(":plugin-core").subprojects
     coreProject.forEach {
         dependsOn(":plugin-core:${it.name}:check")
     }
+}
+
+tasks.shadowJar {
+    archiveBaseName.set("plugin-core-shadow")
+    archiveVersion.set(rootProject.version.toString())
+    archiveClassifier.set("")
+
+    exclude("/META-INF/plugin.xml")
+
+    configurations = project.configurations.runtimeClasspath.map { listOf(it) }
+    destinationDirectory.set(layout.buildDirectory.dir("libs"))
 }

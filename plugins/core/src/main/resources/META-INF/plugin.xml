@@ -1,4 +1,4 @@
-<!-- Copyright 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved. -->
+<!-- Copyright 2025 Amazon.com, Inc. or its affiliates. All Rights Reserved. -->
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
 <idea-plugin xmlns:xi="http://www.w3.org/2001/XInclude" require-restart="true">
@@ -16,6 +16,7 @@
     <incompatible-with>com.intellij.jetbrains.client</incompatible-with>
     <incompatible-with>com.intellij.gateway</incompatible-with>
 
+    <xi:include href="/META-INF/aws.toolkit.core.xml" />
     <xi:include href="/META-INF/module-core.xml" />
 
     <extensions defaultExtensionNs="com.intellij">

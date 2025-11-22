@@ -33,11 +33,10 @@ intellijToolkit {
 
 dependencies {
     intellijPlatform {
-        localPlugin(project(":plugin-core"))
-
         bundledModule("intellij.platform.vcs.dvcs.impl")
         bundledModule("intellij.libraries.microba")
     }
+    implementation(project(path = ":plugin-core", configuration = "shadow"))
 }
 
 val changelog = tasks.register<GeneratePluginChangeLog>("pluginChangeLog") {
@@ -210,5 +209,15 @@ fun transformXml(document: Document, path: Path) {
     StringWriter().use {
         xmlOutput.output(document, it)
         path.writeText(text = it.toString())
+    }
+}
+
+// hack because our test structure currently doesn't make complete sense
+tasks.prepareTestSandbox {
+    val pluginXmlJar = project(":plugin-core").tasks.jar
+
+    dependsOn(pluginXmlJar)
+    from(pluginXmlJar) {
+        into(intellijPlatform.projectName.map { "$it/lib" })
     }
 }

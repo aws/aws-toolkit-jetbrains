@@ -16,9 +16,8 @@ intellijToolkit {
 }
 
 dependencies {
-    intellijPlatform {
-        localPlugin(project(":plugin-core"))
-    }
+    implementation(project(path = ":plugin-core", configuration = "shadow"))
+
     compileOnlyApi(project(":plugin-toolkit:jetbrains-core"))
     compileOnlyApi(project(":plugin-core:jetbrains-ultimate"))
 
@@ -30,4 +29,14 @@ dependencies {
 
     // delete when fully split
     testRuntimeOnly(project(":plugin-core:jetbrains-ultimate"))
+}
+
+// hack because our test structure currently doesn't make complete sense
+tasks.prepareTestSandbox {
+    val pluginXmlJar = project(":plugin-core").tasks.jar
+
+    dependsOn(pluginXmlJar)
+    from(pluginXmlJar) {
+        into(intellijPlatform.projectName.map { "$it/lib" })
+    }
 }

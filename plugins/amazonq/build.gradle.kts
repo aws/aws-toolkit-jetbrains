@@ -34,10 +34,7 @@ tasks.jar {
 }
 
 dependencies {
-    intellijPlatform {
-        localPlugin(project(":plugin-core"))
-    }
-
+    implementation(project(path = ":plugin-core", configuration = "shadow"))
     implementation(project(":plugin-amazonq:chat"))
     implementation(project(":plugin-amazonq:codetransform"))
     implementation(project(":plugin-amazonq:codewhisperer"))

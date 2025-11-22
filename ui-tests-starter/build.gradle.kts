@@ -62,7 +62,6 @@ dependencies {
         val version = ideProfile.community.sdkVersion
         intellijIdeaCommunity(version, !version.contains("SNAPSHOT"))
 
-        localPlugin(project(":plugin-core"))
         testImplementation(project(":plugin-core:core"))
         testImplementation(project(":plugin-core:jetbrains-community"))
         testImplementation(testFixtures(project(":plugin-core:jetbrains-community")))
@@ -74,7 +73,6 @@ dependencies {
     }
 
     testPlugins(project(":plugin-amazonq", "pluginZip"))
-    testPlugins(project(":plugin-core", "pluginZip"))
 }
 
 tasks.test {

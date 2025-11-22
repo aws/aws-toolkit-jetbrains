@@ -12,9 +12,7 @@ intellijToolkit {
 }
 
 dependencies {
-    intellijPlatform {
-        localPlugin(project(":plugin-core"))
-    }
+    implementation(project(path = ":plugin-core", configuration = "shadow"))
 
     compileOnly(project(":plugin-core:jetbrains-community"))
 
