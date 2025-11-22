@@ -211,3 +211,13 @@ fun transformXml(document: Document, path: Path) {
         path.writeText(text = it.toString())
     }
 }
+
+// hack because our test structure currently doesn't make complete sense
+tasks.prepareTestSandbox {
+    val pluginXmlJar = project(":plugin-core").tasks.jar
+
+    dependsOn(pluginXmlJar)
+    from(pluginXmlJar) {
+        into(intellijPlatform.projectName.map { "$it/lib" })
+    }
+}
