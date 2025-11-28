@@ -340,10 +340,10 @@ class Browser(parent: Disposable, private val mynahAsset: Path, val project: Pro
 
                     /* Dropdown menu inside modal */
                     .jb-custom-select-dropdown {
-                        background: #252526 !important;
-                        border: 1px solid #454545 !important;
+                        background: var(--mynah-card-bg) !important;
+                        border: 1px solid var(--mynah-color-border-default) !important;
                         border-radius: 6px !important;
-                        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8) !important;
+                        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
                         min-width: 300px !important;
                         max-width: 400px !important;
                         overflow: hidden !important;
@@ -353,9 +353,9 @@ class Browser(parent: Disposable, private val mynahAsset: Path, val project: Pro
                         padding: 14px 20px !important;
                         cursor: pointer !important;
                         font-size: 14px !important;
-                        color: #cccccc !important;
-                        background: #252526 !important;
-                        border-bottom: 1px solid #3e3e42 !important;
+                        color: var(--mynah-color-text-default) !important;
+                        background: var(--mynah-card-bg) !important;
+                        border-bottom: 1px solid var(--mynah-color-border-default) !important;
                         transition: background 0.15s !important;
                     }
 
@@ -364,18 +364,19 @@ class Browser(parent: Disposable, private val mynahAsset: Path, val project: Pro
                     }
 
                     .jb-custom-select-option:hover {
-                        background: #2a2d2e !important;
-                        color: #ffffff !important;
+                        background: var(--mynah-card-bg-alternate) !important;
+                        color: var(--mynah-color-text-strong) !important;
                     }
 
                     .jb-custom-select-option.selected {
-                        background: #094771 !important;
-                        color: #ffffff !important;
+                        background: var(--mynah-color-button) !important;
+                        color: var(--mynah-color-button-reverse) !important;
                         font-weight: 500 !important;
                     }
 
                     .jb-custom-select-option.selected:hover {
-                        background: #0e639c !important;
+                        background: var(--mynah-color-button) !important;
+                        filter: brightness(1.1) !important;
                     }
                     .mynah-ui-spinner-container > span.mynah-ui-spinner-logo-part > .mynah-ui-spinner-logo-mask.text {
                         will-change: transform !important;
