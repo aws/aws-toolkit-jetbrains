@@ -75,6 +75,11 @@ class CodeWhispererSettings : PersistentStateComponent<CodeWhispererConfiguratio
         }
     }
 
+    fun toggleWorkspaceContextEnabled(value: Boolean) {
+        state.value[CodeWhispererConfigurationType.IsWorkspaceContextEnabled] = value
+    }
+
+    fun isWorkspaceContextEnabled() = state.value.getOrDefault(CodeWhispererConfigurationType.IsWorkspaceContextEnabled, true)
     fun isProjectContextEnabled() = state.value.getOrDefault(CodeWhispererConfigurationType.IsProjectContextEnabled, false)
 
     private fun hasEnabledProjectContextOnce() = state.value.getOrDefault(CodeWhispererConfigurationType.HasEnabledProjectContextOnce, false)
@@ -92,7 +97,7 @@ class CodeWhispererSettings : PersistentStateComponent<CodeWhispererConfiguratio
     fun getProjectContextIndexThreadCount(): Int = state.intValue.getOrDefault(
         CodeWhispererIntConfigurationType.ProjectContextIndexThreadCount,
         0
-    )
+    ).coerceIn(CONTEXT_INDEX_THREADS)
 
     fun setProjectContextIndexThreadCount(value: Int) {
         state.intValue[CodeWhispererIntConfigurationType.ProjectContextIndexThreadCount] = value
@@ -101,7 +106,7 @@ class CodeWhispererSettings : PersistentStateComponent<CodeWhispererConfiguratio
     fun getProjectContextIndexMaxSize(): Int = state.intValue.getOrDefault(
         CodeWhispererIntConfigurationType.ProjectContextIndexMaxSize,
         250
-    )
+    ).coerceIn(CONTEXT_INDEX_SIZE)
 
     fun setProjectContextIndexMaxSize(value: Int) {
         state.intValue[CodeWhispererIntConfigurationType.ProjectContextIndexMaxSize] = value
@@ -134,10 +139,6 @@ class CodeWhispererSettings : PersistentStateComponent<CodeWhispererConfiguratio
         state.value[CodeWhispererConfigurationType.IsTabAcceptPriorityNotificationShownOnce] = value
     }
 
-    companion object {
-        fun getInstance(): CodeWhispererSettings = service()
-    }
-
     override fun getState(): CodeWhispererConfiguration = CodeWhispererConfiguration().apply {
         value.putAll(state.value)
         intValue.putAll(state.intValue)
@@ -154,6 +155,13 @@ class CodeWhispererSettings : PersistentStateComponent<CodeWhispererConfiguratio
         this.state.intValue.putAll(state.intValue)
         this.state.stringValue.putAll(state.stringValue)
         this.state.autoBuildSetting.putAll(state.autoBuildSetting)
+    }
+
+    companion object {
+        fun getInstance(): CodeWhispererSettings = service()
+
+        val CONTEXT_INDEX_SIZE = IntRange(1, 4096)
+        val CONTEXT_INDEX_THREADS = IntRange(0, 50)
     }
 }
 
@@ -183,6 +191,7 @@ enum class CodeWhispererConfigurationType {
     HasEnabledProjectContextOnce,
     IsQPrioritizedForTabAccept,
     IsTabAcceptPriorityNotificationShownOnce,
+    IsWorkspaceContextEnabled,
 }
 
 enum class CodeWhispererStringConfigurationType {

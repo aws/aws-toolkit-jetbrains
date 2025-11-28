@@ -11,6 +11,7 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.util.registry.Registry
 import software.amazon.awssdk.auth.token.credentials.SdkTokenProvider
 import software.amazon.awssdk.awscore.exception.AwsServiceException
+import software.amazon.awssdk.core.exception.SdkServiceException
 import software.amazon.awssdk.services.ssooidc.SsoOidcClient
 import software.amazon.awssdk.services.ssooidc.model.AuthorizationPendingException
 import software.amazon.awssdk.services.ssooidc.model.CreateTokenResponse
@@ -194,7 +195,7 @@ class SsoAccessTokenProvider(
 
     @Deprecated("Device authorization grant flow is deprecated")
     private fun registerDAGClient(): ClientRegistration {
-        loadDagClientRegistration(SourceOfLoadRegistration.REGISTER_CLIENT.toString())?.let {
+        loadDagClientRegistration(SourceOfLoadRegistration.REGISTER_CLIENT)?.let {
             return it
         }
 
@@ -235,7 +236,7 @@ class SsoAccessTokenProvider(
     }
 
     private fun registerPkceClient(): PKCEClientRegistration {
-        loadPkceClientRegistration(SourceOfLoadRegistration.REGISTER_CLIENT.toString())?.let {
+        loadPkceClientRegistration(SourceOfLoadRegistration.REGISTER_CLIENT)?.let {
             return it
         }
 
@@ -338,11 +339,34 @@ class SsoAccessTokenProvider(
                     throw ProcessCanceledException(IllegalStateException("Login canceled by user"))
                 }
 
-                val tokenResponse = client.createToken {
-                    it.clientId(registration.clientId)
-                    it.clientSecret(registration.clientSecret)
-                    it.grantType(DEVICE_GRANT_TYPE)
-                    it.deviceCode(authorization.deviceCode)
+                val startTime = clock.instant()
+                val tokenResponse = try {
+                    client.createToken {
+                        it.clientId(registration.clientId)
+                        it.clientSecret(registration.clientSecret)
+                        it.grantType(DEVICE_GRANT_TYPE)
+                        it.deviceCode(authorization.deviceCode)
+                    }.also {
+                        val duration = Duration.between(startTime, clock.instant()).toMillis().toDouble()
+                        AuthTelemetry.ssoTokenOperation(
+                            result = Result.Succeeded,
+                            grantType = DEVICE_GRANT_TYPE,
+                            duration = duration
+                        )
+                        LOG.info { "SSO token operation succeeded: grantType=$DEVICE_GRANT_TYPE, duration=${duration}ms" }
+                    }
+                } catch (e: Exception) {
+                    val duration = Duration.between(startTime, clock.instant()).toMillis().toDouble()
+                    AuthTelemetry.ssoTokenOperation(
+                        result = Result.Failed,
+                        grantType = DEVICE_GRANT_TYPE,
+                        duration = duration,
+                        reason = e::class.simpleName,
+                        reasonDesc = e.message?.let { scrubNames(it) },
+                        httpStatusCode = (e as? SdkServiceException)?.statusCode()?.toString()
+                    )
+                    LOG.warn { "SSO token operation failed: grantType=$DEVICE_GRANT_TYPE, duration=${duration}ms, error=${e::class.simpleName}" }
+                    throw e
                 }
 
                 onPendingToken.tokenRetrieved()
@@ -431,8 +455,8 @@ class SsoAccessTokenProvider(
         stageName = RefreshCredentialStage.LOAD_REGISTRATION
         val registration = try {
             when (currentToken) {
-                is DeviceAuthorizationGrantToken -> loadDagClientRegistration(SourceOfLoadRegistration.REFRESH_TOKEN.toString())
-                is PKCEAuthorizationGrantToken -> loadPkceClientRegistration(SourceOfLoadRegistration.REFRESH_TOKEN.toString())
+                is DeviceAuthorizationGrantToken -> loadDagClientRegistration(SourceOfLoadRegistration.REFRESH_TOKEN)
+                is PKCEAuthorizationGrantToken -> loadPkceClientRegistration(SourceOfLoadRegistration.REFRESH_TOKEN)
             }
         } catch (e: Exception) {
             val message = e.message ?: "$stageName: ${e::class.java.name}"
@@ -459,11 +483,34 @@ class SsoAccessTokenProvider(
 
         stageName = RefreshCredentialStage.CREATE_TOKEN
         try {
-            val newToken = client.createToken {
-                it.clientId(registration.clientId)
-                it.clientSecret(registration.clientSecret)
-                it.grantType(REFRESH_GRANT_TYPE)
-                it.refreshToken(currentToken.refreshToken)
+            val startTime = clock.instant()
+            val newToken = try {
+                client.createToken {
+                    it.clientId(registration.clientId)
+                    it.clientSecret(registration.clientSecret)
+                    it.grantType(REFRESH_GRANT_TYPE)
+                    it.refreshToken(currentToken.refreshToken)
+                }.also {
+                    val duration = Duration.between(startTime, clock.instant()).toMillis().toDouble()
+                    AuthTelemetry.ssoTokenOperation(
+                        result = Result.Succeeded,
+                        grantType = REFRESH_GRANT_TYPE,
+                        duration = duration
+                    )
+                    LOG.info { "SSO token operation succeeded: grantType=$REFRESH_GRANT_TYPE, duration=${duration}ms" }
+                }
+            } catch (e: Exception) {
+                val duration = Duration.between(startTime, clock.instant()).toMillis().toDouble()
+                AuthTelemetry.ssoTokenOperation(
+                    result = Result.Failed,
+                    grantType = REFRESH_GRANT_TYPE,
+                    duration = duration,
+                    reason = e::class.simpleName,
+                    reasonDesc = e.message?.let { scrubNames(it) },
+                    httpStatusCode = (e as? SdkServiceException)?.statusCode()?.toString()
+                )
+                LOG.warn { "SSO token operation failed: grantType=$REFRESH_GRANT_TYPE, duration=${duration}ms, error=${e::class.simpleName}" }
+                throw e
             }
 
             stageName = RefreshCredentialStage.GET_TOKEN_DETAILS
@@ -519,13 +566,13 @@ class SsoAccessTokenProvider(
         SAVE_TOKEN,
     }
 
-    private fun loadDagClientRegistration(source: String): ClientRegistration? =
-        cache.loadClientRegistration(dagClientRegistrationCacheKey, source)?.let {
+    private fun loadDagClientRegistration(source: SourceOfLoadRegistration): ClientRegistration? =
+        cache.loadClientRegistration(dagClientRegistrationCacheKey, source.toString())?.let {
             return it
         }
 
-    private fun loadPkceClientRegistration(source: String): PKCEClientRegistration? =
-        cache.loadClientRegistration(pkceClientRegistrationCacheKey, source)?.let {
+    private fun loadPkceClientRegistration(source: SourceOfLoadRegistration): PKCEClientRegistration? =
+        cache.loadClientRegistration(pkceClientRegistrationCacheKey, source.toString())?.let {
             return it as PKCEClientRegistration
         }
 

@@ -31,11 +31,11 @@ enum class EditorContextCommand(
         actionId = "aws.amazonq.generateUnitTests",
     ),
     SendToPrompt(
-        verb = "SendToPrompt",
+        verb = "sendToPrompt",
         actionId = "aws.amazonq.sendToPrompt",
     ),
-    ExplainCodeScanIssue(
-        verb = "ExplainIssue",
-        actionId = "aws.amazonq.explainCodeScanIssue",
+    HandleCodeScanIssue(
+        verb = "HandleCodeScanIssue",
+        actionId = "aws.amazonq.handleCodeScanIssueCommand",
     ),
 }

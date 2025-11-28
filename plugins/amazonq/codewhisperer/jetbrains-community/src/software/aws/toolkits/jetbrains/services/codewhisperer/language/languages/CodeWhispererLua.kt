@@ -11,8 +11,6 @@ class CodeWhispererLua private constructor() : CodeWhispererProgrammingLanguage(
 
     override fun toTelemetryType(): CodewhispererLanguage = CodewhispererLanguage.Lua
 
-    override fun isCodeCompletionSupported(): Boolean = true
-
     companion object {
         // TODO: confirm with service team language id
         const val ID = "lua"

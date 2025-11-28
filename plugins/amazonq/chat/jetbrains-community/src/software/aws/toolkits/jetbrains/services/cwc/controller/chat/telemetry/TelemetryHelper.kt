@@ -64,6 +64,8 @@ class TelemetryHelper(private val project: Project, private val sessionStorage: 
         UserIntent.EXPLAIN_CODE_SELECTION -> CwsprChatUserIntent.ExplainCodeSelection
         UserIntent.GENERATE_UNIT_TESTS -> CwsprChatUserIntent.GenerateUnitTests
         UserIntent.UNKNOWN_TO_SDK_VERSION -> CwsprChatUserIntent.Unknown
+        UserIntent.GENERATE_CLOUDFORMATION_TEMPLATE -> CwsprChatUserIntent.Unknown
+        UserIntent.CODE_GENERATION -> CwsprChatUserIntent.Unknown
     }
 
     private fun getTelemetryTriggerType(triggerType: TriggerType): CwsprChatTriggerInteraction = when (triggerType) {
@@ -437,6 +439,26 @@ class TelemetryHelper(private val project: Project, private val sessionStorage: 
                 it.cwsprChatCommandType(type)
                     .cwsprChatCommandName(name)
                     .credentialStartUrl(startUrl)
+            }
+        }
+
+        fun recordTelemetryIssueCommandAction(
+            findingId: String,
+            detectorId: String,
+            ruleId: String,
+            autoDetected: String,
+            startUrl: String,
+            metricName: String,
+            result: String,
+        ) {
+            Telemetry.amazonq.codeReviewTool.use {
+                it.reason(metricName)
+                    .setAttribute("findingId", findingId)
+                    .setAttribute("detectorId", detectorId)
+                    .setAttribute("ruleId", ruleId)
+                    .setAttribute("credentialStartUrl", startUrl)
+                    .setAttribute("autoDetected", autoDetected)
+                    .setAttribute("result", result)
             }
         }
     }

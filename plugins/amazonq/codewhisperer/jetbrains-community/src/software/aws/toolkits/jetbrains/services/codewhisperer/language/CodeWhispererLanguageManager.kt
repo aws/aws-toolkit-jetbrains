@@ -7,6 +7,7 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererAbap
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererC
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererCpp
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererCsharp
@@ -147,6 +148,7 @@ class CodeWhispererLanguageManager {
             listOf("vue") to CodeWhispererVue.INSTANCE,
             listOf("ps1", "psm1") to CodeWhispererPowershell.INSTANCE,
             listOf("r") to CodeWhispererR.INSTANCE,
+            listOf("abap") to CodeWhispererAbap.INSTANCE,
         ).map {
             val exts = it.first
             val lang = it.second

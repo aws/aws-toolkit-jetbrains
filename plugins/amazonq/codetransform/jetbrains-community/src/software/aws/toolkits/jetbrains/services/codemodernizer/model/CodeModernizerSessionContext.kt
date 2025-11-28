@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.codemodernizer.model
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.project.Project
@@ -16,9 +17,9 @@ import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.putNextEntry
-import software.aws.toolkits.jetbrains.services.codemodernizer.EXPLAINABILITY_V1
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_DEPENDENCIES_ROOT_NAME
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_MANIFEST_FILE_NAME
+import software.aws.toolkits.jetbrains.services.codemodernizer.ideMaven.TransformMavenRunner
 import software.aws.toolkits.jetbrains.services.codemodernizer.ideMaven.runDependencyReportCommands
 import software.aws.toolkits.jetbrains.services.codemodernizer.ideMaven.runHilMavenCopyDependency
 import software.aws.toolkits.jetbrains.services.codemodernizer.ideMaven.runMavenCopyCommands
@@ -43,37 +44,48 @@ import kotlin.io.path.pathString
 const val MANIFEST_PATH = "manifest.json"
 const val ZIP_SOURCES_PATH = "sources"
 const val ZIP_DEPENDENCIES_PATH = "dependencies"
-const val BUILD_LOG_PATH = "build-logs.txt"
+const val COMPILATIONS_JSON_FILE = "compilations.json"
+const val CUSTOM_DEPENDENCY_VERSIONS_FILE_PATH = "dependency_upgrade.yml"
 const val UPLOAD_ZIP_MANIFEST_VERSION = "1.0"
 const val HIL_1P_UPGRADE_CAPABILITY = "HIL_1pDependency_VersionUpgrade"
 const val EXPLAINABILITY_V1 = "EXPLAINABILITY_V1"
+const val SELECTIVE_TRANSFORMATION_V2 = "SELECTIVE_TRANSFORMATION_V2"
+const val IDE = "IDE"
+const val CLIENT_SIDE_BUILD = "CLIENT_SIDE_BUILD"
 const val MAVEN_CONFIGURATION_FILE_NAME = "pom.xml"
 const val MAVEN_BUILD_RUN_UNIT_TESTS = "clean test"
 const val MAVEN_BUILD_SKIP_UNIT_TESTS = "clean test-compile"
 const val MAVEN_DEFAULT_BUILD_DIRECTORY_NAME = "target"
 const val IDEA_DIRECTORY_NAME = ".idea"
 const val GIT_DIRECTORY_NAME = ".git"
+const val GITHUB_DIRECTORY_NAME = ".github"
 const val DS_STORE_FILE_NAME = ".DS_Store"
 const val INVALID_SUFFIX_SHA = "sha1"
 const val INVALID_SUFFIX_REPOSITORIES = "repositories"
 const val ORACLE_DB = "ORACLE"
 const val AURORA_DB = "AURORA_POSTGRESQL"
 const val RDS_DB = "POSTGRESQL"
+
 data class CodeModernizerSessionContext(
     val project: Project,
     var configurationFile: VirtualFile? = null, // used to ZIP module
     val sourceJavaVersion: JavaSdkVersion, // always needed for startJob API
     val targetJavaVersion: JavaSdkVersion, // 17 or 21
-    var transformCapabilities: List<String> = listOf(EXPLAINABILITY_V1),
+    var transformCapabilities: List<String> = listOf(),
     var customBuildCommand: String = MAVEN_BUILD_RUN_UNIT_TESTS, // run unit tests by default
     val sourceVendor: String = ORACLE_DB, // only one supported
     val targetVendor: String? = null,
     val sourceServerName: String? = null,
     var schema: String? = null,
     val sqlMetadataZip: File? = null,
-) {
+    var customDependencyVersionsFile: VirtualFile? = null,
+    var targetJdkName: String? = null,
+    var originalUploadZipPath: Path? = null,
+) : Disposable {
     private val mapper = jacksonObjectMapper()
     private val ignoredDependencyFileExtensions = setOf(INVALID_SUFFIX_SHA, INVALID_SUFFIX_REPOSITORIES)
+    private var isDisposed = false
+    val mavenRunnerQueue: MutableList<TransformMavenRunner> = mutableListOf()
 
     private fun File.isMavenTargetFolder(): Boolean {
         val hasPomSibling = this.resolveSibling(MAVEN_CONFIGURATION_FILE_NAME).exists()
@@ -81,14 +93,12 @@ data class CodeModernizerSessionContext(
         return isMavenTargetDirName && hasPomSibling
     }
 
-    private fun File.isIdeaFolder(): Boolean = this.isDirectory && this.name == IDEA_DIRECTORY_NAME
-
-    private fun File.isGitFolder(): Boolean = this.isDirectory && this.name == GIT_DIRECTORY_NAME
+    private fun File.isInvalidFolder(): Boolean = this.isDirectory && this.name in listOf(IDEA_DIRECTORY_NAME, GIT_DIRECTORY_NAME, GITHUB_DIRECTORY_NAME)
 
     private fun findDirectoriesToExclude(sourceFolder: File): List<File> {
         val excluded = mutableListOf<File>()
         sourceFolder.walkTopDown().onEnter {
-            if (it.isMavenTargetFolder() || it.isIdeaFolder() || it.isGitFolder()) {
+            if (it.isMavenTargetFolder() || it.isInvalidFolder()) {
                 excluded.add(it)
                 return@onEnter false
             }
@@ -100,19 +110,21 @@ data class CodeModernizerSessionContext(
     }
 
     fun executeMavenCopyCommands(sourceFolder: File, buildLogBuilder: StringBuilder): MavenCopyCommandsResult {
-        val shouldSkipTests = customBuildCommand == MAVEN_BUILD_SKIP_UNIT_TESTS
-        return runMavenCopyCommands(sourceFolder, buildLogBuilder, LOG, project, shouldSkipTests)
+        if (isDisposed) return MavenCopyCommandsResult.Cancelled
+        return runMavenCopyCommands(this, sourceFolder, buildLogBuilder, LOG, project)
     }
 
     private fun executeHilMavenCopyDependency(sourceFolder: File, destinationFolder: File, buildLogBuilder: StringBuilder) = runHilMavenCopyDependency(
+        this,
         sourceFolder,
         destinationFolder,
         buildLogBuilder,
         LOG,
-        project
+        project,
     )
 
     fun copyHilDependencyUsingMaven(hilTepDirPath: Path): MavenCopyCommandsResult {
+        if (isDisposed) return MavenCopyCommandsResult.Cancelled
         val sourceFolder = File(getPathToHilArtifactPomFolder(hilTepDirPath).pathString)
         val destinationFolder = Files.createDirectories(getPathToHilDependenciesRootDir(hilTepDirPath)).toFile()
         val buildLogBuilder = StringBuilder("Starting Build Log...\n")
@@ -121,6 +133,7 @@ data class CodeModernizerSessionContext(
     }
 
     fun getDependenciesUsingMaven(): MavenCopyCommandsResult {
+        if (isDisposed) return MavenCopyCommandsResult.Cancelled
         val root = configurationFile?.parent
         val sourceFolder = File(root?.path)
         val buildLogBuilder = StringBuilder("Starting Build Log...\n")
@@ -128,14 +141,16 @@ data class CodeModernizerSessionContext(
     }
 
     fun createDependencyReportUsingMaven(hilTempPomPath: Path): MavenDependencyReportCommandsResult {
+        if (isDisposed) return MavenDependencyReportCommandsResult.Cancelled
         val sourceFolder = File(hilTempPomPath.pathString)
         val buildLogBuilder = StringBuilder("Starting Build Log...\n")
         return executeDependencyVersionReportUsingMaven(sourceFolder, buildLogBuilder)
     }
+
     private fun executeDependencyVersionReportUsingMaven(
         sourceFolder: File,
         buildLogBuilder: StringBuilder,
-    ) = runDependencyReportCommands(sourceFolder, buildLogBuilder, LOG, project)
+    ) = runDependencyReportCommands(this, sourceFolder, buildLogBuilder, LOG, project)
 
     fun createZipForHilUpload(hilTempPath: Path, manifest: CodeTransformHilDownloadManifest?, targetVersion: String): ZipCreationResult =
         runReadAction {
@@ -194,7 +209,6 @@ data class CodeModernizerSessionContext(
     fun createZipWithModuleFiles(copyResult: MavenCopyCommandsResult?): ZipCreationResult {
         val root = configurationFile?.parent
         val sourceFolder = File(root?.path)
-        val buildLogBuilder = StringBuilder("Starting Build Log...\n")
         val depDirectory = if (copyResult is MavenCopyCommandsResult.Success) {
             showTransformationHub()
             copyResult.dependencyDirectory
@@ -220,7 +234,6 @@ data class CodeModernizerSessionContext(
                 }
 
                 val zipSources = File(ZIP_SOURCES_PATH)
-                val depSources = File(ZIP_DEPENDENCIES_PATH)
                 val outputFile = createTemporaryZipFile { zip ->
                     // 1) Manifest file
                     var manifest = ZipManifest(transformCapabilities = transformCapabilities, customBuildCommand = customBuildCommand)
@@ -233,6 +246,9 @@ data class CodeModernizerSessionContext(
                             )
                         )
                     }
+                    if (customDependencyVersionsFile != null) {
+                        manifest.dependencyUpgradeConfigFile = CUSTOM_DEPENDENCY_VERSIONS_FILE_PATH
+                    }
                     mapper.writeValueAsString(manifest)
                         .byteInputStream()
                         .use {
@@ -243,26 +259,44 @@ data class CodeModernizerSessionContext(
                     if (depDirectory != null) {
                         dependencyFiles.forEach { depFile ->
                             val relativePath = File(depFile.path).relativeTo(depDirectory)
-                            val paddedPath = depSources.resolve(relativePath)
-                            var paddedPathString = paddedPath.toPath().toString()
+                            if (depFile.path.contains("compilations.json") && File.separatorChar != '/') {
+                                var content = depFile.readText()
+                                content = content.replace("\\\\", "/")
+                                depFile.writeText(content)
+                            }
+                            var relativePathString = relativePath.toPath().toString()
+                            if (copyResult == null) {
+                                // null copyResult means doing a SQL conversion; put metadata under dependencies folder
+                                relativePathString = File(ZIP_DEPENDENCIES_PATH).resolve(relativePath).toPath().toString()
+                            }
                             // Convert Windows file path to work on Linux
                             if (File.separatorChar != '/') {
-                                paddedPathString = paddedPathString.replace('\\', '/')
+                                relativePathString = relativePathString.replace('\\', '/')
                             }
                             depFile.inputStream().use {
-                                zip.putNextEntry(paddedPathString, it)
+                                zip.putNextEntry(relativePathString, it)
                             }
                         }
                     }
 
                     LOG.info { "Dependency files size = ${dependencyFiles.sumOf { it.length().toInt() }}" }
 
-                    // 3) Sources
+                    // 3) Custom YAML file
+                    if (customDependencyVersionsFile != null) {
+                        var yamlPath = "$ZIP_SOURCES_PATH/$CUSTOM_DEPENDENCY_VERSIONS_FILE_PATH"
+                        if (File.separatorChar != '/') {
+                            yamlPath = yamlPath.replace('\\', '/')
+                        }
+                        customDependencyVersionsFile?.inputStream?.use {
+                            zip.putNextEntry(yamlPath, it)
+                        }
+                    }
+
+                    // 4) Sources
                     files?.forEach { file ->
                         val relativePath = File(file.path).relativeTo(sourceFolder)
                         val paddedPath = zipSources.resolve(relativePath)
                         var paddedPathString = paddedPath.toPath().toString()
-                        // Convert Windows file path to work on Linux
                         if (File.separatorChar != '/') {
                             paddedPathString = paddedPathString.replace('\\', '/')
                         }
@@ -277,11 +311,6 @@ data class CodeModernizerSessionContext(
                     }
 
                     LOG.info { "Source code files size = ${files?.sumOf { it.length.toInt() }}" }
-
-                    // 4) Build Log
-                    buildLogBuilder.toString().byteInputStream().use {
-                        zip.putNextEntry(Path(BUILD_LOG_PATH).toString(), it)
-                    }
                 }.toFile()
                 // depDirectory should never be null
                 if (depDirectory != null) ZipCreationResult.Succeeded(outputFile) else ZipCreationResult.Missing1P(outputFile)
@@ -324,6 +353,13 @@ data class CodeModernizerSessionContext(
             ?: error(message("codemodernizer.toolwindow.problems_window_not_found"))
         appModernizerBottomWindow.show()
         CodeModernizerBottomWindowPanelManager.getInstance(project).setJobStartingUI()
+    }
+
+    override fun dispose() {
+        isDisposed = true
+        this.mavenRunnerQueue.forEach {
+            it.cancel()
+        }
     }
 
     companion object {

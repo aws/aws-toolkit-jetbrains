@@ -26,7 +26,6 @@ import javax.swing.JComponent
 
 class QOpenPanelAction : AnAction(message("action.q.openchat.text"), null, AwsIcons.Logos.AWS_Q) {
     override fun actionPerformed(e: AnActionEvent) {
-        if (isRunningOnRemoteBackend()) return
         val project = e.getRequiredData(CommonDataKeys.PROJECT)
         if (!isQWebviewsAvailable()) {
             QWebviewNotAvailable(project).show()
@@ -37,6 +36,10 @@ class QOpenPanelAction : AnAction(message("action.q.openchat.text"), null, AwsIc
         if (e.getData(runScanKey) == true) {
             AmazonQToolWindow.openScanTab(project)
         }
+    }
+
+    override fun update(e: AnActionEvent) {
+        e.presentation.isEnabled = e.getData(CommonDataKeys.PROJECT) != null
     }
 }
 

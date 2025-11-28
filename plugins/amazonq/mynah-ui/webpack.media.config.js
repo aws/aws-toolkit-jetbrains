@@ -3,23 +3,15 @@
 'use strict';
 
 const path = require('path');
-const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 /**@type {import('webpack').Configuration}*/
-const config = {
-    plugins: [
-        new CopyWebpackPlugin({
-            patterns: [
-                { from: './node_modules/web-tree-sitter/tree-sitter.wasm', to: ''}
-            ]
-        })
-    ],
+const connectorAdapter = {
     target: 'web',
-    entry: './src/mynah-ui/index.ts',
+    entry: './src/mynah-ui/connectorAdapter.ts',
     output: {
         path: path.resolve(__dirname, 'build/assets/js'),
-        filename: 'mynah-ui.js',
-        library: 'mynahUI',
+        filename: 'connectorAdapter.js',
+        library: 'connectorAdapter',
         libraryTarget: 'var',
         devtoolModuleFilenameTemplate: '../[resource-path]',
     },
@@ -30,7 +22,7 @@ const config = {
             fs: false,
             path: false,
             util: false
-        }
+        },
     },
     experiments: { asyncWebAssembly: true },
     module: {
@@ -48,4 +40,5 @@ const config = {
         ],
     },
 };
-module.exports = config;
+
+module.exports = [connectorAdapter];

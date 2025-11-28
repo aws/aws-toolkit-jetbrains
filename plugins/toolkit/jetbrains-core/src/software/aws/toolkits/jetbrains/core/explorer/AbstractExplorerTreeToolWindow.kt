@@ -11,7 +11,6 @@ import com.intellij.ide.util.treeView.NodeDescriptor
 import com.intellij.ide.util.treeView.NodeRenderer
 import com.intellij.ide.util.treeView.TreeState
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.actionSystem.ActionGroup
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -87,10 +86,10 @@ abstract class AbstractExplorerTreeToolWindow(
                     if (node is ActionGroupOnRightClick) {
                         val actionGroupName = node.actionGroupName()
 
-                        (actionGroupName.let { groupName -> actionManager.getAction(groupName) } as? ActionGroup)?.let { group ->
+                        (actionGroupName.let { groupName -> actionManager.getAction(groupName) } as? DefaultActionGroup)?.let { group ->
                             val context = comp?.let { DataManager.getInstance().getDataContext(it, x, y) } ?: return@let
                             val event = AnActionEvent.createFromDataContext(actionPlace, null, context)
-                            totalActions.addAll(group.getChildren(event))
+                            totalActions.addAll(group.getChildren(actionManager))
                         }
                     }
 
@@ -119,7 +118,7 @@ abstract class AbstractExplorerTreeToolWindow(
         ApplicationManager.getApplication().messageBus.connect(this).subscribe(
             BearerTokenProviderListener.TOPIC,
             object : BearerTokenProviderListener {
-                override fun onChange(providerId: String, newScopes: List<String>?) {
+                override fun onProviderChange(providerId: String, newScopes: List<String>?) {
                     redraw()
                 }
             }

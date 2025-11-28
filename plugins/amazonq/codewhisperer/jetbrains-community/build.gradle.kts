@@ -19,6 +19,7 @@ dependencies {
     compileOnly(project(":plugin-core:jetbrains-community"))
 
     implementation(project(":plugin-amazonq:shared:jetbrains-community"))
+    implementation(libs.lsp4j)
     // CodeWhispererTelemetryService uses a CircularFifoQueue, previously transitive from zjsonpatch
     implementation(libs.commons.collections)
 
@@ -31,6 +32,7 @@ tasks.prepareTestSandbox {
     val pluginXmlJar = project(":plugin-amazonq").tasks.jar
 
     dependsOn(pluginXmlJar)
-    intoChild(intellijPlatform.projectName.map { "$it/lib" })
-        .from(pluginXmlJar)
+    from(pluginXmlJar) {
+        into(intellijPlatform.projectName.map { "$it/lib" })
+    }
 }

@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.popup
 
 import com.intellij.icons.AllIcons
 import com.intellij.ide.BrowserUtil
-import com.intellij.idea.AppMode
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.actionSystem.ActionToolbar
@@ -34,6 +33,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererColorUtil.POPUP_REF_NOTICE_HEX
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.POPUP_BUTTON_TEXT_SIZE
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.POPUP_INFO_TEXT_SIZE
+import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.resources.message
 import java.awt.GridBagLayout
 import java.awt.event.MouseAdapter
@@ -44,7 +44,7 @@ import javax.swing.JLabel
 import javax.swing.JPanel
 
 class CodeWhispererPopupComponents {
-    val prevButton = createNavigationButton(prevButtonText())
+    val prevButton = createNavigationButton("←")
     fun prevButtonText() =
         message(
             "codewhisperer.popup.button.prev",
@@ -53,7 +53,7 @@ class CodeWhispererPopupComponents {
                 ActionManager.getInstance().getAction("codewhisperer.inline.navigate.previous")
             )
         )
-    val nextButton = createNavigationButton(nextButtonText()).apply { preferredSize = prevButton.preferredSize }
+    val nextButton = createNavigationButton("→").apply { preferredSize = prevButton.preferredSize }
     fun nextButtonText() = message(
         "codewhisperer.popup.button.next",
         POPUP_DIM_HEX,
@@ -96,7 +96,7 @@ class CodeWhispererPopupComponents {
         add(recommendationInfoLabel, inlineLabelConstraints)
         addHorizontalGlue()
         // "More menu" not working in remote dev, it's not so important so disable it for now
-        if (!AppMode.isRemoteDevHost()) {
+        if (!isRunningOnRemoteBackend()) {
             add(kebabMenu, kebabMenuConstraints)
         }
     }
@@ -232,7 +232,7 @@ class CodeWhispererPopupComponentsNew {
         add(recommendationInfoLabel, inlineLabelConstraints)
         addHorizontalGlue()
         // "More menu" not working in remote dev, it's not so important so disable it for now
-        if (!AppMode.isRemoteDevHost()) {
+        if (!isRunningOnRemoteBackend()) {
             add(kebabMenu, kebabMenuConstraints)
         }
     }

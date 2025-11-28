@@ -8,47 +8,42 @@ import { Connector } from '../connector'
 import { TabType, TabsStorage } from '../storages/tabsStorage'
 import { TabDataGenerator } from '../tabs/generator'
 import { uiComponentsTexts } from '../texts/constants'
+import {MynahUIRef} from "../main";
 
 export interface MessageControllerProps {
-    mynahUI: MynahUI
+    mynahUIRef: MynahUIRef
     connector: Connector
     tabsStorage: TabsStorage
-    isFeatureDevEnabled: boolean
     isCodeTransformEnabled: boolean
-    isDocEnabled: boolean
     isCodeScanEnabled: boolean
-    isCodeTestEnabled: boolean
 }
 
 export class MessageController {
-    private mynahUI: MynahUI
+    private mynahUIRef: MynahUIRef
     private connector: Connector
     private tabsStorage: TabsStorage
     private tabDataGenerator: TabDataGenerator
 
     constructor(props: MessageControllerProps) {
-        this.mynahUI = props.mynahUI
+        this.mynahUIRef = props.mynahUIRef
         this.connector = props.connector
         this.tabsStorage = props.tabsStorage
         this.tabDataGenerator = new TabDataGenerator({
-            isFeatureDevEnabled: props.isFeatureDevEnabled,
             isCodeTransformEnabled: props.isCodeTransformEnabled,
-            isDocEnabled: props.isDocEnabled,
             isCodeScanEnabled: props.isCodeScanEnabled,
-            isCodeTestEnabled: props.isCodeTestEnabled,
         })
     }
 
     public sendSelectedCodeToTab(message: ChatItem): string | undefined {
         const selectedTab = { ...this.tabsStorage.getSelectedTab() }
-        if (selectedTab?.id === undefined || selectedTab?.type === 'featuredev') {
+        if (selectedTab?.id === undefined ) {
             // Create a new tab if there's none
-            const newTabID: string | undefined = this.mynahUI.updateStore(
+            const newTabID: string | undefined = this.mynahUI?.updateStore(
                 '',
                 this.tabDataGenerator.getTabData('cwc', false)
             )
             if (newTabID === undefined) {
-                this.mynahUI.notify({
+                this.mynahUI?.notify({
                     content: uiComponentsTexts.noMoreTabsTooltip,
                     type: NotificationType.WARNING,
                 })
@@ -62,7 +57,7 @@ export class MessageController {
             })
             selectedTab.id = newTabID
         }
-        this.mynahUI.addToUserPrompt(selectedTab.id, message.body as string)
+        this.mynahUI?.addToUserPrompt(selectedTab.id, message.body as string)
 
         return selectedTab.id
     }
@@ -78,13 +73,13 @@ export class MessageController {
             this.tabsStorage.updateTabStatus(selectedTab.id, 'busy')
             this.tabsStorage.updateTabTypeFromUnknown(selectedTab.id, tabType)
 
-            this.mynahUI.updateStore(selectedTab.id, {
+            this.mynahUI?.updateStore(selectedTab.id, {
                 loadingChat: true,
                 cancelButtonWhenLoading: false,
                 promptInputDisabledState: true,
             })
-            this.mynahUI.addChatItem(selectedTab.id, message)
-            this.mynahUI.addChatItem(selectedTab.id, {
+            this.mynahUI?.addChatItem(selectedTab.id, message)
+            this.mynahUI?.addChatItem(selectedTab.id, {
                 type: ChatItemType.ANSWER_STREAM,
                 body: '',
             })
@@ -92,24 +87,24 @@ export class MessageController {
             return selectedTab.id
         }
 
-        const newTabID: string | undefined = this.mynahUI.updateStore(
+        const newTabID: string | undefined = this.mynahUI?.updateStore(
             '',
             this.tabDataGenerator.getTabData('cwc', false)
         )
         if (newTabID === undefined) {
-            this.mynahUI.notify({
+            this.mynahUI?.notify({
                 content: uiComponentsTexts.noMoreTabsTooltip,
                 type: NotificationType.WARNING,
             })
             return undefined
         } else {
-            this.mynahUI.addChatItem(newTabID, message)
-            this.mynahUI.addChatItem(newTabID, {
+            this.mynahUI?.addChatItem(newTabID, message)
+            this.mynahUI?.addChatItem(newTabID, {
                 type: ChatItemType.ANSWER_STREAM,
                 body: '',
             })
 
-            this.mynahUI.updateStore(newTabID, {
+            this.mynahUI?.updateStore(newTabID, {
                 loadingChat: true,
                 cancelButtonWhenLoading: false,
                 promptInputDisabledState: true,
@@ -130,5 +125,8 @@ export class MessageController {
 
             return newTabID
         }
+    }
+    private get mynahUI(): MynahUI | undefined {
+        return this.mynahUIRef.mynahUI
     }
 }

@@ -64,7 +64,6 @@ import software.aws.toolkits.jetbrains.core.gettingstarted.requestCredentialsFor
 import software.aws.toolkits.jetbrains.services.caws.CawsEndpoints
 import software.aws.toolkits.jetbrains.services.caws.CawsResources
 import software.aws.toolkits.jetbrains.ui.feedback.ToolkitFeedbackDialog
-import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.jetbrains.utils.ui.editorNotificationCompoundBorder
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.UiTelemetry
@@ -91,7 +90,7 @@ class GettingStartedPanel(
         ApplicationManager.getApplication().messageBus.connect(this).subscribe(
             BearerTokenProviderListener.TOPIC,
             object : BearerTokenProviderListener {
-                override fun onChange(providerId: String, newScopes: List<String>?) {
+                override fun onProviderChange(providerId: String, newScopes: List<String>?) {
                     connectionUpdated()
                 }
             }
@@ -163,12 +162,6 @@ class GettingStartedPanel(
                                     setTitleFont(JBFont.h1().asBold())
                                 }.align(AlignX.FILL)
                             }
-                            row {
-                                label("Note: " + (message("gettingstarted.codewhisperer.remote"))).applyToComponent {
-
-                                    font = JBFont.h4().asBold()
-                                }
-                            }.bottomGap(BottomGap.SMALL).visible(isRunningOnRemoteBackend())
                             featureSetPanel.setFeatureContent()
                             row {
                                 cell(featureSetPanel)
@@ -203,7 +196,7 @@ class GettingStartedPanel(
                                         )
                                     )
                                 )
-                            ).visible(!isRunningOnRemoteBackend())
+                            )
                             // Resource Explorer panel auth bullets
                             cell(
                                 PanelAuthBullets(
@@ -843,7 +836,7 @@ class GettingStartedPanel(
                                     )
                                 }
                             }
-                        }.visible(checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER) is ActiveConnection.NotConnected)
+                        }.visible(checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q) is ActiveConnection.NotConnected)
 
                         panelConnectionInProgress = panel {
                             row {
@@ -879,16 +872,16 @@ class GettingStartedPanel(
                             row {
                                 label(message("gettingstarted.auth.connected.builderid")).applyToComponent { this.icon = PanelConstants.CHECKMARK_ICON }
                             }.visible(
-                                checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER).connectionType == ActiveConnectionType.BUILDER_ID
+                                checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q).connectionType == ActiveConnectionType.BUILDER_ID
                             )
                             row {
                                 label(message("gettingstarted.auth.connected.idc")).applyToComponent { this.icon = PanelConstants.CHECKMARK_ICON }
                             }.visible(
-                                checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER).connectionType == ActiveConnectionType.IAM_IDC
+                                checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q).connectionType == ActiveConnectionType.IAM_IDC
                             )
                             row {
                                 link(message("toolkit.login.aws_builder_id.already_connected.reconnect")) {
-                                    val validConnection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER)
+                                    val validConnection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q)
 
                                     val connection = validConnection.activeConnectionBearer
                                     if (connection is ProfileSsoManagedBearerSsoConnection) {
@@ -924,7 +917,7 @@ class GettingStartedPanel(
                                     )
                                 }
                             }.visible(
-                                checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER).connectionType == ActiveConnectionType.BUILDER_ID
+                                checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q).connectionType == ActiveConnectionType.BUILDER_ID
                             )
                             row {
                                 text("<a>${message("codewhisperer.gettingstarted.panel.login_button")}</a>") {
@@ -942,9 +935,9 @@ class GettingStartedPanel(
                                     )
                                 }
                             }.visible(
-                                checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER).connectionType == ActiveConnectionType.IAM_IDC
+                                checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q).connectionType == ActiveConnectionType.IAM_IDC
                             )
-                        }.visible(checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER) is ActiveConnection.ValidBearer)
+                        }.visible(checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q) is ActiveConnection.ValidBearer)
 
                         panelReauthenticationRequired = panel {
                             row {
@@ -971,16 +964,16 @@ class GettingStartedPanel(
                             row {
                                 label(message("gettingstarted.auth.builderid.expired")).applyToComponent { this.icon = PanelConstants.X_ICON }
                             }.visible(
-                                checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER).connectionType == ActiveConnectionType.BUILDER_ID
+                                checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q).connectionType == ActiveConnectionType.BUILDER_ID
                             )
                             row {
                                 label(message("gettingstarted.auth.idc.expired")).applyToComponent { this.icon = PanelConstants.X_ICON }
                             }.visible(
-                                checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER).connectionType == ActiveConnectionType.IAM_IDC
+                                checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q).connectionType == ActiveConnectionType.IAM_IDC
                             )
                             row {
                                 link(message("toolkit.login.aws_builder_id.already_connected.reconnect")) {
-                                    val validConnection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER)
+                                    val validConnection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q)
                                     val connection = validConnection.activeConnectionBearer
                                     if (connection is ProfileSsoManagedBearerSsoConnection) {
                                         if (validConnection.connectionType == ActiveConnectionType.IAM_IDC) {
@@ -1009,7 +1002,7 @@ class GettingStartedPanel(
                                     )
                                 }
                             }.visible(
-                                checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER).connectionType == ActiveConnectionType.BUILDER_ID
+                                checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q).connectionType == ActiveConnectionType.BUILDER_ID
                             )
                             row {
                                 text("<a>${message("codewhisperer.gettingstarted.panel.login_button")}</a>") {
@@ -1027,9 +1020,9 @@ class GettingStartedPanel(
                                     )
                                 }
                             }.visible(
-                                checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER).connectionType == ActiveConnectionType.IAM_IDC
+                                checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q).connectionType == ActiveConnectionType.IAM_IDC
                             )
-                        }.visible(checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER) is ActiveConnection.ExpiredBearer)
+                        }.visible(checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q) is ActiveConnection.ExpiredBearer)
                     }
                 }.apply {
                     isOpaque = false
@@ -1214,7 +1207,7 @@ class GettingStartedPanel(
                 panel {
                     row {
                         // CodeWhisperer panel
-                        cell(CodeWhispererPanel()).visible(!isRunningOnRemoteBackend())
+                        cell(CodeWhispererPanel())
                         // Resource Explorer Panel
                         cell(ResourceExplorerPanel())
                         // CodeCatalyst Panel

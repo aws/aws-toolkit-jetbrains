@@ -26,9 +26,5 @@ export const uiComponentsTexts = {
     spinnerText: 'Generating your answer...',
     pleaseSelect: 'Please select',
 }
-
-export const docUserGuide = 'https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/doc-generation.html'
-export const featureDevUserGuide = 'https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/software-dev.html'
 export const codeTransformUserGuide = 'https://docs.aws.amazon.com/amazonq/latest/aws-builder-use-ug/code-transformation.html'
-export const codeTestUserGuide = 'https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/test-generation.html'
 export const codeScanUserGuide = 'https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/code-reviews.html'

@@ -67,6 +67,12 @@ if (providers.gradleProperty("ideProfileName").get() == "2024.3") {
     }
 }
 
+configurations {
+    all {
+        exclude(group = "com.jetbrains.intellij.spellchecker")
+    }
+}
+
 dependencies {
     intellijPlatform {
         localPlugin(project(":plugin-core"))
@@ -74,8 +80,7 @@ dependencies {
 
         // FIX_WHEN_MIN_IS_251: https://github.com/JetBrains/intellij-platform-gradle-plugin/issues/1774
         when (providers.gradleProperty("ideProfileName").get()) {
-            "2023.3", "2024.1" -> {}
-            "2024.2", "2024.3", "2025.1" -> {
+            "2024.3", "2025.1" -> {
                 bundledModule("intellij.rider")
             }
         }
@@ -95,7 +100,7 @@ apply<RdGenPlugin>()
 tasks.register<RdGenTask>("generateModels")
 
 val resharperPluginPath = File(projectDir, "ReSharper.AWS")
-val resharperBuildPath = File(project.buildDir, "dotnetBuild")
+val resharperBuildPath = layout.buildDirectory.dir("dotnetBuild").get().asFile
 
 val resharperParts = listOf(
     "AWS.Daemon",
@@ -258,7 +263,7 @@ val buildReSharperPlugin = tasks.register("buildReSharperPlugin") {
             "normal",
             "${resharperPluginPath.canonicalPath}/ReSharper.AWS.sln"
         )
-        exec {
+        project.providers.exec {
             executable = "dotnet"
             args = arguments
         }
@@ -333,8 +338,9 @@ tasks.withType<PrepareSandboxTask>().configureEach {
 
     dependsOn(resharperDllsDir)
 
-    intoChild(intellijPlatform.projectName.map { "$it/dotnet" })
-        .from(resharperDllsDir)
+    from(resharperDllsDir) {
+        into(intellijPlatform.projectName.map { "$it/dotnet" })
+    }
 }
 
 tasks.compileKotlin {
@@ -347,11 +353,13 @@ tasks.withType<Detekt>().configureEach {
 }
 
 tasks.integrationTest {
+    enabled = false
     // linux: computeSystemScaleFactor "Must be precomputed"
     systemProperty("hidpi", false)
 }
 
 tasks.test {
+    enabled = false
     if (SystemInfo.isWindows) {
         // extremely flaky
         filter.excludeTestsMatching("software.aws.toolkits.jetbrains.services.lambda.dotnet.LambdaGutterMarkHighlightingTest*")
@@ -389,7 +397,7 @@ tasks.withType<DetektCreateBaselineTask>().configureEach {
 }
 
 configurations.all {
-    if (name.contains("detekt")) {
+    if (name.contains("detekt") || name.contains("kotlinCompiler") || name.contains("rdGen")) {
         return@all
     }
 

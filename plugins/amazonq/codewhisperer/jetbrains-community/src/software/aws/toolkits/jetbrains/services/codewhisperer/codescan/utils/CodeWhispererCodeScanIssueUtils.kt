@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.diff.DiffContentFactory
 import com.intellij.diff.DiffManager
 import com.intellij.diff.requests.SimpleDiffRequest
@@ -28,6 +29,8 @@ import software.aws.toolkits.core.utils.convertMarkdownToHTML
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.ToolkitPlaces
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionReference
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionReferencePosition
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanHighlightingFilesPanel
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanIssue
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanManager
@@ -38,8 +41,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhisp
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.QFeatureEvent
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.broadcastQEvent
 import software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CODE_SCAN_ISSUE_TITLE_MAX_LENGTH
@@ -63,7 +64,8 @@ val metaBackgroundColor = JBColor.namedColor("FileColor.Blue", JBColor(0xeaf6ff,
 val metaForegroundColor = JBColor.namedColor("Label.infoForeground", JBColor(0x808080, 0x8C8C8C))
 
 private val LOG = getLogger<CodeWhispererCodeScanHighlightingFilesPanel>()
-private val explainIssueDataKey = DataKey.create<MutableMap<String, String>>("amazonq.codescan.explainissue")
+private val hanldeIssueCommandContextDataKey = DataKey.create<MutableMap<String, String>>("amazonq.codescan.handleIssueCommandContext")
+private val hanldeIssueCommandActionDataKey = DataKey.create<String>("amazonq.codescan.handleIssueCommandAction")
 
 enum class IssueSeverity(val displayName: String) {
     CRITICAL("Critical"),
@@ -76,6 +78,11 @@ enum class IssueSeverity(val displayName: String) {
 enum class IssueGroupingStrategy(val displayName: String) {
     SEVERITY("Severity"),
     FILE_LOCATION("File Location"),
+}
+
+private enum class IssueCommandAction(val displayName: String) {
+    EXPLAIN_ISSUE("explainIssue"),
+    APPLY_FIX("applyFix"),
 }
 
 fun getCodeScanIssueDetailsHtml(
@@ -228,18 +235,40 @@ private fun createSuggestedFixSection(issue: CodeWhispererCodeScanIssue, suggest
 }
 
 fun explainIssue(issue: CodeWhispererCodeScanIssue) {
-    val explainIssueContext = mutableMapOf(
+    handleIssueCommand(issue, IssueCommandAction.EXPLAIN_ISSUE)
+}
+
+fun applyFix(issue: CodeWhispererCodeScanIssue) {
+    handleIssueCommand(issue, IssueCommandAction.APPLY_FIX)
+}
+
+private fun handleIssueCommand(issue: CodeWhispererCodeScanIssue, action: IssueCommandAction) {
+    val handleIssueCommandContext = mutableMapOf(
         "title" to issue.title,
         "description" to issue.description.markdown,
-        "code" to issue.codeText
+        "code" to issue.codeText,
+        "fileName" to issue.file.name,
+        "startLine" to issue.startLine.toString(),
+        "endLine" to issue.endLine.toString(),
+        "recommendation" to jacksonObjectMapper().writeValueAsString(issue.recommendation),
+        "suggestedFixes" to jacksonObjectMapper().writeValueAsString(issue.suggestedFixes),
+        "codeSnippet" to jacksonObjectMapper().writeValueAsString(issue.codeSnippet),
+        "findingId" to issue.findingId,
+        "ruleId" to issue.ruleId.orEmpty(),
+        "detectorId" to issue.detectorId,
+        "autoDetected" to issue.autoDetected.toString(),
     )
     val actionEvent = AnActionEvent.createFromInputEvent(
         null,
         ToolkitPlaces.EDITOR_PSI_REFERENCE,
         null,
-        SimpleDataContext.builder().add(explainIssueDataKey, explainIssueContext).add(CommonDataKeys.PROJECT, issue.project).build()
+        SimpleDataContext.builder()
+            .add(hanldeIssueCommandContextDataKey, handleIssueCommandContext)
+            .add(CommonDataKeys.PROJECT, issue.project)
+            .add(hanldeIssueCommandActionDataKey, action.displayName)
+            .build()
     )
-    ActionManager.getInstance().getAction("aws.amazonq.explainCodeScanIssue").actionPerformed(actionEvent)
+    ActionManager.getInstance().getAction("aws.amazonq.handleCodeScanIssueCommand").actionPerformed(actionEvent)
 }
 
 fun openDiff(issue: CodeWhispererCodeScanIssue) {
@@ -338,7 +367,6 @@ fun applySuggestedFix(project: Project, issue: CodeWhispererCodeScanIssue) {
     try {
         val manager = CodeWhispererCodeReferenceManager.getInstance(issue.project)
         WriteCommandAction.runWriteCommandAction(issue.project) {
-            broadcastQEvent(QFeatureEvent.STARTS_EDITING)
             val document = FileDocumentManager.getInstance().getDocument(issue.file) ?: return@runWriteCommandAction
 
             val documentContent = document.text
@@ -349,9 +377,22 @@ fun applySuggestedFix(project: Project, issue: CodeWhispererCodeScanIssue) {
                 LOG.debug { "Applied fix with reference: $reference" }
                 val originalContent = updatedContent.substring(reference.recommendationContentSpan().start(), reference.recommendationContentSpan().end())
                 LOG.debug { "Original content from reference span: $originalContent" }
-                manager.addReferenceLogPanelEntry(reference = reference, null, null, originalContent.split("\n"))
+                // TODO flare: hook codescan references with flare correctly, this is only a compile error fix which is not tested
+                manager.addReferenceLogPanelEntry(
+                    reference = InlineCompletionReference(
+                        referenceName = reference.repository(),
+                        referenceUrl = reference.url(),
+                        licenseName = reference.licenseName(),
+                        position = InlineCompletionReferencePosition(
+                            startCharacter = reference.recommendationContentSpan().start(),
+                            endCharacter = reference.recommendationContentSpan().end(),
+                        ),
+                    ),
+                    null,
+                    null,
+                    originalContent.split("\n")
+                )
             }
-            broadcastQEvent(QFeatureEvent.FINISHES_EDITING)
         }
         if (issue.suggestedFixes[0].references.isNotEmpty()) {
             manager.toolWindow?.show()

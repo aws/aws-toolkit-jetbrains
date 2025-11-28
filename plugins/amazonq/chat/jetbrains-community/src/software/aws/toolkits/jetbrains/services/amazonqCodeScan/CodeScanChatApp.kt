@@ -21,6 +21,8 @@ import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQApp
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.amazonq.messages.AmazonQMessage
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileSelectedListener
 import software.aws.toolkits.jetbrains.services.amazonqCodeScan.auth.isCodeScanAvailable
 import software.aws.toolkits.jetbrains.services.amazonqCodeScan.commands.CodeScanActionMessage
 import software.aws.toolkits.jetbrains.services.amazonqCodeScan.commands.CodeScanMessageListener
@@ -30,9 +32,6 @@ import software.aws.toolkits.jetbrains.services.amazonqCodeScan.messages.Authent
 import software.aws.toolkits.jetbrains.services.amazonqCodeScan.messages.CODE_SCAN_TAB_NAME
 import software.aws.toolkits.jetbrains.services.amazonqCodeScan.messages.IncomingCodeScanMessage
 import software.aws.toolkits.jetbrains.services.amazonqCodeScan.storage.ChatSessionStorage
-import software.aws.toolkits.jetbrains.services.amazonqCodeTest.auth.isCodeTestAvailable
-import software.aws.toolkits.jetbrains.services.amazonqDoc.auth.isDocAvailable
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.auth.isFeatureDevAvailable
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isCodeTransformAvailable
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -88,11 +87,8 @@ class CodeScanChatApp(private val scope: CoroutineScope) : AmazonQApp {
                     // Notify tabs about restoring authentication
                     context.messagesFromAppToUi.publish(
                         AuthenticationUpdateMessage(
-                            featureDevEnabled = isFeatureDevAvailable(context.project),
                             codeTransformEnabled = isCodeTransformAvailable(context.project),
                             codeScanEnabled = isCodeScanAvailable(context.project),
-                            codeTestEnabled = isCodeTestAvailable(context.project),
-                            docEnabled = isDocAvailable(context.project),
                             authenticatingTabIDs = chatSessionStorage.getAuthenticatingSessions().map { it.tabId }
                         )
                     )
@@ -123,7 +119,7 @@ class CodeScanChatApp(private val scope: CoroutineScope) : AmazonQApp {
         ApplicationManager.getApplication().messageBus.connect(this).subscribe(
             BearerTokenProviderListener.TOPIC,
             object : BearerTokenProviderListener {
-                override fun onChange(providerId: String, newScopes: List<String>?) {
+                override fun onProviderChange(providerId: String, newScopes: List<String>?) {
                     val qProvider = getQTokenProvider(context.project)
                     val isQ = qProvider?.id == providerId
                     val isAuthorized = qProvider?.state() == BearerTokenAuthState.AUTHORIZED
@@ -138,6 +134,15 @@ class CodeScanChatApp(private val scope: CoroutineScope) : AmazonQApp {
             object : ToolkitConnectionManagerListener {
                 override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
                     authChanged()
+                }
+            }
+        )
+
+        context.project.messageBus.connect(this).subscribe(
+            QRegionProfileSelectedListener.TOPIC,
+            object : QRegionProfileSelectedListener {
+                override fun onProfileSelected(project: Project, profile: QRegionProfile?) {
+                    chatSessionStorage.deleteAllSessions()
                 }
             }
         )

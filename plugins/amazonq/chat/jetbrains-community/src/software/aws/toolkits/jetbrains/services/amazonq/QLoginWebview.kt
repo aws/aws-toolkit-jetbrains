@@ -3,9 +3,11 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq
 
+import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataContext
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
@@ -16,7 +18,11 @@ import com.intellij.ui.components.panels.Wrapper
 import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.jcef.JBCefJSQuery
-import org.cef.CefApp
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
@@ -30,22 +36,30 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.core.webview.BrowserMessage
 import software.aws.toolkits.jetbrains.core.webview.BrowserState
+import software.aws.toolkits.jetbrains.core.webview.LocalAssetJBCefRequestHandler
 import software.aws.toolkits.jetbrains.core.webview.LoginBrowser
-import software.aws.toolkits.jetbrains.core.webview.WebviewResourceHandlerFactory
 import software.aws.toolkits.jetbrains.isDeveloperMode
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QProfileSwitchIntent
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.amazonq.util.createBrowser
+import software.aws.toolkits.jetbrains.services.amazonq.webview.theme.EditorThemeAdapter
+import software.aws.toolkits.jetbrains.services.amazonq.webview.theme.ThemeBrowserAdapter
 import software.aws.toolkits.jetbrains.utils.isQConnected
 import software.aws.toolkits.jetbrains.utils.isQExpired
 import software.aws.toolkits.jetbrains.utils.isQWebviewsAvailable
 import software.aws.toolkits.telemetry.FeatureId
+import software.aws.toolkits.telemetry.MetricResult
+import software.aws.toolkits.telemetry.Telemetry
 import software.aws.toolkits.telemetry.UiTelemetry
 import software.aws.toolkits.telemetry.WebviewTelemetry
 import java.awt.event.ActionListener
+import java.net.URI
 import javax.swing.JButton
 import javax.swing.JComponent
 
 @Service(Service.Level.PROJECT)
-class QWebviewPanel private constructor(val project: Project) : Disposable {
+class QWebviewPanel private constructor(val project: Project, private val scope: CoroutineScope) : Disposable {
     private val webviewContainer = Wrapper()
     var browser: QWebviewBrowser? = null
         private set
@@ -93,6 +107,14 @@ class QWebviewPanel private constructor(val project: Project) : Disposable {
         } else {
             browser = QWebviewBrowser(project, this).also {
                 webviewContainer.add(it.component())
+
+                val themeBrowserAdapter = ThemeBrowserAdapter()
+                EditorThemeAdapter().onThemeChange()
+                    .distinctUntilChanged()
+                    .onEach { theme ->
+                        themeBrowserAdapter.updateLoginThemeInBrowser(it.jcefBrowser.cefBrowser, theme)
+                    }
+                    .launchIn(scope)
             }
         }
     }
@@ -108,25 +130,14 @@ class QWebviewPanel private constructor(val project: Project) : Disposable {
 class QWebviewBrowser(val project: Project, private val parentDisposable: Disposable) :
     LoginBrowser(
         project,
-        QWebviewBrowser.DOMAIN,
-        QWebviewBrowser.WEB_SCRIPT_URI
     ),
     Disposable {
     // TODO: confirm if we need such configuration or the default is fine
     override val jcefBrowser = createBrowser(parentDisposable)
     private val query = JBCefJSQuery.create(jcefBrowser)
+    private val assetHandler = LocalAssetJBCefRequestHandler(jcefBrowser)
 
     init {
-        CefApp.getInstance()
-            .registerSchemeHandlerFactory(
-                "http",
-                domain,
-                WebviewResourceHandlerFactory(
-                    domain = "http://$domain/",
-                    assetUri = "/webview/assets/"
-                ),
-            )
-
         loadWebView(query)
 
         query.addHandler(jcefHandler)
@@ -204,6 +215,26 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
                     UiTelemetry.click(project, signInOption)
                 }
             }
+
+            is BrowserMessage.SwitchProfile -> {
+                QRegionProfileManager.getInstance().switchProfile(
+                    project,
+                    QRegionProfile(profileName = message.profileName, arn = message.arn),
+                    intent = QProfileSwitchIntent.Auth
+                )
+            }
+
+            is BrowserMessage.ListProfiles -> {
+                handleListProfilesMessage()
+            }
+
+            is BrowserMessage.PublishWebviewTelemetry -> {
+//                publishTelemetry(message)
+            }
+
+            is BrowserMessage.OpenUrl -> {
+                BrowserUtil.browse(URI(message.externalLink))
+            }
         }
     }
 
@@ -243,28 +274,44 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
             writeValueAsString(it)
         }
 
-        // TODO: pass "REAUTH" if connection expires
         val stage = if (isQExpired(project)) {
             "REAUTH"
+        } else if (isQConnected(project) && QRegionProfileManager.getInstance().isPendingProfileSelection(project)) {
+            "PROFILE_SELECT"
         } else {
             "START"
         }
 
-        val jsonData = """
-            {
-                stage: '$stage',
-                regions: $regions,
-                idcInfo: {
-                    profileName: '${lastLoginIdcInfo.profileName}',
-                    startUrl: '${lastLoginIdcInfo.startUrl}',
-                    region: '${lastLoginIdcInfo.region}'
-                },
-                cancellable: ${state.browserCancellable},
-                feature: '${state.feature}',
-                existConnections: ${writeValueAsString(selectionSettings.values.map { it.currentSelection }.toList())}
+        when (stage) {
+            "PROFILE_SELECT" -> {
+                val jsonData = """
+                    {
+                        stage: '$stage',
+                        status: 'pending'
+                    }
+                """.trimIndent()
+                executeJS("window.ideClient.prepareUi($jsonData)")
             }
-        """.trimIndent()
-        executeJS("window.ideClient.prepareUi($jsonData)")
+
+            else -> {
+                val jsonData = """
+                    {
+                        stage: '$stage',
+                        regions: $regions,
+                        idcInfo: {
+                            profileName: '${lastLoginIdcInfo.profileName}',
+                            startUrl: '${lastLoginIdcInfo.startUrl}',
+                            region: '${lastLoginIdcInfo.region}'
+                        },
+                        cancellable: ${state.browserCancellable},
+                        feature: '${state.feature}',
+                        existConnections: ${writeValueAsString(selectionSettings.values.map { it.currentSelection }.toList())},
+                    }
+                """.trimIndent()
+
+                executeJS("window.ideClient.prepareUi($jsonData)")
+            }
+        }
     }
 
     override fun loginIAM(profileName: String, accessKey: String, secretKey: String) {
@@ -273,12 +320,62 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
     }
 
     override fun loadWebView(query: JBCefJSQuery) {
-        jcefBrowser.loadHTML(getWebviewHTML(webScriptUri, query))
+        val webScriptUri = assetHandler.createResource(
+            WEB_SCRIPT,
+            QWebviewBrowser::class.java.getResourceAsStream("/webview/assets/$WEB_SCRIPT")
+        )
+
+        jcefBrowser.loadURL(assetHandler.createResource("content.html", getWebviewHTML(webScriptUri, query)))
+    }
+
+    private fun handleListProfilesMessage() {
+        ApplicationManager.getApplication().executeOnPooledThread {
+            var errorMessage = ""
+            val profiles = try {
+                QRegionProfileManager.getInstance().listRegionProfiles(project)
+            } catch (e: Exception) {
+                e.message?.let {
+                    errorMessage = it
+                }
+                LOG.warn { "Failed to call listRegionProfiles API: $errorMessage" }
+                val qConn = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
+                Telemetry.amazonq.didSelectProfile.use { span ->
+                    span.source(QProfileSwitchIntent.Auth.value)
+                        .amazonQProfileRegion(QRegionProfileManager.getInstance().activeProfile(project)?.region ?: "not-set")
+                        .ssoRegion((qConn as? AwsBearerTokenConnection)?.region)
+                        .credentialStartUrl((qConn as? AwsBearerTokenConnection)?.startUrl)
+                        .result(MetricResult.Failed)
+                        .reason(e.message)
+                }
+
+                null
+            }
+
+            // auto-select the profile if users only have 1 and don't show the UI
+            if (profiles?.size == 1) {
+                LOG.debug { "User only have access to 1 Q profile, auto-selecting profile ${profiles.first().profileName} for ${project.name}" }
+                QRegionProfileManager.getInstance().switchProfile(project, profiles.first(), QProfileSwitchIntent.Update)
+                return@executeOnPooledThread
+            }
+
+            // required EDT as this entire block is executed on thread pool
+            runInEdt {
+                val jsonData = """
+                        {
+                            stage: 'PROFILE_SELECT',
+                            status: '${if (profiles != null) "succeeded" else "failed"}',
+                            profiles: ${writeValueAsString(profiles ?: "")},
+                            errorMessage: '$errorMessage'
+                        }
+                """.trimIndent()
+
+                executeJS("window.ideClient.prepareUi($jsonData)")
+            }
+        }
     }
 
     companion object {
         private val LOG = getLogger<QWebviewBrowser>()
-        private const val WEB_SCRIPT_URI = "http://webview/js/getStart.js"
-        private const val DOMAIN = "webview"
+        private const val WEB_SCRIPT = "js/getStart.js"
     }
 }

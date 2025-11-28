@@ -43,5 +43,11 @@ dependencyResolutionManagement {
                 includeGroupByRegex("org\\.jetbrains\\.intellij\\.platform.*")
             }
         }
+        maven {
+            url = uri("https://s01.oss.sonatype.org/content/repositories/snapshots/")
+            content {
+                includeGroupByRegex("org\\.mockito\\.kotlin")
+            }
+        }
     }
 }

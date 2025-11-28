@@ -36,10 +36,8 @@ import software.amazon.awssdk.services.codewhispererstreaming.model.UserInputMes
 import software.amazon.awssdk.services.codewhispererstreaming.model.UserIntent
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
-import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.amazonq.project.RelevantDocument
 import software.aws.toolkits.jetbrains.services.cwc.ChatConstants
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.ChatSession
@@ -53,6 +51,7 @@ import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.Suggested
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.Suggestion
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.TriggerType
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.ActiveFileContext
+import java.util.UUID
 
 class ChatSessionV1(
     private val project: Project,
@@ -64,13 +63,13 @@ class ChatSessionV1(
         var requestId: String = ""
         var statusCode: Int = 0
         val responseHandler = GenerateAssistantResponseResponseHandler.builder()
-            .onResponse {
-                requestId = it.responseMetadata().requestId()
-                statusCode = it.sdkHttpResponse().statusCode()
-                conversationId = it.conversationId()
+            .onResponse { response ->
+                requestId = response.responseMetadata().requestId()
+                statusCode = response.sdkHttpResponse().statusCode()
+                conversationId = response.conversationId().takeIf { !it.isNullOrBlank() } ?: "client-inline-${UUID.randomUUID()}"
 
                 logger.info {
-                    val metadata = it.responseMetadata()
+                    val metadata = response.responseMetadata()
                     "Response to tab: ${data.tabId}, conversationId: $conversationId, requestId: ${metadata.requestId()}, metadata: $metadata"
                 }
             }
@@ -170,11 +169,7 @@ class ChatSessionV1(
 
         try {
             withTimeout(ChatConstants.REQUEST_TIMEOUT_MS.toLong()) {
-                val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
-                    // this should never happen because it should have been handled upstream by [AuthController]
-                    ?: error("connection was found to be null")
-
-                val client = AwsClientManager.getInstance().getClient<CodeWhispererStreamingAsyncClient>(connection.getConnectionSettings())
+                val client = QRegionProfileManager.getInstance().getQClient<CodeWhispererStreamingAsyncClient>(project)
                 val request = data.toChatRequest()
                 logger.info { "Request from tab: ${data.tabId}, conversationId: $conversationId, request: $request" }
                 client.generateAssistantResponse(request, responseHandler).await()
@@ -216,6 +211,7 @@ class ChatSessionV1(
             .build()
         return GenerateAssistantResponseRequest.builder()
             .conversationState(conversationState)
+            .profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
             .build()
     }
 
@@ -300,6 +296,8 @@ class ChatSessionV1(
         UserIntent.EXPLAIN_CODE_SELECTION -> FollowUpType.ExplainInDetail
         UserIntent.UNKNOWN_TO_SDK_VERSION -> FollowUpType.Generated
         UserIntent.GENERATE_UNIT_TESTS -> FollowUpType.Generated
+        UserIntent.GENERATE_CLOUDFORMATION_TEMPLATE -> FollowUpType.Generated
+        UserIntent.CODE_GENERATION -> FollowUpType.Generated
         null -> FollowUpType.Generated
     }
 

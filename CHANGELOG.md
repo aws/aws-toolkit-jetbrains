@@ -1,3 +1,156 @@
+# _3.99_ (2025-11-21)
+
+# _3.98_ (2025-11-14)
+- **(Feature)** Add support for 2025.3
+- **(Deprecation)** An upcoming release will remove support for JetBrains Gateway version 2025.2 and for IDEs based on the 2024.3 platform
+
+# _3.97_ (2025-10-16)
+
+# _3.96_ (2025-10-02)
+- **(Bug Fix)** remove findings message from chat even when all issues are ignored
+- **(Bug Fix)** DisplayFindings tool findings were not being populated in the display panel, instead sending json to chat
+
+# _3.95_ (2025-09-29)
+
+# _3.94_ (2025-09-19)
+- **(Feature)** Improve the explain and apply fix messages
+
+# _3.93_ (2025-09-11)
+- **(Bug Fix)** Fix handling of code review findings so they are properly sent to CodeIssues Panel
+- **(Removal)** Removed support for 2024.2.x IDEs and Gateway 2025.1
+
+# _3.92_ (2025-09-04)
+
+# _3.91_ (2025-08-28)
+- **(Feature)** Enabling dynamic model fetching capabilities in Amazon Q chat
+- **(Feature)** Enable agentic code review
+- **(Feature)** Amazon Q: Support for configuring and utilizing remote MCP servers.
+- **(Deprecation)** An upcoming release will remove support for JetBrains Gateway version 2025.1 and for IDEs based on the 2024.2 platform
+
+# _3.90_ (2025-08-22)
+- **(Feature)** Amazon Q supports admin control for MCP servers to restrict MCP server usage
+- **(Bug Fix)** Fix incompatible version warning for AWS Toolkit in 2025.2
+- **(Bug Fix)** Fix UriError when project is on WSL or a UNC path
+
+# _3.89_ (2025-08-07)
+- **(Bug Fix)** /transform: validate YAML dependency file for required fields
+
+# _3.88_ (2025-08-04)
+- **(Feature)** Add support for 2025.2
+- **(Bug Fix)** Fix unsupported files being shown in file picker when selecting images for adding image context in Windows
+- **(Bug Fix)** Fix the issue that sometime images added via drag & drop are incorrectly routed to pinned context
+
+# _3.87_ (2025-07-30)
+- **(Bug Fix)** change to use promptStickyCard to for image verification notification
+- **(Bug Fix)** Suppress IDE error when current editor context is not valid for Amazon Q
+
+# _3.86_ (2025-07-16)
+- **(Bug Fix)** - Fixed "Insert to Cursor" button to correctly insert code blocks at the current cursor position in the active file
+
+# _3.85_ (2025-07-10)
+- **(Feature)** Amazon Q /test, /doc, and /dev capabilities integrated into Agentic coding.
+- **(Feature)** Add image context support
+
+# _3.84_ (2025-07-09)
+
+# _3.83_ (2025-07-07)
+- **(Bug Fix)** Fix auto-suggestions being shown when suggestions are paused
+
+# _3.82_ (2025-07-03)
+- **(Bug Fix)** Skip inline completion when deleting characters
+
+# _3.81_ (2025-06-27)
+
+# _3.80_ (2025-06-26)
+- **(Feature)** Amazon Q inline: now display completions much more consistently at the user's current caret position
+- **(Feature)** Amazon Q inline: now Q completions can co-exist with JetBrains' native IntelliSense completions, when both are showing, press Tab or your customized key shortcuts to accept Q completions and press Enter to accept IntelliSense completions.
+- **(Feature)** Amazon Q inline: now shows in a JetBrains native UX of popup and inlay text style
+- **(Feature)** Amazon Q inline: The new UX allows configurable shortcuts for accepting completions and navigating through completions. *Caveat: for users using the previous versions, if you have configured your custom key shortcuts for the Q inline before, you will have to re-configure them again in Amazon Q settings due to a change in the keymap actions.
+
+# _3.79_ (2025-06-25)
+- **(Feature)** /transform: run all builds client-side
+- **(Feature)** Amazon Q Chat: Pin context items in chat and manage workspace rules
+
+# _3.78_ (2025-06-18)
+- **(Feature)** Add model selection feature
+
+# _3.77_ (2025-06-16)
+
+# _3.76_ (2025-06-12)
+- **(Feature)** Add MCP support for Amazon Q chat
+
+# _3.75_ (2025-06-11)
+- **(Feature)** Support for Amazon Q Builder ID paid tier
+
+# _3.74_ (2025-06-05)
+- **(Feature)** Agentic coding experience: Amazon Q can now write code and run shell commands on your behalf
+- **(Bug Fix)** Support full Unicode range in inline chat panel on Windows
+
+# _3.73_ (2025-05-29)
+- **(Bug Fix)** /transform: handle InvalidGrantException properly when polling job status
+
+# _3.72_ (2025-05-22)
+- **(Removal)** /transform: remove option to receive multiple diffs
+
+# _3.71_ (2025-05-15)
+- **(Feature)** Add inline completion support for abap language
+- **(Bug Fix)** Fix UI freezes that may occur when interacting with large files in the editor
+
+# _3.70_ (2025-05-08)
+- **(Feature)** Amazon Q: Support selecting customizations across all Q profiles with automatic profile switching for enterprise users
+- **(Bug Fix)** Do not always show 'Amazon Q Code Issues' tab when switching to the 'Problems' tool window
+- **(Bug Fix)** /dev: Fix missing Amazon Q feature dev auto build setting.
+- **(Bug Fix)** increase /review timeout
+- **(Bug Fix)** Fix JavascriptLanguage not found on 2025.1+
+
+# _3.69_ (2025-04-28)
+- **(Bug Fix)** Amazon Q: Fix issue where context menu items are not available after re-opening projects or restarting the IDE
+- **(Bug Fix)** Fix LinkageError while attempting to do Amazon Q inline suggestions in certain environments
+- **(Bug Fix)** Fix issue where user can become stuck because Amazon Q Chat does not show authentication prompt
+- **(Removal)** Removed support for 2024.1.x IDEs
+- **(Removal)** Removed support for Gateway 2024.3
+
+# _3.68_ (2025-04-23)
+- **(Feature)** Amazon Q: Show visual indicator in status bar if profile selection is needed to continue with Q Inline / Q Chat
+- **(Feature)** Amazon Q /test: Remove unsupported message for non-java python languages
+- **(Bug Fix)** /dev: Fix prompt to enable devfile build not triggering when devfile is present.
+- **(Bug Fix)** /review disable auto scan by default
+- **(Bug Fix)** /review: disabled highlighter for ignored issues
+
+# _3.67_ (2025-04-18)
+- **(Bug Fix)** Amazon Q: Customization now resets with a warning if unavailable in the selected profile.
+- **(Bug Fix)** Q panel will get stuck while signin if users have multiple windows
+- **(Bug Fix)** Fix integer overflow when local context index input is larger than 2GB
+- **(Bug Fix)** Fix workspace index process quits when hitting a race condition
+- **(Bug Fix)** Fix infinite loop when workspace indexing server fails to initialize
+
+# _3.66_ (2025-04-11)
+- **(Feature)** The logs emitted by the Agent during user command execution will be accepted and written to `.amazonq/dev/run_command.log` file in the user's local repository.
+- **(Bug Fix)** Unit test generation now completes successfully when using the `/test` command
+
+# _3.64_ (2025-04-10)
+- **(Bug Fix)** Fix issue where IDE freezes when logging into Amazon Q
+
+# _3.65_ (2025-04-10)
+- **(Bug Fix)** Fix issue where Amazon Q cannot process chunks from local `@workspace` context
+
+# _3.63_ (2025-04-08)
+- **(Feature)** Enterprise users can choose their preferred Amazon Q profile to improve personalization and workflow across different business regions
+- **(Bug Fix)** Amazon Q /doc: close diff tab and open README file in preview mode after user accept changes
+
+# _3.62_ (2025-04-03)
+- **(Feature)** /review: automatically generate fix without clicking Generate Fix button
+- **(Bug Fix)** /transform: prompt user to re-authenticate if credentials expire during transformation
+- **(Bug Fix)** Gracefully handle additional fields in Amazon Q /dev code generation result without throwing errors
+- **(Bug Fix)** /review: set programmingLanguage to Plaintext if language is unknown
+- **(Bug Fix)** /review: Respect user option to allow code suggestions with references
+
+# _3.61_ (2025-03-27)
+- **(Feature)** Amazon Q: Moved "Include suggestions with code references" setting to General
+- **(Feature)** Add support for 2025.1
+- **(Bug Fix)** Amazon Q: Attempt to reduce thread pool contention locking IDE caused by `@workspace` making a large number of requests
+- **(Deprecation)** An upcoming release will remove support for JetBrains Gateway version 2024.3 and for IDEs based on the 2024.1 platform
+
 # _3.60_ (2025-03-20)
 - **(Feature)** AmazonQ /test now displays a concise test plan summary to users.
 - **(Bug Fix)** Fix inline completion failure due to context length exceeding the threshold

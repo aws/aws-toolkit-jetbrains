@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.status
 
 import com.intellij.icons.AllIcons
 import com.intellij.ide.DataManager
-import com.intellij.idea.AppMode
 import com.intellij.openapi.actionSystem.ActionGroup
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.application.ApplicationManager
@@ -23,6 +22,9 @@ import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileWatcher
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.amazonq.gettingstarted.QActionGroups.Q_SIGNED_OUT_ACTION_GROUP
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileSelectedListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomizationListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.QStatusBarLoggedInActionGroup
@@ -32,6 +34,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispe
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.reconnectCodeWhisperer
 import software.aws.toolkits.jetbrains.utils.isQConnected
 import software.aws.toolkits.jetbrains.utils.isQExpired
+import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.resources.message
 import java.awt.event.MouseEvent
 import javax.swing.Icon
@@ -53,7 +56,7 @@ class CodeWhispererStatusBarWidget(project: Project) :
         ApplicationManager.getApplication().messageBus.connect(this).subscribe(
             BearerTokenProviderListener.TOPIC,
             object : BearerTokenProviderListener {
-                override fun onChange(providerId: String, newScopes: List<String>?) {
+                override fun onProviderChange(providerId: String, newScopes: List<String>?) {
                     statusBar.updateWidget(ID)
                 }
             }
@@ -73,6 +76,20 @@ class CodeWhispererStatusBarWidget(project: Project) :
             object : ToolkitConnectionManagerListener {
                 override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
                     statusBar.updateWidget(ID)
+                }
+            }
+        )
+
+        ApplicationManager.getApplication().messageBus.connect(this).subscribe(
+            QRegionProfileSelectedListener.TOPIC,
+            object : QRegionProfileSelectedListener {
+                override fun onProfileSelected(
+                    project: Project,
+                    profile: QRegionProfile?,
+                ) {
+                    if (project == this@CodeWhispererStatusBarWidget.project) {
+                        statusBar.updateWidget(ID)
+                    }
                 }
             }
         )
@@ -121,7 +138,7 @@ class CodeWhispererStatusBarWidget(project: Project) :
     }
 
     override fun getIcon(): Icon =
-        if (isQExpired(project)) {
+        if (isQExpired(project) || QRegionProfileManager.getInstance().isPendingProfileSelection(project)) {
             AllIcons.General.BalloonWarning
         } else if (!isQConnected(project)) {
             AllIcons.RunConfigurations.TestState.Run
@@ -133,7 +150,7 @@ class CodeWhispererStatusBarWidget(project: Project) :
             }
         ) {
             // AnimatedIcon can't serialize over remote host
-            if (!AppMode.isRemoteDevHost()) {
+            if (!isRunningOnRemoteBackend()) {
                 AnimatedIcon.Default()
             } else {
                 AllIcons.Actions.Download

@@ -1,0 +1,20 @@
+{
+  "date" : "2025-04-28",
+  "version" : "3.69",
+  "entries" : [ {
+    "type" : "bugfix",
+    "description" : "Amazon Q: Fix issue where context menu items are not available after re-opening projects or restarting the IDE"
+  }, {
+    "type" : "bugfix",
+    "description" : "Fix LinkageError while attempting to do Amazon Q inline suggestions in certain environments"
+  }, {
+    "type" : "bugfix",
+    "description" : "Fix issue where user can become stuck because Amazon Q Chat does not show authentication prompt"
+  }, {
+    "type" : "removal",
+    "description" : "Removed support for 2024.1.x IDEs"
+  }, {
+    "type" : "removal",
+    "description" : "Removed support for Gateway 2024.3"
+  } ]
+}

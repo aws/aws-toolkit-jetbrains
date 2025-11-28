@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer
 
 import com.intellij.analysis.problemsView.toolWindow.ProblemsView
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
 import com.intellij.openapi.wm.RegisterToolWindowTask
 import com.intellij.openapi.wm.ToolWindow
@@ -13,21 +12,21 @@ import com.intellij.openapi.wm.impl.status.widget.StatusBarWidgetsManager
 import com.intellij.testFramework.replaceService
 import com.intellij.testFramework.runInEdtAndWait
 import com.intellij.util.xmlb.XmlSerializer
+import io.mockk.junit4.MockKRule
 import org.assertj.core.api.Assertions.assertThat
 import org.jdom.output.XMLOutputter
 import org.junit.Before
 import org.junit.Ignore
+import org.junit.Rule
 import org.junit.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.never
-import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import software.aws.toolkits.jetbrains.core.ToolWindowHeadlessManagerImpl
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererLoginType
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExploreActionState
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.jetbrains.services.codewhisperer.status.CodeWhispererStatusBarWidgetFactory
 import software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceToolWindowFactory
 import software.aws.toolkits.jetbrains.settings.CodeWhispererConfiguration
@@ -37,15 +36,14 @@ import kotlin.test.fail
 
 class CodeWhispererSettingsTest : CodeWhispererTestBase() {
 
-    private lateinit var codewhispererServiceSpy: CodeWhispererService
     private lateinit var toolWindowHeadlessManager: ToolWindowHeadlessManagerImpl
+
+    @get:Rule
+    val mockkRule = MockKRule(this)
 
     @Before
     override fun setUp() {
         super.setUp()
-        codewhispererServiceSpy = spy(codewhispererService)
-        ApplicationManager.getApplication().replaceService(CodeWhispererService::class.java, codewhispererServiceSpy, disposableRule.disposable)
-
         // Create a mock ToolWindowManager with working implementation of setAvailable() and isAvailable()
         toolWindowHeadlessManager = object : ToolWindowHeadlessManagerImpl(projectRule.project) {
             private val myToolWindows: MutableMap<String, ToolWindow> = HashMap()
@@ -86,7 +84,7 @@ class CodeWhispererSettingsTest : CodeWhispererTestBase() {
         whenever(stateManager.checkActiveCodeWhispererConnectionType(projectRule.project)).thenReturn(CodeWhispererLoginType.Logout)
         assertThat(isCodeWhispererEnabled(projectRule.project)).isFalse
         invokeCodeWhispererService()
-        verify(codewhispererServiceSpy, never()).showRecommendationsInPopup(any(), any(), any())
+        verify(codewhispererService, never()).showRecommendationsInPopup(any(), any(), any())
     }
 
     @Test
@@ -95,7 +93,7 @@ class CodeWhispererSettingsTest : CodeWhispererTestBase() {
         assertThat(stateManager.isAutoEnabled()).isFalse
         runInEdtAndWait {
             projectRule.fixture.type(':')
-            verify(codewhispererServiceSpy, never()).showRecommendationsInPopup(any(), any(), any())
+            verify(codewhispererService, never()).showRecommendationsInPopup(any(), any(), any())
         }
     }
 
@@ -210,6 +208,41 @@ class CodeWhispererSettingsTest : CodeWhispererTestBase() {
         val actual = XmlSerializer.deserialize(element, CodeWhispererConfiguration::class.java)
         assertThat(actual.autoBuildSetting).hasSize(1)
         assertThat(actual.autoBuildSetting["project1"]).isTrue()
+    }
+
+    @Test
+    fun `context thread count is returned in range`() {
+        val sut = CodeWhispererSettings.getInstance()
+
+        mapOf(
+            1 to 1,
+            0 to 0,
+            -1 to 0,
+            123 to 50,
+            50 to 50,
+            51 to 50,
+        ).forEach { s, expected ->
+            sut.setProjectContextIndexThreadCount(s)
+            assertThat(sut.getProjectContextIndexThreadCount()).isEqualTo(expected)
+        }
+    }
+
+    @Test
+    fun `context index size is returned in range`() {
+        val sut = CodeWhispererSettings.getInstance()
+
+        mapOf(
+            1 to 1,
+            0 to 1,
+            -1 to 1,
+            123 to 123,
+            2047 to 2047,
+            4096 to 4096,
+            4097 to 4096,
+        ).forEach { s, expected ->
+            sut.setProjectContextIndexMaxSize(s)
+            assertThat(sut.getProjectContextIndexMaxSize()).isEqualTo(expected)
+        }
     }
 }
 

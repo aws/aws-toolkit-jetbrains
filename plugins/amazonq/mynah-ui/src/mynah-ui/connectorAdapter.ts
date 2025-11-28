@@ -1,0 +1,98 @@
+/*!
+ * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+import {ChatPrompt, MynahUI, QuickActionCommand, QuickActionCommandGroup} from '@aws/mynah-ui-chat'
+import { isTabType } from './ui/storages/tabsStorage'
+import { WebviewUIHandler } from './ui/main'
+import { TabDataGenerator } from './ui/tabs/generator'
+import { ChatClientAdapter, ChatEventHandler } from '@aws/chat-client'
+
+export const initiateAdapter = (showWelcomePage: boolean,
+                             disclaimerAcknowledged: boolean,
+                             isCodeTransformEnabled: boolean,
+                             isCodeScanEnabled: boolean,
+                             ideApiPostMessage: (message: any) => void,
+                             highlightCommand?: QuickActionCommand,
+                             profileName?: string,
+) : HybridChatAdapter => {
+    return new HybridChatAdapter(showWelcomePage, disclaimerAcknowledged, isCodeTransformEnabled, isCodeScanEnabled, ideApiPostMessage, highlightCommand, profileName)
+}
+
+// Ref: https://github.com/aws/aws-toolkit-vscode/blob/e9ea8082ffe0b9968a873437407d0b6b31b9e1a5/packages/core/src/amazonq/webview/ui/connectorAdapter.ts#L14
+export class HybridChatAdapter implements ChatClientAdapter {
+    private uiHandler?: WebviewUIHandler
+
+    private mynahUIRef?: { mynahUI: MynahUI}
+
+    constructor(
+
+        private showWelcomePage: boolean,
+        private disclaimerAcknowledged: boolean,
+        private isCodeTransformEnabled: boolean,
+        private isCodeScanEnabled: boolean,
+        private ideApiPostMessage: (message: any) => void,
+        private highlightCommand?: QuickActionCommand,
+        private profileName?: string,
+
+    ) {}
+
+    /**
+     * First we create the ui handler to get the props, then once mynah UI gets created flare will re-inject the
+     * mynah UI instance on the hybrid chat adapter
+     */
+    createChatEventHandler(mynahUIRef: { mynahUI: MynahUI }): ChatEventHandler {
+        this.mynahUIRef = mynahUIRef
+
+        this.uiHandler = new WebviewUIHandler({
+            postMessage: this.ideApiPostMessage,
+            mynahUIRef: this.mynahUIRef,
+            showWelcomePage: this.showWelcomePage,
+            disclaimerAcknowledged: this.disclaimerAcknowledged,
+            isCodeTransformEnabled: this.isCodeTransformEnabled,
+            isCodeScanEnabled: this.isCodeScanEnabled,
+            highlightCommand: this.highlightCommand,
+            profileName: this.profileName,
+            hybridChat: true,
+        })
+
+        return this.uiHandler.mynahUIProps
+    }
+
+    isSupportedTab(tabId: string): boolean {
+        const tabType = this.uiHandler?.tabsStorage.getTab(tabId)?.type
+        if (!tabType) {
+            return false
+        }
+        return isTabType(tabType) && tabType !== 'cwc'
+    }
+
+    async handleMessageReceive(message: MessageEvent): Promise<void> {
+        if (this.uiHandler) {
+            return this.uiHandler?.connector?.handleMessageReceive(message)
+        }
+
+        console.error('unknown message: ', message.data)
+    }
+
+    isSupportedQuickAction(command: string): boolean {
+        return (
+            command === '/transform'
+        )
+    }
+
+    handleQuickAction(prompt: ChatPrompt, tabId: string, eventId: string | undefined): void {
+        return this.uiHandler?.quickActionHandler?.handleCommand(prompt, tabId, eventId)
+    }
+
+    get initialQuickActions(): QuickActionCommandGroup[] {
+        const tabDataGenerator = new TabDataGenerator({
+            isCodeTransformEnabled: this.isCodeTransformEnabled,
+            isCodeScanEnabled: this.isCodeScanEnabled,
+            profileName: this.profileName
+        })
+        return tabDataGenerator.quickActionsGenerator.generateForTab('cwc') ?? []
+    }
+}
+
+

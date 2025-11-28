@@ -14,8 +14,8 @@ import com.intellij.ide.starter.models.TestCase
 import com.intellij.ide.starter.project.LocalProjectInfo
 import com.intellij.ide.starter.runner.CurrentTestMethod
 import com.intellij.ide.starter.runner.Starter
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterAll
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.kodein.di.DI
@@ -71,18 +71,21 @@ async function testNavigation() {
                 const button = document.querySelector('button[action-id="codetransform-input-confirm-skip-tests"]')
                 button.click()
             })
-            
-            const oneOrMultipleDiffsForm = await page.waitForSelector('button[action-id="codetransform-input-confirm-one-or-multiple-diffs"]', {
+
+            const selectCustomVersionsForm = await page.waitForSelector('button[action-id="codetransform-input-confirm-custom-dependency-versions"]', {
                 timeout: 5000
             })
-            console.log('One or multiple diffs form appeared:', oneOrMultipleDiffsForm !== null)
-            
+            console.log('Custom dependency versions file form appeared:', selectCustomVersionsForm !== null)
+
             await page.evaluate(() => {
-                const button = document.querySelector('button[action-id="codetransform-input-confirm-one-or-multiple-diffs"]')
+                const button = document.querySelector('button[action-id="codetransform-input-continue"]')
                 button.click()
             })
-              
-            const errorMessage = await page.waitForSelector('text/Sorry, I couldn\'t run the Maven clean install command', {
+
+            await page.type('.mynah-chat-prompt-input', 'dummy-target-jdk-name-here')
+            await page.keyboard.press('Enter')
+
+            const errorMessage = await page.waitForSelector('text/I could not find "dummy-target-jdk-name-here" in File > Project Structure > Platform Settings > SDKs.', {
                 timeout: 5000
             })
             console.log('Error message:', await errorMessage.evaluate(el => el.textContent))
@@ -143,11 +146,13 @@ class TransformChatTest {
                 // required wait time for the system to be fully ready
                 Thread.sleep(30000)
                 val result = executePuppeteerScript(transformHappyPathScript)
-                assertTrue(result.contains("Choose a module to transform"))
-                assertTrue(result.contains("Choose the target code version"))
-                assertTrue(result.contains("Skip tests form appeared: true"))
-                assertTrue(result.contains("One or multiple diffs form appeared: true"))
-                assertTrue(result.contains("couldn't run the Maven clean install command"))
+                assertThat(result).contains(
+                    "Choose a module to transform",
+                    "Choose the target code version",
+                    "Skip tests form appeared: true",
+                    "Custom dependency versions file form appeared: true",
+                    "I could not find \"dummy-target-jdk-name-here\""
+                )
             }
     }
 

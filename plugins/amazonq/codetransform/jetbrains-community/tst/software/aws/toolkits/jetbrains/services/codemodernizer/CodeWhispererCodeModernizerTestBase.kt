@@ -45,19 +45,16 @@ import software.aws.toolkits.core.credentials.ToolkitBearerTokenProvider
 import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.sso.DeviceAuthorizationGrantToken
 import software.aws.toolkits.jetbrains.core.credentials.sso.PKCEAuthorizationGrantToken
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerArtifact
-import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerArtifact.Companion.MAPPER
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerManifest
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerMetrics
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerSessionContext
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformFailureBuildLog
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CustomerSelection
-import software.aws.toolkits.jetbrains.services.codemodernizer.model.DescriptionContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.panels.managers.CodeModernizerBottomWindowPanelManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeModernizerSessionState
@@ -92,24 +89,12 @@ open class CodeWhispererCodeModernizerTestBase(
     internal lateinit var testSessionStateSpy: CodeModernizerSessionState
     internal val minJDKUpgradePatchResource = "min_jdk_upgrade.patch".toResourceFile()
     internal val minJDKUpgradePatchResourceFile = LightVirtualFile("min_jdk_upgrade.patch", minJDKUpgradePatchResource.readText())
-    internal val enterpriseApplicationUpgradePatchResource = "popular_enterprise_application_framework.patch".toResourceFile()
-    internal val enterpriseApplicationUpgradePatchResourceFile = LightVirtualFile(
-        "popular_enterprise_application_framework.patch",
-        enterpriseApplicationUpgradePatchResource.readText()
-    )
-    internal val testingToolPatchResource = "testing_tool.patch".toResourceFile()
-    internal val testingToolPatchResourceFile = LightVirtualFile("testing_tool.patch", testingToolPatchResource.readText())
-    internal val deprecatedAPIPatchResource = "update_deprecated_api.patch".toResourceFile()
-    internal val deprecatedAPIPatchResourceFile = LightVirtualFile("update_deprecated_api.patch", deprecatedAPIPatchResource.readText())
-    internal val diffJsonResource = "diffPatchOutput.json".toResourceFile()
-    internal val exampleDescriptionContent: DescriptionContent = MAPPER.readValue(diffJsonResource, DescriptionContent::class.java)
     internal val emptyPomFile = LightVirtualFile("pom.xml", "")
     internal val emptyPomFileSpy = spy(emptyPomFile)
     internal val jobId = JobId("Test job id")
     internal lateinit var testCodeModernizerArtifact: CodeModernizerArtifact
     internal lateinit var testTransformFailureBuildLog: CodeTransformFailureBuildLog
     internal val exampleZipPath = "simple.zip".toResourceFile().toPath()
-    internal val multipleDiffZipPath = "multiple-diff.zip".toResourceFile().toPath()
     internal val expectedFilePath = "expectedFile".toResourceFile().toPath()
     internal val overwrittenFilePath = "overwrittenFile".toResourceFile().toPath()
     internal val testRequestId = "test_aws_request_id"
@@ -264,11 +249,7 @@ open class CodeWhispererCodeModernizerTestBase(
         project = projectRule.project
         toolkitConnectionManager = spy(ToolkitConnectionManager.getInstance(project))
 
-        val accessToken = DeviceAuthorizationGrantToken(aString(), aString(), aString(), aString(), Instant.MAX, Instant.now())
-        val provider =
-            mock<BearerTokenProvider> {
-                doReturn(accessToken).whenever(it).refresh()
-            }
+        val provider = mock<BearerTokenProvider> { }
         val mockBearerProvider =
             mock<ToolkitBearerTokenProvider> {
                 doReturn(provider).whenever(it).delegate
@@ -307,26 +288,19 @@ open class CodeWhispererCodeModernizerTestBase(
                 virtualFileMock,
                 JavaSdkVersion.JDK_1_8,
                 JavaSdkVersion.JDK_11,
-                listOf("EXPLAINABILITY_V1", "SELECTIVE_TRANSFORMATION_V1"),
+                listOf("EXPLAINABILITY_V1"),
                 "test"
             )
         )
 
         testSessionSpy = spy(CodeModernizerSession(testSessionContextSpy, 0, 0))
-        doNothing().whenever(testSessionSpy).deleteUploadArtifact(any())
         doReturn(Job()).whenever(codeModernizerManagerSpy).launchModernizationJob(any(), any())
         testCodeModernizerArtifact =
             spy(
                 CodeModernizerArtifact(
                     exampleZipPath.toAbsolutePath().toString(),
                     validManifest,
-                    listOf(
-                        minJDKUpgradePatchResourceFile,
-                        enterpriseApplicationUpgradePatchResourceFile,
-                        testingToolPatchResourceFile,
-                        deprecatedAPIPatchResourceFile
-                    ),
-                    exampleDescriptionContent.content,
+                    minJDKUpgradePatchResourceFile,
                     validTransformationSummary,
                     summaryFileMock,
                     validMetrics
@@ -361,7 +335,6 @@ open class CodeWhispererCodeModernizerTestBase(
         val accessToken = PKCEAuthorizationGrantToken(aString(), aString(), aString(), aString(), Instant.MAX, Instant.now())
 
         val provider = mock<BearerTokenProvider> {
-            doReturn(accessToken).whenever(it).refresh()
             doReturn(accessToken).whenever(it).currentToken()
             doReturn(authState).whenever(it).state()
         }

@@ -7,33 +7,38 @@
     <description><![CDATA[
     <p>The most capable generative AI-powered assistant for building, operating, and transforming software, with advanced capabilities for managing data and AI</p>
 
-    <h2>Agent capabilities</h2>
+    <h2>Agentic coding experience</h2>
+	<p>Amazon Q Developer uses information across native and MCP server-based tools to intelligently perform actions beyond code suggestions, such as reading files, generating code diffs, and running commands based on your natural language instruction. Simply type your prompt in your preferred language and Q Developer will provide continuous status updates and iteratively apply changes based on your feedback, helping you accomplish tasks faster.</p>
+
     <h3>Implement new features</h3>
-    <p><code>/dev</code> to task Amazon Q with generating new code across your entire project and implement features.</p>
+    <p>Generate new code across your entire project and implement features.</p>
 
     <h3>Generate documentation</h3>
-    <p><code>/doc</code> to task Amazon Q with writing API, technical design, and onboarding documentation.</p>
+    <p>Write API, technical design, and onboarding documentation.</p>
 
     <h3>Automate code reviews</h3>
-    <p><code>/review</code> to ask Amazon Q to perform code reviews, flagging suspicious code patterns and assessing deployment risk.</p>
+    <p>Perform code reviews, flagging suspicious code patterns and assessing deployment risk.</p>
 
     <h3>Generate unit tests</h3>
-    <p><code>/test</code> to ask Amazon Q to generate unit tests and add them to your project, helping you improve code quality, fast.</p>
+    <p>Generate unit tests and add them to your project, helping you improve code quality, fast.</p>
 
     <h3>Transform workloads</h3>
     <p><code>/transform</code> to upgrade your Java applications in minutes, not weeks.</p>
 
     <h2>Core features</h2>
 
+	<h3>MCP support</h3>
+    <p>Add Model Context Protocol (MCP) servers to give Amazon Q Developer access to important context.</p>
+
+    <h3>Inline suggestions</h3>
+    <p>Receive real-time code suggestions ranging from snippets to full functions based on your comments and existing code.</p>
+    <p><i><a href="https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/q-language-ide-support.html">15+ languages supported including Python, TypeScript, Rust, Terraform, AWS Cloudformation, and more</a></i></p>
+
     <h3>Inline chat</h3>
     <p>Seamlessly initial chat within the inline coding experience. Select a section of code that you need assistance with and initiate chat within the editor to request actions such as "Optimize this code", "Add comments", or "Write tests".</p>
 
     <h3>Chat</h3>
     <p>Generate code, explain code, and get answers about software development.</p>
-
-    <h3>Inline suggestions</h3>
-    <p><Receive real-time code suggestions ranging from snippets to full functions based on your comments and existing code.</p>
-    <p><i><a href="https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/q-language-ide-support.html">15+ languages supported including Python, TypeScript, Rust, Terraform, AWS Cloudformation, and more</a></i></p>
 
     <h3>Code reference log</h3>
     <p>Attribute code from Amazon Q that is similar to training data. When code suggestions similar to training data are accepted, they will be added to the code reference log.</p>
@@ -58,26 +63,10 @@
     <depends>aws.toolkit.core</depends>
     <depends>com.intellij.modules.lang</depends>
 
-    <depends optional="true" config-file="amazonq-ext-dart.xml">Dart</depends>
-    <depends optional="true" config-file="amazonq-ext-datagrip.xml">com.intellij.database</depends>
-    <depends optional="true" config-file="amazonq-ext-go.xml">org.jetbrains.plugins.go</depends>
+    <depends optional="true" config-file="amazonq-ext-codewithme.xml">com.jetbrains.codeWithMe</depends>
     <depends optional="true" config-file="amazonq-ext-java.xml">com.intellij.java</depends>
-    <depends optional="true" config-file="amazonq-ext-kotlin.xml">org.jetbrains.kotlin</depends>
-    <depends optional="true" config-file="amazonq-ext-lua.xml">com.tang</depends>
     <depends optional="true" config-file="amazonq-ext-nodejs.xml">JavaScriptDebugger</depends>
-    <depends optional="true" config-file="amazonq-ext-php.xml">com.jetbrains.php</depends>
-    <depends optional="true" config-file="amazonq-ext-powershell.xml">com.intellij.plugin.adernov.powershell</depends>
     <depends optional="true" config-file="amazonq-ext-python.xml">com.intellij.modules.python</depends>
-    <depends optional="true" config-file="amazonq-ext-r.xml">R4Intellij</depends>
-    <depends optional="true" config-file="amazonq-ext-rider.xml">com.intellij.modules.rider</depends>
-    <depends optional="true" config-file="amazonq-ext-ruby.xml">org.jetbrains.plugins.ruby</depends>
-    <depends optional="true" config-file="amazonq-ext-rust.xml">com.jetbrains.rust</depends>
-    <depends optional="true" config-file="amazonq-ext-rust-deprecated.xml">org.rust.lang</depends>
-    <depends optional="true" config-file="amazonq-ext-scala.xml">org.intellij.scala</depends>
-    <depends optional="true" config-file="amazonq-ext-swift.xml">com.intellij.swift</depends>
-    <depends optional="true" config-file="amazonq-ext-shell.xml">com.jetbrains.sh</depends>
-    <depends optional="true" config-file="amazonq-ext-systemverfilog.xml">studio.edaphic.sv</depends>
-    <depends optional="true" config-file="amazonq-ext-vue.xml">org.jetbrains.plugins.vue</depends>
 
     <incompatible-with>com.intellij.cwm.guest</incompatible-with>
     <incompatible-with>com.intellij.jetbrains.client</incompatible-with>
@@ -85,9 +74,29 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <registryKey key="amazon.q.endpoint" description="Endpoint to use for Amazon Q"
-                     defaultValue="https://codewhisperer.us-east-1.amazonaws.com/" restartRequired="true"/>
+                     defaultValue="" restartRequired="true"/>
+        <registryKey key="amazon.q.endpoints.json" description="List of region-endpoint pairs in JSON array form"
+                     defaultValue=""
+                     restartRequired="true"/>
         <registryKey key="inline.completion.rem.dev.use.rhizome" description="Defined by IntelliJ. Used for Amazon Q to display suggestions on remote."
                      defaultValue="false" restartRequired="true"/>
+        <registryKey defaultValue=""
+                     description="Endpoint to use to download flare artifacts"
+                     key="amazon.q.flare.endpoint"/>
+    </extensions>
+
+    <extensionPoints>
+        <extensionPoint qualifiedName="software.aws.toolkits.jetbrains.moduleDependencyProvider"
+                        interface="software.aws.toolkits.jetbrains.services.amazonq.lsp.dependencies.ModuleDependencyProvider"
+                        dynamic="true"/>
+
+        <extensionPoint qualifiedName="software.aws.toolkits.jetbrains.problemsViewMutator"
+                        interface="software.aws.toolkits.jetbrains.ProblemsViewMutator"
+                        dynamic="true" />
+    </extensionPoints>
+
+    <extensions defaultExtensionNs="software.aws.toolkits.jetbrains">
+        <problemsViewMutator implementation="software.aws.toolkits.jetbrains.DefaultProblemsViewMutator"/>
     </extensions>
 
     <xi:include href="/META-INF/module-amazonq.xml" />

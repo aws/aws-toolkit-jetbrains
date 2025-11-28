@@ -7,6 +7,7 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.util.io.HttpRequests
+import software.amazon.awssdk.core.exception.SdkException
 import software.amazon.awssdk.services.codewhispererruntime.CodeWhispererRuntimeClient
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.ContentChecksumType
@@ -32,45 +33,47 @@ import software.amazon.awssdk.services.codewhispererruntime.model.UploadContext
 import software.amazon.awssdk.services.codewhispererruntime.model.UploadIntent
 import software.amazon.awssdk.services.codewhispererstreaming.model.ExportContext
 import software.amazon.awssdk.services.codewhispererstreaming.model.ExportIntent
+import software.amazon.awssdk.services.codewhispererstreaming.model.ThrottlingException
 import software.amazon.awssdk.services.codewhispererstreaming.model.TransformationDownloadArtifactType
 import software.amazon.awssdk.services.codewhispererstreaming.model.TransformationExportContext
+import software.amazon.awssdk.services.codewhispererstreaming.model.ValidationException
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.core.AwsClientManager
-import software.aws.toolkits.jetbrains.core.awsClient
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.services.amazonq.APPLICATION_ZIP
 import software.aws.toolkits.jetbrains.services.amazonq.AWS_KMS
 import software.aws.toolkits.jetbrains.services.amazonq.CONTENT_SHA256
+import software.aws.toolkits.jetbrains.services.amazonq.RetryableOperation
 import software.aws.toolkits.jetbrains.services.amazonq.SERVER_SIDE_ENCRYPTION
 import software.aws.toolkits.jetbrains.services.amazonq.SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID
 import software.aws.toolkits.jetbrains.services.amazonq.clients.AmazonQStreamingClient
 import software.aws.toolkits.jetbrains.services.amazonq.codeWhispererUserContext
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerMetrics
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.calculateTotalLatency
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getTelemetryOptOutPreference
 import java.io.File
 import java.net.HttpURLConnection
+import java.net.SocketTimeoutException
 import java.time.Instant
+import java.util.concurrent.TimeoutException
 
 @Service(Service.Level.PROJECT)
 class GumbyClient(private val project: Project) {
-    private fun connection() = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
-        ?: error("Attempted to use connection while one does not exist")
-
-    private fun bearerClient() = connection().getConnectionSettings().awsClient<CodeWhispererRuntimeClient>()
+    private fun bearerClient() = QRegionProfileManager.getInstance().getQClient<CodeWhispererRuntimeClient>(project)
 
     private val amazonQStreamingClient
         get() = AmazonQStreamingClient.getInstance(project)
 
-    fun createGumbyUploadUrl(sha256Checksum: String): CreateUploadUrlResponse {
+    fun createGumbyUploadUrl(sha256Checksum: String, context: UploadContext? = null): CreateUploadUrlResponse {
         val request = CreateUploadUrlRequest.builder()
             .contentChecksumType(ContentChecksumType.SHA_256)
             .contentChecksum(sha256Checksum)
             .uploadIntent(UploadIntent.TRANSFORMATION)
+            .profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
+            .uploadContext(context)
             .build()
         return callApi({ bearerClient().createUploadUrl(request) }, apiName = "CreateUploadUrl")
     }
@@ -92,12 +95,16 @@ class GumbyClient(private val project: Project) {
                     )
                     .build()
             )
+            .profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
             .build()
         return callApi({ bearerClient().createUploadUrl(request) }, apiName = "CreateUploadUrl")
     }
 
     fun getCodeModernizationJob(jobId: String): GetTransformationResponse {
-        val request = GetTransformationRequest.builder().transformationJobId(jobId).build()
+        val request = GetTransformationRequest.builder()
+            .transformationJobId(jobId)
+            .profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
+            .build()
         return callApi({ bearerClient().getTransformation(request) }, apiName = "GetTransformation")
     }
 
@@ -116,6 +123,7 @@ class GumbyClient(private val project: Project) {
                     .source { it.language(sourceLanguage) }
                     .target { it.language(targetLanguage) }
             }
+            .profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
             .build()
         return callApi({ bearerClient().startTransformation(request) }, apiName = "StartTransformation")
     }
@@ -127,17 +135,22 @@ class GumbyClient(private val project: Project) {
         val request = ResumeTransformationRequest.builder()
             .transformationJobId(jobId.id)
             .userActionStatus(userActionStatus)
+            .profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
             .build()
         return callApi({ bearerClient().resumeTransformation(request) }, apiName = "ResumeTransformation")
     }
 
     fun getCodeModernizationPlan(jobId: JobId): GetTransformationPlanResponse {
-        val request = GetTransformationPlanRequest.builder().transformationJobId(jobId.id).build()
+        val request = GetTransformationPlanRequest.builder()
+            .profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
+            .transformationJobId(jobId.id).build()
         return callApi({ bearerClient().getTransformationPlan(request) }, apiName = "GetTransformationPlan")
     }
 
     fun stopTransformation(transformationJobId: String): StopTransformationResponse {
-        val request = StopTransformationRequest.builder().transformationJobId(transformationJobId).build()
+        val request = StopTransformationRequest.builder().transformationJobId(transformationJobId)
+            .profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
+            .build()
         return callApi({ bearerClient().stopTransformation(request) }, apiName = "StopTransformation")
     }
 
@@ -145,25 +158,44 @@ class GumbyClient(private val project: Project) {
         apiCall: () -> T,
         apiName: String,
     ): T {
-        var result: CodeWhispererRuntimeResponse? = null
+        var result: T? = null
         try {
-            result = apiCall()
-            LOG.info { "$apiName request ID: ${result.responseMetadata()?.requestId()}" }
-            return result
+            RetryableOperation<Unit>().execute(
+                operation = {
+                    result = apiCall()
+                },
+                isRetryable = { e ->
+                    when (e) {
+                        is ValidationException,
+                        is ThrottlingException,
+                        is SdkException,
+                        is TimeoutException,
+                        is SocketTimeoutException,
+                        -> true
+                        else -> false
+                    }
+                },
+                errorHandler = { e, attempts ->
+                    LOG.error(e) { "After $attempts attempts, $apiName failed: ${e.message}" }
+                    throw e
+                }
+            )
         } catch (e: Exception) {
-            LOG.error(e) { "$apiName failed: ${e.message}" }
-            throw e // pass along error to callee
+            LOG.error(e) { "$apiName failed: ${e.message}; may have been retried up to 3 times" }
+            throw e
         }
+        LOG.info { "$apiName request ID: ${result?.responseMetadata()?.requestId()}" }
+        return result ?: error("$apiName failed")
     }
 
     suspend fun downloadExportResultArchive(
         jobId: JobId,
-        hilDownloadArtifactId: String? = null,
+        downloadArtifactId: String? = null,
         downloadArtifactType: TransformationDownloadArtifactType? = TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS,
     ): MutableList<ByteArray> = amazonQStreamingClient.exportResultArchive(
         jobId.id,
         ExportIntent.TRANSFORMATION,
-        if (hilDownloadArtifactId == null) {
+        if (downloadArtifactId == null) {
             null
         } else {
             ExportContext
@@ -171,14 +203,14 @@ class GumbyClient(private val project: Project) {
                 .transformationExportContext(
                     TransformationExportContext
                         .builder()
-                        .downloadArtifactId(hilDownloadArtifactId)
+                        .downloadArtifactId(downloadArtifactId)
                         .downloadArtifactType(downloadArtifactType.toString())
                         .build()
                 )
                 .build()
         },
         { e ->
-            LOG.error(e) { "ExportResultArchive failed: ${e.message}" }
+            LOG.error(e) { "ExportResultArchive on job ${jobId.id} and artifact $downloadArtifactId failed: ${e.message}" }
         },
         { startTime ->
             LOG.info { "ExportResultArchive latency: ${calculateTotalLatency(startTime, Instant.now())}" }
@@ -232,6 +264,7 @@ class GumbyClient(private val project: Project) {
             }
             requestBuilder.optOutPreference(getTelemetryOptOutPreference())
             requestBuilder.userContext(codeWhispererUserContext())
+            requestBuilder.profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
         }
     }
 

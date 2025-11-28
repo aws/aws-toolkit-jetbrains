@@ -32,6 +32,8 @@ import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.services.amazonq.CODE_TRANSFORM_TROUBLESHOOT_DOC_MVN_FAILURE
 import software.aws.toolkits.jetbrains.services.amazonq.CODE_TRANSFORM_TROUBLESHOOT_DOC_PROJECT_SIZE
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileSelectedListener
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformMessageListener
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_POM_FILE_NAME
@@ -77,7 +79,6 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.parseXmlDep
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.setDependencyVersionInPom
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.tryGetJdk
 import software.aws.toolkits.jetbrains.ui.feedback.CodeTransformFeedbackDialog
-import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.jetbrains.utils.notifyStickyError
 import software.aws.toolkits.jetbrains.utils.notifyStickyInfo
 import software.aws.toolkits.resources.message
@@ -130,18 +131,27 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
 
     init {
         CodeModernizerSessionState.getInstance(project).setDefaults()
+        initQRegionProfileSelectedListener()
+    }
+
+    private fun initQRegionProfileSelectedListener() {
+        project.messageBus.connect(this).subscribe(
+            QRegionProfileSelectedListener.TOPIC,
+            object : QRegionProfileSelectedListener {
+                override fun onProfileSelected(project: Project, profile: QRegionProfile?) {
+                    stopModernize()
+                    codeTransformationSession?.let {
+                        Disposer.dispose(it)
+                    }
+                    managerState = CodeModernizerState()
+                    codeTransformationSession = null
+                }
+            }
+        )
     }
 
     fun validate(project: Project, transformationType: CodeTransformType): ValidationResult {
         fun validateCore(project: Project): ValidationResult {
-            if (isRunningOnRemoteBackend()) {
-                return ValidationResult(
-                    false,
-                    InvalidTelemetryReason(
-                        CodeTransformPreValidationError.RemoteRunProject,
-                    )
-                )
-            }
             if (!isCodeTransformAvailable(project)) {
                 return ValidationResult(
                     false,
@@ -259,7 +269,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
 
     fun runModernize(copyResult: MavenCopyCommandsResult? = null) {
         initStopParameters()
-        val session = codeTransformationSession as CodeModernizerSession
+        val session = codeTransformationSession ?: return
         initModernizationJobUI(true, project.getModuleOrProjectNameForFile(session.sessionContext.configurationFile))
         launchModernizationJob(session, copyResult)
     }
@@ -458,7 +468,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         transformType,
         jobId
     ) { new, plan ->
-        codeModernizerBottomWindowPanelManager.handleJobTransition(new, plan, session.sessionContext.sourceJavaVersion, transformType)
+        codeModernizerBottomWindowPanelManager.handleJobTransition(new, plan, session.sessionContext, transformType)
     }
 
     private suspend fun handleJobStarted(jobId: JobId, session: CodeModernizerSession): CodeModernizerJobCompletedResult {
@@ -472,7 +482,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         val transformType = if (session.sessionContext.sqlMetadataZip != null) CodeTransformType.SQL_CONVERSION else CodeTransformType.LANGUAGE_UPGRADE
 
         return session.pollUntilJobCompletion(transformType, jobId) { new, plan ->
-            codeModernizerBottomWindowPanelManager.handleJobTransition(new, plan, session.sessionContext.sourceJavaVersion, transformType)
+            codeModernizerBottomWindowPanelManager.handleJobTransition(new, plan, session.sessionContext, transformType)
         }
     }
 
@@ -890,7 +900,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                 // Add delay between upload complete and trying to resume
                 delay(500)
 
-                codeTransformationSession?.resumeTransformFromHil()
+                codeTransformationSession?.resumeTransformation()
             } else {
                 throw CodeModernizerException("Cannot create dependency zip for HIL")
             }

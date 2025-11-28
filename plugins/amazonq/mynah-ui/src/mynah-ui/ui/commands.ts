@@ -36,8 +36,9 @@ type MessageCommand =
     | 'codetransform-select-sql-module-schema'
     | 'codetransform-cancel'
     | 'codetransform-stop'
+    | 'codetransform-continue'
     | 'codetransform-confirm-skip-tests'
-    | 'codetransform-confirm-one-or-multiple-diffs'
+    | 'codetransform-input-confirm-custom-dependency-versions'
     | 'codetransform-new'
     | 'codetransform-open-transform-hub'
     | 'codetransform-open-mvn-build'
@@ -58,11 +59,8 @@ type MessageCommand =
     | 'codescan_stop_project_scan'
     | 'codescan_stop_file_scan'
     | 'codescan_open_issues'
-    | 'generate-test'
-    | 'start-test-gen'
     | 'open-user-guide'
     | 'send-telemetry'
-    | 'doc_stop_generate'
     | 'updatePromptProgress'
 
 export type ExtensionMessage = Record<string, any> & { command: MessageCommand }

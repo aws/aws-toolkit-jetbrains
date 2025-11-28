@@ -48,9 +48,11 @@ configurations {
 
         // Exclude dependencies that ship with iDE
         exclude(group = "org.slf4j")
-        // we want kotlinx-coroutines-debug and kotlinx-coroutines-test
-        exclude(group = "org.jetbrains.kotlinx", "kotlinx-coroutines-core-jvm")
-        exclude(group = "org.jetbrains.kotlinx", "kotlinx-coroutines-core")
+        if (!name.startsWith("kotlinCompiler") && !name.startsWith("generateModels") && !name.startsWith("rdGen")) {
+            // we want kotlinx-coroutines-debug and kotlinx-coroutines-test
+            exclude(group = "org.jetbrains.kotlinx", "kotlinx-coroutines-core-jvm")
+            exclude(group = "org.jetbrains.kotlinx", "kotlinx-coroutines-core")
+        }
 
         resolutionStrategy.eachDependency {
             if (requested.group == "org.jetbrains.kotlinx" && requested.name.startsWith("kotlinx-coroutines")) {
@@ -85,18 +87,27 @@ intellijPlatform {
 
 dependencies {
     intellijPlatform {
-        instrumentationTools()
+        val version = toolkitIntelliJ.version()
 
         // annoying resolution issue that we don't want to bother fixing
         if (!project.name.contains("jetbrains-gateway")) {
             val type = toolkitIntelliJ.ideFlavor.map { IntelliJPlatformType.fromCode(it.toString()) }
-            val version = toolkitIntelliJ.version()
 
             create(type, version, useInstaller = false)
+        } else {
+            create(IntelliJPlatformType.Gateway, version)
         }
 
         bundledPlugins(toolkitIntelliJ.productProfile().map { it.bundledPlugins })
         plugins(toolkitIntelliJ.productProfile().map { it.marketplacePlugins })
+
+        // OAuth modules split in 2025.3 (253) - must be explicitly bundled
+        val versionStr = version.get()
+        if (versionStr.contains("253")) {
+            bundledModule("intellij.platform.collaborationTools")
+            bundledModule("intellij.platform.collaborationTools.auth.base")
+            bundledModule("intellij.platform.collaborationTools.auth")
+        }
 
         testFramework(TestFrameworkType.Plugin.Java)
         testFramework(TestFrameworkType.Platform)
