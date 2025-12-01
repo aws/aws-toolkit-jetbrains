@@ -409,18 +409,8 @@ class Browser(parent: Disposable, private val mynahAsset: Path, val project: Pro
                                     }
 
                                     // Only replace if this is the model selection dropdown
-                                    // Check if any option contains "Claude" or model-related text
-                                    let isModelDropdown = false;
-                                    for (let i = 0; i < select.options.length; i++) {
-                                        const optionText = select.options[i].text.toLowerCase();
-                                        if (optionText.includes('claude') || optionText.includes('sonnet') ||
-                                            optionText.includes('opus') || optionText.includes('haiku')) {
-                                            isModelDropdown = true;
-                                            break;
-                                        }
-                                    }
-
-                                    if (!isModelDropdown) {
+                                    // Model selector has autoWidth which adds 'auto-width' class
+                                    if (!select.classList.contains('auto-width')) {
                                         console.log('[JB Modal Dropdown] Skipping non-model dropdown');
                                         return;
                                     }
