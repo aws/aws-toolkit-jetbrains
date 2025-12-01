@@ -35,7 +35,7 @@ import com.jetbrains.rd.util.lifetime.Lifetime
 import com.jetbrains.rd.util.lifetime.LifetimeDefinition
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.launch
 import org.jetbrains.concurrency.AsyncPromise
 import org.jetbrains.concurrency.await
 import software.amazon.awssdk.services.codecatalyst.CodeCatalystClient
@@ -199,7 +199,7 @@ class CawsConnectionProvider : GatewayConnectionProvider {
                                 )
                             }
 
-                            withContext(getCoroutineBgContext()) {
+                            launch(getCoroutineBgContext()) {
                                 ApplicationManager.getApplication().messageBus.syncPublisher(WorkspaceNotifications.TOPIC)
                                     .environmentStarted(
                                         WorkspaceListStateChangeContext(
@@ -249,7 +249,7 @@ class CawsConnectionProvider : GatewayConnectionProvider {
                                     duration = timeTakenToCheckInstallation.toDouble()
                                 )
 
-                                withContext(getCoroutineBgContext()) {
+                                launch(getCoroutineBgContext()) {
                                     environmentActions.stopEnvironment()
                                     GatewayUI.getInstance().connect(parameters)
                                 }
