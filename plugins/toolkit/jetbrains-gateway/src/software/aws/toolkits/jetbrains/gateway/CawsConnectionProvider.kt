@@ -34,10 +34,8 @@ import com.jetbrains.rd.framework.util.launch
 import com.jetbrains.rd.util.lifetime.Lifetime
 import com.jetbrains.rd.util.lifetime.LifetimeDefinition
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.jetbrains.concurrency.AsyncPromise
 import org.jetbrains.concurrency.await
 import software.amazon.awssdk.services.codecatalyst.CodeCatalystClient
@@ -94,8 +92,6 @@ import software.aws.toolkits.telemetry.Result as TelemetryResult
 
 @ExperimentalTime
 class CawsConnectionProvider : GatewayConnectionProvider {
-    private val scope = CoroutineScope(getCoroutineBgContext() + SupervisorJob())
-
     companion object {
         val CAWS_CONNECTION_PARAMETERS = AttributeBagKey.create<Map<String, String>>("CAWS_CONNECTION_PARAMETERS")
         private val LOG = getLogger<CawsConnectionProvider>()
@@ -203,7 +199,7 @@ class CawsConnectionProvider : GatewayConnectionProvider {
                                 )
                             }
 
-                            scope.launch {
+                            withContext(getCoroutineBgContext()) {
                                 ApplicationManager.getApplication().messageBus.syncPublisher(WorkspaceNotifications.TOPIC)
                                     .environmentStarted(
                                         WorkspaceListStateChangeContext(
@@ -253,7 +249,7 @@ class CawsConnectionProvider : GatewayConnectionProvider {
                                     duration = timeTakenToCheckInstallation.toDouble()
                                 )
 
-                                scope.launch {
+                                withContext(getCoroutineBgContext()) {
                                     environmentActions.stopEnvironment()
                                     GatewayUI.getInstance().connect(parameters)
                                 }
