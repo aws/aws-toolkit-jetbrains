@@ -50,8 +50,6 @@ private class BasicOtlpSpanProcessor(
         coroutineScope.launch {
             try {
                 val item = TraceRequestMarshaler.create(listOf(data))
-                val baos = ByteArrayOutputStream()
-                item.writeBinaryTo(baos)
 
                 HttpRequests.post(traceUrl, "application/x-protobuf")
                     .userAgent(AwsClientManager.getUserAgent())
