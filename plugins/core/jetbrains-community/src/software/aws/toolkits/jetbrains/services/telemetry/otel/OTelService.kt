@@ -56,7 +56,7 @@ private class BasicOtlpSpanProcessor(
                 HttpRequests.post(traceUrl, "application/x-protobuf")
                     .userAgent(AwsClientManager.getUserAgent())
                     .connect { request ->
-                        request.write(baos.toByteArray())
+                        item.writeBinaryTo(request.connection.outputStream)
                     }
             } catch (e: CancellationException) {
                 throw e
