@@ -284,7 +284,7 @@ class Browser(parent: Disposable, private val mynahAsset: Path, val project: Pro
                         display: flex !important;
                         align-items: center !important;
                         justify-content: space-between !important;
-                        padding: 8px 12px !important;
+                        padding: 8px 8px 8px 6px !important;
                         background: var(--mynah-color-bg) !important;
                         border: 1px solid var(--mynah-color-border-default) !important;
                         border-radius: 4px !important;
@@ -295,10 +295,7 @@ class Browser(parent: Disposable, private val mynahAsset: Path, val project: Pro
                     }
 
                     .jb-custom-select-trigger > span:first-child {
-                        flex: 1 !important;
                         white-space: nowrap !important;
-                        overflow: hidden !important;
-                        text-overflow: ellipsis !important;
                     }
 
                     .jb-custom-select-trigger:hover {
@@ -306,12 +303,13 @@ class Browser(parent: Disposable, private val mynahAsset: Path, val project: Pro
                     }
 
                     .jb-custom-select-arrow {
+                        flex-shrink: 0 !important;
                         width: 0 !important;
                         height: 0 !important;
                         border-left: 4px solid transparent !important;
                         border-right: 4px solid transparent !important;
                         border-top: 4px solid var(--mynah-color-text-default) !important;
-                        margin-left: 8px !important;
+                        margin-left: 6px !important;
                         transition: transform 0.2s !important;
                     }
 
@@ -340,7 +338,7 @@ class Browser(parent: Disposable, private val mynahAsset: Path, val project: Pro
                     .jb-custom-select-option {
                         padding: 6px 14px !important;
                         cursor: pointer !important;
-                        font-size: 13px !important;
+                        font-size: 11px !important;
                         color: var(--mynah-color-text-default) !important;
                         background: var(--mynah-card-bg) !important;
                         border-bottom: 1px solid var(--mynah-color-border-default) !important;
@@ -410,20 +408,8 @@ class Browser(parent: Disposable, private val mynahAsset: Path, val project: Pro
                                     const selectedText = document.createElement('span');
                                     selectedText.textContent = select.options[select.selectedIndex]?.text || '';
 
-                                    // Function to adjust font size based on text length
                                     function adjustFontSize(text, element) {
-                                        const length = text.length;
-                                        let fontSize;
-                                        if (length <= 12) {
-                                            fontSize = '12px';  // Short text
-                                        } else if (length <= 18) {
-                                            fontSize = '11px';  // Medium text
-                                        } else if (length <= 25) {
-                                            fontSize = '10px';  // Long text
-                                        } else {
-                                            fontSize = '9px';   // Very long text
-                                        }
-                                        element.style.fontSize = fontSize;
+                                        element.style.fontSize = '11px';
                                     }
 
                                     // Set initial font size
