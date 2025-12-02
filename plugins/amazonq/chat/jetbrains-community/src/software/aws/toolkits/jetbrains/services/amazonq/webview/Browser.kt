@@ -326,8 +326,8 @@ class Browser(parent: Disposable, private val mynahAsset: Path, val project: Pro
                         border: 1px solid var(--mynah-color-border-default) !important;
                         border-radius: 6px !important;
                         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
-                        min-width: 300px !important;
-                        max-width: 400px !important;
+                        min-width: 200px !important;
+                        max-width: 300px !important;
                         overflow: hidden !important;
                         z-index: 2147483647 !important;
                         display: none !important;
@@ -338,9 +338,9 @@ class Browser(parent: Disposable, private val mynahAsset: Path, val project: Pro
                     }
 
                     .jb-custom-select-option {
-                        padding: 14px 20px !important;
+                        padding: 6px 14px !important;
                         cursor: pointer !important;
-                        font-size: 14px !important;
+                        font-size: 13px !important;
                         color: var(--mynah-color-text-default) !important;
                         background: var(--mynah-card-bg) !important;
                         border-bottom: 1px solid var(--mynah-color-border-default) !important;
@@ -408,7 +408,7 @@ class Browser(parent: Disposable, private val mynahAsset: Path, val project: Pro
                                     trigger.className = 'jb-custom-select-trigger';
 
                                     const selectedText = document.createElement('span');
-                                    selectedText.textContent = select.options[select.selectedIndex]?.text || 'Select model';
+                                    selectedText.textContent = select.options[select.selectedIndex]?.text || '';
 
                                     // Function to adjust font size based on text length
                                     function adjustFontSize(text, element) {
