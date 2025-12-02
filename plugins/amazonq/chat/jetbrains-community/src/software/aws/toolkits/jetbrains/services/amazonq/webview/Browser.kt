@@ -246,13 +246,125 @@ class Browser(parent: Disposable, private val mynahAsset: Path, val project: Pro
                         box-shadow: none !important;
                         border-radius: 0 !important;
                     }
+                    /* Hide native select - will be replaced with custom dropdown */
                     select.mynah-form-input {
                         -webkit-appearance: menulist !important;
                         appearance: menulist !important;
                         padding: 0 !important;
                     }
+                    select.mynah-form-input[data-jb-replaced="true"] {
+                        position: absolute !important;
+                        width: 1px !important;
+                        height: 1px !important;
+                        opacity: 0 !important;
+                        pointer-events: none !important;
+                    }
                     .mynah-select-handle {
                         visibility: hidden;
+                    }
+
+                    /* Custom dropdown styles with modal overlay */
+                    .jb-custom-select {
+                        position: absolute !important;
+                        width: 100%% !important;
+                        top: 0 !important;
+                        left: 0 !important;
+                        right: 0 !important;
+                        font-family: var(--mynah-font-family) !important;
+                    }
+
+                    /* Ensure the parent wrapper has fixed width and relative positioning */
+                    .mynah-form-input-wrapper {
+                        position: relative !important;
+                        width: 100%% !important;
+                        min-height: 40px !important;
+                    }
+
+                    .jb-custom-select-trigger {
+                        display: flex !important;
+                        align-items: center !important;
+                        justify-content: space-between !important;
+                        padding: 8px 12px !important;
+                        background: var(--mynah-color-bg) !important;
+                        border: 1px solid var(--mynah-color-border-default) !important;
+                        border-radius: 4px !important;
+                        cursor: pointer !important;
+                        color: var(--mynah-color-text-default) !important;
+                        width: 100%% !important;
+                        box-sizing: border-box !important;
+                    }
+
+                    .jb-custom-select-trigger > span:first-child {
+                        flex: 1 !important;
+                        white-space: nowrap !important;
+                        overflow: hidden !important;
+                        text-overflow: ellipsis !important;
+                    }
+
+                    .jb-custom-select-trigger:hover {
+                        border-color: var(--mynah-color-border-hover, var(--mynah-color-border-default)) !important;
+                    }
+
+                    .jb-custom-select-arrow {
+                        width: 0 !important;
+                        height: 0 !important;
+                        border-left: 4px solid transparent !important;
+                        border-right: 4px solid transparent !important;
+                        border-top: 4px solid var(--mynah-color-text-default) !important;
+                        margin-left: 8px !important;
+                        transition: transform 0.2s !important;
+                    }
+
+                    .jb-custom-select-arrow.open {
+                        transform: rotate(180deg) !important;
+                    }
+
+                    /* Dropdown menu - floats with high z-index */
+                    .jb-custom-select-dropdown {
+                        position: fixed !important;
+                        background: var(--mynah-card-bg) !important;
+                        border: 1px solid var(--mynah-color-border-default) !important;
+                        border-radius: 6px !important;
+                        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+                        min-width: 300px !important;
+                        max-width: 400px !important;
+                        overflow: hidden !important;
+                        z-index: 2147483647 !important;
+                        display: none !important;
+                    }
+
+                    .jb-custom-select-dropdown.open {
+                        display: block !important;
+                    }
+
+                    .jb-custom-select-option {
+                        padding: 14px 20px !important;
+                        cursor: pointer !important;
+                        font-size: 14px !important;
+                        color: var(--mynah-color-text-default) !important;
+                        background: var(--mynah-card-bg) !important;
+                        border-bottom: 1px solid var(--mynah-color-border-default) !important;
+                        transition: background 0.15s !important;
+                    }
+
+                    .jb-custom-select-option:last-child {
+                        border-bottom: none !important;
+                    }
+
+                    .jb-custom-select-option:hover {
+                        background: var(--mynah-card-bg-alternate) !important;
+                        color: var(--mynah-color-text-strong) !important;
+                    }
+
+                    .jb-custom-select-option.selected {
+                        background: var(--mynah-color-button) !important;
+                        color: var(--mynah-color-button-reverse) !important;
+                        font-weight: 500 !important;
+                    }
+
+                    .jb-custom-select-option.selected:hover {
+                        background: var(--mynah-color-button) !important;
+                        filter: brightness(1.1) !important;
                     }
                     .mynah-ui-spinner-container > span.mynah-ui-spinner-logo-part > .mynah-ui-spinner-logo-mask.text {
                         will-change: transform !important;
@@ -268,6 +380,213 @@ class Browser(parent: Disposable, private val mynahAsset: Path, val project: Pro
                     <div style="text-align: center;">Amazon Q is loading...</div>
                     <script type="text/javascript">
                         ${ThemeBrowserAdapter().buildJsCodeToUpdateTheme(EditorThemeAdapter.getThemeFromIde())}
+                    </script>
+                    <script type="text/javascript">
+                        // Custom dropdown for JetBrains
+                        (function() {
+                            let currentOpenDropdown = null;
+
+                            function replaceSelectWithCustomDropdown() {
+                                const selectElements = document.querySelectorAll('select.mynah-form-input');
+                                console.log('[JB Modal Dropdown] Found', selectElements.length, 'select elements');
+
+                                selectElements.forEach(function(select) {
+                                    // Skip if already replaced
+                                    if (select.hasAttribute('data-jb-replaced')) {
+                                        return;
+                                    }
+
+                                    select.setAttribute('data-jb-replaced', 'true');
+                                    console.log('[JB Modal Dropdown] Replacing select with', select.options.length, 'options');
+
+                                    // Create custom dropdown container
+                                    const container = document.createElement('div');
+                                    container.className = 'jb-custom-select';
+
+                                    // Create trigger button
+                                    const trigger = document.createElement('div');
+                                    trigger.className = 'jb-custom-select-trigger';
+
+                                    const selectedText = document.createElement('span');
+                                    selectedText.textContent = select.options[select.selectedIndex]?.text || 'Select model';
+
+                                    // Function to adjust font size based on text length
+                                    function adjustFontSize(text, element) {
+                                        const length = text.length;
+                                        let fontSize;
+                                        if (length <= 12) {
+                                            fontSize = '12px';  // Short text
+                                        } else if (length <= 18) {
+                                            fontSize = '11px';  // Medium text
+                                        } else if (length <= 25) {
+                                            fontSize = '10px';  // Long text
+                                        } else {
+                                            fontSize = '9px';   // Very long text
+                                        }
+                                        element.style.fontSize = fontSize;
+                                    }
+
+                                    // Set initial font size
+                                    adjustFontSize(selectedText.textContent, trigger);
+
+                                    const arrow = document.createElement('span');
+                                    arrow.className = 'jb-custom-select-arrow';
+
+                                    trigger.appendChild(selectedText);
+                                    trigger.appendChild(arrow);
+
+                                    // Create dropdown menu
+                                    const dropdown = document.createElement('div');
+                                    dropdown.className = 'jb-custom-select-dropdown';
+
+                                    // Add options
+                                    console.log('[JB Modal Dropdown] Creating options, total:', select.options.length);
+
+                                    if (select.options.length === 0) {
+                                        const debugOption = document.createElement('div');
+                                        debugOption.className = 'jb-custom-select-option';
+                                        debugOption.textContent = 'No models available';
+                                        debugOption.style.color = '#ff6b6b';
+                                        dropdown.appendChild(debugOption);
+                                    }
+
+                                    for (let i = 0; i < select.options.length; i++) {
+                                        const option = document.createElement('div');
+                                        option.className = 'jb-custom-select-option';
+                                        option.textContent = select.options[i].text || ('Option ' + i);
+                                        option.setAttribute('data-value', select.options[i].value);
+                                        console.log('[JB Modal Dropdown] Option', i, ':', select.options[i].text);
+
+                                        if (i === select.selectedIndex) {
+                                            option.classList.add('selected');
+                                        }
+
+                                        option.addEventListener('click', function(e) {
+                                            e.stopPropagation();
+
+                                            // Update selected value
+                                            select.selectedIndex = i;
+
+                                            // Trigger change event on original select
+                                            const event = new Event('change', { bubbles: true });
+                                            select.dispatchEvent(event);
+
+                                            // Update UI
+                                            selectedText.textContent = this.textContent;
+
+                                            // Adjust font size for new text
+                                            adjustFontSize(this.textContent, trigger);
+
+                                            // Update selected class
+                                            dropdown.querySelectorAll('.jb-custom-select-option').forEach(function(opt) {
+                                                opt.classList.remove('selected');
+                                            });
+                                            this.classList.add('selected');
+
+                                            // Close dropdown
+                                            dropdown.classList.remove('open');
+                                            arrow.classList.remove('open');
+                                            currentOpenDropdown = null;
+                                        });
+
+                                        dropdown.appendChild(option);
+                                    }
+                                    console.log('[JB Modal Dropdown] Dropdown has', dropdown.children.length, 'option elements');
+
+                                    // Toggle dropdown on trigger click
+                                    trigger.addEventListener('click', function(e) {
+                                        console.log('[JB Dropdown] Trigger clicked, toggling dropdown');
+                                        e.stopPropagation();
+
+                                        // Close any other open dropdown
+                                        if (currentOpenDropdown && currentOpenDropdown !== dropdown) {
+                                            currentOpenDropdown.classList.remove('open');
+                                        }
+
+                                        // Toggle this dropdown
+                                        const isOpening = !dropdown.classList.contains('open');
+
+                                        if (isOpening) {
+                                            // Position dropdown near trigger (smart positioning)
+                                            const rect = trigger.getBoundingClientRect();
+                                            dropdown.style.left = rect.left + 'px';
+
+                                            // Check if more space above or below
+                                            const spaceAbove = rect.top;
+                                            const spaceBelow = window.innerHeight - rect.bottom;
+
+                                            if (spaceAbove > spaceBelow) {
+                                                // More space above - position above trigger
+                                                dropdown.style.bottom = (window.innerHeight - rect.top) + 'px';
+                                                dropdown.style.top = 'auto';
+                                            } else {
+                                                // More space below - position below trigger
+                                                dropdown.style.top = rect.bottom + 'px';
+                                                dropdown.style.bottom = 'auto';
+                                            }
+
+                                            // Show dropdown
+                                            dropdown.classList.add('open');
+                                            arrow.classList.add('open');
+                                            currentOpenDropdown = dropdown;
+                                        } else {
+                                            // Close dropdown
+                                            dropdown.classList.remove('open');
+                                            arrow.classList.remove('open');
+                                            currentOpenDropdown = null;
+                                        }
+                                    });
+
+                                    // Build custom dropdown
+                                    container.appendChild(trigger);
+
+                                    // Append dropdown to body for proper positioning
+                                    document.body.appendChild(dropdown);
+
+                                    // Hide original select and insert custom dropdown trigger
+                                    select.style.display = 'none';
+                                    select.parentElement.insertBefore(container, select);
+
+                                    console.log('[JB Dropdown] Setup complete');
+                                });
+                            }
+
+                            // Close dropdown when clicking outside
+                            document.addEventListener('click', function(e) {
+                                if (currentOpenDropdown) {
+                                    currentOpenDropdown.classList.remove('open');
+                                    // Also update arrow state
+                                    const arrows = document.querySelectorAll('.jb-custom-select-arrow.open');
+                                    arrows.forEach(function(arrow) {
+                                        arrow.classList.remove('open');
+                                    });
+                                    currentOpenDropdown = null;
+                                }
+                            });
+
+                            // Try to replace immediately
+                            replaceSelectWithCustomDropdown();
+
+                            // Also watch for new selects being added (mynah-ui might add them dynamically)
+                            const observer = new MutationObserver(function() {
+                                replaceSelectWithCustomDropdown();
+                            });
+
+                            // Start observing once DOM is ready
+                            if (document.body) {
+                                observer.observe(document.body, {
+                                    childList: true,
+                                    subtree: true
+                                });
+                            } else {
+                                document.addEventListener('DOMContentLoaded', function() {
+                                    observer.observe(document.body, {
+                                        childList: true,
+                                        subtree: true
+                                    });
+                                });
+                            }
+                        })();
                     </script>
                 </body>
             </html>
