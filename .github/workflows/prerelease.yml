@@ -87,7 +87,10 @@ jobs:
       - name: Generate changelog
         id: changelog
         run: |
-          ./gradlew :createRelease :generateChangelog
+          # TODO(repo-split): Amazon Q repo keeps this line
+          ./gradlew :createAmazonQRelease :generateAmazonQChangeLog
+          # TODO(repo-split): Toolkit repo keeps this line
+          ./gradlew :createToolkitRelease :generateToolkitChangeLog
       - name: Provide the metadata to output
         id: assign_output
         run: |

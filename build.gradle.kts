@@ -2,7 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 import org.jetbrains.gradle.ext.ProjectSettings
 import org.jetbrains.gradle.ext.TaskTriggersConfig
+import software.aws.toolkits.gradle.changelog.tasks.CreateRelease
+import software.aws.toolkits.gradle.changelog.tasks.GenerateAmazonQGithubChangeLog
 import software.aws.toolkits.gradle.changelog.tasks.GenerateGithubChangeLog
+import software.aws.toolkits.gradle.changelog.tasks.GenerateToolkitGithubChangeLog
 
 plugins {
     id("base")
@@ -21,12 +24,35 @@ allprojects {
     }
 }
 
+// TODO(repo-split): Remove this task when splitting repos (This is not used)
 val generateChangeLog = tasks.register<GenerateGithubChangeLog>("generateChangeLog") {
     mustRunAfter(tasks.createRelease)
     changeLogFile.set(project.file("CHANGELOG.md"))
 }
 
 tasks.createRelease.configure {
+    releaseVersion.set(providers.gradleProperty("toolkitVersion"))
+}
+
+// TODO(repo-split): Amazon Q repo keeps this task
+val generateAmazonQChangeLog = tasks.register<GenerateAmazonQGithubChangeLog>("generateAmazonQChangeLog") {
+    changeLogFile.set(project.file("CHANGELOG-amazonq.md"))
+}
+
+// TODO(repo-split): Amazon Q repo keeps this task
+tasks.register<CreateRelease>("createAmazonQRelease") {
+    pluginName.set("amazonq")
+    releaseVersion.set(providers.gradleProperty("toolkitVersion"))
+}
+
+// TODO(repo-split): Toolkit repo keeps this task
+val generateToolkitChangeLog = tasks.register<GenerateToolkitGithubChangeLog>("generateToolkitChangeLog") {
+    changeLogFile.set(project.file("CHANGELOG-toolkit.md"))
+}
+
+// TODO(repo-split): Toolkit repo keeps this task
+tasks.register<CreateRelease>("createToolkitRelease") {
+    pluginName.set("toolkit")
     releaseVersion.set(providers.gradleProperty("toolkitVersion"))
 }
 
