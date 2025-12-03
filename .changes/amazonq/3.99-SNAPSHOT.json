@@ -1,0 +1,8 @@
+{
+  "date" : "2025-12-02",
+  "version" : "3.99-SNAPSHOT",
+  "entries" : [ {
+    "type" : "feature",
+    "description" : "try to use new changelog"
+  } ]
+}

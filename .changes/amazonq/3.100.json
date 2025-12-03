@@ -1,0 +1,11 @@
+{
+  "date" : "2025-12-02",
+  "version" : "3.100",
+  "entries" : [ {
+    "type" : "feature",
+    "description" : "add changelog generator"
+  }, {
+    "type" : "bugfix",
+    "description" : "fix the bug for changelog"
+  } ]
+}

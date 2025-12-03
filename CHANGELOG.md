@@ -1,3 +1,16 @@
+# AWS Toolkit for JetBrains - Changelog
+
+This repository contains two plugins with separate changelogs:
+
+- **[Amazon Q Developer Changelog](CHANGELOG-AmazonQ.md)**
+- **[AWS Toolkit Changelog](CHANGELOG-Toolkit.md)**
+
+---
+
+## Historical Releases (3.98 and earlier)
+
+Versions 3.98 and earlier were released as a combined plugin. Starting from version 3.99, the plugins have independent changelogs.
+
 # _3.98_ (2025-11-14)
 - **(Feature)** Add support for 2025.3
 - **(Deprecation)** An upcoming release will remove support for JetBrains Gateway version 2025.2 and for IDEs based on the 2024.3 platform
@@ -1069,12 +1082,12 @@
 - **(Feature)** Add support for Lambda runtime java8.al2
 - **(Feature)** Allow connecting to RDS/Redshift databases with temporary IAM AWS credentials or a SecretsManager secret
 - **(Feature)** Several enhancements to the UX around connecting to AWS including:
-  - Making connection settings more visible (now visible in the AWS Explorer)
-  - Automatically selecting 'default' profile if it exists
-  - Better visibility of connection validation workflow (more information when unable to connect)
-  - Handling of default regions on credential profile
-  - Better UX around partitions
-  - Adding ability to refresh connection from the UI
+    - Making connection settings more visible (now visible in the AWS Explorer)
+    - Automatically selecting 'default' profile if it exists
+    - Better visibility of connection validation workflow (more information when unable to connect)
+    - Handling of default regions on credential profile
+    - Better UX around partitions
+    - Adding ability to refresh connection from the UI
 - **(Feature)** Save update Lambda code settings
 - **(Bug Fix)** Fix several cases where features not supported by the host IDE are shown ([#1980](https://github.com/aws/aws-toolkit-jetbrains/issues/1980))
 - **(Bug Fix)** Start generating SAM project before the IDE is done indexing
@@ -1144,9 +1157,9 @@
 - **(Breaking Change)** Minimum SAM CLI version has been increased to 0.38.0
 - **(Breaking Change)** Remove the Lambda nodes underneath of the CloudFromation stack in the explorer
 - **(Feature)** Add S3 node and S3 Browser:
-  - Browse files and folders in a tree view
-  - Drag and drop upload
-  - Double click to open files directly in the IDE
+    - Browse files and folders in a tree view
+    - Drag and drop upload
+    - Double click to open files directly in the IDE
 - **(Feature)** Add support for NodeJS 12 SAM/Lambdas
 - **(Feature)** Add support for Java 11 SAM/Lambda
 - **(Feature)** Add support for Java 11 SAM/Lambdas
@@ -1221,10 +1234,10 @@
 
 # _1.4_ (2019-06-10)
 - **(Feature)** Usability enhancements to the CloudFormation UI
-  - color coding status similar to the AWS Console
-  - preventing multiple tabs opening for the same stack ([#798](https://github.com/aws/aws-toolkit-jetbrains/issues/798))
-  - opening from AWS Explorer with right-click instead of double click ([#799](https://github.com/aws/aws-toolkit-jetbrains/issues/799))
-  - adding status reason to event view
+    - color coding status similar to the AWS Console
+    - preventing multiple tabs opening for the same stack ([#798](https://github.com/aws/aws-toolkit-jetbrains/issues/798))
+    - opening from AWS Explorer with right-click instead of double click ([#799](https://github.com/aws/aws-toolkit-jetbrains/issues/799))
+    - adding status reason to event view
 - **(Feature)** Open README.md file after creating a project
 - **(Feature)** Auto-create run configurations when using the New Project wizard
 - **(Feature)** Enable toolkit in 2019.2 EAP
@@ -1280,4 +1293,3 @@
 - **(Bug Fix)** Fix IllegalStateException: context.module must not be null ([#643](https://github.com/aws/aws-toolkit-jetbrains/issues/643))
 - **(Bug Fix)** Fixed issue on OS X where the SAM CLI is unable to use an UTF-8 locale.
 - **(Bug Fix)** Fix the status message for certain states during CloudFormation stack updates ([#702](https://github.com/aws/aws-toolkit-jetbrains/issues/702))
-
