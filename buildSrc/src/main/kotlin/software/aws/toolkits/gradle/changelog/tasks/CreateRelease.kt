@@ -27,6 +27,10 @@ open class CreateRelease @Inject constructor(projectLayout: ProjectLayout) : Cha
 
     @Input
     @Optional
+    val pluginName: Property<String> = project.objects.property(String::class.java)
+
+    @Input
+    @Optional
     val issuesUrl: Provider<String?> = project.objects.property(String::class.java).convention("https://github.com/aws/aws-toolkit-jetbrains/issues")
 
     @OutputFile
@@ -41,18 +45,31 @@ open class CreateRelease @Inject constructor(projectLayout: ProjectLayout) : Cha
             LocalDate.from(it)
         }
 
-        val releaseEntries = nextReleaseDirectory.jsonFiles()
+        val plugin = pluginName.orNull
+        val targetNextReleaseDir = if (plugin != null) {
+            project.layout.projectDirectory.dir(".changes/$plugin/next-release")
+        } else {
+            nextReleaseDirectory.get()
+        }
 
-        val creator = ReleaseCreator(releaseEntries.files, releaseFile.get().asFile, logger)
+        val targetReleaseFile = if (plugin != null) {
+            project.layout.projectDirectory.file(".changes/$plugin/${releaseVersion.get()}.json").asFile
+        } else {
+            releaseFile.get().asFile
+        }
+
+        val releaseEntries = targetNextReleaseDir.asFileTree.files.filter { it.extension == "json" }
+
+        val creator = ReleaseCreator(releaseEntries, targetReleaseFile, logger)
         creator.create(releaseVersion.get(), releaseDate)
         if (git != null) {
-            git.stage(releaseFile.get().asFile.absoluteFile)
-            git.stage(nextReleaseDirectory.get().asFile.absoluteFile)
+            git.stage(targetReleaseFile.absoluteFile)
+            git.stage(targetNextReleaseDir.asFile.absoluteFile)
         }
 
         val generator = ChangeLogGenerator(listOf(GithubWriter(changeLogFile.get().asFile.toPath(), issuesUrl.get())), logger)
         generator.use {
-            generator.addReleasedChanges(listOf(releaseFile.get().asFile.toPath()))
+            generator.addReleasedChanges(listOf(targetReleaseFile.toPath()))
         }
     }
 }

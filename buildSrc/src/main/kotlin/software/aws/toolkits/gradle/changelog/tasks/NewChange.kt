@@ -18,6 +18,10 @@ open class NewChange : ChangeLogTask() {
 
     @TaskAction
     fun create() {
+        val pluginName = if (project.hasProperty("plugin")) {
+            project.property("plugin") as? String?
+        } else null
+
         val changeType = if (project.hasProperty("changeType")) {
             (project.property("changeType") as? String?)?.toUpperCase()?.let { ChangeType.valueOf(it) }
         } else defaultChangeType
@@ -27,19 +31,34 @@ open class NewChange : ChangeLogTask() {
 
         val input = Scanner(System.`in`)
         val file = when {
-            changeType != null && description != null -> createChange(changeType, description)
-            else -> promptForChange(input, changeType)
+            pluginName != null && changeType != null && description != null -> createChange(pluginName, changeType, description)
+            else -> promptForChange(input, pluginName, changeType)
         }
         git?.stage(file)
     }
 
-    private fun promptForChange(input: Scanner, existingChangeType: ChangeType?): File {
+    private fun promptForChange(input: Scanner, existingPlugin: String?, existingChangeType: ChangeType?): File {
+        val pluginName = existingPlugin ?: promptForPlugin(input)
         val changeType = existingChangeType ?: promptForChangeType(input)
 
         logger.lifecycle("> Please enter a change description: ")
         val description = input.nextLine()
 
-        return createChange(changeType, description)
+        return createChange(pluginName, changeType, description)
+    }
+
+    // Todo: delete the prompt for plugin after separation
+    private fun promptForPlugin(input: Scanner): String {
+        logger.lifecycle("""
+> Which plugin is this change for?
+1. amazonq
+2. toolkit
+> Please enter selection (1): """.trimIndent())
+
+        return when (input.nextLine().trim()) {
+            "2" -> "toolkit"
+            else -> "amazonq"
+        }
     }
 
     private fun promptForChangeType(input: Scanner): ChangeType {
@@ -58,15 +77,15 @@ open class NewChange : ChangeLogTask() {
         }
     }
 
-    private fun createChange(changeType: ChangeType, description: String) = newFile(changeType).apply {
-        MAPPER.writerWithDefaultPrettyPrinter().writeValue(
-            this,
-            Entry(changeType, description)
-        )
+    private fun createChange(pluginName: String, changeType: ChangeType, description: String): File {
+        return newFile(pluginName, changeType).apply {
+            MAPPER.writerWithDefaultPrettyPrinter().writeValue(this, Entry(changeType, description))
+        }
     }
 
-    private fun newFile(changeType: ChangeType) = nextReleaseDirectory.file("${changeType.name.lowercase()}-${UUID.randomUUID()}.json").get().asFile.apply {
-        parentFile?.mkdirs()
-        createNewFile()
-    }
+    private fun newFile(pluginName: String, changeType: ChangeType) =
+        changesDirectory.get().dir("$pluginName/next-release").file("${changeType.name.lowercase()}-${UUID.randomUUID()}.json").asFile.apply {
+            parentFile?.mkdirs()
+            createNewFile()
+        }
 }
