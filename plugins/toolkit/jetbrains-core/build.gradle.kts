@@ -7,7 +7,7 @@ import org.jdom2.output.Format
 import org.jdom2.output.XMLOutputter
 import org.jetbrains.intellij.platform.gradle.tasks.PatchPluginXmlTask
 import software.aws.toolkits.gradle.buildMetadata
-import software.aws.toolkits.gradle.changelog.tasks.GeneratePluginChangeLog
+import software.aws.toolkits.gradle.changelog.tasks.GenerateToolkitPluginChangeLog
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.IdeVersions
 import software.aws.toolkits.gradle.isCi
@@ -40,7 +40,7 @@ dependencies {
     }
 }
 
-val changelog = tasks.register<GeneratePluginChangeLog>("pluginChangeLog") {
+val changelog = tasks.register<GenerateToolkitPluginChangeLog>("pluginChangeLog") {
     includeUnreleased.set(true)
     changeLogFile.set(project.layout.buildDirectory.file("changelog/change-notes.xml"))
 }

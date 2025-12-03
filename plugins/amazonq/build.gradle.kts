@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import de.undercouch.gradle.tasks.download.Download
 import org.jetbrains.intellij.platform.gradle.tasks.PrepareSandboxTask
-import software.aws.toolkits.gradle.changelog.tasks.GeneratePluginChangeLog
+import software.aws.toolkits.gradle.changelog.tasks.GenerateAmazonQPluginChangeLog
 
 plugins {
     id("toolkit-publishing-conventions")
@@ -21,7 +21,7 @@ buildscript {
     }
 }
 
-val changelog = tasks.register<GeneratePluginChangeLog>("pluginChangeLog") {
+val changelog = tasks.register<GenerateAmazonQPluginChangeLog>("pluginChangeLog") {
     includeUnreleased.set(true)
     changeLogFile.value(layout.buildDirectory.file("changelog/change-notes.xml"))
 }
