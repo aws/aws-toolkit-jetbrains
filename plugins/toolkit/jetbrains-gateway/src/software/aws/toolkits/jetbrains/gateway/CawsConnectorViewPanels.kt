@@ -9,7 +9,6 @@ import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.observable.properties.PropertyGraph
 import com.intellij.openapi.rd.createNestedDisposable
 import com.intellij.openapi.rd.util.launchOnUi
-import com.intellij.openapi.rd.util.startChildSyncIOBackgroundAsync
 import com.intellij.openapi.rd.util.startWithModalProgressAsync
 import com.intellij.openapi.rd.util.withUiContext
 import com.intellij.openapi.ui.DialogPanel
@@ -46,6 +45,7 @@ import com.jetbrains.gateway.welcomeScreen.MultistagePanel
 import com.jetbrains.gateway.welcomeScreen.MultistagePanelContainer
 import com.jetbrains.gateway.welcomeScreen.MultistagePanelDelegate
 import com.jetbrains.rd.util.lifetime.Lifetime
+import kotlinx.coroutines.withContext
 import software.amazon.awssdk.services.codecatalyst.CodeCatalystClient
 import software.amazon.awssdk.services.codecatalyst.model.InstanceType
 import software.aws.toolkits.core.ClientConnectionSettings
@@ -54,6 +54,7 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.AwsResourceCache
 import software.aws.toolkits.jetbrains.core.awsClient
+import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeCatalystConnection
@@ -471,7 +472,7 @@ class EnvironmentDetailsPanel(private val context: CawsSettings, lifetime: Lifet
                                 projectProperty.afterChange {
                                     lifetime.launchOnUi {
                                         loadingPanel.startLoading()
-                                        val panel = startChildSyncIOBackgroundAsync { content(it?.space) }.await()
+                                        val panel = withContext(getCoroutineBgContext()) { content(it?.space) }
                                         wrapper.setContent(panel)
                                         loadingPanel.stopLoading()
                                     }
