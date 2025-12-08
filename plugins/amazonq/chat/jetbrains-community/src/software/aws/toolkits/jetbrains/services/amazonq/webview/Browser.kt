@@ -386,7 +386,6 @@ class Browser(parent: Disposable, private val mynahAsset: Path, val project: Pro
 
                             function replaceSelectWithCustomDropdown() {
                                 const selectElements = document.querySelectorAll('select.mynah-form-input');
-                                console.log('[JB Modal Dropdown] Found', selectElements.length, 'select elements');
 
                                 selectElements.forEach(function(select) {
                                     // Skip if already replaced
@@ -395,7 +394,6 @@ class Browser(parent: Disposable, private val mynahAsset: Path, val project: Pro
                                     }
 
                                     select.setAttribute('data-jb-replaced', 'true');
-                                    console.log('[JB Modal Dropdown] Replacing select with', select.options.length, 'options');
 
                                     // Create custom dropdown container
                                     const container = document.createElement('div');
@@ -426,8 +424,6 @@ class Browser(parent: Disposable, private val mynahAsset: Path, val project: Pro
                                     dropdown.className = 'jb-custom-select-dropdown';
 
                                     // Add options
-                                    console.log('[JB Modal Dropdown] Creating options, total:', select.options.length);
-
                                     if (select.options.length === 0) {
                                         const debugOption = document.createElement('div');
                                         debugOption.className = 'jb-custom-select-option';
@@ -441,7 +437,6 @@ class Browser(parent: Disposable, private val mynahAsset: Path, val project: Pro
                                         option.className = 'jb-custom-select-option';
                                         option.textContent = select.options[i].text || ('Option ' + i);
                                         option.setAttribute('data-value', select.options[i].value);
-                                        console.log('[JB Modal Dropdown] Option', i, ':', select.options[i].text);
 
                                         if (i === select.selectedIndex) {
                                             option.classList.add('selected');
@@ -477,11 +472,9 @@ class Browser(parent: Disposable, private val mynahAsset: Path, val project: Pro
 
                                         dropdown.appendChild(option);
                                     }
-                                    console.log('[JB Modal Dropdown] Dropdown has', dropdown.children.length, 'option elements');
 
                                     // Toggle dropdown on trigger click
                                     trigger.addEventListener('click', function(e) {
-                                        console.log('[JB Dropdown] Trigger clicked, toggling dropdown');
                                         e.stopPropagation();
 
                                         // Close any other open dropdown
@@ -532,8 +525,6 @@ class Browser(parent: Disposable, private val mynahAsset: Path, val project: Pro
                                     // Hide original select and insert custom dropdown trigger
                                     select.style.display = 'none';
                                     select.parentElement.insertBefore(container, select);
-
-                                    console.log('[JB Dropdown] Setup complete');
                                 });
                             }
 
