@@ -86,7 +86,7 @@ class EditorThemeAdapter {
             )
 
             val linkColor = themeColor("link", "Link.activeForeground", default = 0x589DF6)
-            
+
             return AmazonQTheme(
                 darkMode = !JBColor.isBright(),
                 font = UIUtil.getFont(UIUtil.FontSize.NORMAL, null),
