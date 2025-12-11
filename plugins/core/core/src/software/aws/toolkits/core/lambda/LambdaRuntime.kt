@@ -31,6 +31,7 @@ enum class LambdaRuntime(
     PYTHON3_10(Runtime.PYTHON3_10, minSamDebugging = "1.78.0", minSamInit = "1.78.0", architectures = ARM_COMPATIBLE),
     PYTHON3_11(Runtime.PYTHON3_11, minSamDebugging = "1.87.0", minSamInit = "1.87.0", architectures = ARM_COMPATIBLE),
     PYTHON3_12(Runtime.PYTHON3_12, minSamDebugging = "1.103.0", minSamInit = "1.103.0", architectures = ARM_COMPATIBLE),
+    PYTHON3_14(Runtime.PYTHON3_14, minSamDebugging = "1.150.1", minSamInit = "1.150.1", architectures = ARM_COMPATIBLE),
     DOTNET6_0(Runtime.DOTNET6, minSamDebugging = "1.40.1", minSamInit = "1.40.1", architectures = ARM_COMPATIBLE),
     ;
 

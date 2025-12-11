@@ -1,3 +1,7 @@
+# _3.101_ (2025-12-16)
+- **(Bug Fix)** Adding missing test for Python 3.12 completion support
+- **(Feature)** Add support for Python 3.14
+
 # _3.100_ (2025-12-09)
 
 # _3.99_ (2025-11-21)

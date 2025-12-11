@@ -57,4 +57,13 @@ class PythonRuntimeGroupTest {
 
         assertThat(sut.determineRuntime(module)).isEqualTo(LambdaRuntime.PYTHON3_12)
     }
+
+    @Test
+    fun testRuntimeDetection312() {
+        val module = projectRule.module
+        // PythonCodeInsightTestFixtureRule already sets SDK to 3.14
+        // projectRule.setModuleSdk(module, PyTestSdk.create("3.14.0"))
+
+        assertThat(sut.determineRuntime(module)).isEqualTo(LambdaRuntime.PYTHON3_14)
+    }
 }
