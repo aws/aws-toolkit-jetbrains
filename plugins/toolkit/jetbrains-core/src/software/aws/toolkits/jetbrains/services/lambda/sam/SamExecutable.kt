@@ -67,10 +67,15 @@ class SamExecutable : ExecutableType<SemVer>, AutoResolvable, Validatable {
                     arrayOf("C:\\Program Files\\Amazon\\AWSSAMCLI\\bin", "C:\\Program Files (x86)\\Amazon\\AWSSAMCLI\\bin"),
                     arrayOf("sam.cmd", "sam.exe")
                 )
-            } else {
+            } else if (SystemInfo.isMac) {
                 ExecutableDetector().find(
-                    arrayOf("/usr/local/bin", "/usr/bin"),
+                    arrayOf("/usr/local/bin", "/usr/bin", "/opt/homebrew/bin/sam"),
                     arrayOf("sam")
+                )
+            } else {
+            ExecutableDetector().find(
+                arrayOf("/usr/local/bin", "/usr/bin"),
+                arrayOf("sam")
                 )
             }
             ) ?: return null
