@@ -23,9 +23,11 @@ import software.aws.toolkits.jetbrains.services.lambda.wizard.TemplateParameters
 import software.aws.toolkits.resources.message
 
 private val pythonTemplateRuntimes =
-    setOf(LambdaRuntime.PYTHON3_8, LambdaRuntime.PYTHON3_9, LambdaRuntime.PYTHON3_10, LambdaRuntime.PYTHON3_11, LambdaRuntime.PYTHON3_12)
+    setOf(LambdaRuntime.PYTHON3_8, LambdaRuntime.PYTHON3_9, LambdaRuntime.PYTHON3_10, LambdaRuntime.PYTHON3_11, LambdaRuntime.PYTHON3_12,
+        LambdaRuntime.PYTHON3_13, LambdaRuntime.PYTHON3_14)
 private val eventBridgeTemplateRuntimes =
-    setOf(LambdaRuntime.PYTHON3_8, LambdaRuntime.PYTHON3_9, LambdaRuntime.PYTHON3_10, LambdaRuntime.PYTHON3_11, LambdaRuntime.PYTHON3_12)
+    setOf(LambdaRuntime.PYTHON3_8, LambdaRuntime.PYTHON3_9, LambdaRuntime.PYTHON3_10, LambdaRuntime.PYTHON3_11, LambdaRuntime.PYTHON3_12,
+        LambdaRuntime.PYTHON3_13, LambdaRuntime.PYTHON3_14)
 
 class PythonSamProjectWizard : SamProjectWizard {
     override fun createSdkSelectionPanel(projectLocation: TextFieldWithBrowseButton?): SdkSelector = when {
