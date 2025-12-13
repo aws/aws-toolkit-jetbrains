@@ -1,3 +1,6 @@
+# _3.101_ (2025-12-16)
+- **(Bug Fix)** Adding homebrew install path on macOS
+
 # _3.100_ (2025-12-09)
 
 # _3.99_ (2025-11-21)
