@@ -106,6 +106,20 @@ class Python312ImageDebugSupport : PythonImageDebugSupport() {
     override val bootstrapPath: String = "/var/runtime/bootstrap.py"
 }
 
+class Python313ImageDebugSupport : PythonImageDebugSupport() {
+    override val id: String = LambdaRuntime.PYTHON3_13.toString()
+    override fun displayName() = LambdaRuntime.PYTHON3_13.toString().capitalize()
+    override val pythonPath: String = "/var/lang/bin/python3.13"
+    override val bootstrapPath: String = "/var/runtime/bootstrap.py"
+}
+
+class Python314ImageDebugSupport : PythonImageDebugSupport() {
+    override val id: String = LambdaRuntime.PYTHON3_14.toString()
+    override fun displayName() = LambdaRuntime.PYTHON3_14.toString().capitalize()
+    override val pythonPath: String = "/var/lang/bin/python3.14"
+    override val bootstrapPath: String = "/var/runtime/bootstrap.py"
+}
+
 private const val DEBUGGER_VOLUME_PATH = "/tmp/lambci_debug_files"
 
 private fun createDebugProcess(
