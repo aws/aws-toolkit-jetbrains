@@ -172,6 +172,10 @@ abstract class ToolkitClientManager {
                 }
 
                 val clientOverrideConfig = ClientOverrideConfiguration.builder()
+                clientOverrideConfig.putAdvancedOption(
+                    SdkAdvancedClientOption.USER_AGENT_SUFFIX,
+                    userAgent()
+                )
 
                 if (credProvider != null) {
                     credentialsProvider(credProvider)
@@ -193,49 +197,6 @@ abstract class ToolkitClientManager {
                         clientOverrideConfig.putAdvancedOption(SdkAdvancedClientOption.SIGNER, BearerTokenSigner())
                     }
                 }
-
-                clientOverrideConfig.addExecutionInterceptor(object : ExecutionInterceptor {
-                    override fun modifyRequest(
-                        context: Context.ModifyRequest,
-                        executionAttributes: ExecutionAttributes,
-                    ): SdkRequest {
-                        val request = context.request()
-                        if (request !is AwsRequest) {
-                            return request
-                        }
-
-                        val clientType = executionAttributes.getAttribute(AwsExecutionAttribute.CLIENT_TYPE)
-                        val sdkClient = executionAttributes.getAttribute(SdkInternalExecutionAttribute.SDK_CLIENT)
-                        val serviceClientConfiguration = sdkClient.serviceClientConfiguration()
-                        val retryMode = serviceClientConfiguration.overrideConfiguration().retryMode().orElse(RetryMode.defaultRetryMode())
-                        val toolkitUserAgent = userAgent()
-
-                        val requestUserAgent = ApplyUserAgentStage.resolveClientUserAgent(
-                            toolkitUserAgent,
-                            null,
-                            clientType,
-                            null,
-                            null,
-                            retryMode.toString().lowercase()
-                        )
-
-                        val overrideConfiguration = request.overrideConfiguration()
-                            .map { config ->
-                                config.toBuilder()
-                                    .putHeader(HEADER_USER_AGENT, requestUserAgent)
-                                    .build()
-                            }
-                            .orElseGet {
-                                AwsRequestOverrideConfiguration.builder()
-                                    .putHeader(HEADER_USER_AGENT, requestUserAgent)
-                                    .build()
-                            }
-
-                        return request.toBuilder()
-                            .overrideConfiguration(overrideConfiguration)
-                            .build()
-                    }
-                })
 
                 clientOverrideConfig.let { configuration ->
                     configuration.retryStrategy(RetryMode.STANDARD)
