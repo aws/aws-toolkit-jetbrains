@@ -1,5 +1,8 @@
 # _3.101_ (2025-12-16)
-- **(Bug Fix)** Adding homebrew install path on macOS
+- **Feature** AWS SDK v2 2.26.25 -> 2.40.8
+- **Feature** SAM path auto-detection works now also for homebrew installations
+- **Feature** Support for Python 3.13
+- **Feature** Support for Python 3.14
 
 # _3.100_ (2025-12-09)
 
