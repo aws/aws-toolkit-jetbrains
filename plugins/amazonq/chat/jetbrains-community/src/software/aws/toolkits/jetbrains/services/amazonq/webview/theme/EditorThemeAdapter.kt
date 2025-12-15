@@ -85,15 +85,13 @@ class EditorThemeAdapter {
                 darkDefault = 0x3C3F41,
             )
 
-            val linkColor = themeColor("link", "Link.activeForeground", default = 0x589DF6)
-
             return AmazonQTheme(
                 darkMode = !JBColor.isBright(),
                 font = UIUtil.getFont(UIUtil.FontSize.NORMAL, null),
 
                 defaultText = text,
                 inactiveText = themeColor("TextField.inactiveForeground", default = 0x8C8C8C, darkDefault = 0x808080),
-                linkText = linkColor,
+                linkText = themeColor("link", "Link.activeForeground", default = 0x589DF6),
 
                 background = chatBackground,
                 border = getBorderColor(currentScheme),

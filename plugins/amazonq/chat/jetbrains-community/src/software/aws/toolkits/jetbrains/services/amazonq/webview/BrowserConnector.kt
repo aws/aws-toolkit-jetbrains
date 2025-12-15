@@ -74,6 +74,9 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_READY
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SOURCE_LINK_CLICK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_TAB_ADD
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FOOTER_INFO_LINK_CLICK
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.RESPONSE_BODY_LINK_CLICK
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SOURCE_LINK_CLICK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_TAB_BAR_ACTIONS
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_TAB_CHANGE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_TAB_REMOVE
@@ -387,15 +390,15 @@ class BrowserConnector(
                 handleChat(AmazonQChatServer.insertToCursorPosition, enrichedNode)
             }
 
-            CHAT_LINK_CLICK, "response-body-link-click" -> {
+            CHAT_LINK_CLICK, RESPONSE_BODY_LINK_CLICK -> {
                 node.get("params")?.get("link")?.asText()?.let { BrowserUtil.browse(it) }
             }
 
-            CHAT_INFO_LINK_CLICK, "footer-info-link-click" -> {
+            CHAT_INFO_LINK_CLICK, FOOTER_INFO_LINK_CLICK -> {
                 node.get("params")?.get("link")?.asText()?.let { BrowserUtil.browse(it) }
             }
 
-            CHAT_SOURCE_LINK_CLICK, "source-link-click" -> {
+            CHAT_SOURCE_LINK_CLICK, SOURCE_LINK_CLICK -> {
                 node.get("params")?.get("link")?.asText()?.let { BrowserUtil.browse(it) }
             }
 
