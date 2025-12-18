@@ -114,6 +114,9 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhisp
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererConfigurable
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
+import software.aws.toolkits.jetbrains.services.cwc.ChatConstants.FOOTER_INFO_LINK_CLICK
+import software.aws.toolkits.jetbrains.services.cwc.ChatConstants.RESPONSE_BODY_LINK_CLICK
+import software.aws.toolkits.jetbrains.services.cwc.ChatConstants.SOURCE_LINK_CLICK
 import software.aws.toolkits.jetbrains.settings.MeetQSettings
 import software.aws.toolkits.telemetry.MetricResult
 import software.aws.toolkits.telemetry.Telemetry
@@ -387,16 +390,16 @@ class BrowserConnector(
                 handleChat(AmazonQChatServer.insertToCursorPosition, enrichedNode)
             }
 
-            CHAT_LINK_CLICK -> {
-                handleChat(AmazonQChatServer.linkClick, node)
+            CHAT_LINK_CLICK, RESPONSE_BODY_LINK_CLICK -> {
+                node.get("params")?.get("link")?.asText()?.let { BrowserUtil.browse(it) }
             }
 
-            CHAT_INFO_LINK_CLICK -> {
-                handleChat(AmazonQChatServer.infoLinkClick, node)
+            CHAT_INFO_LINK_CLICK, FOOTER_INFO_LINK_CLICK -> {
+                node.get("params")?.get("link")?.asText()?.let { BrowserUtil.browse(it) }
             }
 
-            CHAT_SOURCE_LINK_CLICK -> {
-                handleChat(AmazonQChatServer.sourceLinkClick, node)
+            CHAT_SOURCE_LINK_CLICK, SOURCE_LINK_CLICK -> {
+                node.get("params")?.get("link")?.asText()?.let { BrowserUtil.browse(it) }
             }
 
             CHAT_FILE_CLICK -> {
