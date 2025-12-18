@@ -1,0 +1,69 @@
+> Task :buildSrc:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :buildSrc:generateExternalPluginSpecBuilders UP-TO-DATE
+> Task :buildSrc:extractPrecompiledScriptPluginPlugins UP-TO-DATE
+> Task :buildSrc:compilePluginsBlocks UP-TO-DATE
+> Task :buildSrc:generatePrecompiledScriptPluginAccessors UP-TO-DATE
+> Task :buildSrc:generateScriptPluginAdapters UP-TO-DATE
+> Task :buildSrc:compileKotlin UP-TO-DATE
+> Task :buildSrc:compileJava NO-SOURCE
+> Task :buildSrc:compileGroovy NO-SOURCE
+> Task :buildSrc:pluginDescriptors UP-TO-DATE
+> Task :buildSrc:processResources UP-TO-DATE
+> Task :buildSrc:classes UP-TO-DATE
+> Task :buildSrc:jar UP-TO-DATE
+
+> Configure project :plugin-toolkit:jetbrains-rider
+Using rd-gen: 2025.2.2
+
+> Task :detekt-rules:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :plugin-core:jetbrains-community:generateTelemetry UP-TO-DATE
+> Task :plugin-toolkit:jetbrains-rider:generateModels UP-TO-DATE
+> Task :detekt-rules:compileKotlin UP-TO-DATE
+> Task :detekt-rules:compileJava NO-SOURCE
+> Task :detekt-rules:processResources UP-TO-DATE
+> Task :detekt-rules:classes UP-TO-DATE
+> Task :detekt-rules:jar UP-TO-DATE
+> Task :detekt-rules:assemble UP-TO-DATE
+> Task :plugin-toolkit:jetbrains-gateway:detekt UP-TO-DATE
+> Task :plugin-toolkit:intellij-standalone:detekt
+> Task :plugin-core:jetbrains-ultimate:detekt
+> Task :plugin-core:resources:detekt
+> Task :plugin-amazonq:codewhisperer:jetbrains-ultimate:detekt UP-TO-DATE
+> Task :plugin-amazonq:codetransform:jetbrains-community:detekt UP-TO-DATE
+> Task :plugin-amazonq:shared:jetbrains-ultimate:detekt UP-TO-DATE
+> Task :detekt-rules:detekt
+> Task :plugin-amazonq:codewhisperer:jetbrains-community:detekt UP-TO-DATE
+> Task :ui-tests-starter:detekt
+> Task :ui-tests:detekt
+> Task :plugin-toolkit:jetbrains-rider:detekt
+> Task :plugin-core:core:detekt
+> Task :plugin-toolkit:jetbrains-ultimate:detekt
+> Task :plugin-amazonq:shared:jetbrains-community:detekt
+
+> Task :plugin-amazonq:chat:jetbrains-community:detekt
+/Users/aseemxs/IdeaProjects/jetbrains3/plugins/amazonq/chat/jetbrains-community/src/software/aws/toolkits/jetbrains/services/amazonq/webview/BrowserConnector.kt:6:1: Imports must be ordered in lexicographic order without any empty lines in-between with "java", "javax", "kotlin" and aliases in the end [ImportOrdering]
+
+formatting - 5min debt
+	[33mImportOrdering - [Imports must be ordered in lexicographic order without any empty lines in-betwee(...)] at /Users/aseemxs/IdeaProjects/jetbrains3/plugins/amazonq/chat/jetbrains-community/src/software/aws/toolkits/jetbrains/services/amazonq/webview/BrowserConnector.kt:6:1[0m
+
+Overall debt: 5min
+
+
+> Task :plugin-amazonq:chat:jetbrains-community:detekt FAILED
+> Task :plugin-core:jetbrains-community:detekt
+> Task :plugin-toolkit:jetbrains-core:detekt
+Kotlin build report is written to file:///Users/aseemxs/IdeaProjects/jetbrains3/build/reports/kotlin-build/aws-toolkit-jetbrains-build-2025-12-18-12-53-10-0.txt
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':plugin-amazonq:chat:jetbrains-community:detekt'.
+> Analysis failed with 1 weighted issues.
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 14s
+32 actionable tasks: 13 executed, 19 up-to-date

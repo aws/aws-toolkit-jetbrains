@@ -1,0 +1,164 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.13/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+> Task :buildSrc:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :buildSrc:generateExternalPluginSpecBuilders UP-TO-DATE
+> Task :buildSrc:extractPrecompiledScriptPluginPlugins UP-TO-DATE
+> Task :buildSrc:compilePluginsBlocks UP-TO-DATE
+> Task :buildSrc:generatePrecompiledScriptPluginAccessors UP-TO-DATE
+> Task :buildSrc:generateScriptPluginAdapters UP-TO-DATE
+> Task :buildSrc:compileKotlin UP-TO-DATE
+> Task :buildSrc:compileJava NO-SOURCE
+> Task :buildSrc:compileGroovy NO-SOURCE
+> Task :buildSrc:pluginDescriptors UP-TO-DATE
+> Task :buildSrc:processResources UP-TO-DATE
+> Task :buildSrc:classes UP-TO-DATE
+> Task :buildSrc:jar UP-TO-DATE
+
+> Configure project :plugin-toolkit:jetbrains-rider
+Using rd-gen: 2025.2.2
+
+> Task :plugin-core:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :plugin-core:resources:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :plugin-core:core:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :plugin-core:jetbrains-community:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :plugin-core:jetbrains-ultimate:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :plugin-amazonq:codewhisperer:jetbrains-community:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :plugin-amazonq:shared:jetbrains-community:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :plugin-amazonq:chat:jetbrains-community:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :plugin-core:webview:nodeSetup SKIPPED
+> Task :plugin-core:webview:npmSetup SKIPPED
+> Task :plugin-core:jetbrains-ultimate:processResources NO-SOURCE
+> Task :plugin-core:core:processResources NO-SOURCE
+> Task :plugin-amazonq:shared:jetbrains-community:processResources UP-TO-DATE
+> Task :plugin-amazonq:codewhisperer:jetbrains-community:processResources UP-TO-DATE
+> Task :plugin-core:jetbrains-community:generateTelemetry UP-TO-DATE
+> Task :plugin-core:jetbrains-community:processResources UP-TO-DATE
+> Task :plugin-core:jetbrains-ultimate:initializeIntellijPlatformPlugin
+> Task :plugin-core:resources:compileKotlin UP-TO-DATE
+> Task :plugin-core:resources:compileJava NO-SOURCE
+> Task :plugin-core:sdk-codegen:generateSdks UP-TO-DATE
+> Task :plugin-core:jetbrains-ultimate:generateManifest UP-TO-DATE
+
+> Task :plugin-core:initializeIntellijPlatformPlugin
+[org.jetbrains.intellij.platform] IntelliJ Platform Gradle Plugin is outdated: 2.7.1. Update `org.jetbrains.intellij.platform` to: 2.10.5
+
+> Task :plugin-core:patchPluginXml
+[org.jetbrains.intellij.platform] Patching plugin.xml: value of 'version[1.0]' tag will be set to '3.101-SNAPSHOT.252+d186350.modified'
+[org.jetbrains.intellij.platform] Patching plugin.xml: attribute 'since-build=[232]' of 'idea-version' tag will be set to '252'
+
+> Task :plugin-core:resources:downloadResources
+Download https://idetoolkits.amazonwebservices.com/endpoints.json
+
+> Task :plugin-core:processResources
+> Task :plugin-core:resources:processResources
+> Task :plugin-core:resources:classes
+> Task :plugin-core:resources:jar
+> Task :plugin-core:sdk-codegen:compileJava UP-TO-DATE
+> Task :plugin-core:generateManifest UP-TO-DATE
+> Task :plugin-core:sdk-codegen:processResources UP-TO-DATE
+> Task :plugin-core:sdk-codegen:classes UP-TO-DATE
+> Task :plugin-core:sdk-codegen:jar UP-TO-DATE
+> Task :plugin-core:core:compileKotlin UP-TO-DATE
+> Task :plugin-core:core:compileJava NO-SOURCE
+> Task :plugin-core:core:classes UP-TO-DATE
+> Task :plugin-core:core:jar UP-TO-DATE
+> Task :plugin-core:jetbrains-community:initializeIntellijPlatformPlugin
+> Task :plugin-core:jetbrains-community:generateManifest UP-TO-DATE
+
+> Task :plugin-core:webview:npmInstall
+
+up to date, audited 330 packages in 614ms
+
+66 packages are looking for funding
+  run `npm fund` for details
+
+1 moderate severity vulnerability
+
+To address all issues, run:
+  npm audit fix
+
+Run `npm audit` for details.
+
+> Task :plugin-core:webview:buildWebviewUI UP-TO-DATE
+> Task :plugin-core:webview:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :plugin-core:webview:compileKotlin NO-SOURCE
+> Task :plugin-core:webview:compileJava NO-SOURCE
+> Task :plugin-core:webview:processResources NO-SOURCE
+> Task :plugin-core:webview:classes UP-TO-DATE
+> Task :plugin-core:webview:jar UP-TO-DATE
+
+> Task :plugin-core:jetbrains-community:compileKotlin
+w: file:///Users/aseemxs/IdeaProjects/jetbrains3/plugins/core/jetbrains-community/src/software/aws/toolkits/jetbrains/core/credentials/DefaultToolkitConnectionManager.kt:37:25 'fun activeConnection(): ToolkitConnection?' is deprecated. Fragile API. Probably leads to unexpected behavior. Use only for toolkit explorer dropdown state.
+
+> Task :plugin-core:jetbrains-community:compileJava NO-SOURCE
+> Task :plugin-core:jetbrains-community:classes UP-TO-DATE
+> Task :plugin-core:jetbrains-community:instrumentCode
+> Task :plugin-core:jetbrains-community:jar
+> Task :plugin-core:jetbrains-community:instrumentedJar
+> Task :plugin-core:jetbrains-community:composedJar
+> Task :plugin-core:jetbrains-ultimate:compileKotlin
+> Task :plugin-core:jetbrains-ultimate:compileJava NO-SOURCE
+> Task :plugin-core:jetbrains-ultimate:classes UP-TO-DATE
+> Task :plugin-core:jetbrains-ultimate:instrumentCode UP-TO-DATE
+> Task :plugin-core:jetbrains-ultimate:jar UP-TO-DATE
+> Task :plugin-core:compileKotlin NO-SOURCE
+> Task :plugin-core:compileJava NO-SOURCE
+> Task :plugin-core:classes
+> Task :plugin-core:instrumentCode SKIPPED
+> Task :plugin-core:jetbrains-ultimate:instrumentedJar UP-TO-DATE
+> Task :plugin-core:jetbrains-ultimate:composedJar UP-TO-DATE
+> Task :plugin-core:jar
+> Task :plugin-core:composedJar
+> Task :plugin-core:prepareSandbox
+
+> Task :plugin-core:buildSearchableOptions
+[0.058s][warning][cds] Archived non-system classes are disabled because the java.system.class.loader property is specified (value = "com.intellij.util.lang.PathClassLoader"). To use archived non-system classes, this property must not be set
+2025-12-18 12:50:16,313 [    753]   WARN - #c.i.u.p.CommonProxy - main authenticator is not yet registered
+
+> Task :plugin-amazonq:shared:jetbrains-community:compileKotlin
+> Task :plugin-amazonq:shared:jetbrains-community:compileJava NO-SOURCE
+> Task :plugin-amazonq:shared:jetbrains-community:classes UP-TO-DATE
+
+> Task :plugin-core:buildSearchableOptions
+2025-12-18 12:50:17,702 [   2142]   WARN - #c.i.i.s.p.i.BundledSharedIndexProvider - Bundled shared index is not found at: /Users/aseemxs/.gradle/caches/8.13/transforms/7dc2785ee9661f35150982cbc6e52918/transformed/ideaIC-2025.2/jdk-shared-indexes
+2025-12-18 12:50:20,260 [   4700]   WARN - #c.i.i.u.UIThemeBean - Unknown field: CombinedDiff
+2025-12-18 12:50:20,260 [   4700]   WARN - #c.i.i.u.UIThemeBean - Unknown field: BlockBorder
+2025-12-18 12:50:21,201 [   5641]   WARN - #c.i.d.d.GridUtil - No settings for grid {GRID_CELL_EDITOR_HELPER_KEY=com.intellij.database.run.ui.grid.editors.GridCellEditorHelperImpl@2f9c9a7d, GRID_HELPER_KEY=com.intellij.database.datagrid.GridHelperImpl@456663c5, FACTORY_PROVIDER_KEY=com.intellij.database.run.ui.grid.editors.GridCellEditorFactoryImpl@9bc1320, RENDERER_FACTORIES_KEY=com.intellij.database.run.ui.grid.renderers.GridCellRendererFactories@3d070d33, FORMATTER_CREATOR_KEY=com.intellij.database.datagrid.FormatterCreatorProvider$$Lambda/0x000000a803380c08@7683279c, CONVERSION_GRAPH_KEY=com.intellij.database.data.types.BaseConversionGraph@8d1ac2}.Make sure DATA_GRID_SETTINGS_KEY set for your grid.TableResultPanel inheritors could use 'configurator' constructor parameter to pass settings
+2025-12-18 12:50:21,258 [   5698]   WARN - #c.i.d.d.GridUtil - No settings for grid {GRID_CELL_EDITOR_HELPER_KEY=com.intellij.database.run.ui.grid.editors.GridCellEditorHelperImpl@2f9c9a7d, GRID_HELPER_KEY=com.intellij.database.datagrid.GridHelperImpl@456663c5, FACTORY_PROVIDER_KEY=com.intellij.database.run.ui.grid.editors.GridCellEditorFactoryImpl@9bc1320, RENDERER_FACTORIES_KEY=com.intellij.database.run.ui.grid.renderers.GridCellRendererFactories@3d070d33, FORMATTER_CREATOR_KEY=com.intellij.database.datagrid.FormatterCreatorProvider$$Lambda/0x000000a803380c08@7683279c, CONVERSION_GRAPH_KEY=com.intellij.database.data.types.BaseConversionGraph@8d1ac2}.Make sure DATA_GRID_SETTINGS_KEY set for your grid.TableResultPanel inheritors could use 'configurator' constructor parameter to pass settings
+2025-12-18 12:50:21,269 [   5709]   WARN - #c.i.d.d.GridUtil - No settings for grid {GRID_CELL_EDITOR_HELPER_KEY=com.intellij.database.run.ui.grid.editors.GridCellEditorHelperImpl@2f9c9a7d, GRID_HELPER_KEY=com.intellij.database.datagrid.GridHelperImpl@456663c5, FACTORY_PROVIDER_KEY=com.intellij.database.run.ui.grid.editors.GridCellEditorFactoryImpl@9bc1320, RENDERER_FACTORIES_KEY=com.intellij.database.run.ui.grid.renderers.GridCellRendererFactories@3d070d33, FORMATTER_CREATOR_KEY=com.intellij.database.datagrid.FormatterCreatorProvider$$Lambda/0x000000a803380c08@7683279c, CONVERSION_GRAPH_KEY=com.intellij.database.data.types.BaseConversionGraph@8d1ac2}.Make sure DATA_GRID_SETTINGS_KEY set for your grid.TableResultPanel inheritors could use 'configurator' constructor parameter to pass settings
+2025-12-18 12:50:21,297 [   5737]   WARN - #c.i.d.d.GridUtil - No settings for grid {GRID_CELL_EDITOR_HELPER_KEY=com.intellij.database.run.ui.grid.editors.GridCellEditorHelperImpl@198f23e0, GRID_HELPER_KEY=com.intellij.database.datagrid.GridHelperImpl@3095586b, FACTORY_PROVIDER_KEY=com.intellij.database.run.ui.grid.editors.GridCellEditorFactoryImpl@9bc1320, RENDERER_FACTORIES_KEY=com.intellij.database.run.ui.grid.renderers.GridCellRendererFactories@13e354ef, FORMATTER_CREATOR_KEY=com.intellij.database.datagrid.FormatterCreatorProvider$$Lambda/0x000000a803380c08@abbb6d9, CONVERSION_GRAPH_KEY=com.intellij.database.data.types.BaseConversionGraph@6acb044d}.Make sure DATA_GRID_SETTINGS_KEY set for your grid.TableResultPanel inheritors could use 'configurator' constructor parameter to pass settings
+2025-12-18 12:50:21,302 [   5742]   WARN - #c.i.d.d.GridUtil - No settings for grid {GRID_CELL_EDITOR_HELPER_KEY=com.intellij.database.run.ui.grid.editors.GridCellEditorHelperImpl@198f23e0, GRID_HELPER_KEY=com.intellij.database.datagrid.GridHelperImpl@3095586b, FACTORY_PROVIDER_KEY=com.intellij.database.run.ui.grid.editors.GridCellEditorFactoryImpl@9bc1320, RENDERER_FACTORIES_KEY=com.intellij.database.run.ui.grid.renderers.GridCellRendererFactories@13e354ef, FORMATTER_CREATOR_KEY=com.intellij.database.datagrid.FormatterCreatorProvider$$Lambda/0x000000a803380c08@abbb6d9, CONVERSION_GRAPH_KEY=com.intellij.database.data.types.BaseConversionGraph@6acb044d}.Make sure DATA_GRID_SETTINGS_KEY set for your grid.TableResultPanel inheritors could use 'configurator' constructor parameter to pass settings
+2025-12-18 12:50:21,303 [   5743]   WARN - #c.i.d.d.GridUtil - No settings for grid {GRID_CELL_EDITOR_HELPER_KEY=com.intellij.database.run.ui.grid.editors.GridCellEditorHelperImpl@198f23e0, GRID_HELPER_KEY=com.intellij.database.datagrid.GridHelperImpl@3095586b, FACTORY_PROVIDER_KEY=com.intellij.database.run.ui.grid.editors.GridCellEditorFactoryImpl@9bc1320, RENDERER_FACTORIES_KEY=com.intellij.database.run.ui.grid.renderers.GridCellRendererFactories@13e354ef, FORMATTER_CREATOR_KEY=com.intellij.database.datagrid.FormatterCreatorProvider$$Lambda/0x000000a803380c08@abbb6d9, CONVERSION_GRAPH_KEY=com.intellij.database.data.types.BaseConversionGraph@6acb044d}.Make sure DATA_GRID_SETTINGS_KEY set for your grid.TableResultPanel inheritors could use 'configurator' constructor parameter to pass settings
+2025-12-18 12:50:23,570 [   8010]   WARN - #c.i.u.j.JBCefApp - JCEF is manually disabled in headless env via 'ide.browser.jcef.headless.enabled=false'
+Found 232 configurables
+save to /Users/aseemxs/IdeaProjects/jetbrains3/plugins/core/build/tmp/buildSearchableOptions
+
+> Task :plugin-core:prepareJarSearchableOptions
+> Task :plugin-core:jarSearchableOptions UP-TO-DATE
+> Task :plugin-core:buildPlugin
+> Task :plugin-amazonq:shared:jetbrains-community:initializeIntellijPlatformPlugin
+> Task :plugin-amazonq:codewhisperer:jetbrains-community:initializeIntellijPlatformPlugin
+> Task :plugin-amazonq:shared:jetbrains-community:generateManifest UP-TO-DATE
+> Task :plugin-amazonq:shared:jetbrains-community:instrumentCode
+> Task :plugin-amazonq:shared:jetbrains-community:jar
+> Task :plugin-amazonq:codewhisperer:jetbrains-community:generateManifest UP-TO-DATE
+> Task :plugin-amazonq:codewhisperer:jetbrains-community:compileKotlin
+> Task :plugin-amazonq:codewhisperer:jetbrains-community:compileJava NO-SOURCE
+> Task :plugin-amazonq:codewhisperer:jetbrains-community:classes UP-TO-DATE
+> Task :plugin-amazonq:codewhisperer:jetbrains-community:instrumentCode UP-TO-DATE
+> Task :plugin-amazonq:codewhisperer:jetbrains-community:jar UP-TO-DATE
+
+> Task :plugin-amazonq:chat:jetbrains-community:compileKotlin
+w: file:///Users/aseemxs/IdeaProjects/jetbrains3/plugins/amazonq/chat/jetbrains-community/src/software/aws/toolkits/jetbrains/services/amazonq/toolwindow/AmazonQToolWindowFactory.kt:113:48 The corresponding parameter in the supertype 'QRegionProfileSelectedListener' is named 'project'. This may cause problems when calling this function with named arguments.
+w: file:///Users/aseemxs/IdeaProjects/jetbrains3/plugins/amazonq/chat/jetbrains-community/src/software/aws/toolkits/jetbrains/services/amazonq/toolwindow/AmazonQToolWindowFactory.kt:156:34 'fun message(key: String, vararg params: Any): String' is deprecated. Use extension-specific localization bundle instead.
+w: file:///Users/aseemxs/IdeaProjects/jetbrains3/plugins/amazonq/chat/jetbrains-community/src/software/aws/toolkits/jetbrains/services/amazonq/webview/BrowserConnector.kt:203:31 'fun postChat(message: String): Unit' is deprecated. shouldn't need this version.
+w: file:///Users/aseemxs/IdeaProjects/jetbrains3/plugins/amazonq/chat/jetbrains-community/src/software/aws/toolkits/jetbrains/services/amazonq/webview/BrowserConnector.kt:262:84 Unchecked cast of 'CompletableFuture<Any!>!' to 'CompletableFuture<String>'.
+w: file:///Users/aseemxs/IdeaProjects/jetbrains3/plugins/amazonq/chat/jetbrains-community/src/software/aws/toolkits/jetbrains/services/amazonq/webview/BrowserConnector.kt:281:77 Unchecked cast of 'CompletableFuture<Any!>!' to 'CompletableFuture<String>'.
+w: file:///Users/aseemxs/IdeaProjects/jetbrains3/plugins/amazonq/chat/jetbrains-community/src/software/aws/toolkits/jetbrains/services/amazonq/webview/BrowserConnector.kt:467:49 'fun postChat(message: String): Unit' is deprecated. shouldn't need this version.
+w: file:///Users/aseemxs/IdeaProjects/jetbrains3/plugins/amazonq/chat/jetbrains-community/src/software/aws/toolkits/jetbrains/services/amazonq/webview/BrowserConnector.kt:612:25 'fun postChat(message: String): Unit' is deprecated. shouldn't need this version.
+w: file:///Users/aseemxs/IdeaProjects/jetbrains3/plugins/amazonq/chat/jetbrains-community/src/software/aws/toolkits/jetbrains/services/amazonq/webview/BrowserConnector.kt:618:25 'fun postChat(message: String): Unit' is deprecated. shouldn't need this version.
+w: file:///Users/aseemxs/IdeaProjects/jetbrains3/plugins/amazonq/chat/jetbrains-community/src/software/aws/toolkits/jetbrains/services/amazonq/webview/BrowserConnector.kt:776:15 Unchecked cast of 'Function0<CompletableFuture<out Any!>!>' to 'Function0<CompletableFuture<Response (of fun <Request, Response> handleChat)>>'.
+Kotlin build report is written to file:///Users/aseemxs/IdeaProjects/jetbrains3/build/reports/kotlin-build/aws-toolkit-jetbrains-build-2025-12-18-12-50-34-0.txt
+
+BUILD SUCCESSFUL in 51s
+62 actionable tasks: 28 executed, 34 up-to-date
