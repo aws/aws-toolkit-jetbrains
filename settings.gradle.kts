@@ -68,7 +68,7 @@ buildscript {
     // match with version catalog, s3-build-cache has silent classpath conflict with codegen task
     // also since this is a settings plugin, we can't use a version catalog
     dependencies {
-        classpath(platform("software.amazon.awssdk:bom:2.26.25"))
+        classpath(platform("software.amazon.awssdk:bom:2.40.8"))
     }
 }
 
