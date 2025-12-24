@@ -11,11 +11,11 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 import com.intellij.util.xmlb.annotations.Property
-import software.aws.toolkits.jetbrains.utils.notifyInfo
+import software.amazon.q.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.AmazonQBundle
 
 @Service
-@State(name = "codewhispererSettings", storages = [Storage("aws.xml")])
+@State(name = "codewhispererSettings", storages = [Storage("amazonq.xml")])
 class CodeWhispererSettings : PersistentStateComponent<CodeWhispererConfiguration> {
     private val state = CodeWhispererConfiguration()
 

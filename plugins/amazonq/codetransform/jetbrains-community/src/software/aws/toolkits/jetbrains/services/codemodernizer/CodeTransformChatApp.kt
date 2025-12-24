@@ -7,11 +7,11 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.launch
-import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
-import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
-import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
+import software.amazon.q.jetbrains.core.coroutines.disposableCoroutineScope
+import software.amazon.q.jetbrains.core.credentials.ToolkitConnection
+import software.amazon.q.jetbrains.core.credentials.ToolkitConnectionManagerListener
+import software.amazon.q.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
+import software.amazon.q.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQApp
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController

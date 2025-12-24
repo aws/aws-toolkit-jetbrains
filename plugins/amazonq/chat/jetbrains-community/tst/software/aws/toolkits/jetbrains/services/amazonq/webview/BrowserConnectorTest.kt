@@ -30,7 +30,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.Descripti
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.Recommendation
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.SuggestedFix
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
-import software.aws.toolkits.jetbrains.utils.satisfiesKt
+import software.amazon.q.jetbrains.utils.satisfiesKt
 
 class BrowserConnectorTest : AmazonQTestBase() {
     private lateinit var browserConnector: BrowserConnector

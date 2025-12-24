@@ -11,7 +11,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.AutoCloseableSoftAssertions
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.TestFactory
-import software.aws.toolkits.jetbrains.utils.satisfiesKt
+import software.amazon.q.jetbrains.utils.satisfiesKt
 import java.util.stream.Stream
 import kotlin.streams.asStream
 import kotlin.test.Test

@@ -10,7 +10,7 @@ import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.components.panels.Wrapper
 import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.panel
-import software.aws.toolkits.jetbrains.utils.isQWebviewsAvailable
+import software.amazon.q.jetbrains.utils.isQWebviewsAvailable
 
 class QGettingStartedPanel(
     val project: Project,

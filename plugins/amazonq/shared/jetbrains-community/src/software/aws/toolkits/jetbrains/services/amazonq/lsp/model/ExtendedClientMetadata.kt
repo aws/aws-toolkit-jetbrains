@@ -4,7 +4,7 @@
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.model
 
 import com.intellij.openapi.project.Project
-import software.aws.toolkits.jetbrains.services.telemetry.ClientMetadata
+import software.amazon.q.jetbrains.services.telemetry.ClientMetadata
 
 data class ExtendedClientMetadata(
     val aws: AwsMetadata,

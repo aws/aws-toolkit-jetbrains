@@ -38,14 +38,3 @@ tasks.check {
         dependsOn(":plugin-core:${it.name}:check")
     }
 }
-
-tasks.shadowJar {
-    archiveBaseName.set("plugin-core-shadow")
-    archiveVersion.set(rootProject.version.toString())
-    archiveClassifier.set("")
-
-    exclude("/META-INF/plugin.xml")
-
-    configurations = project.configurations.runtimeClasspath.map { listOf(it) }
-    destinationDirectory.set(layout.buildDirectory.dir("libs"))
-}

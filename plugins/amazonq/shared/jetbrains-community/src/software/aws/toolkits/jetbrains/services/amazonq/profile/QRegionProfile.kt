@@ -3,7 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.profile
 import software.amazon.awssdk.arns.Arn
-import software.aws.toolkits.core.utils.tryOrNull
+import software.amazon.q.core.utils.tryOrNull
 
 data class QRegionProfile(
     var profileName: String = "",

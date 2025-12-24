@@ -12,16 +12,16 @@ intellijToolkit {
 }
 
 dependencies {
-    implementation(project(path = ":plugin-core", configuration = "shadow"))
+    implementation(project(":plugin-core-q"))
 
-    compileOnly(project(":plugin-core:jetbrains-community"))
+    compileOnly(project(":plugin-core-q:jetbrains-community"))
 
     implementation(project(":plugin-amazonq:shared:jetbrains-community"))
     implementation(libs.lsp4j)
     // CodeWhispererTelemetryService uses a CircularFifoQueue, previously transitive from zjsonpatch
     implementation(libs.commons.collections)
 
-    testFixturesApi(testFixtures(project(":plugin-core:jetbrains-community")))
+    testFixturesApi(testFixtures(project(":plugin-core-q:jetbrains-community")))
     testFixturesApi(project(path = ":plugin-toolkit:jetbrains-core", configuration = "testArtifacts"))
 }
 

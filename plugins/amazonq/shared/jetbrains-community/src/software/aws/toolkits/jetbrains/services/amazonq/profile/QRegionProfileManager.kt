@@ -17,20 +17,20 @@ import com.intellij.util.xmlb.annotations.MapAnnotation
 import com.intellij.util.xmlb.annotations.Property
 import software.amazon.awssdk.core.SdkClient
 import software.amazon.awssdk.services.codewhispererruntime.model.AccessDeniedException
-import software.aws.toolkits.core.TokenConnectionSettings
-import software.aws.toolkits.core.utils.debug
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.warn
-import software.aws.toolkits.jetbrains.core.AwsClientManager
-import software.aws.toolkits.jetbrains.core.AwsResourceCache
-import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
-import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
-import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
-import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
-import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
-import software.aws.toolkits.jetbrains.utils.notifyInfo
+import software.amazon.q.core.TokenConnectionSettings
+import software.amazon.q.core.utils.debug
+import software.amazon.q.core.utils.getLogger
+import software.amazon.q.core.utils.warn
+import software.amazon.q.jetbrains.core.AwsClientManager
+import software.amazon.q.jetbrains.core.AwsResourceCache
+import software.amazon.q.jetbrains.core.credentials.AwsBearerTokenConnection
+import software.amazon.q.jetbrains.core.credentials.ToolkitConnectionManager
+import software.amazon.q.jetbrains.core.credentials.pinning.QConnection
+import software.amazon.q.jetbrains.core.credentials.sono.isSono
+import software.amazon.q.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
+import software.amazon.q.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
+import software.amazon.q.jetbrains.core.region.AwsRegionProvider
+import software.amazon.q.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.AmazonQBundle.message
 import software.aws.toolkits.telemetry.MetricResult
 import software.aws.toolkits.telemetry.Telemetry
@@ -39,7 +39,7 @@ import java.util.Collections
 import kotlin.reflect.KClass
 
 @Service(Service.Level.APP)
-@State(name = "qProfileStates", storages = [Storage("aws.xml")])
+@State(name = "qProfileStates", storages = [Storage("amazonq.xml")])
 class QRegionProfileManager : PersistentStateComponent<QProfileState>, Disposable {
 
     // Map to store connectionId to its active profile

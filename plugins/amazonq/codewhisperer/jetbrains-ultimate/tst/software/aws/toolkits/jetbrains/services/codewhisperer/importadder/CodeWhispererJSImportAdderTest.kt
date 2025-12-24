@@ -13,7 +13,7 @@ import com.intellij.testFramework.runInEdtAndWait
 import compat.com.intellij.lang.javascript.JavascriptLanguage
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
-import software.aws.toolkits.jetbrains.utils.rules.NodeJsCodeInsightTestFixtureRule
+import software.amazon.q.jetbrains.utils.rules.NodeJsCodeInsightTestFixtureRule
 import kotlin.test.fail
 
 class CodeWhispererJSImportAdderTest : CodeWhispererImportAdderTestBase(

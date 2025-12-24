@@ -12,7 +12,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceManager
-import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
+import software.amazon.q.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
 
 class CodeWhispererReferenceManagerTest {
     @Rule

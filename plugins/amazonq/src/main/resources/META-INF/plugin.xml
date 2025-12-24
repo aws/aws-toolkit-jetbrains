@@ -2,9 +2,6 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
 <idea-plugin xmlns:xi="http://www.w3.org/2001/XInclude" require-restart="true">
-    <xi:include href="/META-INF/module-core.xml" />
-    <xi:include href="/META-INF/aws.toolkit.core.xml" />
-
     <id>amazon.q</id>
     <name>Amazon Q</name>
     <description><![CDATA[
@@ -76,20 +73,13 @@
     <incompatible-with>com.intellij.jetbrains.client</incompatible-with>
     <incompatible-with>com.intellij.gateway</incompatible-with>
 
-    <extensions defaultExtensionNs="com.intellij">
-        <registryKey key="amazon.q.endpoint" description="Endpoint to use for Amazon Q"
-                     defaultValue="" restartRequired="true"/>
-        <registryKey key="amazon.q.endpoints.json" description="List of region-endpoint pairs in JSON array form"
-                     defaultValue=""
-                     restartRequired="true"/>
-        <registryKey key="inline.completion.rem.dev.use.rhizome" description="Defined by IntelliJ. Used for Amazon Q to display suggestions on remote."
-                     defaultValue="false" restartRequired="true"/>
-        <registryKey defaultValue=""
-                     description="Endpoint to use to download flare artifacts"
-                     key="amazon.q.flare.endpoint"/>
-    </extensions>
-
     <extensionPoints>
+        <extensionPoint qualifiedName="amazon.q.connection.pinned.feature" interface="software.amazon.q.jetbrains.core.credentials.pinning.FeatureWithPinnedConnection"
+                        dynamic="true"/>
+        <extensionPoint qualifiedName="amazon.q.credentialProviderFactory" interface="software.amazon.q.core.credentials.CredentialProviderFactory" dynamic="true"/>
+        <extensionPoint qualifiedName="amazon.q.startupAuthFactory" interface="software.amazon.q.jetbrains.core.credentials.ToolkitStartupAuthFactory" dynamic="true"/>
+        <extensionPoint qualifiedName="amazon.q.sdk.clientCustomizer" interface="software.amazon.q.core.ToolkitClientCustomizer" dynamic="true"/>
+
         <extensionPoint qualifiedName="software.aws.toolkits.jetbrains.moduleDependencyProvider"
                         interface="software.aws.toolkits.jetbrains.services.amazonq.lsp.dependencies.ModuleDependencyProvider"
                         dynamic="true"/>
@@ -103,6 +93,14 @@
         <problemsViewMutator implementation="software.aws.toolkits.jetbrains.DefaultProblemsViewMutator"/>
     </extensions>
 
+    <extensions defaultExtensionNs="amazon.q">
+        <credentialProviderFactory implementation="software.amazon.q.jetbrains.core.credentials.profiles.ProfileCredentialProviderFactory"/>
+
+        <!-- need to resolve hard dependency on telemetry querying the status of these -->
+        <connection.pinned.feature implementation="software.amazon.q.jetbrains.core.credentials.pinning.CodeCatalystConnection"/>
+        <connection.pinned.feature implementation="software.amazon.q.jetbrains.core.credentials.pinning.QConnection"/>
+    </extensions>
+
     <xi:include href="/META-INF/module-amazonq.xml" />
 
     <xi:include href="/META-INF/change-notes.xml" xpointer="xpointer(/idea-plugin/*)">
@@ -110,13 +108,95 @@
     </xi:include>
 
     <extensions defaultExtensionNs="com.intellij">
+        <applicationConfigurable
+            id="aws"
+            groupId="tools"
+            bundle="software.aws.toolkits.resources.MessagesBundle"
+            key="aws.settings.title"
+            instance="software.amazon.q.jetbrains.settings.AwsSettingsSharedConfigurable"
+        />
+
+        <registryKey key="amazon.q.endpoint" description="Endpoint to use for Amazon Q"
+                     defaultValue="" restartRequired="true"/>
+        <registryKey key="amazon.q.endpoints.json" description="List of region-endpoint pairs in JSON array form"
+                     defaultValue=""
+                     restartRequired="true"/>
+        <registryKey key="inline.completion.rem.dev.use.rhizome" description="Defined by IntelliJ. Used for Amazon Q to display suggestions on remote."
+                     defaultValue="false" restartRequired="true"/>
+        <registryKey defaultValue=""
+                     description="Endpoint to use to download flare artifacts"
+                     key="amazon.q.flare.endpoint"/>
+        <registryKey key="aws.dev.useDAG" description="True if DAG should be used instead of authorization_grant with PKCE"
+                     defaultValue="false" restartRequired="false" overrides="true"/>
+        <registryKey key="aws.telemetry.endpoint" description="Endpoint to use for publishing AWS client-side telemetry"
+                     defaultValue="https://client-telemetry.us-east-1.amazonaws.com" restartRequired="true" overrides="true"/>
+        <registryKey key="aws.telemetry.identityPool" description="Cognito identity pool to use for publishing AWS client-side telemetry"
+                     defaultValue="us-east-1:820fd6d1-95c0-4ca4-bffb-3f01d32da842" restartRequired="true" overrides="true"/>
+        <registryKey key="aws.telemetry.region" description="Region to use for publishing AWS client-side telemetry" defaultValue="us-east-1"
+                     restartRequired="true" overrides="true"/>
+        <registryKey key="aws.toolkit.developerMode" description="Enables features to facilitate development of the toolkit" restartRequired="false"
+                     defaultValue="false" overrides="true"/>
+        <registryKey key="aws.toolkit.notification.endpoint" description="Endpoint for AWS Toolkit notifications"
+                     defaultValue="https://idetoolkits-hostedfiles.amazonaws.com/Notifications/Jetbrains/combined/2.x.json" restartRequired="true"
+                     overrides="true"/>
+
+        <webHelpProvider implementation="software.amazon.q.jetbrains.core.help.HelpIdTranslator"/>
+]
+        <httpRequestHandler implementation="software.amazon.q.jetbrains.core.credentials.sso.pkce.ToolkitOAuthCallbackHandler"/>
+        <httpRequestHandler implementation="software.amazon.q.jetbrains.core.credentials.sso.pkce.ToolkitOAuthCallbackResultService"/>
+
+        <postStartupActivity implementation="software.amazon.q.jetbrains.core.plugin.PluginAutoUpdater"/>
+        <postStartupActivity implementation="software.amazon.q.jetbrains.core.AwsTelemetryPrompter"/>
+        <postStartupActivity implementation="software.amazon.q.jetbrains.services.telemetry.AwsToolkitStartupMetrics"/>
+
+        <applicationService serviceInterface="migration.software.amazon.q.jetbrains.settings.AwsSettings"
+                            serviceImplementation="software.amazon.q.jetbrains.settings.DefaultAwsSettings"
+                            testServiceImplementation="software.amazon.q.jetbrains.settings.MockAwsSettings"/>
+        <applicationService serviceInterface="migration.software.amazon.q.jetbrains.core.credentials.ToolkitAuthManager"
+                            serviceImplementation="software.amazon.q.jetbrains.core.credentials.DefaultToolkitAuthManager"/>
+        <applicationService serviceInterface="migration.software.amazon.q.jetbrains.core.credentials.pinning.ConnectionPinningManager"
+                            serviceImplementation="software.amazon.q.jetbrains.core.credentials.pinning.DefaultConnectionPinningManager"/>
+        <applicationService serviceInterface="migration.software.amazon.q.jetbrains.core.credentials.CredentialManager"
+                            serviceImplementation="software.amazon.q.jetbrains.core.credentials.DefaultCredentialManager"
+                            testServiceImplementation="software.amazon.q.jetbrains.core.credentials.MockCredentialsManager"/>
+        <applicationService serviceInterface="migration.software.amazon.q.jetbrains.telemetry.TelemetryService"
+                            serviceImplementation="software.amazon.q.jetbrains.services.telemetry.DefaultTelemetryService"
+                            testServiceImplementation="software.amazon.q.jetbrains.services.telemetry.NoOpTelemetryService"/>
+        <applicationService serviceInterface="migration.software.amazon.q.jetbrains.core.AwsResourceCache"
+                            serviceImplementation="software.amazon.q.jetbrains.core.DefaultAwsResourceCache"
+                            testServiceImplementation="software.amazon.q.jetbrains.core.MockResourceCache"/>
+        <applicationService serviceInterface="migration.software.amazon.q.core.region.ToolkitRegionProvider"
+                            serviceImplementation="software.amazon.q.jetbrains.core.region.AwsRegionProvider"
+                            testServiceImplementation="software.amazon.q.jetbrains.core.region.MockRegionProvider"/>
+        <applicationService serviceInterface="migration.software.amazon.q.jetbrains.core.RemoteResourceResolverProvider"
+                            serviceImplementation="software.amazon.q.jetbrains.core.DefaultRemoteResourceResolverProvider"/>
+        <applicationService serviceInterface="migration.software.amazon.q.core.clients.SdkClientProvider"
+                            serviceImplementation="software.amazon.q.jetbrains.core.AwsSdkClient"/>
+        <applicationService serviceInterface="migration.software.amazon.q.core.ToolkitClientManager"
+                            serviceImplementation="software.amazon.q.jetbrains.core.AwsClientManager"
+                            testServiceImplementation="software.amazon.q.jetbrains.core.MockClientManager"/>
+        <applicationService serviceInterface="migration.software.amazon.q.jetbrains.core.credentials.sso.SsoLoginCallbackProvider"
+                            serviceImplementation="software.amazon.q.jetbrains.core.credentials.sso.DefaultSsoLoginCallbackProvider"
+                            testServiceImplementation="software.amazon.q.jetbrains.core.credentials.sso.MockSsoLoginCallbackProvider"/>
+        <applicationService serviceInterface="migration.software.amazon.q.jetbrains.core.credentials.profiles.ProfileWatcher"
+                            serviceImplementation="software.amazon.q.jetbrains.core.credentials.profiles.DefaultProfileWatcher"/>
+
+        <projectService serviceInterface="software.amazon.q.jetbrains.core.credentials.AwsConnectionManager"
+                        serviceImplementation="software.amazon.q.jetbrains.core.credentials.DefaultAwsConnectionManager"
+                        testServiceImplementation="software.amazon.q.jetbrains.core.credentials.MockAwsConnectionManager"/>
+        <projectService serviceInterface="software.amazon.q.jetbrains.core.credentials.CredentialsRegionHandler"
+                        serviceImplementation="software.amazon.q.jetbrains.core.credentials.DefaultCredentialsRegionHandler"
+                        testServiceImplementation="software.amazon.q.jetbrains.core.credentials.MockCredentialsRegionHandler"/>
+        <projectService serviceInterface="software.amazon.q.jetbrains.core.credentials.ToolkitConnectionManager"
+                        serviceImplementation="software.amazon.q.jetbrains.core.credentials.DefaultToolkitConnectionManager"/>
+
         <!-- each plugin needs its own instance of these -->
-        <applicationService serviceImplementation="migration.software.aws.toolkits.jetbrains.core.coroutines.PluginCoroutineScopeTracker"/>
-        <projectService serviceImplementation="migration.software.aws.toolkits.jetbrains.core.coroutines.PluginCoroutineScopeTracker"/>
-        <postStartupActivity implementation = "software.aws.toolkits.jetbrains.core.notifications.NotificationServiceInitializer"/>
-        <postStartupActivity implementation="software.aws.toolkits.jetbrains.services.telemetry.AwsToolkitStartupMetrics"/>
+        <applicationService serviceImplementation="migration.software.amazon.q.jetbrains.core.coroutines.PluginCoroutineScopeTracker"/>
+        <projectService serviceImplementation="migration.software.amazon.q.jetbrains.core.coroutines.PluginCoroutineScopeTracker"/>
+        <postStartupActivity implementation = "software.amazon.q.jetbrains.core.notifications.NotificationServiceInitializer"/>
+        <postStartupActivity implementation="software.amazon.q.jetbrains.services.telemetry.AwsToolkitStartupMetrics"/>
     </extensions>
     <projectListeners>
-        <listener class="software.aws.toolkits.jetbrains.services.telemetry.OpenedFileTypesMetricsListener" topic="com.intellij.openapi.fileEditor.FileEditorManagerListener"/>
+        <listener class="software.amazon.q.jetbrains.services.telemetry.OpenedFileTypesMetricsListener" topic="com.intellij.openapi.fileEditor.FileEditorManagerListener"/>
     </projectListeners>
 </idea-plugin>

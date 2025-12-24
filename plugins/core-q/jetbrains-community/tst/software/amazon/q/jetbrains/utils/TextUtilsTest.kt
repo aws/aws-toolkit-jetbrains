@@ -1,0 +1,207 @@
+// Copyright 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
+package software.amazon.q.jetbrains.utils
+
+import com.intellij.json.JsonLanguage
+import com.intellij.testFramework.ProjectRule
+import com.intellij.testFramework.runInEdtAndWait
+import org.assertj.core.api.Assertions.assertThat
+import org.intellij.lang.annotations.Language
+import org.junit.Rule
+import org.junit.Test
+import software.amazon.q.jetbrains.utils.applyPatch
+import software.amazon.q.jetbrains.utils.formatText
+import software.amazon.q.jetbrains.utils.generateUnifiedPatch
+import software.amazon.q.jetbrains.utils.toHumanReadable
+import software.amazon.q.core.utils.convertMarkdownToHTML
+import software.amazon.q.core.utils.extractCodeBlockLanguage
+
+class TextUtilsTest {
+    @Rule
+    @JvmField
+    val projectRule = ProjectRule()
+
+    private val defaultTestGenResponseLanguage = "plaintext"
+
+    @Test
+    fun textGetsFormatted() {
+        @Language("JSON")
+        val actual =
+            """
+            {
+              "hello":
+                      "world"}
+            """.trimIndent()
+
+        @Language("JSON")
+        val expected =
+            """
+            {
+              "hello": "world"
+            }
+            """.trimIndent()
+
+        lateinit var formatted: String
+        runInEdtAndWait {
+            formatted = formatText(projectRule.project, JsonLanguage.INSTANCE, actual)
+        }
+        assertThat(formatted).isEqualTo(expected)
+    }
+
+    @Test
+    fun canConvertToTitleHumanReadable() {
+        assertThat("CREATE_COMPLETE".toHumanReadable()).isEqualTo("Create Complete")
+        assertThat("UPDATE_IN_PROGRESS".toHumanReadable()).isEqualTo("Update In Progress")
+    }
+
+    @Test
+    fun canConvertMarkdownToHTML() {
+        @Language("md")
+        val input = """
+            # heading 1
+            ## heading 2
+            
+           ```js 
+           console.log("hello world");
+           ```
+        """.trimIndent()
+
+        @Language("html")
+        val expected = """
+            <h1>heading 1</h1>
+            <h2>heading 2</h2>
+            <div class="code-block"><pre><code class="language-js">console.log(&quot;hello world&quot;);
+            </code></pre></div>
+            
+        """.trimIndent()
+
+        val actual = convertMarkdownToHTML(input)
+        assertThat(actual).isEqualTo(expected)
+    }
+
+    @Test
+    fun canRenderDiffsWithCustomRenderer() {
+        @Language("md")
+        val input = """
+           ```diff
+             line 1
+           - line 2
+           + line 3
+             line 4
+           ```
+        """.trimIndent()
+
+        @Language("html")
+        val expected = """
+            <div class="code-block"><div><pre>  line 1</pre></div><div class="deletion"><pre>- line 2</pre></div><div class="addition"><pre>+ line 3</pre></div><div><pre>  line 4</pre></div><div><pre></pre></div></div>
+            
+        """.trimIndent()
+
+        val actual = convertMarkdownToHTML(input)
+        assertThat(actual).isEqualTo(expected)
+    }
+
+    @Test
+    fun canApplyPatchSuccessfully() {
+        val inputPatch = "@@ -1,3 +1,3 @@\n first line\n-second line\n+third line\n forth line"
+        val inputFilePath = "dummy.py"
+        val fileContent = "first line\nsecond line\nforth line"
+        val actual = applyPatch(inputPatch, fileContent, inputFilePath)
+        val expected = "first line\nthird line\nforth line"
+        assertThat(actual).isEqualTo(expected)
+    }
+
+    @Test
+    fun shouldTryToApplyPatchEvenIfPatchIsIncorrect() {
+        val inputPatch = "@@ -1,3 +1,3 @@\n first line\n-second line\n+third line\n forth line"
+        val inputFilePath = "dummy.py"
+        val fileContent = "first line\nThree line\nforth line"
+        val actual = applyPatch(inputPatch, fileContent, inputFilePath)
+        val expected = "first line\nthird line\nThree line\nforth line"
+        assertThat(actual).isEqualTo(expected)
+    }
+
+    @Test
+    fun shouldHaveZeroHunkSizeForIncorrectPatchGenerated() {
+        val inputPatch = " first line\n-second line\n+third line\n forth line"
+        val inputFilePath = "dummy.py"
+        val actual = generateUnifiedPatch(inputPatch, inputFilePath)
+        assertThat(actual.hunks.size).isEqualTo(0)
+    }
+
+    @Test
+    fun shouldHaveHunksForCorrectPatchGenerated() {
+        val inputPatch = "@@ -1,3 +1,3 @@\n first line\n-second line\n+third line\n forth line"
+        val inputFilePath = "dummy.py"
+        val actual = generateUnifiedPatch(inputPatch, inputFilePath)
+        assertThat(actual.hunks.size).isEqualTo(1)
+        val hunk = actual.hunks[0]
+        assertThat(hunk.startLineAfter).isEqualTo(0)
+        assertThat(hunk.startLineBefore).isEqualTo(0)
+        assertThat(hunk.endLineAfter).isEqualTo(3)
+        assertThat(hunk.endLineBefore).isEqualTo(3)
+        val inputPatchLines = inputPatch.split("\n")
+        hunk.lines.forEachIndexed { index, patchLine -> assertThat(inputPatchLines[index + 1].substring(1)).isEqualTo(patchLine.text) }
+    }
+
+    @Test
+    fun shouldApplyPatchEvenIfNeighboringLinesDiffer() {
+        val inputPatch = "@@ -1,3 +1,3 @@\n first line\n-second line\n+third line\n forth line"
+        val inputFilePath = "dummy.py"
+        val fileContent = "foo\nsecond line\nbar"
+        val actual = applyPatch(inputPatch, fileContent, inputFilePath)
+        assertThat(actual).isEqualTo("foo\nthird line\nbar")
+    }
+
+    @Test
+    fun shouldApplyPatchEvenIfLineNumbersDiffer() {
+        val inputPatch = "@@ -1,3 +1,3 @@\n first line\n-second line\n+third line\n forth line"
+        val inputFilePath = "dummy.py"
+        val fileContent = "dummy\ndummy\ndummy\ndummy\nfirst line\nsecond line\nforth line"
+        val actual = applyPatch(inputPatch, fileContent, inputFilePath)
+        assertThat(actual).isEqualTo("dummy\ndummy\ndummy\ndummy\nfirst line\nthird line\nforth line")
+    }
+
+    @Test
+    fun `extractCodeBlockLanguage returns default when no code block is present`() {
+        val message = "This is a message without a code block"
+        assertThat(defaultTestGenResponseLanguage).isEqualTo(extractCodeBlockLanguage(message))
+    }
+
+    @Test
+    fun `extractCodeBlockLanguage returns language when code block with language is present`() {
+        val message = "Here's a code block:\n```kotlin\nval x = 5\n```"
+        assertThat("kotlin").isEqualTo(extractCodeBlockLanguage(message))
+    }
+
+    @Test
+    fun `extractCodeBlockLanguage returns default when code block has no language specified`() {
+        val message = "Here's a code block:\n```\nval x = 5\n```"
+        assertThat(defaultTestGenResponseLanguage).isEqualTo(extractCodeBlockLanguage(message))
+    }
+
+    @Test
+    fun `extractCodeBlockLanguage returns language when multiple code blocks are present`() {
+        val message = "First block:\n```java\nint x = 5;\n```\nSecond block:\n```python\nx = 5\n```"
+        assertThat("java").isEqualTo(extractCodeBlockLanguage(message))
+    }
+
+    @Test
+    fun `extractCodeBlockLanguage returns default when code block is not closed`() {
+        val message = "Incomplete code block:\n```kotlin\nval x = 5"
+        assertThat("kotlin").isEqualTo(extractCodeBlockLanguage(message))
+    }
+
+    @Test
+    fun `extractCodeBlockLanguage trims whitespace from language`() {
+        val message = "Code block with spaces:\n```  kotlin  \nval x = 5\n```"
+        assertThat("kotlin").isEqualTo(extractCodeBlockLanguage(message))
+    }
+
+    @Test
+    fun `extractCodeBlockLanguage handles empty message`() {
+        val message = ""
+        assertThat(defaultTestGenResponseLanguage).isEqualTo(extractCodeBlockLanguage(message))
+    }
+}

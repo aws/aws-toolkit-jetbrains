@@ -12,10 +12,10 @@ import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import software.aws.toolkits.core.utils.debug
-import software.aws.toolkits.core.utils.getLogger
+import software.amazon.q.core.utils.debug
+import software.amazon.q.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
-import software.aws.toolkits.jetbrains.utils.isQWebviewsAvailable
+import software.amazon.q.jetbrains.utils.isQWebviewsAvailable
 import software.aws.toolkits.telemetry.UiTelemetry
 
 class LearnCodeWhispererEditorProvider : FileEditorProvider, DumbAware {

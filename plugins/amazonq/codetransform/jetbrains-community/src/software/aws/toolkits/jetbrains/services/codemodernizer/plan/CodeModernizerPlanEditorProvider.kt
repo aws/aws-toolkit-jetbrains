@@ -13,8 +13,8 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
 import com.intellij.openapi.vfs.VirtualFile
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationPlan
-import software.aws.toolkits.core.utils.debug
-import software.aws.toolkits.core.utils.getLogger
+import software.amazon.q.core.utils.debug
+import software.amazon.q.core.utils.getLogger
 
 class CodeModernizerPlanEditorProvider : FileEditorProvider, DumbAware {
     override fun accept(project: Project, file: VirtualFile) = file is CodeModernizerPlanVirtualFile

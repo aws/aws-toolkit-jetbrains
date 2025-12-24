@@ -18,7 +18,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import software.aws.toolkits.jetbrains.core.coroutines.EDT
+import software.amazon.q.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererColorUtil.POPUP_BUTTON_BORDER
 import software.aws.toolkits.resources.AmazonQBundle.message
 import java.awt.Point

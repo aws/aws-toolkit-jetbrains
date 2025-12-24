@@ -23,7 +23,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import software.aws.toolkits.jetbrains.core.ToolWindowHeadlessManagerImpl
+import software.amazon.q.jetbrains.core.ToolWindowHeadlessManagerImpl
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererLoginType
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExploreActionState
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
@@ -31,7 +31,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.status.CodeWhisper
 import software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceToolWindowFactory
 import software.aws.toolkits.jetbrains.settings.CodeWhispererConfiguration
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
-import software.aws.toolkits.jetbrains.utils.xmlElement
+import software.amazon.q.jetbrains.utils.xmlElement
 import kotlin.test.fail
 
 class CodeWhispererSettingsTest : CodeWhispererTestBase() {

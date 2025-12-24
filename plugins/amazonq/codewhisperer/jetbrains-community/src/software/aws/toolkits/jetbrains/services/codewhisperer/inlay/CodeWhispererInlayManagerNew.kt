@@ -10,7 +10,7 @@ import com.intellij.openapi.editor.Inlay
 import com.intellij.openapi.util.Disposer
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.RecommendationChunk
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContextNew
-import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
+import software.amazon.q.jetbrains.utils.isRunningOnRemoteBackend
 
 @Service
 class CodeWhispererInlayManagerNew {

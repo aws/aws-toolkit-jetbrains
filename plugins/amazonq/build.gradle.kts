@@ -34,7 +34,7 @@ tasks.jar {
 }
 
 dependencies {
-    implementation(project(path = ":plugin-core", configuration = "shadow"))
+    implementation(project(":plugin-core-q"))
     implementation(project(":plugin-amazonq:chat"))
     implementation(project(":plugin-amazonq:codetransform"))
     implementation(project(":plugin-amazonq:codewhisperer"))
@@ -43,7 +43,7 @@ dependencies {
     implementation(libs.bundles.jackson)
     implementation(libs.lsp4j)
 
-    testImplementation(project(":plugin-core"))
+    testImplementation(project(":plugin-core-q"))
 }
 
 tasks.check {

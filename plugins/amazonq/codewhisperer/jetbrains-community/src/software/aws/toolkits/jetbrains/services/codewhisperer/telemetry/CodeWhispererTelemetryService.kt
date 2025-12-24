@@ -10,9 +10,9 @@ import com.intellij.openapi.project.Project
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import software.aws.toolkits.core.utils.debug
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.jetbrains.core.credentials.sono.isInternalUser
+import software.amazon.q.core.utils.debug
+import software.amazon.q.core.utils.getLogger
+import software.amazon.q.jetbrains.core.credentials.sono.isInternalUser
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.InlineCompletionStates
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LogInlineCompletionSessionResultsParams
@@ -31,7 +31,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.DiagnosticDif
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.getDiagnosticDifferences
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.getDocumentDiagnostics
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
-import software.aws.toolkits.jetbrains.settings.AwsSettings
+import software.amazon.q.jetbrains.settings.AwsSettings
 import software.aws.toolkits.telemetry.CodeFixAction
 import software.aws.toolkits.telemetry.CodewhispererCodeScanScope
 import software.aws.toolkits.telemetry.CodewhispererGettingStartedTask

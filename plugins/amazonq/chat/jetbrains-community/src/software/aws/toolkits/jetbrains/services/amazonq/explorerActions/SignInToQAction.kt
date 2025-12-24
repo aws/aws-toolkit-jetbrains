@@ -8,14 +8,14 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.wm.ToolWindowManager
-import software.aws.toolkits.jetbrains.core.credentials.ReauthSource
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
-import software.aws.toolkits.jetbrains.core.credentials.reauthConnectionIfNeeded
-import software.aws.toolkits.jetbrains.core.gettingstarted.requestCredentialsForQ
+import software.amazon.q.jetbrains.core.credentials.ReauthSource
+import software.amazon.q.jetbrains.core.credentials.ToolkitConnectionManager
+import software.amazon.q.jetbrains.core.credentials.pinning.QConnection
+import software.amazon.q.jetbrains.core.credentials.reauthConnectionIfNeeded
+import software.amazon.q.jetbrains.core.gettingstarted.requestCredentialsForQ
 import software.aws.toolkits.jetbrains.services.amazonq.gettingstarted.openMeetQPage
 import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindowFactory
-import software.aws.toolkits.jetbrains.utils.isQWebviewsAvailable
+import software.amazon.q.jetbrains.utils.isQWebviewsAvailable
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.UiTelemetry
 

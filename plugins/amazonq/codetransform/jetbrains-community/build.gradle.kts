@@ -12,7 +12,7 @@ intellijToolkit {
 }
 
 dependencies {
-    implementation(project(path = ":plugin-core", configuration = "shadow"))
+    implementation(project(":plugin-core-q"))
 
     implementation(project(":plugin-amazonq:shared:jetbrains-community"))
     // hack because transform has a chat entrypoint
@@ -20,9 +20,9 @@ dependencies {
     // hack because everything references codewhisperer
     implementation(project(":plugin-amazonq:codewhisperer:jetbrains-community"))
 
-    compileOnly(project(":plugin-core:jetbrains-community"))
+    compileOnly(project(":plugin-core-q:jetbrains-community"))
 
-    testImplementation(testFixtures(project(":plugin-core:jetbrains-community")))
+    testImplementation(testFixtures(project(":plugin-core-q:jetbrains-community")))
 }
 
 // hack because our test structure currently doesn't make complete sense

@@ -6,8 +6,8 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.service
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
-import software.aws.toolkits.core.utils.debug
-import software.aws.toolkits.core.utils.getLogger
+import software.amazon.q.core.utils.debug
+import software.amazon.q.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus.Companion.CODEWHISPERER_INVOCATION_STATE_CHANGED
 import java.time.Duration
 import java.time.Instant

@@ -13,7 +13,7 @@ import com.intellij.openapi.components.service
 import com.intellij.util.text.nullize
 
 @Service
-@State(name = "lspSettings", storages = [Storage("aws.xml", roamingType = RoamingType.DISABLED)])
+@State(name = "lspSettings", storages = [Storage("amazonq.xml", roamingType = RoamingType.DISABLED)])
 class LspSettings : PersistentStateComponent<LspConfiguration> {
     private var state = LspConfiguration()
 

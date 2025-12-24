@@ -8,7 +8,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.cppFileName
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.cppTestLeftContext
-import software.aws.toolkits.jetbrains.utils.rules.RunWithRealCredentials.RequiresRealCredentials
+import software.amazon.q.jetbrains.utils.rules.RunWithRealCredentials.RequiresRealCredentials
 import software.aws.toolkits.resources.message
 
 @RequiresRealCredentials

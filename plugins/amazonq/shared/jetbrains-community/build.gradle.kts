@@ -17,16 +17,16 @@ dependencies {
         platformDependency(Coordinates(groupId = "com.jetbrains.intellij.rd", artifactId = "rd-platform"))
     }
 
-    implementation(project(path = ":plugin-core", configuration = "shadow"))
+    implementation(project(":plugin-core-q"))
 
-    compileOnlyApi(project(":plugin-core:jetbrains-community"))
+    compileOnlyApi(project(":plugin-core-q:jetbrains-community"))
 
     // CodeWhispererTelemetryService uses a CircularFifoQueue
     implementation(libs.commons.collections)
     implementation(libs.nimbus.jose.jwt)
     api(libs.lsp4j)
 
-    testFixturesApi(testFixtures(project(":plugin-core:jetbrains-community")))
+    testFixturesApi(testFixtures(project(":plugin-core-q:jetbrains-community")))
 }
 
 // hack because our test structure currently doesn't make complete sense

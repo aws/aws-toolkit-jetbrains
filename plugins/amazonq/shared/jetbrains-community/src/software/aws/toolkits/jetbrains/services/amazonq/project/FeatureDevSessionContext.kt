@@ -16,11 +16,11 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.apache.commons.codec.digest.DigestUtils
 import org.apache.commons.io.FileUtils
-import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
-import software.aws.toolkits.jetbrains.services.amazonq.QConstants.MAX_FILE_SIZE_BYTES
-import software.aws.toolkits.jetbrains.utils.getWorkspaceDevFile
-import software.aws.toolkits.jetbrains.utils.isWorkspaceDevFile
-import software.aws.toolkits.resources.AwsCoreBundle
+import software.amazon.q.jetbrains.core.coroutines.getCoroutineBgContext
+import software.amazon.q.jetbrains.services.amazonq.QConstants.MAX_FILE_SIZE_BYTES
+import software.amazon.q.jetbrains.utils.getWorkspaceDevFile
+import software.amazon.q.jetbrains.utils.isWorkspaceDevFile
+import software.amazon.q.resources.AwsCoreBundle
 import software.aws.toolkits.telemetry.AmazonqTelemetry
 import java.io.File
 import java.io.FileInputStream

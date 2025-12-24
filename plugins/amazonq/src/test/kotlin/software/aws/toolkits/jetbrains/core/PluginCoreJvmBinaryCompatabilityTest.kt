@@ -25,7 +25,7 @@ class PluginCoreJvmBinaryCompatabilityTest {
         //       )Lsoftware/aws/toolkits/jetbrains/core/credentials/AwsBearerTokenConnection;
 
         // loginSso(...)
-        val clazz = Class.forName("software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManagerKt")
+        val clazz = Class.forName("software.amazon.q.jetbrains.core.credentials.ToolkitAuthManagerKt")
         val method = clazz.getDeclaredMethod(
             "loginSso\$default",
             Class.forName("com.intellij.openapi.project.Project"),
@@ -35,13 +35,13 @@ class PluginCoreJvmBinaryCompatabilityTest {
             Class.forName("kotlin.jvm.functions.Function1"),
             Class.forName("kotlin.jvm.functions.Function1"),
             Class.forName("kotlin.jvm.functions.Function0"),
-            Class.forName("software.aws.toolkits.jetbrains.core.credentials.ConnectionMetadata"),
+            Class.forName("software.amazon.q.jetbrains.core.credentials.ConnectionMetadata"),
             // can't request primitive type using reflection
             Integer.TYPE,
             Class.forName("java.lang.Object"),
         )
 
-        assertThat(method.returnType).isEqualTo(Class.forName("software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection"))
+        assertThat(method.returnType).isEqualTo(Class.forName("software.amazon.q.jetbrains.core.credentials.AwsBearerTokenConnection"))
     }
 
     @Test
@@ -53,7 +53,7 @@ class PluginCoreJvmBinaryCompatabilityTest {
         //      21: invokestatic  #96                 // Method software/aws/toolkits/jetbrains/core/credentials/sono/SonoConstantsKt.getQ_SCOPES:()Ljava/util/List;
 
         // not sure why CODEWHISPERER_SCOPES is being used when Q_SCOPES is a superset
-        val clazz = Class.forName("software.aws.toolkits.jetbrains.core.credentials.sono.SonoConstantsKt")
+        val clazz = Class.forName("software.amazon.q.jetbrains.core.credentials.sono.SonoConstantsKt")
 
         // type erasure :/
         assertThat(clazz.getMethod("getCODEWHISPERER_SCOPES").invoke(null)).isInstanceOf(List::class.java)

@@ -1,0 +1,429 @@
+{
+    "types": [
+        {
+            "name": "amazonQProfileRegion",
+            "type": "string",
+            "description": "Region of the Q Profile associated with a metric\n- \"n/a\" if metric is not associated with a profile or region.\n- \"not-set\" if metric is associated with a profile, but profile is unknown."
+        },
+        {
+            "name": "ssoRegion",
+            "type": "string",
+            "description": "Region of the current SSO connection. Typically associated with credentialStartUrl\n- \"n/a\" if metric is not associated with a region.\n- \"not-set\" if metric is associated with a region, but region is unknown."
+        },
+        {
+            "name": "profileCount",
+            "type": "int",
+            "description": "The number of profiles that were available to choose from"
+        },
+        {
+            "name": "amazonqIndexFileSizeInMB",
+            "type": "int",
+            "description": "Index size in MB"
+        },
+        {
+            "name": "amazonqIndexFileCount",
+            "type": "int",
+            "description": "Files indexed"
+        },
+        {
+            "name": "amazonqIndexMemoryUsageInMB",
+            "type": "int",
+            "description": "Memory usage of LSP server"
+        },
+        {
+            "name": "amazonqIndexCpuUsagePercentage",
+            "type": "int",
+            "description": "Cpu usage of LSP server"
+        },
+        {
+            "name": "authRefreshSource",
+            "type": "string",
+            "description": "Source triggering token refresh"
+        },
+        {
+            "name": "component",
+            "allowedValues": [
+                "editor",
+                "viewer",
+                "filesystem",
+                "explorer",
+                "infobar",
+                "hover",
+                "webview",
+                "quickfix",
+                "Manage Extensions",
+                "Got It",
+                "Read More",
+                "Install",
+                "Dismiss"
+            ],
+            "description": "The IDE or OS component used for the action. (Examples: S3 download to filesystem, S3 upload from editor, ...)"
+        },
+        {
+            "name": "connectionState",
+            "type": "string",
+            "description": "A detailed state of a specific auth connection. Use `authStatus` for a higher level view of an extension's general connection."
+        },
+        {
+            "name": "cwsprChatCommandName",
+            "type": "string",
+            "description": "Type of chat command name executed"
+        },
+        {
+            "name": "cwsprChatCommandType",
+            "type": "string",
+            "allowedValues": [
+                "clear",
+                "help",
+                "transform",
+                "auth"
+            ],
+            "description": "Type of chat command (/command) executed"
+        },
+        {
+            "name": "cwsprChatModificationPercentage",
+            "type": "double",
+            "description": "Percentage of characters edited by user after copying/inserting code from a message"
+        },
+        {
+            "name": "executedCount",
+            "type": "int",
+            "description": "The number of executed operations"
+        },
+        {
+            "name": "reAuth",
+            "type": "boolean",
+            "description": "Connection requires re-authentication."
+        },
+        {
+            "name": "startUpState",
+            "allowedValues": [
+                "firstStartUp",
+                "reloaded"
+            ],
+            "description": "Toolkit run state."
+        },
+        {
+            "name": "filePath",
+            "type": "string",
+            "description": "The path of the file"
+        },
+        {
+            "name": "workspaceRoot",
+            "type": "string",
+            "description": "The path of the project root"
+        },
+        {
+            "name": "relativePath",
+            "type": "string",
+            "description": "The relative path of the file"
+        }
+    ],
+    "metrics": [
+        {
+            "name": "amazonq_didSelectProfile",
+            "description": "Emitted after the user's Q Profile has been set, whether the user was prompted with a dialog, or a profile was automatically assigned after signing in.",
+            "metadata": [
+                { "type": "source" },
+                { "type": "amazonQProfileRegion" },
+                { "type": "result" },
+                { "type": "ssoRegion", "required": false },
+                { "type": "credentialStartUrl", "required": false },
+                { "type": "profileCount", "required": false }
+            ],
+            "passive": true
+        },
+        {
+            "name": "amazonq_profileState",
+            "description": "Indicates a change in the user's Q Profile state",
+            "metadata": [
+                { "type": "source" },
+                { "type": "amazonQProfileRegion" },
+                { "type": "result" },
+                { "type": "ssoRegion", "required": false },
+                { "type": "credentialStartUrl", "required": false }
+            ],
+            "passive": true
+        },
+        {
+            "name": "amazonq_indexWorkspace",
+            "description": "Indexing of local workspace",
+            "metadata": [
+                {
+                    "type": "duration"
+                },
+                {
+                    "type": "result"
+                },
+                {
+                    "type": "amazonqIndexFileSizeInMB"
+                },
+                {
+                    "type": "amazonqIndexFileCount"
+                },
+                {
+                    "type": "amazonqIndexMemoryUsageInMB",
+                    "required": false
+                },
+                {
+                    "type": "amazonqIndexCpuUsagePercentage",
+                    "required": false
+                },
+                {
+                    "type": "credentialStartUrl",
+                    "required": false
+                }
+            ]
+        },
+        {
+            "name": "amazonq_modifyCode",
+            "description": "Percentage of code modified by the user after copying/inserting code from a message",
+            "metadata": [
+                {
+                    "type": "cwsprChatConversationId"
+                },
+                {
+                    "type": "cwsprChatMessageId"
+                },
+                {
+                    "type": "cwsprChatModificationPercentage"
+                },
+                {
+                    "type": "credentialStartUrl",
+                    "required": false
+                }
+            ]
+        },
+        {
+            "name": "amazonq_closeChat",
+            "description": "When chat panel is closed"
+        },
+        {
+            "name": "amazonq_enterFocusChat",
+            "description": "When chat panel comes into focus"
+        },
+        {
+            "name": "amazonq_enterFocusConversation",
+            "description": "When a conversation comes into focus",
+            "metadata": [
+                {
+                    "type": "cwsprChatConversationId"
+                }
+            ]
+        },
+        {
+            "name": "amazonq_exitFocusChat",
+            "description": "When chat panel goes out of focus"
+        },
+        {
+            "name": "amazonq_exitFocusConversation",
+            "description": "When a conversation goes out of focus",
+            "metadata": [
+                {
+                    "type": "cwsprChatConversationId"
+                }
+            ]
+        },
+        {
+            "name": "amazonq_messageResponseError",
+            "description": "When an error has occured in response to a prompt",
+            "metadata": [
+                {
+                    "type": "cwsprChatConversationId",
+                    "required": false
+                },
+                {
+                    "type": "cwsprChatTriggerInteraction"
+                },
+                {
+                    "type": "cwsprChatUserIntent",
+                    "required": false
+                },
+                {
+                    "type": "cwsprChatHasCodeSnippet",
+                    "required": false
+                },
+                {
+                    "type": "cwsprChatProgrammingLanguage",
+                    "required": false
+                },
+                {
+                    "type": "cwsprChatActiveEditorTotalCharacters",
+                    "required": false
+                },
+                {
+                    "type": "cwsprChatActiveEditorImportCount",
+                    "required": false
+                },
+                {
+                    "type": "cwsprChatResponseCode"
+                },
+                {
+                    "type": "cwsprChatRequestLength"
+                },
+                {
+                    "type": "cwsprChatConversationType"
+                },
+                {
+                    "type": "credentialStartUrl",
+                    "required": false
+                }
+            ]
+        },
+        {
+            "name": "amazonq_openChat",
+            "description": "When user opens CWSPR chat panel"
+        },
+        {
+            "name": "amazonq_runCommand",
+            "description": "When a chat command is executed",
+            "metadata": [
+                {
+                    "type": "cwsprChatCommandType"
+                },
+                {
+                    "type": "cwsprChatCommandName",
+                    "required": false
+                },
+                {
+                    "type": "credentialStartUrl",
+                    "required": false
+                }
+            ]
+        },
+        {
+            "name": "amazonq_startConversation",
+            "description": "When user starts a new conversation",
+            "metadata": [
+                {
+                    "type": "cwsprChatConversationId"
+                },
+                {
+                    "type": "cwsprChatTriggerInteraction"
+                },
+                {
+                    "type": "cwsprChatUserIntent",
+                    "required": false
+                },
+                {
+                    "type": "cwsprChatHasCodeSnippet",
+                    "required": false
+                },
+                {
+                    "type": "cwsprChatProgrammingLanguage",
+                    "required": false
+                },
+                {
+                    "type": "cwsprChatConversationType"
+                },
+                {
+                    "type": "credentialStartUrl",
+                    "required": false
+                },
+                {
+                    "type": "cwsprChatHasProjectContext",
+                    "required": false
+                },
+                {
+                    "type": "cwsprChatProjectContextQueryMs",
+                    "required": false
+                }
+            ]
+        },
+        {
+            "name": "auth_modifyConnection",
+            "description": "An auth connection was modified in some way, e.g. deleted, updated",
+            "metadata": [
+                {
+                    "type": "action",
+                    "required": true
+                },
+                {
+                    "type": "authScopes",
+                    "required": false
+                },
+                {
+                    "type": "authStatus",
+                    "required": false
+                },
+                {
+                    "type": "connectionState",
+                    "required": false
+                },
+                {
+                    "type": "credentialStartUrl",
+                    "required": false
+                },
+                {
+                    "type": "sessionDuration",
+                    "required": false
+                },
+                {
+                    "type": "source",
+                    "required": true
+                },
+                {
+                    "type": "ssoRegistrationClientId",
+                    "required": false
+                },
+                {
+                    "type": "ssoRegistrationExpiresAt",
+                    "required": false
+                },
+                {
+                    "type": "id",
+                    "required": false
+                }
+            ],
+            "passive": true
+        },
+        {
+            "name": "auth_sourceOfRefresh",
+            "description": "Source of user triggered refresh",
+            "metadata": [
+                {
+                    "type": "authRefreshSource",
+                    "required": false
+                }
+            ]
+        },
+        {
+            "name": "aws_openLocalTerminal",
+            "description": "Open local terminal with aws connection injected",
+            "metadata": [
+                {
+                    "type": "result"
+                }
+            ]
+        },
+        {
+            "name": "webview_amazonqSignInOpened",
+            "description": "Called when a Amazon Q sign in webview is opened.",
+            "metadata": [
+                {
+                    "type": "reAuth",
+                    "required": true
+                }
+            ],
+            "passive": true
+        },
+        {
+            "name": "codewhisperer_invalidZip",
+            "description": "Invalid zip file",
+            "metadata": [
+                {
+                    "type": "filePath",
+                    "required": true
+                },
+                {
+                    "type": "workspaceRoot",
+                    "required": true
+                },
+                {
+                    "type": "relativePath",
+                    "required": true
+                }
+            ]
+        }
+    ]
+}

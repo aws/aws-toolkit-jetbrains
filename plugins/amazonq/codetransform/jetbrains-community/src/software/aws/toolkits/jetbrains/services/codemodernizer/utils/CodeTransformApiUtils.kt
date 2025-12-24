@@ -33,12 +33,12 @@ import software.amazon.awssdk.services.codewhispererruntime.model.Transformation
 import software.amazon.awssdk.services.codewhispererruntime.model.UploadContext
 import software.amazon.awssdk.services.codewhispererruntime.model.ValidationException
 import software.amazon.awssdk.services.ssooidc.model.InvalidGrantException
-import software.aws.toolkits.core.utils.WaiterUnrecoverableException
-import software.aws.toolkits.core.utils.Waiters.waitUntil
-import software.aws.toolkits.core.utils.error
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.info
-import software.aws.toolkits.jetbrains.core.coroutines.EDT
+import software.amazon.q.core.utils.WaiterUnrecoverableException
+import software.amazon.q.core.utils.Waiters.waitUntil
+import software.amazon.q.core.utils.error
+import software.amazon.q.core.utils.getLogger
+import software.amazon.q.core.utils.info
+import software.amazon.q.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeModernizerManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTelemetryManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
@@ -51,7 +51,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModerni
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformType
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.PlanTable
-import software.aws.toolkits.jetbrains.utils.notifyStickyWarn
+import software.amazon.q.jetbrains.utils.notifyStickyWarn
 import software.aws.toolkits.resources.message
 import java.nio.file.Path
 import java.nio.file.Paths

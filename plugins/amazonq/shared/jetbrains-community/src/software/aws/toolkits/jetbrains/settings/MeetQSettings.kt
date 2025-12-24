@@ -11,7 +11,7 @@ import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 
 @Service
-@State(name = "meetQPage", storages = [Storage("aws.xml", roamingType = RoamingType.DISABLED)])
+@State(name = "meetQPage", storages = [Storage("amazonq.xml", roamingType = RoamingType.DISABLED)])
 class MeetQSettings : PersistentStateComponent<MeetQSettingsConfiguration> {
     private var state = MeetQSettingsConfiguration()
     override fun getState(): MeetQSettingsConfiguration? = state

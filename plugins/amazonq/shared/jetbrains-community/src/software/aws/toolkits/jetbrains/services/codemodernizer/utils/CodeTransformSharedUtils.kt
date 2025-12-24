@@ -5,10 +5,10 @@ package software.aws.toolkits.jetbrains.services.codemodernizer.utils
 
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.project.Project
-import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.lazyIsUnauthedBearerConnection
-import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
+import software.amazon.q.jetbrains.core.credentials.AwsBearerTokenConnection
+import software.amazon.q.jetbrains.core.credentials.ToolkitConnectionManager
+import software.amazon.q.jetbrains.core.credentials.lazyIsUnauthedBearerConnection
+import software.amazon.q.jetbrains.core.credentials.pinning.QConnection
 import java.time.Instant
 
 fun calculateTotalLatency(startTime: Instant, endTime: Instant) = (endTime.toEpochMilli() - startTime.toEpochMilli()).toInt()

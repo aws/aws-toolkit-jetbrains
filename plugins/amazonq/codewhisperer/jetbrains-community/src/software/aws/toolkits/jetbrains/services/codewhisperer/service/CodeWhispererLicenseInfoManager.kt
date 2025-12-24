@@ -8,7 +8,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
-import software.aws.toolkits.jetbrains.utils.runUnderProgressIfNeeded
+import software.amazon.q.jetbrains.utils.runUnderProgressIfNeeded
 import software.aws.toolkits.resources.message
 
 @Service

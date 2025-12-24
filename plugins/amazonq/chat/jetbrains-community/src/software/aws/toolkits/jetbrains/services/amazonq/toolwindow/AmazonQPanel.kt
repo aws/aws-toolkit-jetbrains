@@ -21,10 +21,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import software.aws.toolkits.core.utils.error
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.jetbrains.core.coroutines.EDT
-import software.aws.toolkits.jetbrains.isDeveloperMode
+import software.amazon.q.core.utils.error
+import software.amazon.q.core.utils.getLogger
+import software.amazon.q.jetbrains.core.coroutines.EDT
+import software.amazon.q.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AppConnection
 import software.aws.toolkits.jetbrains.services.amazonq.commands.MessageTypeRegistry
@@ -42,7 +42,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.webview.FqnWebviewAdapte
 import software.aws.toolkits.jetbrains.services.amazonq.webview.theme.EditorThemeAdapter
 import software.aws.toolkits.jetbrains.services.amazonqCodeScan.auth.isCodeScanAvailable
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isCodeTransformAvailable
-import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
+import software.amazon.q.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.resources.message
 import java.awt.datatransfer.DataFlavor
 import java.awt.dnd.DropTarget

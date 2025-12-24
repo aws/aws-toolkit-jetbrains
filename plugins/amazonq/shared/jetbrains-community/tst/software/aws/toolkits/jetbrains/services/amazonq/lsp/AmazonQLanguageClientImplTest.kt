@@ -19,7 +19,7 @@ import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.slot
 import io.mockk.verify
-import migration.software.aws.toolkits.jetbrains.settings.AwsSettings
+import migration.software.amazon.q.jetbrains.settings.AwsSettings
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.entry
 import org.eclipse.lsp4j.ConfigurationItem
@@ -27,12 +27,12 @@ import org.eclipse.lsp4j.ConfigurationParams
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import software.amazon.awssdk.services.toolkittelemetry.model.MetricUnit
-import software.aws.toolkits.core.telemetry.DefaultMetricEvent
-import software.aws.toolkits.core.telemetry.MetricEvent
-import software.aws.toolkits.core.utils.test.aString
-import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
+import software.amazon.q.core.telemetry.DefaultMetricEvent
+import software.amazon.q.core.telemetry.MetricEvent
+import software.amazon.q.core.utils.test.aString
+import software.amazon.q.jetbrains.core.credentials.AwsBearerTokenConnection
+import software.amazon.q.jetbrains.core.credentials.ToolkitConnectionManager
+import software.amazon.q.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.ConnectionMetadata
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.SsoProfileData
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization

@@ -5,7 +5,7 @@ package software.aws.toolkits.jetbrains.services.amazonq.explorerActions
 
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
-import software.aws.toolkits.jetbrains.core.gettingstarted.reauthenticateWithQ
+import software.amazon.q.jetbrains.core.gettingstarted.reauthenticateWithQ
 import software.aws.toolkits.resources.message
 
 class ReauthenticateWithQ : AnAction(message("q.reauthenticate")) {
