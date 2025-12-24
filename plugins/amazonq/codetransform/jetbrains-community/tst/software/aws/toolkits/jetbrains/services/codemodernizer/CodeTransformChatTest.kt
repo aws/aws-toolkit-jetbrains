@@ -9,7 +9,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildTr
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformButtonId
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerJobCompletedResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
-import software.aws.toolkits.jetbrains.utils.satisfiesKt
+import software.amazon.q.jetbrains.utils.satisfiesKt
 import software.aws.toolkits.resources.message
 
 class CodeTransformChatTest {

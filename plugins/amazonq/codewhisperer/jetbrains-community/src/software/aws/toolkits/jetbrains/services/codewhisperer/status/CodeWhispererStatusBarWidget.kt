@@ -16,10 +16,10 @@ import com.intellij.openapi.wm.StatusBarWidget
 import com.intellij.openapi.wm.impl.status.EditorBasedWidget
 import com.intellij.ui.AnimatedIcon
 import com.intellij.util.Consumer
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
-import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileWatcher
-import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
+import software.amazon.q.jetbrains.core.credentials.ToolkitConnection
+import software.amazon.q.jetbrains.core.credentials.ToolkitConnectionManagerListener
+import software.amazon.q.jetbrains.core.credentials.profiles.ProfileWatcher
+import software.amazon.q.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.amazonq.gettingstarted.QActionGroups.Q_SIGNED_OUT_ACTION_GROUP
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
@@ -32,9 +32,9 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispe
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatusNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.reconnectCodeWhisperer
-import software.aws.toolkits.jetbrains.utils.isQConnected
-import software.aws.toolkits.jetbrains.utils.isQExpired
-import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
+import software.amazon.q.jetbrains.utils.isQConnected
+import software.amazon.q.jetbrains.utils.isQExpired
+import software.amazon.q.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.resources.message
 import java.awt.event.MouseEvent
 import javax.swing.Icon

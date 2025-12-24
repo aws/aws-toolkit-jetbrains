@@ -108,9 +108,7 @@ object NotificationManager {
                 AwsCoreBundle.message("aws.settings.auto_update.progress.message")
             ) {
                 override fun run(indicator: ProgressIndicator) {
-                    pluginUpdateManager.checkForUpdates(indicator, AwsPlugin.CORE)
                     pluginUpdateManager.checkForUpdates(indicator, AwsPlugin.TOOLKIT)
-                    pluginUpdateManager.checkForUpdates(indicator, AwsPlugin.Q)
                 }
             })
         }

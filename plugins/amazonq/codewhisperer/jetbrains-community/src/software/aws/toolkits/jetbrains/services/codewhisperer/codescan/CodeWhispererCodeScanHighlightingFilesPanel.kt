@@ -15,8 +15,8 @@ import com.intellij.ui.SimpleTextAttributes
 import com.intellij.ui.TreeSpeedSearch
 import com.intellij.ui.treeStructure.Tree
 import com.intellij.util.ui.UIUtil
-import software.aws.toolkits.core.utils.error
-import software.aws.toolkits.core.utils.getLogger
+import software.amazon.q.core.utils.error
+import software.amazon.q.core.utils.getLogger
 import software.aws.toolkits.resources.message
 import java.awt.BorderLayout
 import java.awt.event.MouseEvent

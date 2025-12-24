@@ -9,7 +9,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererLicenseInfoManager
-import software.aws.toolkits.jetbrains.utils.runUnderProgressIfNeeded
+import software.amazon.q.jetbrains.utils.runUnderProgressIfNeeded
 import software.aws.toolkits.resources.message
 
 class CodeWhispererLicenseInfoManagerTest : CodeWhispererTestBase() {

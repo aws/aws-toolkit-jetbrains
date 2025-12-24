@@ -44,8 +44,8 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.parseBuildF
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.pollTransformationStatusAndPlan
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.validateCustomVersionsFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.validateSctMetadata
-import software.aws.toolkits.jetbrains.utils.notifyStickyWarn
-import software.aws.toolkits.jetbrains.utils.rules.addFileToModule
+import software.amazon.q.jetbrains.utils.notifyStickyWarn
+import software.amazon.q.jetbrains.utils.rules.addFileToModule
 import software.aws.toolkits.resources.message
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.zip.ZipFile

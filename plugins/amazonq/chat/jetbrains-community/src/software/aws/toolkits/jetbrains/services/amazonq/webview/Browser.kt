@@ -9,8 +9,8 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.jcef.JBCefJSQuery
-import software.aws.toolkits.core.utils.inputStream
-import software.aws.toolkits.jetbrains.core.webview.LocalAssetJBCefRequestHandler
+import software.amazon.q.core.utils.inputStream
+import software.amazon.q.jetbrains.core.webview.LocalAssetJBCefRequestHandler
 import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.FlareUiMessage
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile

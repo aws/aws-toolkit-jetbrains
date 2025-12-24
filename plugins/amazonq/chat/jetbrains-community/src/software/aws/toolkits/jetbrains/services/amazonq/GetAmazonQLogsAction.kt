@@ -17,10 +17,10 @@ import com.intellij.ui.JBColor
 import com.intellij.util.IconUtil
 import com.intellij.util.ui.UIUtil
 import kotlinx.coroutines.runBlocking
-import software.aws.toolkits.jetbrains.utils.notifyInfo
-import software.aws.toolkits.jetbrains.utils.runUnderProgressIfNeeded
+import software.amazon.q.jetbrains.utils.notifyInfo
+import software.amazon.q.jetbrains.utils.runUnderProgressIfNeeded
 import software.aws.toolkits.resources.AmazonQBundle.message
-import software.aws.toolkits.resources.AwsCoreBundle
+import software.amazon.q.resources.AwsCoreBundle
 
 class GetAmazonQLogsAction : DumbAwareAction(message("amazonq.getLogs.tooltip.text")) {
     private val baseIcon = IconLoader.getIcon("/icons/file.svg", GetAmazonQLogsAction::class.java)

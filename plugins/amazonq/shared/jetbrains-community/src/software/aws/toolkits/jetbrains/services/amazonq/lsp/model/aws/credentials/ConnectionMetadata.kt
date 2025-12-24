@@ -3,8 +3,8 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials
 
-import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
+import software.amazon.q.jetbrains.core.credentials.AwsBearerTokenConnection
+import software.amazon.q.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspConstants
 
 data class ConnectionMetadata(

@@ -34,9 +34,9 @@ import software.amazon.awssdk.services.codewhispererstreaming.model.TextDocument
 import software.amazon.awssdk.services.codewhispererstreaming.model.UserInputMessage
 import software.amazon.awssdk.services.codewhispererstreaming.model.UserInputMessageContext
 import software.amazon.awssdk.services.codewhispererstreaming.model.UserIntent
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.info
-import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
+import software.amazon.q.core.utils.getLogger
+import software.amazon.q.core.utils.info
+import software.amazon.q.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.amazonq.project.RelevantDocument
 import software.aws.toolkits.jetbrains.services.cwc.ChatConstants

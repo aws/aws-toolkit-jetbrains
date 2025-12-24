@@ -19,7 +19,7 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import software.aws.toolkits.jetbrains.core.getTextFromUrl
+import software.amazon.q.jetbrains.core.getTextFromUrl
 import java.nio.file.Path
 import java.nio.file.Paths
 
@@ -64,7 +64,7 @@ class ManifestFetcherTest {
 
     @Test
     fun `fetchManifestFromRemote should return null due to invalid manifestString`() {
-        mockkStatic("software.aws.toolkits.jetbrains.core.HttpUtilsKt")
+        mockkStatic("software.amazon.q.jetbrains.core.HttpUtilsKt")
         every { getTextFromUrl(any()) } returns "ManifestContent"
 
         assertThat(manifestFetcher.fetchManifestFromRemote()).isNull()
@@ -73,7 +73,7 @@ class ManifestFetcherTest {
     @Test
     fun `fetchManifestFromRemote should return manifest and update manifest`() {
         val validManifest = Manifest(manifestSchemaVersion = "1.0")
-        mockkStatic("software.aws.toolkits.jetbrains.core.HttpUtilsKt")
+        mockkStatic("software.amazon.q.jetbrains.core.HttpUtilsKt")
 
         every { getTextFromUrl(any()) } returns "{ \"manifestSchemaVersion\": \"1.0\" }"
 
@@ -83,7 +83,7 @@ class ManifestFetcherTest {
 
     @Test
     fun `fetchManifestFromRemote should return null if manifest is deprecated`() {
-        mockkStatic("software.aws.toolkits.jetbrains.core.HttpUtilsKt")
+        mockkStatic("software.amazon.q.jetbrains.core.HttpUtilsKt")
         every { getTextFromUrl(any()) } returns
             // language=JSON
             """

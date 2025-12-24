@@ -7,7 +7,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.launch
-import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
+import software.amazon.q.jetbrains.core.coroutines.disposableCoroutineScope
 import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigListener
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQApp
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext

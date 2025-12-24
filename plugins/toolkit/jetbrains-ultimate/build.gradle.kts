@@ -16,7 +16,7 @@ intellijToolkit {
 }
 
 dependencies {
-    implementation(project(path = ":plugin-core", configuration = "shadow"))
+    implementation(project(":plugin-core"))
 
     compileOnlyApi(project(":plugin-toolkit:jetbrains-core"))
     compileOnlyApi(project(":plugin-core:jetbrains-ultimate"))

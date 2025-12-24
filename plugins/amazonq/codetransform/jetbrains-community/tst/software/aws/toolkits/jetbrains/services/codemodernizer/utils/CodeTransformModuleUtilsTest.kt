@@ -21,7 +21,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.whenever
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeWhispererCodeModernizerTestBase
-import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
+import software.amazon.q.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
 
 class CodeTransformModuleUtilsTest : CodeWhispererCodeModernizerTestBase(HeavyJavaCodeInsightTestFixtureRule()) {
     lateinit var javaSdkMock: JavaSdk

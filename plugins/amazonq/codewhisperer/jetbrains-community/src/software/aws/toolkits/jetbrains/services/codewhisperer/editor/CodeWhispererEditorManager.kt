@@ -22,7 +22,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CaretMovement
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.PAIRED_BRACKETS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.PAIRED_QUOTES
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
-import software.aws.toolkits.jetbrains.utils.notifyInfo
+import software.amazon.q.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
 import java.util.Stack
 

@@ -10,9 +10,9 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 import org.jetbrains.annotations.VisibleForTesting
-import software.aws.toolkits.core.utils.tryOrNull
-import software.aws.toolkits.jetbrains.AwsPlugin
-import software.aws.toolkits.jetbrains.AwsToolkit
+import software.amazon.q.core.utils.tryOrNull
+import software.amazon.q.jetbrains.AwsPlugin
+import software.amazon.q.jetbrains.AwsToolkit
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
 
@@ -20,7 +20,7 @@ import kotlin.reflect.KClass
  * Component controlling codewhisperer user group settings
  */
 @Service
-@State(name = "codewhispererUserGroupSettings", storages = [Storage("aws.xml", roamingType = RoamingType.DISABLED)])
+@State(name = "codewhispererUserGroupSettings", storages = [Storage("amazonq.xml", roamingType = RoamingType.DISABLED)])
 class CodeWhispererUserGroupSettings : PersistentStateComponent<CodeWhispererUserGroupStates> {
     private var version: String? = null
 

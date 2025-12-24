@@ -8,8 +8,8 @@ import com.intellij.execution.util.ExecUtil
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
-import software.aws.toolkits.core.utils.debug
-import software.aws.toolkits.core.utils.getLogger
+import software.amazon.q.core.utils.debug
+import software.amazon.q.core.utils.getLogger
 import java.io.File
 
 object AmazonQCodeReviewGitUtils {

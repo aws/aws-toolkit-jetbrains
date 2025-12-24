@@ -18,8 +18,8 @@ import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.ui.awt.RelativePoint
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.util.Alarm
-import software.aws.toolkits.core.utils.debug
-import software.aws.toolkits.core.utils.getLogger
+import software.amazon.q.core.utils.debug
+import software.amazon.q.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanIssue
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.context.CodeScanIssueDetailsDisplayType

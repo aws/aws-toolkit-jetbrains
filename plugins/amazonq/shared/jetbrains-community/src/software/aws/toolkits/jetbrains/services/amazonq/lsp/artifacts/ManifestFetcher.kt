@@ -9,16 +9,16 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.openapi.util.registry.Registry
 import org.jetbrains.annotations.VisibleForTesting
-import software.aws.toolkits.core.utils.deleteIfExists
-import software.aws.toolkits.core.utils.error
-import software.aws.toolkits.core.utils.exists
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.info
-import software.aws.toolkits.core.utils.readText
-import software.aws.toolkits.core.utils.warn
-import software.aws.toolkits.jetbrains.core.getETagFromUrl
-import software.aws.toolkits.jetbrains.core.getTextFromUrl
-import software.aws.toolkits.jetbrains.core.saveFileFromUrl
+import software.amazon.q.core.utils.deleteIfExists
+import software.amazon.q.core.utils.error
+import software.amazon.q.core.utils.exists
+import software.amazon.q.core.utils.getLogger
+import software.amazon.q.core.utils.info
+import software.amazon.q.core.utils.readText
+import software.amazon.q.core.utils.warn
+import software.amazon.q.jetbrains.core.getETagFromUrl
+import software.amazon.q.jetbrains.core.getTextFromUrl
+import software.amazon.q.jetbrains.core.saveFileFromUrl
 import java.nio.file.Path
 
 class ManifestFetcher {

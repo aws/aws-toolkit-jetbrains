@@ -36,10 +36,10 @@ import org.eclipse.lsp4j.TextDocumentIdentifier
 import org.eclipse.lsp4j.jsonrpc.ResponseErrorException
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseErrorCode
 import org.intellij.lang.annotations.Language
-import software.aws.toolkits.core.utils.error
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.info
-import software.aws.toolkits.core.utils.warn
+import software.amazon.q.core.utils.error
+import software.amazon.q.core.utils.getLogger
+import software.amazon.q.core.utils.info
+import software.amazon.q.core.utils.warn
 import software.aws.toolkits.jetbrains.services.amazonq.GetAmazonQLogsAction
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AppConnection
 import software.aws.toolkits.jetbrains.services.amazonq.commands.MessageSerializer

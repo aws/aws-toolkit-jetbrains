@@ -4,9 +4,9 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer.explorer.actions
 
 import com.intellij.openapi.project.Project
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
-import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
+import software.amazon.q.jetbrains.core.credentials.ToolkitConnectionManager
+import software.amazon.q.jetbrains.core.credentials.pinning.QConnection
+import software.amazon.q.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isUserBuilderId

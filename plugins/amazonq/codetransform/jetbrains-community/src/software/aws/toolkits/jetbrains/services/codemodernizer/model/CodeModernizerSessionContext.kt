@@ -12,11 +12,11 @@ import com.intellij.openapi.projectRoots.JavaSdkVersion
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.wm.ToolWindowManager
-import software.aws.toolkits.core.utils.createTemporaryZipFile
-import software.aws.toolkits.core.utils.error
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.info
-import software.aws.toolkits.core.utils.putNextEntry
+import software.amazon.q.core.utils.createTemporaryZipFile
+import software.amazon.q.core.utils.error
+import software.amazon.q.core.utils.getLogger
+import software.amazon.q.core.utils.info
+import software.amazon.q.core.utils.putNextEntry
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_DEPENDENCIES_ROOT_NAME
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_MANIFEST_FILE_NAME
 import software.aws.toolkits.jetbrains.services.codemodernizer.ideMaven.TransformMavenRunner

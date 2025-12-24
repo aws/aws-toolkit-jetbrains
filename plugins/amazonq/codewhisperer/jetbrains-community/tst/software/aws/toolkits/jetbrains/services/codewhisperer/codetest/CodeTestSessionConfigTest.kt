@@ -15,10 +15,10 @@ import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
 import software.aws.toolkits.jetbrains.services.codewhisperer.codetest.sessionconfig.CodeTestSessionConfig
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
-import software.aws.toolkits.jetbrains.utils.rules.CodeInsightTestFixtureRule
-import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
-import software.aws.toolkits.jetbrains.utils.rules.addFileToModule
-import software.aws.toolkits.jetbrains.utils.rules.addModule
+import software.amazon.q.jetbrains.utils.rules.CodeInsightTestFixtureRule
+import software.amazon.q.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
+import software.amazon.q.jetbrains.utils.rules.addFileToModule
+import software.amazon.q.jetbrains.utils.rules.addModule
 import java.io.BufferedInputStream
 import java.util.zip.ZipInputStream
 

@@ -15,9 +15,9 @@ import org.mockito.kotlin.stub
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.CodeScanSessionConfig
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getNormalizedRelativePath
-import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
-import software.aws.toolkits.jetbrains.utils.rules.addFileToModule
-import software.aws.toolkits.jetbrains.utils.rules.addModule
+import software.amazon.q.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
+import software.amazon.q.jetbrains.utils.rules.addFileToModule
+import software.amazon.q.jetbrains.utils.rules.addModule
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 import java.io.BufferedInputStream
 import java.nio.file.Paths

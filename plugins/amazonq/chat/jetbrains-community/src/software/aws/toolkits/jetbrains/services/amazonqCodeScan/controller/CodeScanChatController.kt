@@ -4,8 +4,8 @@
 package software.aws.toolkits.jetbrains.services.amazonqCodeScan.controller
 
 import com.intellij.ide.BrowserUtil
-import software.aws.toolkits.core.utils.debug
-import software.aws.toolkits.core.utils.getLogger
+import software.amazon.q.core.utils.debug
+import software.amazon.q.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.amazonqCodeScan.FEATURE_NAME

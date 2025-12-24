@@ -46,7 +46,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererUnknownLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererVue
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererYaml
-import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
+import software.amazon.q.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 import kotlin.reflect.full.createInstance
 import kotlin.reflect.full.primaryConstructor

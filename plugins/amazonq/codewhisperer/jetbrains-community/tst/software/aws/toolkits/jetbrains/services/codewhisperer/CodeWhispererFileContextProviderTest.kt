@@ -18,7 +18,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConf
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJava
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.DefaultCodeWhispererFileContextProvider
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.FileContextProvider
-import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
+import software.amazon.q.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
 
 class CodeWhispererFileContextProviderTest {
     @JvmField
