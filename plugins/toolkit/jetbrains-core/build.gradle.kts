@@ -196,6 +196,13 @@ dependencies {
     implementation(libs.zjsonpatch)
 
     testFixturesApi(testFixtures(project(":plugin-core:jetbrains-community")))
+    testImplementation(project(":plugin-core:jetbrains-community"))
+}
+
+tasks.test {
+    // Include core test sources
+    testClassesDirs += project(":plugin-core:jetbrains-community").sourceSets.test.get().output.classesDirs
+    classpath += project(":plugin-core:jetbrains-community").sourceSets.test.get().runtimeClasspath
 }
 
 fun transformXml(document: Document, path: Path) {
@@ -214,7 +221,7 @@ fun transformXml(document: Document, path: Path) {
 
 // hack because our test structure currently doesn't make complete sense
 tasks.prepareTestSandbox {
-    val pluginXmlJar = project(":plugin-core").tasks.jar
+    val pluginXmlJar = project(":plugin-toolkit:intellij-standalone").tasks.jar
 
     dependsOn(pluginXmlJar)
     from(pluginXmlJar) {

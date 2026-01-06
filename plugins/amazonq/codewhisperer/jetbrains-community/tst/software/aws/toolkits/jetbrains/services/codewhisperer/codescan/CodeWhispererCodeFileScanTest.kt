@@ -34,7 +34,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.TOTAL_MILLIS_IN_SECOND
 import software.amazon.q.jetbrains.utils.isInstanceOf
 import software.amazon.q.jetbrains.utils.isInstanceOfSatisfying
-import software.amazon.q.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
+import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 import java.io.FileInputStream
 import java.lang.management.ManagementFactory

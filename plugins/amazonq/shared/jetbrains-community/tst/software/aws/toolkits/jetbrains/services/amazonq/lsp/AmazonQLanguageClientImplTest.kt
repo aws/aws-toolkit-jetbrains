@@ -37,7 +37,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credential
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.SsoProfileData
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
-import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
+import software.amazon.q.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings.Companion.CONTEXT_INDEX_SIZE
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings.Companion.CONTEXT_INDEX_THREADS

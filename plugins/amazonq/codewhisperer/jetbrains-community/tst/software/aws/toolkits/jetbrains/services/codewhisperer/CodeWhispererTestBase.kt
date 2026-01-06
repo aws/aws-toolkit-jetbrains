@@ -81,7 +81,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.jetbrains.settings.CodeWhispererConfiguration
 import software.aws.toolkits.jetbrains.settings.CodeWhispererConfigurationType
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
-import software.amazon.q.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
+import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
 import software.aws.toolkits.resources.message
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Future

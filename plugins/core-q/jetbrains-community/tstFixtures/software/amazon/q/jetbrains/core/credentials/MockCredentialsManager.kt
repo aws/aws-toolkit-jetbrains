@@ -20,7 +20,7 @@ import software.amazon.q.core.credentials.CredentialsChangeListener
 import software.amazon.q.core.credentials.SsoSessionIdentifier
 import software.amazon.q.core.credentials.ToolkitCredentialsProvider
 import software.amazon.q.core.region.AwsRegion
-import software.aws.toolkits.core.utils.test.aString
+import software.amazon.q.core.utils.test.aString
 import software.amazon.q.jetbrains.utils.rules.ClearableLazy
 
 @Deprecated("Use MockCredentialManagerRule")

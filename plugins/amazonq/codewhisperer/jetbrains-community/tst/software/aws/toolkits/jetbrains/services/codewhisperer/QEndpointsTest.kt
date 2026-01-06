@@ -11,7 +11,7 @@ import org.junit.jupiter.api.extension.RegisterExtension
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QDefaultServiceConfig
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QEndpoints
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionEndpoint
-import software.amazon.q.jetbrains.utils.rules.RegistryExtension
+import software.aws.toolkits.jetbrains.utils.rules.RegistryExtension
 import software.amazon.q.jetbrains.utils.satisfiesKt
 
 @ExtendWith(ApplicationExtension::class)

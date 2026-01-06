@@ -21,7 +21,7 @@ import software.amazon.awssdk.services.cognitoidentity.model.GetCredentialsForId
 import software.amazon.awssdk.services.cognitoidentity.model.GetIdRequest
 import software.amazon.awssdk.services.cognitoidentity.model.GetIdResponse
 import software.amazon.q.core.telemetry.CachedIdentityStorage
-import software.aws.toolkits.core.utils.delegateMock
+import software.amazon.q.core.utils.delegateMock
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 

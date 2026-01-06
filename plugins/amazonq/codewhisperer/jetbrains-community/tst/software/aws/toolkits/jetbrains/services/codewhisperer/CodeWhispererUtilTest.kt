@@ -35,7 +35,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.isWithin
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.runIfIdcConnectionOrTelemetryEnabled
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.toCodeChunk
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.truncateLineByLine
-import software.aws.toolkits.jetbrains.settings.AwsSettings
+import software.amazon.q.jetbrains.settings.AwsSettings
 import software.amazon.q.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 

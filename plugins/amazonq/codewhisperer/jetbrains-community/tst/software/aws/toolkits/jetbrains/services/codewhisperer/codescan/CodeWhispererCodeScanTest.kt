@@ -32,7 +32,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.getTelemetryErrorMessage
 import software.amazon.q.jetbrains.utils.isInstanceOf
 import software.amazon.q.jetbrains.utils.isInstanceOfSatisfying
-import software.amazon.q.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
+import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 import java.io.File
 import java.io.FileInputStream

@@ -9,7 +9,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import software.amazon.q.resources.AwsCoreBundle
-import software.aws.toolkits.core.rules.SystemPropertyHelper
+import software.amazon.q.core.rules.SystemPropertyHelper
 import java.io.File
 
 class ProfileReaderTest {

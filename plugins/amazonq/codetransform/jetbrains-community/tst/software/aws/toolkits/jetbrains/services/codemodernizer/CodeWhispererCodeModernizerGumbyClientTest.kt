@@ -52,7 +52,7 @@ import software.amazon.q.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.services.amazonq.clients.AmazonQStreamingClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
-import software.aws.toolkits.jetbrains.settings.AwsSettings
+import software.amazon.q.jetbrains.settings.AwsSettings
 import java.util.concurrent.CompletableFuture
 
 class CodeWhispererCodeModernizerGumbyClientTest : CodeWhispererCodeModernizerTestBase() {

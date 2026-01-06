@@ -33,7 +33,7 @@ dependencies {
 
 // hack because our test structure currently doesn't make complete sense
 tasks.prepareTestSandbox {
-    val pluginXmlJar = project(":plugin-core").tasks.jar
+    val pluginXmlJar = project(":plugin-toolkit:intellij-standalone").tasks.jar
 
     dependsOn(pluginXmlJar)
     from(pluginXmlJar) {

@@ -25,8 +25,8 @@ import software.amazon.awssdk.services.sts.model.AssumeRoleRequest
 import software.amazon.awssdk.services.sts.model.AssumeRoleResponse
 import software.amazon.awssdk.utils.SdkAutoCloseable
 import software.amazon.q.jetbrains.core.MockClientManagerRule
-import software.aws.toolkits.core.region.anAwsRegion
-import software.aws.toolkits.core.utils.test.aString
+import software.amazon.q.core.region.anAwsRegion
+import software.amazon.q.core.utils.test.aString
 import java.time.Duration
 import java.time.Instant
 

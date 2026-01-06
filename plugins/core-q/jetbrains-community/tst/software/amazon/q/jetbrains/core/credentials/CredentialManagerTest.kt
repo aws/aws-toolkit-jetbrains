@@ -29,8 +29,8 @@ import software.amazon.q.core.credentials.CredentialSourceId
 import software.amazon.q.core.credentials.CredentialsChangeEvent
 import software.amazon.q.core.credentials.CredentialsChangeListener
 import software.amazon.q.core.region.AwsRegion
-import software.aws.toolkits.core.region.anAwsRegion
-import software.aws.toolkits.core.utils.test.aString
+import software.amazon.q.core.region.anAwsRegion
+import software.amazon.q.core.utils.test.aString
 import software.amazon.q.jetbrains.utils.isInstanceOf
 import kotlin.test.assertNotNull
 

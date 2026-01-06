@@ -21,7 +21,7 @@ import software.amazon.q.jetbrains.core.MockClientManagerExtension
 import software.amazon.q.jetbrains.core.credentials.ConfigFilesFacade
 import software.amazon.q.jetbrains.core.region.MockRegionProviderExtension
 import software.amazon.q.resources.AwsCoreBundle
-import software.aws.toolkits.core.utils.test.aString
+import software.amazon.q.core.utils.test.aString
 import software.amazon.q.jetbrains.utils.satisfiesKt
 
 @ExtendWith(MockKExtension::class)

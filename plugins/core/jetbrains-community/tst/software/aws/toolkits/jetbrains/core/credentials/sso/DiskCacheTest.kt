@@ -3,9 +3,11 @@
 
 package software.aws.toolkits.jetbrains.core.credentials.sso
 
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.openapi.util.io.NioFiles
 import com.intellij.testFramework.ApplicationExtension
+import com.intellij.testFramework.junit5.TestDisposable
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -16,6 +18,7 @@ import org.junit.jupiter.api.io.TempDir
 import software.aws.toolkits.core.utils.readText
 import software.aws.toolkits.core.utils.test.assertPosixPermissions
 import software.aws.toolkits.core.utils.writeText
+import software.aws.toolkits.jetbrains.core.CoreTestHelper
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -42,7 +45,8 @@ class DiskCacheTest {
     private lateinit var sut: DiskCache
 
     @BeforeEach
-    fun setUp(@TempDir tempFolder: Path) {
+    fun setUp(@TestDisposable disposable: Disposable, @TempDir tempFolder: Path) {
+//        CoreTestHelper.registerMissingServices(disposable)
         cacheRoot = tempFolder.toAbsolutePath()
         cacheLocation = Paths.get(cacheRoot.toString(), "fakehome", ".aws", "sso", "cache")
         Files.createDirectories(cacheLocation)

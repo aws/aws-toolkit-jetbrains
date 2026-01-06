@@ -3,9 +3,11 @@
 
 package software.aws.toolkits.jetbrains.core.gettingstarted
 
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.ui.TestDialog
 import com.intellij.openapi.ui.TestDialogManager
 import com.intellij.testFramework.ProjectExtension
+import com.intellij.testFramework.junit5.TestDisposable
 import com.intellij.testFramework.runInEdtAndWait
 import io.mockk.every
 import io.mockk.junit5.MockKExtension
@@ -13,6 +15,7 @@ import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.verify
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
@@ -28,6 +31,7 @@ import software.amazon.awssdk.services.sts.model.StsException
 import software.aws.toolkits.core.region.Endpoint
 import software.aws.toolkits.core.region.Service
 import software.aws.toolkits.core.utils.test.aString
+import software.aws.toolkits.jetbrains.core.CoreTestHelper
 import software.aws.toolkits.jetbrains.core.MockClientManagerExtension
 import software.aws.toolkits.jetbrains.core.credentials.ConfigFilesFacade
 import software.aws.toolkits.jetbrains.core.credentials.UserConfigSsoSessionProfile
@@ -56,6 +60,11 @@ class SetupAuthenticationDialogTest {
     @JvmField
     @RegisterExtension
     val mockRegionProvider = MockRegionProviderExtension()
+
+//    @BeforeEach
+//    fun setUp(@TestDisposable disposable: Disposable) {
+//        CoreTestHelper.registerMissingServices(disposable)
+//    }
 
     @Test
     fun `login to IdC tab`() {

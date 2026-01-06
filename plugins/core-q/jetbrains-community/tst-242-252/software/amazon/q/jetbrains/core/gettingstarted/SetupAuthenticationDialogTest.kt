@@ -37,7 +37,7 @@ import software.amazon.q.jetbrains.core.region.MockRegionProviderExtension
 import software.amazon.q.resources.AwsCoreBundle
 import software.amazon.q.core.region.Endpoint
 import software.amazon.q.core.region.Service
-import software.aws.toolkits.core.utils.test.aString
+import software.amazon.q.core.utils.test.aString
 import software.amazon.q.jetbrains.utils.satisfiesKt
 import software.aws.toolkits.telemetry.FeatureId
 

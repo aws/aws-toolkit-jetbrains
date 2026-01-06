@@ -4,7 +4,7 @@
 package software.amazon.q.jetbrains.core
 
 import software.amazon.q.core.ClientConnectionSettings
-import software.aws.toolkits.core.utils.test.aString
+import software.amazon.q.core.utils.test.aString
 import java.util.concurrent.atomic.AtomicInteger
 
 open class DummyResource<T>(override val id: String, private val value: T) : Resource.Cached<T>() {

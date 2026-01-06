@@ -33,7 +33,7 @@ import software.amazon.q.core.ConnectionSettings
 import software.amazon.q.core.credentials.CredentialIdentifier
 import software.amazon.q.core.credentials.ToolkitCredentialsProvider
 import software.amazon.q.core.region.AwsRegion
-import software.aws.toolkits.core.utils.test.retryableAssert
+import software.amazon.q.core.utils.test.retryableAssert
 import software.amazon.q.jetbrains.utils.hasCauseWithMessage
 import software.amazon.q.jetbrains.utils.hasException
 import software.amazon.q.jetbrains.utils.hasValue

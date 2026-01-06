@@ -61,8 +61,8 @@ import software.amazon.q.core.credentials.CredentialsChangeEvent
 import software.amazon.q.core.credentials.CredentialsChangeListener
 import software.amazon.q.core.credentials.SsoSessionIdentifier
 import software.amazon.q.core.credentials.ToolkitBearerTokenProvider
-import software.aws.toolkits.core.rules.SystemPropertyHelper
-import software.aws.toolkits.core.utils.test.aString
+import software.amazon.q.core.rules.SystemPropertyHelper
+import software.amazon.q.core.utils.test.aString
 import software.amazon.q.jetbrains.utils.isInstanceOf
 import software.amazon.q.jetbrains.utils.isInstanceOfSatisfying
 import software.amazon.q.jetbrains.utils.rules.NotificationListenerRule

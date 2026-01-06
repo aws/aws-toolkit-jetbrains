@@ -22,8 +22,8 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.actions.P
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.actions.Resume
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.amazon.q.jetbrains.services.telemetry.NoOpPublisher
-import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
-import software.aws.toolkits.jetbrains.settings.AwsSettings
+import software.amazon.q.jetbrains.services.telemetry.TelemetryService
+import software.amazon.q.jetbrains.settings.AwsSettings
 
 class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
     private val awsModifySetting = "aws_modifySetting"

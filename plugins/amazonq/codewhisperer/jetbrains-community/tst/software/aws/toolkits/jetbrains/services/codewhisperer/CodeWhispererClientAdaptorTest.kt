@@ -58,7 +58,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestU
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.sdkHttpResponse
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptorImpl
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
-import software.aws.toolkits.jetbrains.settings.AwsSettings
+import software.amazon.q.jetbrains.settings.AwsSettings
 import software.amazon.q.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 
 class CodeWhispererClientAdaptorTest {

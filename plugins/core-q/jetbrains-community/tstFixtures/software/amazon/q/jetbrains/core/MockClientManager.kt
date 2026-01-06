@@ -23,7 +23,7 @@ import software.amazon.q.core.clients.SdkClientProvider
 import software.amazon.q.core.credentials.ToolkitCredentialsProvider
 import software.amazon.q.core.region.AwsRegion
 import software.amazon.q.core.region.ToolkitRegionProvider
-import software.aws.toolkits.core.utils.delegateMock
+import software.amazon.q.core.utils.delegateMock
 import kotlin.reflect.KClass
 
 class MockClientManager : AwsClientManager() {

@@ -38,7 +38,7 @@ import software.amazon.q.jetbrains.settings.AwsSettings
 import software.amazon.q.core.telemetry.MetricEvent
 import software.amazon.q.core.telemetry.TelemetryBatcher
 import software.amazon.q.core.telemetry.TelemetryPublisher
-import software.aws.toolkits.core.utils.test.aString
+import software.amazon.q.core.utils.test.aString
 import software.amazon.q.jetbrains.services.telemetry.NoOpPublisher
 import software.amazon.q.jetbrains.utils.isInstanceOf
 import software.amazon.q.jetbrains.utils.isInstanceOfSatisfying

@@ -8,9 +8,9 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Rule
 import org.junit.Test
 import software.amazon.q.jetbrains.core.credentials.profiles.Ec2MetadataConfigProvider.getEc2MedataEndpoint
-import software.aws.toolkits.core.rules.EnvironmentVariableHelper
-import software.aws.toolkits.core.rules.SystemPropertyHelper
-import software.aws.toolkits.core.utils.test.aString
+import software.amazon.q.core.rules.EnvironmentVariableHelper
+import software.amazon.q.core.rules.SystemPropertyHelper
+import software.amazon.q.core.utils.test.aString
 import software.amazon.q.jetbrains.utils.isInstanceOf
 
 class Ec2MetadataConfigProviderTest {

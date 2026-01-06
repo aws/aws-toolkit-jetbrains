@@ -18,7 +18,7 @@ import software.amazon.awssdk.services.toolkittelemetry.model.PostFeedbackReques
 import software.amazon.awssdk.services.toolkittelemetry.model.PostMetricsRequest
 import software.amazon.awssdk.services.toolkittelemetry.model.Sentiment
 import software.amazon.q.core.telemetry.DefaultMetricEvent
-import software.aws.toolkits.core.utils.delegateMock
+import software.amazon.q.core.utils.delegateMock
 
 class DefaultTelemetryPublisherTest {
     @Rule

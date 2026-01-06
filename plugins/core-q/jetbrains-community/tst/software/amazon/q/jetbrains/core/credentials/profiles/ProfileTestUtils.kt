@@ -4,7 +4,7 @@
 package software.amazon.q.jetbrains.core.credentials.profiles
 
 import software.amazon.awssdk.profiles.Profile
-import software.aws.toolkits.core.utils.test.aString
+import software.amazon.q.core.utils.test.aString
 
 fun profile(name: String = aString(), properties: MutableMap<String, String>.() -> Unit = {}): Profile = Profile.builder()
     .name(name)

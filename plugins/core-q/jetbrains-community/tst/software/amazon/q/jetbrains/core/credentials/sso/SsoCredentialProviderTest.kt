@@ -20,8 +20,8 @@ import software.amazon.awssdk.services.sso.model.GetRoleCredentialsRequest
 import software.amazon.awssdk.services.sso.model.GetRoleCredentialsResponse
 import software.amazon.awssdk.services.sso.model.RoleCredentials
 import software.amazon.awssdk.services.sso.model.UnauthorizedException
-import software.aws.toolkits.core.utils.delegateMock
-import software.aws.toolkits.core.utils.test.aString
+import software.amazon.q.core.utils.delegateMock
+import software.amazon.q.core.utils.test.aString
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 

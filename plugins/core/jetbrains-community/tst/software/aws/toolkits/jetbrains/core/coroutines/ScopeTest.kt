@@ -14,6 +14,7 @@ import com.intellij.testFramework.PlatformTestUtil
 import com.intellij.testFramework.ProjectRule
 import com.intellij.testFramework.TestApplicationManager
 import com.intellij.testFramework.createTestOpenProjectOptions
+import com.intellij.testFramework.junit5.TestDisposable
 import com.intellij.testFramework.replaceService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
@@ -26,8 +27,10 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
+import org.junit.jupiter.api.BeforeEach
 import org.junit.rules.TemporaryFolder
 import org.junit.rules.TestName
+import software.aws.toolkits.jetbrains.core.CoreTestHelper
 import software.aws.toolkits.jetbrains.utils.isInstanceOf
 import java.time.Duration
 import java.util.concurrent.CancellationException
@@ -51,6 +54,11 @@ class ScopeTest {
     @Rule
     @JvmField
     val testName = TestName()
+
+//    @BeforeEach
+//    fun setUp(@TestDisposable disposable: Disposable) {
+//        CoreTestHelper.registerMissingServices(disposable)
+//    }
 
     @Test
     fun `plugin being uploaded cancels application scope`() {

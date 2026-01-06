@@ -20,8 +20,8 @@ import org.junit.Test
 import software.amazon.awssdk.http.HttpExecuteRequest
 import software.amazon.awssdk.http.SdkHttpFullRequest
 import software.amazon.awssdk.http.SdkHttpMethod
-import software.aws.toolkits.core.rules.EnvironmentVariableHelper
-import software.aws.toolkits.core.rules.SystemPropertyHelper
+import software.amazon.q.core.rules.EnvironmentVariableHelper
+import software.amazon.q.core.rules.SystemPropertyHelper
 import java.net.URI
 
 class AwsSdkClientTest {

@@ -16,9 +16,9 @@ import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.verifyNoInteractions
 import software.amazon.awssdk.services.ssooidc.SsoOidcClient
 import software.amazon.q.jetbrains.core.MockClientManagerRule
-import software.aws.toolkits.core.rules.EnvironmentVariableHelper
+import software.amazon.q.core.rules.EnvironmentVariableHelper
 import software.amazon.q.core.utils.createParentDirectories
-import software.aws.toolkits.core.utils.test.aString
+import software.amazon.q.core.utils.test.aString
 import software.amazon.q.core.utils.toHexString
 import software.amazon.q.core.utils.writeText
 import java.nio.file.Path

@@ -5,7 +5,7 @@ package software.aws.toolkits.jetbrains.services.codewhisperer
 
 import com.intellij.testFramework.DisposableRule
 import org.junit.Rule
-import software.amazon.q.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
+import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
 
 open class CodeWhispererBasicTestBase {
     @Rule

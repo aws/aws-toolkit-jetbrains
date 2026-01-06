@@ -81,6 +81,10 @@ dependencies {
     testRuntimeOnly(project(":plugin-core:sdk-codegen"))
 }
 
+tasks.test {
+    enabled = false
+}
+
 // fix implicit dependency on generated source
 tasks.withType<Detekt>().configureEach {
     dependsOn(generateTelemetry)

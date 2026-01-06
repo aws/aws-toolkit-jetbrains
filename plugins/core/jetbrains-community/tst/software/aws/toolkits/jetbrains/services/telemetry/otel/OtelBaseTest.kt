@@ -3,8 +3,10 @@
 
 package software.aws.toolkits.jetbrains.services.telemetry.otel
 
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.testFramework.ApplicationExtension
+import com.intellij.testFramework.junit5.TestDisposable
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.TraceId
 import io.opentelemetry.context.Context
@@ -17,6 +19,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
@@ -31,6 +34,7 @@ import org.junit.jupiter.params.provider.MethodSource
 import software.amazon.awssdk.services.toolkittelemetry.model.AWSProduct
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.core.CoreTestHelper
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.jetbrains.utils.satisfiesKt
@@ -59,6 +63,11 @@ class OtelBaseTest {
         @JvmStatic
         fun `AbstractBaseSpan#end() does not throw if all required attributes are present`() = spanEndArgs()
     }
+
+//    @BeforeEach
+//    fun setUp(@TestDisposable disposable: Disposable) {
+//        CoreTestHelper.registerMissingServices(disposable)
+//    }
 
     @Test
     fun `context propagates from parent to child - happy case`() {

@@ -19,11 +19,11 @@ import software.amazon.q.jetbrains.core.region.MockRegionProviderRule
 import software.amazon.q.jetbrains.core.region.getDefaultRegion
 import software.amazon.q.jetbrains.services.sts.StsResources
 import software.amazon.q.core.credentials.CredentialIdentifier
-import software.aws.toolkits.core.credentials.aCredentialsIdentifier
+import software.amazon.q.core.credentials.aCredentialsIdentifier
 import software.amazon.q.core.region.AwsRegion
-import software.aws.toolkits.core.rules.EnvironmentVariableHelper
-import software.aws.toolkits.core.rules.SystemPropertyHelper
-import software.aws.toolkits.core.utils.test.notNull
+import software.amazon.q.core.rules.EnvironmentVariableHelper
+import software.amazon.q.core.rules.SystemPropertyHelper
+import software.amazon.q.core.utils.test.notNull
 import software.amazon.q.jetbrains.utils.deserializeState
 import software.amazon.q.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
 import software.amazon.q.jetbrains.utils.satisfiesKt

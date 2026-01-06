@@ -50,8 +50,8 @@ import software.amazon.q.core.credentials.ToolkitBearerTokenProvider
 import software.amazon.q.core.credentials.ToolkitBearerTokenProviderDelegate
 import software.amazon.q.core.region.Endpoint
 import software.amazon.q.core.region.Service
-import software.aws.toolkits.core.region.anAwsRegion
-import software.aws.toolkits.core.utils.test.aString
+import software.amazon.q.core.region.anAwsRegion
+import software.amazon.q.core.utils.test.aString
 import java.net.URI
 import kotlin.reflect.full.declaredMemberProperties
 import kotlin.reflect.jvm.isAccessible

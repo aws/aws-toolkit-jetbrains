@@ -14,7 +14,7 @@ import org.junit.jupiter.api.condition.OS
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.io.TempDir
 import software.amazon.q.core.utils.readText
-import software.aws.toolkits.core.utils.test.assertPosixPermissions
+import software.amazon.q.core.utils.test.assertPosixPermissions
 import software.amazon.q.core.utils.writeText
 import java.nio.file.Files
 import java.nio.file.Path

@@ -12,9 +12,9 @@ import software.amazon.q.core.region.AwsPartition
 import software.amazon.q.core.region.AwsRegion
 import software.amazon.q.core.region.Service
 import software.amazon.q.core.region.ToolkitRegionProvider
-import software.aws.toolkits.core.region.aRegionId
-import software.aws.toolkits.core.region.anAwsRegion
-import software.aws.toolkits.core.utils.test.aString
+import software.amazon.q.core.region.aRegionId
+import software.amazon.q.core.region.anAwsRegion
+import software.amazon.q.core.utils.test.aString
 import software.amazon.q.jetbrains.utils.rules.ClearableLazy
 
 private class MockRegionProvider : ToolkitRegionProvider() {

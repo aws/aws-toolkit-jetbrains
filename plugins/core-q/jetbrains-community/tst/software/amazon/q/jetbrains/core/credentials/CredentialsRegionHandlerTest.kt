@@ -15,8 +15,8 @@ import software.amazon.q.jetbrains.core.region.MockRegionProviderRule
 import software.amazon.q.jetbrains.settings.AwsSettings
 import software.amazon.q.jetbrains.settings.UseAwsCredentialRegion
 import software.amazon.q.resources.AwsCoreBundle
-import software.aws.toolkits.core.credentials.aCredentialsIdentifier
-import software.aws.toolkits.core.region.anAwsRegion
+import software.amazon.q.core.credentials.aCredentialsIdentifier
+import software.amazon.q.core.region.anAwsRegion
 import software.amazon.q.jetbrains.settings.AwsSettingsRule
 import software.amazon.q.jetbrains.utils.rules.NotificationListenerRule
 

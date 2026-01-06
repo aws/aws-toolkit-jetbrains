@@ -46,8 +46,8 @@ import software.amazon.q.jetbrains.core.credentials.sso.DeviceAuthorizationGrant
 import software.amazon.q.jetbrains.core.credentials.sso.DeviceGrantAccessTokenCacheKey
 import software.amazon.q.jetbrains.core.credentials.sso.DiskCache
 import software.amazon.q.jetbrains.core.credentials.sso.PKCEAccessTokenCacheKey
-import software.aws.toolkits.core.region.aRegionId
-import software.aws.toolkits.core.utils.test.aString
+import software.amazon.q.core.region.aRegionId
+import software.amazon.q.core.utils.test.aString
 import java.time.Clock
 import java.time.Instant
 import java.time.temporal.ChronoUnit
