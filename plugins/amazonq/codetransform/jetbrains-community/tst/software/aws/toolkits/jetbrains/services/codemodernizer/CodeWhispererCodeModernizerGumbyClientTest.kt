@@ -49,10 +49,10 @@ import software.amazon.q.jetbrains.core.credentials.ManagedSsoProfile
 import software.amazon.q.jetbrains.core.credentials.MockCredentialManagerRule
 import software.amazon.q.jetbrains.core.credentials.MockToolkitAuthManagerRule
 import software.amazon.q.jetbrains.core.credentials.ToolkitConnectionManager
+import software.amazon.q.jetbrains.settings.AwsSettings
 import software.aws.toolkits.jetbrains.services.amazonq.clients.AmazonQStreamingClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
-import software.amazon.q.jetbrains.settings.AwsSettings
 import java.util.concurrent.CompletableFuture
 
 class CodeWhispererCodeModernizerGumbyClientTest : CodeWhispererCodeModernizerTestBase() {

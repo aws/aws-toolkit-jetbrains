@@ -29,6 +29,12 @@ dependencies {
     testFixturesApi(testFixtures(project(":plugin-core-q:jetbrains-community")))
 }
 
+tasks.test {
+    // Include core test sources
+    testClassesDirs += project(":plugin-core-q:jetbrains-community").sourceSets.test.get().output.classesDirs
+    classpath += project(":plugin-core-q:jetbrains-community").sourceSets.test.get().runtimeClasspath
+}
+
 // hack because our test structure currently doesn't make complete sense
 tasks.prepareTestSandbox {
     val pluginXmlJar = project(":plugin-amazonq").tasks.jar

@@ -34,6 +34,7 @@ import software.amazon.q.core.utils.debug
 import software.amazon.q.core.utils.error
 import software.amazon.q.core.utils.getLogger
 import software.amazon.q.core.utils.info
+import software.amazon.q.jetbrains.utils.assertIsNonDispatchThread
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.CodeScanSessionConfig
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.PayloadContext
@@ -52,7 +53,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.notifyErrorCodeWhispererUsageLimit
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererZipUploadManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.getTelemetryErrorMessage
-import software.amazon.q.jetbrains.utils.assertIsNonDispatchThread
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 import java.nio.file.Path

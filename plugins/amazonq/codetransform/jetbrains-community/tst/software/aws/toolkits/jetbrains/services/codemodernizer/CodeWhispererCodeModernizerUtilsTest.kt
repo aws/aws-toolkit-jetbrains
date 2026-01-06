@@ -30,6 +30,8 @@ import software.amazon.awssdk.services.codewhispererruntime.model.Transformation
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStatus
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStep
 import software.amazon.awssdk.services.ssooidc.model.InvalidGrantException
+import software.amazon.q.jetbrains.utils.notifyStickyWarn
+import software.amazon.q.jetbrains.utils.rules.addFileToModule
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerArtifact.Companion.MAPPER
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerSessionContext
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformType
@@ -44,8 +46,6 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.parseBuildF
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.pollTransformationStatusAndPlan
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.validateCustomVersionsFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.validateSctMetadata
-import software.amazon.q.jetbrains.utils.notifyStickyWarn
-import software.amazon.q.jetbrains.utils.rules.addFileToModule
 import software.aws.toolkits.resources.message
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.zip.ZipFile

@@ -13,4 +13,5 @@ intellijToolkit {
 
 dependencies {
     compileOnly(project(":plugin-core-q:jetbrains-community"))
+    testFixturesApi(testFixtures(project(":plugin-core-q:jetbrains-community")))
 }

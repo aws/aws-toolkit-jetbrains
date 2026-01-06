@@ -31,6 +31,8 @@ import software.amazon.q.jetbrains.core.credentials.ToolkitConnectionManager
 import software.amazon.q.jetbrains.core.credentials.sso.PKCEAuthorizationGrantToken
 import software.amazon.q.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.amazon.q.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
+import software.amazon.q.jetbrains.utils.isQConnected
+import software.amazon.q.jetbrains.utils.isQExpired
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLanguageServer
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
@@ -38,8 +40,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LspServerC
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.ConnectionMetadata
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.SsoProfileData
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.UpdateCredentialsPayload
-import software.amazon.q.jetbrains.utils.isQConnected
-import software.amazon.q.jetbrains.utils.isQExpired
 import java.time.Instant
 import java.util.concurrent.CompletableFuture
 
@@ -113,7 +113,7 @@ class DefaultAuthCredentialsServiceTest {
             every { connectionStateForFeature(any()) } returns BearerTokenAuthState.AUTHORIZED
         }
         project.replaceService(ToolkitConnectionManager::class.java, mockConnectionManager, project)
-        mockkStatic("software.aws.toolkits.jetbrains.utils.FunctionUtilsKt")
+        mockkStatic("software.amazon.q.jetbrains.utils.FunctionUtilsKt")
         // these set so init doesn't always emit
         every { isQConnected(any()) } returns false
         every { isQExpired(any()) } returns true

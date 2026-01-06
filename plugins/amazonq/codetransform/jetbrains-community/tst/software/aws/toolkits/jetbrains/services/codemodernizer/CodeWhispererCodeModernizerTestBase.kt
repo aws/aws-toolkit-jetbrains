@@ -48,6 +48,10 @@ import software.amazon.q.jetbrains.core.credentials.ToolkitConnectionManager
 import software.amazon.q.jetbrains.core.credentials.sso.PKCEAuthorizationGrantToken
 import software.amazon.q.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.amazon.q.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
+import software.amazon.q.jetbrains.utils.rules.CodeInsightTestFixtureRule
+import software.amazon.q.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
+import software.amazon.q.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
+import software.amazon.q.jetbrains.utils.rules.addModule
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerArtifact
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerManifest
@@ -60,10 +64,6 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.panels.managers.C
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeModernizerSessionState
 import software.aws.toolkits.jetbrains.services.codemodernizer.toolwindow.CodeModernizerBottomToolWindowFactory
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
-import software.amazon.q.jetbrains.utils.rules.CodeInsightTestFixtureRule
-import software.amazon.q.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
-import software.amazon.q.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
-import software.amazon.q.jetbrains.utils.rules.addModule
 import java.io.File
 import java.time.Instant
 import kotlin.io.path.Path

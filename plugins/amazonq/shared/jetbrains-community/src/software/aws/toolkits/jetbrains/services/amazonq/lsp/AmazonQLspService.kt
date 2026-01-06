@@ -67,6 +67,7 @@ import software.amazon.q.core.utils.info
 import software.amazon.q.core.utils.warn
 import software.amazon.q.core.utils.writeText
 import software.amazon.q.jetbrains.core.coroutines.ioDispatcher
+import software.amazon.q.jetbrains.services.telemetry.ClientMetadata
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts.ArtifactManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.auth.DefaultAuthCredentialsService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.dependencies.DefaultModuleDependenciesService
@@ -79,7 +80,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.WorkspaceFolder
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.workspace.WorkspaceServiceHandler
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QDefaultServiceConfig
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QEndpoints
-import software.amazon.q.jetbrains.services.telemetry.ClientMetadata
 import software.aws.toolkits.jetbrains.settings.LspSettings
 import java.io.IOException
 import java.io.OutputStreamWriter

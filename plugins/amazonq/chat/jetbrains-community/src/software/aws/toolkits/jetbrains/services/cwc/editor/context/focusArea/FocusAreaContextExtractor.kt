@@ -11,14 +11,14 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
 import software.amazon.q.core.utils.getLogger
 import software.amazon.q.core.utils.warn
+import software.amazon.q.jetbrains.utils.computeOnEdt
+import software.amazon.q.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.jetbrains.services.amazonq.webview.FqnWebviewAdapter
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.CodeNames
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.CodeNamesImpl
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.FullyQualifiedNames
 import software.aws.toolkits.jetbrains.services.cwc.controller.ChatController
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.file.util.LanguageExtractor
-import software.amazon.q.jetbrains.utils.computeOnEdt
-import software.amazon.q.jetbrains.utils.isRunningOnRemoteBackend
 import java.awt.Point
 import kotlin.math.min
 

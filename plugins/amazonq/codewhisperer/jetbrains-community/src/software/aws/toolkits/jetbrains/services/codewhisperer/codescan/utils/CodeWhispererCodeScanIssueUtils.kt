@@ -29,6 +29,9 @@ import software.amazon.q.core.utils.convertMarkdownToHTML
 import software.amazon.q.core.utils.debug
 import software.amazon.q.core.utils.getLogger
 import software.amazon.q.jetbrains.ToolkitPlaces
+import software.amazon.q.jetbrains.utils.applyPatch
+import software.amazon.q.jetbrains.utils.notifyError
+import software.amazon.q.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionReference
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionReferencePosition
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanHighlightingFilesPanel
@@ -45,9 +48,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhi
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CODE_SCAN_ISSUE_TITLE_MAX_LENGTH
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.runIfIdcConnectionOrTelemetryEnabled
-import software.amazon.q.jetbrains.utils.applyPatch
-import software.amazon.q.jetbrains.utils.notifyError
-import software.amazon.q.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeFixAction
 import software.aws.toolkits.telemetry.Result

@@ -37,6 +37,9 @@ import software.amazon.q.jetbrains.core.credentials.sono.Q_SCOPES
 import software.amazon.q.jetbrains.core.credentials.sono.SONO_REGION
 import software.amazon.q.jetbrains.core.credentials.sono.SONO_URL
 import software.amazon.q.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
+import software.amazon.q.jetbrains.utils.rules.CodeInsightTestFixtureRule
+import software.amazon.q.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
+import software.amazon.q.jetbrains.utils.rules.RunWithRealCredentials
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.codeWhispererRecommendationActionId
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonFileName
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonTestLeftContext
@@ -58,9 +61,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhisp
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
-import software.amazon.q.jetbrains.utils.rules.CodeInsightTestFixtureRule
-import software.amazon.q.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
-import software.amazon.q.jetbrains.utils.rules.RunWithRealCredentials
 
 open class CodeWhispererIntegrationTestBase(val projectRule: CodeInsightTestFixtureRule = PythonCodeInsightTestFixtureRule()) {
 

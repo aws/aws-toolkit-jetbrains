@@ -8,9 +8,9 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.EditorCustomElementRenderer
 import com.intellij.openapi.editor.Inlay
 import com.intellij.openapi.util.Disposer
+import software.amazon.q.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.RecommendationChunk
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContextNew
-import software.amazon.q.jetbrains.utils.isRunningOnRemoteBackend
 
 @Service
 class CodeWhispererInlayManagerNew {

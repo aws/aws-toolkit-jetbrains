@@ -17,8 +17,8 @@ import software.amazon.q.core.utils.getLogger
 import software.amazon.q.core.utils.info
 import software.amazon.q.core.utils.warn
 import software.amazon.q.jetbrains.core.saveFileFromUrl
-import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
 import software.amazon.q.resources.AwsCoreBundle
+import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
 import software.aws.toolkits.telemetry.LanguageServerSetupStage
 import software.aws.toolkits.telemetry.Telemetry
 import java.nio.file.Files

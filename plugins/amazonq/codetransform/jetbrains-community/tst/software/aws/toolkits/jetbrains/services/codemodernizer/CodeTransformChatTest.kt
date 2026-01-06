@@ -5,11 +5,11 @@ package software.aws.toolkits.jetbrains.services.codemodernizer
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
+import software.amazon.q.jetbrains.utils.satisfiesKt
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildTransformResultChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformButtonId
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerJobCompletedResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
-import software.amazon.q.jetbrains.utils.satisfiesKt
 import software.aws.toolkits.resources.message
 
 class CodeTransformChatTest {

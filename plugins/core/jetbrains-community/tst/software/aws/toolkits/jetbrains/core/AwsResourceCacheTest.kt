@@ -484,7 +484,7 @@ class AwsResourceCacheTest {
         whenever(mockResource.fetch(any())).then {
             latch.await()
             // exception gets thrown fast enough where the second fetchIfNeeded check occurs after the first call throws
-            runTest {
+                runTest {
                 delay(500)
             }
             throw RuntimeException("Boom")

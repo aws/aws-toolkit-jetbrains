@@ -55,6 +55,8 @@ import software.amazon.q.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.amazon.q.jetbrains.core.credentials.ToolkitConnectionManager
 import software.amazon.q.jetbrains.core.credentials.pinning.QConnection
 import software.amazon.q.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
+import software.amazon.q.jetbrains.utils.isQConnected
+import software.amazon.q.jetbrains.utils.isQExpired
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.importadder.CodeWhispererImportAdder
@@ -70,8 +72,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhi
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.getDocumentDiagnostics
-import software.amazon.q.jetbrains.utils.isQConnected
-import software.amazon.q.jetbrains.utils.isQExpired
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodewhispererTriggerType
 import java.awt.Dimension

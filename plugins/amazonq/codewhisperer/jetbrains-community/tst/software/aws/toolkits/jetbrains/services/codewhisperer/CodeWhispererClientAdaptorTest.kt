@@ -53,13 +53,13 @@ import software.amazon.q.jetbrains.core.credentials.logoutFromSsoConnection
 import software.amazon.q.jetbrains.core.credentials.pinning.QConnection
 import software.amazon.q.jetbrains.core.credentials.sono.Q_SCOPES
 import software.amazon.q.jetbrains.core.credentials.sono.SONO_REGION
+import software.amazon.q.jetbrains.settings.AwsSettings
+import software.amazon.q.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.services.amazonq.FEATURE_EVALUATION_PRODUCT_NAME
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.metadata
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.sdkHttpResponse
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptorImpl
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
-import software.amazon.q.jetbrains.settings.AwsSettings
-import software.amazon.q.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 
 class CodeWhispererClientAdaptorTest {
     val projectRule = JavaCodeInsightTestFixtureRule()

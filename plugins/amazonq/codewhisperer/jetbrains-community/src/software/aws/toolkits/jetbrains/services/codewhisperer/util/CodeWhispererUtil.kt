@@ -46,6 +46,11 @@ import software.amazon.q.jetbrains.core.gettingstarted.editor.ActiveConnection
 import software.amazon.q.jetbrains.core.gettingstarted.editor.ActiveConnectionType
 import software.amazon.q.jetbrains.core.gettingstarted.editor.BearerTokenFeatureSet
 import software.amazon.q.jetbrains.core.gettingstarted.editor.checkBearerConnectionValidity
+import software.amazon.q.jetbrains.settings.AwsSettings
+import software.amazon.q.jetbrains.utils.isQExpired
+import software.amazon.q.jetbrains.utils.notifyError
+import software.amazon.q.jetbrains.utils.notifyInfo
+import software.amazon.q.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionItem
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.learn.LearnCodeWhispererManager.Companion.taskTypeToFilename
@@ -54,11 +59,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispe
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.isTelemetryEnabled
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CrossFile.NUMBER_OF_CHUNK_TO_FETCH
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CrossFile.NUMBER_OF_LINE_IN_CHUNK
-import software.amazon.q.jetbrains.settings.AwsSettings
-import software.amazon.q.jetbrains.utils.isQExpired
-import software.amazon.q.jetbrains.utils.notifyError
-import software.amazon.q.jetbrains.utils.notifyInfo
-import software.amazon.q.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererGettingStartedTask

@@ -13,9 +13,9 @@ import software.amazon.q.jetbrains.core.credentials.ToolkitConnectionManager
 import software.amazon.q.jetbrains.core.credentials.pinning.QConnection
 import software.amazon.q.jetbrains.core.credentials.reauthConnectionIfNeeded
 import software.amazon.q.jetbrains.core.gettingstarted.requestCredentialsForQ
+import software.amazon.q.jetbrains.utils.isQWebviewsAvailable
 import software.aws.toolkits.jetbrains.services.amazonq.gettingstarted.openMeetQPage
 import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindowFactory
-import software.amazon.q.jetbrains.utils.isQWebviewsAvailable
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.UiTelemetry
 

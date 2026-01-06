@@ -18,12 +18,12 @@ import org.mockito.kotlin.whenever
 import software.amazon.q.core.telemetry.MetricEvent
 import software.amazon.q.core.telemetry.TelemetryBatcher
 import software.amazon.q.core.telemetry.TelemetryPublisher
-import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.actions.Pause
-import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.actions.Resume
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.amazon.q.jetbrains.services.telemetry.NoOpPublisher
 import software.amazon.q.jetbrains.services.telemetry.TelemetryService
 import software.amazon.q.jetbrains.settings.AwsSettings
+import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.actions.Pause
+import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.actions.Resume
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 
 class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
     private val awsModifySetting = "aws_modifySetting"

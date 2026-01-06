@@ -20,8 +20,8 @@ import software.amazon.q.jetbrains.core.credentials.pinning.QConnection
 import software.amazon.q.jetbrains.core.help.HelpIds
 import software.amazon.q.jetbrains.ui.AsyncComboBox
 import software.amazon.q.jetbrains.utils.ui.selected
-import software.aws.toolkits.resources.AmazonQBundle.message
 import software.amazon.q.resources.AwsCoreBundle
+import software.aws.toolkits.resources.AmazonQBundle.message
 import software.aws.toolkits.telemetry.MetricResult
 import software.aws.toolkits.telemetry.Telemetry
 import javax.swing.JComponent

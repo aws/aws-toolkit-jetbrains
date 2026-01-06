@@ -62,12 +62,15 @@ import software.amazon.q.core.utils.error
 import software.amazon.q.core.utils.getLogger
 import software.amazon.q.core.utils.info
 import software.amazon.q.core.utils.warn
-import software.aws.toolkits.jetbrains.ProblemsViewMutator
 import software.amazon.q.jetbrains.core.coroutines.EDT
 import software.amazon.q.jetbrains.core.coroutines.getCoroutineUiContext
 import software.amazon.q.jetbrains.core.coroutines.projectCoroutineScope
 import software.amazon.q.jetbrains.core.credentials.ToolkitConnectionManager
 import software.amazon.q.jetbrains.core.credentials.pinning.QConnection
+import software.amazon.q.jetbrains.utils.isQConnected
+import software.amazon.q.jetbrains.utils.isQExpired
+import software.amazon.q.jetbrains.utils.isRunningOnRemoteBackend
+import software.aws.toolkits.jetbrains.ProblemsViewMutator
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.listeners.CodeWhispererCodeScanDocumentListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.listeners.CodeWhispererCodeScanEditorMouseMotionListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.listeners.CodeWhispererCodeScanFileListener
@@ -95,9 +98,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.promptReAuth
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.runIfIdcConnectionOrTelemetryEnabled
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
-import software.amazon.q.jetbrains.utils.isQConnected
-import software.amazon.q.jetbrains.utils.isQExpired
-import software.amazon.q.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.Result
 import java.time.Duration

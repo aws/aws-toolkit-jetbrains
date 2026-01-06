@@ -39,6 +39,7 @@ import software.amazon.q.core.utils.error
 import software.amazon.q.core.utils.getLogger
 import software.amazon.q.core.utils.info
 import software.amazon.q.jetbrains.core.coroutines.EDT
+import software.amazon.q.jetbrains.utils.notifyStickyWarn
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeModernizerManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTelemetryManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
@@ -51,7 +52,6 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModerni
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformType
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.PlanTable
-import software.amazon.q.jetbrains.utils.notifyStickyWarn
 import software.aws.toolkits.resources.message
 import java.nio.file.Path
 import java.nio.file.Paths

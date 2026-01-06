@@ -26,9 +26,9 @@ import software.amazon.awssdk.arns.Arn
 import software.amazon.q.core.utils.debug
 import software.amazon.q.core.utils.getLogger
 import software.amazon.q.core.utils.tryOrNull
-import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
 import software.amazon.q.jetbrains.ui.AsyncComboBox
 import software.amazon.q.jetbrains.utils.notifyInfo
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
 import software.aws.toolkits.resources.message
 import javax.swing.JComponent
 import javax.swing.JList

@@ -39,6 +39,8 @@ import software.amazon.q.jetbrains.core.credentials.pinning.QConnection
 import software.amazon.q.jetbrains.core.credentials.sono.Q_SCOPES
 import software.amazon.q.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.amazon.q.jetbrains.core.region.MockRegionProviderRule
+import software.amazon.q.jetbrains.utils.satisfiesKt
+import software.amazon.q.jetbrains.utils.xmlElement
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QEndpoints
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QProfileResources
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QProfileState
@@ -46,8 +48,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.profile.QProfileSwitchIn
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileSelectedListener
-import software.amazon.q.jetbrains.utils.satisfiesKt
-import software.amazon.q.jetbrains.utils.xmlElement
 import java.net.URI
 import java.util.function.Consumer
 import kotlin.test.fail

@@ -26,6 +26,8 @@ import software.amazon.q.jetbrains.core.credentials.sono.Q_SCOPES
 import software.amazon.q.jetbrains.core.credentials.sono.SONO_REGION
 import software.amazon.q.jetbrains.core.credentials.sono.SONO_URL
 import software.amazon.q.jetbrains.core.region.MockRegionProviderRule
+import software.amazon.q.jetbrains.settings.AwsSettings
+import software.amazon.q.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getCompletionType
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getTelemetryOptOutPreference
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.convertSeverity
@@ -35,8 +37,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.isWithin
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.runIfIdcConnectionOrTelemetryEnabled
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.toCodeChunk
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.truncateLineByLine
-import software.amazon.q.jetbrains.settings.AwsSettings
-import software.amazon.q.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 
 class CodeWhispererUtilTest {

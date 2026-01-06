@@ -44,6 +44,9 @@ import software.amazon.q.core.utils.info
 import software.amazon.q.core.utils.warn
 import software.amazon.q.jetbrains.core.credentials.ToolkitConnectionManager
 import software.amazon.q.jetbrains.core.credentials.pinning.QConnection
+import software.amazon.q.jetbrains.services.telemetry.TelemetryService
+import software.amazon.q.jetbrains.utils.getCleanedContent
+import software.amazon.q.jetbrains.utils.notify
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommunicationManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.FlareUiMessage
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LSPAny
@@ -67,10 +70,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.LspEditorUtil
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.TelemetryParsingUtil
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.applyExtensionFilter
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
-import software.amazon.q.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
-import software.amazon.q.jetbrains.utils.getCleanedContent
-import software.amazon.q.jetbrains.utils.notify
 import software.aws.toolkits.resources.message
 import java.io.File
 import java.net.URLDecoder

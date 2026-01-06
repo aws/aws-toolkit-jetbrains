@@ -20,11 +20,11 @@ import software.amazon.q.core.credentials.ToolkitBearerTokenProvider
 import software.amazon.q.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.amazon.q.jetbrains.core.credentials.ToolkitConnectionManager
 import software.amazon.q.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
-import software.aws.toolkits.jetbrains.services.amazonq.clients.AmazonQStreamingClient
 import software.amazon.q.jetbrains.utils.rules.CodeInsightTestFixtureRule
 import software.amazon.q.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
 import software.amazon.q.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import software.amazon.q.jetbrains.utils.rules.addModule
+import software.aws.toolkits.jetbrains.services.amazonq.clients.AmazonQStreamingClient
 
 open class AmazonQTestBase(
     @Rule @JvmField

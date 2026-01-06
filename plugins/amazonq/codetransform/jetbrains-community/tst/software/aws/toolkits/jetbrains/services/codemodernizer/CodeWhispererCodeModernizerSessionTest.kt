@@ -49,6 +49,8 @@ import software.amazon.awssdk.services.codewhispererruntime.model.Transformation
 import software.amazon.awssdk.services.codewhispererruntime.model.UploadContext
 import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
 import software.amazon.q.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
+import software.amazon.q.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
+import software.amazon.q.jetbrains.utils.rules.addFileToModule
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CLIENT_SIDE_BUILD
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerJobCompletedResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerSessionContext
@@ -63,8 +65,6 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.SELECTIVE_T
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.UploadFailureReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.ZipCreationResult
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
-import software.amazon.q.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
-import software.amazon.q.jetbrains.utils.rules.addFileToModule
 import java.io.File
 import java.io.FileInputStream
 import java.net.ConnectException

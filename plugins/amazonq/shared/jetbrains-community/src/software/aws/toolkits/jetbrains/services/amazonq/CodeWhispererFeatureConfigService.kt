@@ -16,9 +16,9 @@ import software.amazon.q.core.utils.error
 import software.amazon.q.core.utils.getLogger
 import software.amazon.q.jetbrains.core.credentials.ToolkitConnectionManager
 import software.amazon.q.jetbrains.core.credentials.pinning.QConnection
+import software.amazon.q.jetbrains.utils.isQExpired
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
-import software.amazon.q.jetbrains.utils.isQExpired
 @Service
 class CodeWhispererFeatureConfigService {
     private val featureConfigs = mutableMapOf<String, FeatureContext>()

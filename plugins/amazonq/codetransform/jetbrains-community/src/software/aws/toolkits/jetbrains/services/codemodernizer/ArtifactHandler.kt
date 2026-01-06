@@ -26,6 +26,8 @@ import software.amazon.q.core.utils.info
 import software.amazon.q.jetbrains.core.coroutines.EDT
 import software.amazon.q.jetbrains.core.coroutines.projectCoroutineScope
 import software.amazon.q.jetbrains.core.credentials.sso.bearer.NoTokenInitializedException
+import software.amazon.q.jetbrains.utils.notifyStickyInfo
+import software.amazon.q.jetbrains.utils.notifyStickyWarn
 import software.aws.toolkits.jetbrains.services.amazonq.CODE_TRANSFORM_TROUBLESHOOT_DOC_DOWNLOAD_ERROR_OVERVIEW
 import software.aws.toolkits.jetbrains.services.amazonq.CODE_TRANSFORM_TROUBLESHOOT_DOC_DOWNLOAD_EXPIRED
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
@@ -47,8 +49,6 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHi
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isValidCodeTransformConnection
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.openTroubleshootingGuideNotificationAction
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.zipToPath
-import software.amazon.q.jetbrains.utils.notifyStickyInfo
-import software.amazon.q.jetbrains.utils.notifyStickyWarn
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformArtifactType
 import java.io.File

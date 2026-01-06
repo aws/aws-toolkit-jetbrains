@@ -30,6 +30,8 @@ import software.amazon.q.core.utils.getLogger
 import software.amazon.q.core.utils.info
 import software.amazon.q.core.utils.warn
 import software.amazon.q.jetbrains.core.coroutines.projectCoroutineScope
+import software.amazon.q.jetbrains.utils.notifyStickyError
+import software.amazon.q.jetbrains.utils.notifyStickyInfo
 import software.aws.toolkits.jetbrains.services.amazonq.CODE_TRANSFORM_TROUBLESHOOT_DOC_MVN_FAILURE
 import software.aws.toolkits.jetbrains.services.amazonq.CODE_TRANSFORM_TROUBLESHOOT_DOC_PROJECT_SIZE
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
@@ -79,8 +81,6 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.parseXmlDep
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.setDependencyVersionInPom
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.tryGetJdk
 import software.aws.toolkits.jetbrains.ui.feedback.CodeTransformFeedbackDialog
-import software.amazon.q.jetbrains.utils.notifyStickyError
-import software.amazon.q.jetbrains.utils.notifyStickyInfo
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformBuildSystem
 import software.aws.toolkits.telemetry.CodeTransformCancelSrcComponents

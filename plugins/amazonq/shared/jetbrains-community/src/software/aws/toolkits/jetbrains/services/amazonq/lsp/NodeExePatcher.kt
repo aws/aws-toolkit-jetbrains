@@ -17,9 +17,9 @@ import software.amazon.q.core.utils.exists
 import software.amazon.q.core.utils.getLogger
 import software.amazon.q.core.utils.info
 import software.amazon.q.core.utils.warn
+import software.amazon.q.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
 import software.aws.toolkits.jetbrains.settings.LspSettings
-import software.amazon.q.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.Telemetry
 import java.nio.file.Files
