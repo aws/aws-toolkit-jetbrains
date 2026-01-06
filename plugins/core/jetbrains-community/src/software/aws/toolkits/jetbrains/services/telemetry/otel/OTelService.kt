@@ -9,9 +9,8 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.util.SystemInfoRt
-import com.intellij.platform.util.http.ContentType
-import com.intellij.platform.util.http.httpPost
 import com.intellij.serviceContainer.NonInjectable
+import com.intellij.util.io.HttpRequests
 import io.opentelemetry.api.common.AttributeKey
 import io.opentelemetry.api.common.Attributes
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
@@ -34,6 +33,7 @@ import software.amazon.awssdk.http.SdkHttpMethod
 import software.amazon.awssdk.http.SdkHttpRequest
 import software.amazon.awssdk.http.apache.ApacheHttpClient
 import software.amazon.awssdk.http.auth.aws.signer.AwsV4HttpSigner
+import software.aws.toolkits.jetbrains.core.AwsClientManager
 import java.io.ByteArrayOutputStream
 import java.net.ConnectException
 
@@ -51,9 +51,11 @@ private class BasicOtlpSpanProcessor(
             try {
                 val item = TraceRequestMarshaler.create(listOf(data))
 
-                httpPost(traceUrl, contentLength = item.binarySerializedSize.toLong(), contentType = ContentType.XProtobuf) {
-                    item.writeBinaryTo(this)
-                }
+                HttpRequests.post(traceUrl, "application/x-protobuf")
+                    .userAgent(AwsClientManager.getUserAgent())
+                    .connect { request ->
+                        item.writeBinaryTo(request.connection.outputStream)
+                    }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: ConnectException) {
