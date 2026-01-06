@@ -21,6 +21,7 @@ dependencies {
     testCompileOnly(project(":plugin-core-q:jetbrains-ultimate"))
 
     testImplementation(testFixtures(project(":plugin-amazonq:codewhisperer:jetbrains-community")))
+    testImplementation(testFixtures(project(":plugin-core-q:jetbrains-ultimate")))
     testImplementation(project(path = ":plugin-toolkit:jetbrains-ultimate", configuration = "testArtifacts"))
 }
 

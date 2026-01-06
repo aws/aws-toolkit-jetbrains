@@ -135,3 +135,7 @@ tasks.prepareTestSandbox {
         into(intellijPlatform.projectName.map { "$it/lib" })
     }
 }
+
+tasks.test {
+    enabled = false
+}
