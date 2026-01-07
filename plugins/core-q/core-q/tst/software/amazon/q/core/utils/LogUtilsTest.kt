@@ -17,16 +17,6 @@ import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import org.slf4j.Logger
 import org.slf4j.event.Level
-import software.amazon.q.core.utils.debug
-import software.amazon.q.core.utils.error
-import software.amazon.q.core.utils.info
-import software.amazon.q.core.utils.log
-import software.amazon.q.core.utils.logWhenNull
-import software.amazon.q.core.utils.trace
-import software.amazon.q.core.utils.tryOrNull
-import software.amazon.q.core.utils.tryOrThrow
-import software.amazon.q.core.utils.tryOrThrowNullable
-import software.amazon.q.core.utils.warn
 
 class LogUtilsTest {
 

@@ -11,14 +11,14 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import software.amazon.q.jetbrains.core.region.MockRegionProviderRule
-import software.amazon.q.jetbrains.settings.AwsSettings
-import software.amazon.q.jetbrains.settings.UseAwsCredentialRegion
-import software.amazon.q.resources.AwsCoreBundle
 import software.amazon.q.core.credentials.aCredentialsIdentifier
 import software.amazon.q.core.region.anAwsRegion
+import software.amazon.q.jetbrains.core.region.MockRegionProviderRule
+import software.amazon.q.jetbrains.settings.AwsSettings
 import software.amazon.q.jetbrains.settings.AwsSettingsRule
+import software.amazon.q.jetbrains.settings.UseAwsCredentialRegion
 import software.amazon.q.jetbrains.utils.rules.NotificationListenerRule
+import software.amazon.q.resources.AwsCoreBundle
 
 class CredentialsRegionHandlerTest {
 

@@ -15,12 +15,12 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.verifyNoInteractions
 import software.amazon.awssdk.services.ssooidc.SsoOidcClient
-import software.amazon.q.jetbrains.core.MockClientManagerRule
 import software.amazon.q.core.rules.EnvironmentVariableHelper
 import software.amazon.q.core.utils.createParentDirectories
 import software.amazon.q.core.utils.test.aString
 import software.amazon.q.core.utils.toHexString
 import software.amazon.q.core.utils.writeText
+import software.amazon.q.jetbrains.core.MockClientManagerRule
 import java.nio.file.Path
 import java.security.MessageDigest
 import java.time.Instant

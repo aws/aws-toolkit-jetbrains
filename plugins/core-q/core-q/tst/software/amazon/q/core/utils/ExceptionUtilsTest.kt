@@ -5,7 +5,6 @@ package software.amazon.q.core.utils
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
-import software.amazon.q.core.utils.tryOrNull
 
 class ExceptionUtilsTest {
     @Test

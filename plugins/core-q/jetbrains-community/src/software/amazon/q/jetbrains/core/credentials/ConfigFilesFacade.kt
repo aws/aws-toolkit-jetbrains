@@ -8,9 +8,6 @@ import com.intellij.openapi.fileEditor.FileDocumentManager
 import software.amazon.awssdk.profiles.Profile
 import software.amazon.awssdk.profiles.ProfileFile
 import software.amazon.awssdk.profiles.ProfileFileLocation
-import software.amazon.q.jetbrains.core.credentials.profiles.ProfileWatcher
-import software.amazon.q.jetbrains.core.credentials.profiles.SsoSessionConstants
-import software.amazon.q.jetbrains.core.credentials.profiles.ssoSessions
 import software.amazon.q.core.utils.appendText
 import software.amazon.q.core.utils.createParentDirectories
 import software.amazon.q.core.utils.exists
@@ -20,6 +17,9 @@ import software.amazon.q.core.utils.touch
 import software.amazon.q.core.utils.tryDirOp
 import software.amazon.q.core.utils.tryFileOp
 import software.amazon.q.core.utils.writeText
+import software.amazon.q.jetbrains.core.credentials.profiles.ProfileWatcher
+import software.amazon.q.jetbrains.core.credentials.profiles.SsoSessionConstants
+import software.amazon.q.jetbrains.core.credentials.profiles.ssoSessions
 import java.nio.file.Path
 
 interface ConfigFilesFacade {

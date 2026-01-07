@@ -7,12 +7,12 @@ import com.intellij.openapi.project.Project
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withTimeoutOrNull
 import org.slf4j.LoggerFactory
+import software.amazon.q.core.utils.debug
 import software.amazon.q.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.amazon.q.jetbrains.core.credentials.ToolkitConnectionManager
 import software.amazon.q.jetbrains.core.credentials.pinning.QConnection
 import software.amazon.q.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.amazon.q.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
-import software.amazon.q.core.utils.debug
 
 private val LOG = LoggerFactory.getLogger("FunctionUtils")
 

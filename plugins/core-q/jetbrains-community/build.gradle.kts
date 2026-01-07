@@ -75,7 +75,6 @@ val replaceInGeneratedSources = tasks.register<DefaultTask>("replaceInGeneratedS
     }
 }
 
-
 tasks.compileKotlin {
     dependsOn(replaceInGeneratedSources)
 }

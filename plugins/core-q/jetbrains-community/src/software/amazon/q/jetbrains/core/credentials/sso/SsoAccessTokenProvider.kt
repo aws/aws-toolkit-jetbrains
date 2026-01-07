@@ -18,6 +18,9 @@ import software.amazon.awssdk.services.ssooidc.model.CreateTokenResponse
 import software.amazon.awssdk.services.ssooidc.model.InvalidClientException
 import software.amazon.awssdk.services.ssooidc.model.InvalidRequestException
 import software.amazon.awssdk.services.ssooidc.model.SlowDownException
+import software.amazon.q.core.utils.getLogger
+import software.amazon.q.core.utils.info
+import software.amazon.q.core.utils.warn
 import software.amazon.q.jetbrains.core.credentials.sono.SONO_URL
 import software.amazon.q.jetbrains.core.credentials.sso.pkce.PKCE_CLIENT_NAME
 import software.amazon.q.jetbrains.core.credentials.sso.pkce.ToolkitOAuthService
@@ -26,9 +29,6 @@ import software.amazon.q.jetbrains.services.telemetry.scrubNames
 import software.amazon.q.jetbrains.utils.assertIsNonDispatchThread
 import software.amazon.q.jetbrains.utils.sleepWithCancellation
 import software.amazon.q.resources.AwsCoreBundle
-import software.amazon.q.core.utils.getLogger
-import software.amazon.q.core.utils.info
-import software.amazon.q.core.utils.warn
 import software.aws.toolkits.telemetry.AuthTelemetry
 import software.aws.toolkits.telemetry.AuthType
 import software.aws.toolkits.telemetry.AwsTelemetry

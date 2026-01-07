@@ -6,13 +6,13 @@ package software.amazon.q.jetbrains.core.credentials
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.util.Disposer
+import software.amazon.q.core.TokenConnectionSettings
+import software.amazon.q.core.credentials.ToolkitBearerTokenProvider
 import software.amazon.q.jetbrains.core.credentials.sso.DiskCache
 import software.amazon.q.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
 import software.amazon.q.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
 import software.amazon.q.jetbrains.core.credentials.sso.bearer.ProfileSdkTokenProviderWrapper
 import software.amazon.q.jetbrains.core.region.AwsRegionProvider
-import software.amazon.q.core.TokenConnectionSettings
-import software.amazon.q.core.credentials.ToolkitBearerTokenProvider
 
 /**
  * An SSO bearer connection created through a `sso-session` declaration in a user's ~/.aws/config

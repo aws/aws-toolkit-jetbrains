@@ -29,12 +29,12 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
 import software.amazon.awssdk.services.toolkittelemetry.model.AWSProduct
-import software.amazon.q.jetbrains.core.coroutines.getCoroutineBgContext
-import software.amazon.q.jetbrains.utils.pluginAwareExecuteOnPooledThread
-import software.amazon.q.jetbrains.utils.spinUntil
 import software.amazon.q.core.utils.getLogger
 import software.amazon.q.core.utils.warn
+import software.amazon.q.jetbrains.core.coroutines.getCoroutineBgContext
+import software.amazon.q.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.amazon.q.jetbrains.utils.satisfiesKt
+import software.amazon.q.jetbrains.utils.spinUntil
 import software.aws.toolkits.telemetry.MetricResult
 import software.aws.toolkits.telemetry.Telemetry
 import java.time.Duration

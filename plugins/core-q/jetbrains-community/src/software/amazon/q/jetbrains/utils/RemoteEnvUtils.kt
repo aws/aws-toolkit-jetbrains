@@ -5,9 +5,9 @@ package software.amazon.q.jetbrains.utils
 
 import com.intellij.idea.AppMode
 import com.intellij.ui.jcef.JBCefApp
-import software.amazon.q.jetbrains.isDeveloperMode
 import software.amazon.q.core.utils.exists
 import software.amazon.q.core.utils.tryOrNull
+import software.amazon.q.jetbrains.isDeveloperMode
 import java.nio.file.Paths
 
 /**

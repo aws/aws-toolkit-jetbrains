@@ -17,8 +17,8 @@ import com.intellij.ui.dsl.builder.AlignX
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.util.ui.JBFont
 import com.intellij.util.ui.components.BorderLayoutPanel
-import software.amazon.q.resources.AwsCoreBundle
 import software.amazon.q.core.utils.tryOrNull
+import software.amazon.q.resources.AwsCoreBundle
 import java.awt.datatransfer.StringSelection
 import javax.swing.JComponent
 

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 @file:Suppress("UnusedPrivateClass")
 
-package software.aws.toolkits.jetbrains.services.telemetry.otel
+package software.amazon.q.jetbrains.services.telemetry.otel
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service

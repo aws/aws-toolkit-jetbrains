@@ -20,6 +20,13 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import software.amazon.q.core.credentials.CredentialIdentifier
+import software.amazon.q.core.region.AwsRegion
+import software.amazon.q.core.telemetry.DefaultMetricEvent.Companion.METADATA_INVALID
+import software.amazon.q.core.telemetry.DefaultMetricEvent.Companion.METADATA_NOT_SET
+import software.amazon.q.core.telemetry.MetricEvent
+import software.amazon.q.core.telemetry.TelemetryBatcher
+import software.amazon.q.core.telemetry.TelemetryPublisher
 import software.amazon.q.jetbrains.core.MockResourceCacheRule
 import software.amazon.q.jetbrains.core.credentials.AwsConnectionManager
 import software.amazon.q.jetbrains.core.credentials.ConnectionState
@@ -30,13 +37,6 @@ import software.amazon.q.jetbrains.core.credentials.waitUntilConnectionStateIsSt
 import software.amazon.q.jetbrains.core.region.MockRegionProviderRule
 import software.amazon.q.jetbrains.services.sts.StsResources
 import software.amazon.q.jetbrains.settings.AwsSettings
-import software.amazon.q.core.credentials.CredentialIdentifier
-import software.amazon.q.core.region.AwsRegion
-import software.amazon.q.core.telemetry.DefaultMetricEvent.Companion.METADATA_INVALID
-import software.amazon.q.core.telemetry.DefaultMetricEvent.Companion.METADATA_NOT_SET
-import software.amazon.q.core.telemetry.MetricEvent
-import software.amazon.q.core.telemetry.TelemetryBatcher
-import software.amazon.q.core.telemetry.TelemetryPublisher
 import software.amazon.q.jetbrains.utils.isInstanceOfSatisfying
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit

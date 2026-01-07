@@ -18,6 +18,8 @@ import software.amazon.awssdk.profiles.Profile
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.sso.SsoClient
 import software.amazon.awssdk.services.sso.model.RoleInfo
+import software.amazon.q.core.utils.getLogger
+import software.amazon.q.core.utils.warn
 import software.amazon.q.jetbrains.core.AwsClientManager
 import software.amazon.q.jetbrains.core.credentials.AwsConnectionManager
 import software.amazon.q.jetbrains.core.credentials.AwsConnectionManagerConnection
@@ -29,8 +31,6 @@ import software.amazon.q.jetbrains.core.credentials.profiles.ProfileWatcher
 import software.amazon.q.jetbrains.ui.AsyncComboBox
 import software.amazon.q.jetbrains.utils.ui.selected
 import software.amazon.q.resources.AwsCoreBundle
-import software.amazon.q.core.utils.getLogger
-import software.amazon.q.core.utils.warn
 
 data class IdcRolePopupState(
     var roleInfo: RoleInfo? = null,

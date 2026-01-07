@@ -17,12 +17,12 @@ import org.junit.jupiter.api.extension.RegisterExtension
 import software.amazon.awssdk.profiles.Profile
 import software.amazon.awssdk.services.sso.SsoClient
 import software.amazon.awssdk.services.sso.model.RoleInfo
+import software.amazon.q.core.utils.test.aString
 import software.amazon.q.jetbrains.core.MockClientManagerExtension
 import software.amazon.q.jetbrains.core.credentials.ConfigFilesFacade
 import software.amazon.q.jetbrains.core.region.MockRegionProviderExtension
-import software.amazon.q.resources.AwsCoreBundle
-import software.amazon.q.core.utils.test.aString
 import software.amazon.q.jetbrains.utils.satisfiesKt
+import software.amazon.q.resources.AwsCoreBundle
 
 @ExtendWith(MockKExtension::class)
 class IdcRolePopupTest {

@@ -13,12 +13,12 @@ import software.amazon.awssdk.services.toolkittelemetry.model.AWSProduct
 import software.amazon.awssdk.services.toolkittelemetry.model.MetadataEntry
 import software.amazon.awssdk.services.toolkittelemetry.model.MetricDatum
 import software.amazon.awssdk.services.toolkittelemetry.model.Sentiment
-import software.amazon.q.jetbrains.core.AwsClientManager
-import software.amazon.q.jetbrains.core.AwsSdkClient
-import software.amazon.q.jetbrains.core.coroutines.getCoroutineBgContext
 import software.amazon.q.core.clients.nullDefaultProfileFile
 import software.amazon.q.core.telemetry.MetricEvent
 import software.amazon.q.core.telemetry.TelemetryPublisher
+import software.amazon.q.jetbrains.core.AwsClientManager
+import software.amazon.q.jetbrains.core.AwsSdkClient
+import software.amazon.q.jetbrains.core.coroutines.getCoroutineBgContext
 
 class DefaultTelemetryPublisher(
     private val clientProvider: () -> ToolkitTelemetryClient,

@@ -15,12 +15,6 @@ import com.intellij.openapi.util.SimpleModificationTracker
 import com.intellij.util.ExceptionUtil
 import com.intellij.util.messages.Topic
 import org.jetbrains.concurrency.AsyncPromise
-import software.amazon.q.jetbrains.core.AwsResourceCache
-import software.amazon.q.jetbrains.core.region.AwsRegionProvider
-import software.amazon.q.jetbrains.services.sts.StsResources
-import software.amazon.q.jetbrains.utils.MRUList
-import software.amazon.q.jetbrains.utils.pluginAwareExecuteOnPooledThread
-import software.amazon.q.resources.AwsCoreBundle
 import software.amazon.q.core.ConnectionSettings
 import software.amazon.q.core.credentials.CredentialIdentifier
 import software.amazon.q.core.credentials.CredentialProviderNotFoundException
@@ -29,6 +23,12 @@ import software.amazon.q.core.credentials.ToolkitCredentialsProvider
 import software.amazon.q.core.region.AwsRegion
 import software.amazon.q.core.utils.getLogger
 import software.amazon.q.core.utils.warn
+import software.amazon.q.jetbrains.core.AwsResourceCache
+import software.amazon.q.jetbrains.core.region.AwsRegionProvider
+import software.amazon.q.jetbrains.services.sts.StsResources
+import software.amazon.q.jetbrains.utils.MRUList
+import software.amazon.q.jetbrains.utils.pluginAwareExecuteOnPooledThread
+import software.amazon.q.resources.AwsCoreBundle
 import software.aws.toolkits.telemetry.AwsTelemetry
 import java.util.concurrent.atomic.AtomicReference
 

@@ -22,9 +22,9 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
-import software.amazon.q.jetbrains.core.gettingstarted.editor.BearerTokenFeatureSet
 import software.amazon.q.core.utils.exists
 import software.amazon.q.core.utils.inputStream
+import software.amazon.q.jetbrains.core.gettingstarted.editor.BearerTokenFeatureSet
 import java.io.InputStream
 import java.nio.file.Paths
 import java.util.stream.Stream

@@ -5,7 +5,6 @@ package software.amazon.q.core.region
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
-import software.amazon.q.core.region.PartitionParser
 import software.aws.toolkits.resources.BundledResources
 
 class PartitionParserTest {

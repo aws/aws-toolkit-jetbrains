@@ -11,6 +11,12 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.mockito.kotlin.mock
+import software.amazon.q.core.credentials.CredentialIdentifier
+import software.amazon.q.core.credentials.aCredentialsIdentifier
+import software.amazon.q.core.region.AwsRegion
+import software.amazon.q.core.rules.EnvironmentVariableHelper
+import software.amazon.q.core.rules.SystemPropertyHelper
+import software.amazon.q.core.utils.test.notNull
 import software.amazon.q.jetbrains.core.MockResourceCacheRule
 import software.amazon.q.jetbrains.core.credentials.AwsConnectionManager.Companion.selectedPartition
 import software.amazon.q.jetbrains.core.credentials.profiles.DEFAULT_PROFILE_ID
@@ -18,12 +24,6 @@ import software.amazon.q.jetbrains.core.region.AwsRegionProvider
 import software.amazon.q.jetbrains.core.region.MockRegionProviderRule
 import software.amazon.q.jetbrains.core.region.getDefaultRegion
 import software.amazon.q.jetbrains.services.sts.StsResources
-import software.amazon.q.core.credentials.CredentialIdentifier
-import software.amazon.q.core.credentials.aCredentialsIdentifier
-import software.amazon.q.core.region.AwsRegion
-import software.amazon.q.core.rules.EnvironmentVariableHelper
-import software.amazon.q.core.rules.SystemPropertyHelper
-import software.amazon.q.core.utils.test.notNull
 import software.amazon.q.jetbrains.utils.deserializeState
 import software.amazon.q.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
 import software.amazon.q.jetbrains.utils.satisfiesKt

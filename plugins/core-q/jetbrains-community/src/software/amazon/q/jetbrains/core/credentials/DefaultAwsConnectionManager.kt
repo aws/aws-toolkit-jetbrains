@@ -8,10 +8,10 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.launch
+import software.amazon.q.core.utils.tryOrNull
 import software.amazon.q.jetbrains.core.coroutines.disposableCoroutineScope
 import software.amazon.q.jetbrains.core.credentials.profiles.DEFAULT_PROFILE_ID
 import software.amazon.q.jetbrains.core.region.AwsRegionProvider
-import software.amazon.q.core.utils.tryOrNull
 
 data class ConnectionSettingsState(
     var activeProfile: String? = null,

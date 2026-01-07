@@ -7,7 +7,6 @@ import com.intellij.openapi.components.service
 import software.amazon.awssdk.regions.providers.AwsProfileRegionProvider
 import software.amazon.awssdk.regions.providers.AwsRegionProviderChain
 import software.amazon.awssdk.regions.providers.SystemSettingsRegionProvider
-import software.amazon.q.jetbrains.core.RemoteResourceResolverProvider
 import software.amazon.q.core.region.AwsPartition
 import software.amazon.q.core.region.AwsRegion
 import software.amazon.q.core.region.PartitionParser
@@ -15,6 +14,7 @@ import software.amazon.q.core.region.ServiceEndpointResource
 import software.amazon.q.core.region.ToolkitRegionProvider
 import software.amazon.q.core.utils.inputStream
 import software.amazon.q.core.utils.tryOrNull
+import software.amazon.q.jetbrains.core.RemoteResourceResolverProvider
 import software.aws.toolkits.resources.BundledResources
 
 class AwsRegionProvider : ToolkitRegionProvider() {

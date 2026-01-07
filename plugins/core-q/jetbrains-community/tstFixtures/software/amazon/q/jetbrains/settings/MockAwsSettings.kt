@@ -4,7 +4,6 @@
 package software.amazon.q.jetbrains.settings
 
 import com.intellij.testFramework.ApplicationRule
-import software.amazon.q.jetbrains.settings.AwsSettings
 import java.util.UUID
 
 class MockAwsSettings : AwsSettings {

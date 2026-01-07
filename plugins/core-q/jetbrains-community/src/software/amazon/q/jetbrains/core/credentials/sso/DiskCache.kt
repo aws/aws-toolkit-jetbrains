@@ -21,7 +21,6 @@ import com.fasterxml.jackson.databind.util.StdDateFormat
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
-import software.amazon.q.jetbrains.services.telemetry.scrubNames
 import software.amazon.q.core.utils.createParentDirectories
 import software.amazon.q.core.utils.deleteIfExists
 import software.amazon.q.core.utils.getLogger
@@ -33,6 +32,7 @@ import software.amazon.q.core.utils.touch
 import software.amazon.q.core.utils.tryDirOp
 import software.amazon.q.core.utils.tryFileOp
 import software.amazon.q.core.utils.tryOrNull
+import software.amazon.q.jetbrains.services.telemetry.scrubNames
 import software.aws.toolkits.telemetry.AuthTelemetry
 import software.aws.toolkits.telemetry.Result
 import java.io.InputStream

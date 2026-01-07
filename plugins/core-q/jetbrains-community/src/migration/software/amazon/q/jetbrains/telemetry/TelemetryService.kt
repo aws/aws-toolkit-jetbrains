@@ -7,6 +7,12 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import software.amazon.awssdk.services.toolkittelemetry.model.Sentiment
+import software.amazon.q.core.ConnectionSettings
+import software.amazon.q.core.telemetry.DefaultMetricEvent
+import software.amazon.q.core.telemetry.MetricEvent
+import software.amazon.q.core.telemetry.TelemetryBatcher
+import software.amazon.q.core.telemetry.TelemetryPublisher
+import software.amazon.q.core.utils.tryOrNull
 import software.amazon.q.jetbrains.core.credentials.getConnectionSettings
 import software.amazon.q.jetbrains.core.getResourceIfPresent
 import software.amazon.q.jetbrains.services.sts.StsResources
@@ -14,12 +20,6 @@ import software.amazon.q.jetbrains.services.telemetry.MetricEventMetadata
 import software.amazon.q.jetbrains.services.telemetry.PluginResolver
 import software.amazon.q.jetbrains.services.telemetry.TelemetryListener
 import software.amazon.q.jetbrains.settings.AwsSettings
-import software.amazon.q.core.ConnectionSettings
-import software.amazon.q.core.telemetry.DefaultMetricEvent
-import software.amazon.q.core.telemetry.MetricEvent
-import software.amazon.q.core.telemetry.TelemetryBatcher
-import software.amazon.q.core.telemetry.TelemetryPublisher
-import software.amazon.q.core.utils.tryOrNull
 import java.util.concurrent.atomic.AtomicBoolean
 
 abstract class TelemetryService(private val publisher: TelemetryPublisher, protected val batcher: TelemetryBatcher) : Disposable {

@@ -18,10 +18,6 @@ import org.mockito.kotlin.verifyBlocking
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.stubbing.Answer
 import software.amazon.awssdk.core.exception.SdkServiceException
-import software.amazon.q.core.telemetry.DefaultMetricEvent
-import software.amazon.q.core.telemetry.DefaultTelemetryBatcher
-import software.amazon.q.core.telemetry.MetricEvent
-import software.amazon.q.core.telemetry.TelemetryPublisher
 import java.time.Instant
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit

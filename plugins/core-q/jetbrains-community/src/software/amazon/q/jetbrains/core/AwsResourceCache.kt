@@ -15,12 +15,6 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import org.jetbrains.annotations.VisibleForTesting
 import software.amazon.awssdk.core.SdkClient
-import software.amazon.q.jetbrains.core.coroutines.disposableCoroutineScope
-import software.amazon.q.jetbrains.core.credentials.AwsConnectionManager
-import software.amazon.q.jetbrains.core.credentials.CredentialManager
-import software.amazon.q.jetbrains.core.credentials.getConnectionSettingsOrThrow
-import software.amazon.q.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
-import software.amazon.q.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.amazon.q.core.ClientConnectionSettings
 import software.amazon.q.core.ConnectionSettings
 import software.amazon.q.core.TokenConnectionSettings
@@ -31,6 +25,12 @@ import software.amazon.q.core.credentials.ToolkitCredentialsProvider
 import software.amazon.q.core.region.AwsRegion
 import software.amazon.q.core.utils.getLogger
 import software.amazon.q.core.utils.warn
+import software.amazon.q.jetbrains.core.coroutines.disposableCoroutineScope
+import software.amazon.q.jetbrains.core.credentials.AwsConnectionManager
+import software.amazon.q.jetbrains.core.credentials.CredentialManager
+import software.amazon.q.jetbrains.core.credentials.getConnectionSettingsOrThrow
+import software.amazon.q.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
+import software.amazon.q.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant

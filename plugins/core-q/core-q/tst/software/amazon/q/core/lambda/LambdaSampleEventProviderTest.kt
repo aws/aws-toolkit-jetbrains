@@ -10,9 +10,6 @@ import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
-import software.amazon.q.core.lambda.LambdaSampleEventManifestResource
-import software.amazon.q.core.lambda.LambdaSampleEventProvider
-import software.amazon.q.core.lambda.LambdaSampleEventResource
 import software.amazon.q.core.utils.RemoteResourceResolver
 import java.util.concurrent.CompletableFuture
 

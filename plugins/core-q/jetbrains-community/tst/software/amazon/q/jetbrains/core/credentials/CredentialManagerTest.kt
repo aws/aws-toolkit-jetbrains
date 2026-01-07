@@ -17,10 +17,6 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.auth.credentials.AwsCredentials
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
-import software.amazon.q.jetbrains.core.region.MockRegionProviderRule
-import software.amazon.q.jetbrains.core.region.getDefaultRegion
-import software.amazon.q.jetbrains.utils.assertIsNonDispatchThread
-import software.amazon.q.jetbrains.utils.computeOnEdt
 import software.amazon.q.core.credentials.CredentialIdentifier
 import software.amazon.q.core.credentials.CredentialIdentifierBase
 import software.amazon.q.core.credentials.CredentialProviderFactory
@@ -31,6 +27,10 @@ import software.amazon.q.core.credentials.CredentialsChangeListener
 import software.amazon.q.core.region.AwsRegion
 import software.amazon.q.core.region.anAwsRegion
 import software.amazon.q.core.utils.test.aString
+import software.amazon.q.jetbrains.core.region.MockRegionProviderRule
+import software.amazon.q.jetbrains.core.region.getDefaultRegion
+import software.amazon.q.jetbrains.utils.assertIsNonDispatchThread
+import software.amazon.q.jetbrains.utils.computeOnEdt
 import software.amazon.q.jetbrains.utils.isInstanceOf
 import kotlin.test.assertNotNull
 

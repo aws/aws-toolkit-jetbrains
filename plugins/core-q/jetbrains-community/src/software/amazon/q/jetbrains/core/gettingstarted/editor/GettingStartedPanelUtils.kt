@@ -5,6 +5,8 @@ package software.amazon.q.jetbrains.core.gettingstarted.editor
 
 import com.intellij.openapi.project.Project
 import com.intellij.ui.dsl.builder.Panel
+import software.amazon.q.core.credentials.CredentialIdentifier
+import software.amazon.q.core.credentials.CredentialType
 import software.amazon.q.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.amazon.q.jetbrains.core.credentials.AwsConnectionManager
 import software.amazon.q.jetbrains.core.credentials.ConnectionState
@@ -17,8 +19,6 @@ import software.amazon.q.jetbrains.core.credentials.pinning.QConnection
 import software.amazon.q.jetbrains.core.credentials.profiles.SsoSessionConstants
 import software.amazon.q.jetbrains.core.credentials.sono.SONO_URL
 import software.amazon.q.jetbrains.utils.isRunningOnRemoteBackend
-import software.amazon.q.core.credentials.CredentialIdentifier
-import software.amazon.q.core.credentials.CredentialType
 import java.util.Locale
 
 enum class ActiveConnectionType {

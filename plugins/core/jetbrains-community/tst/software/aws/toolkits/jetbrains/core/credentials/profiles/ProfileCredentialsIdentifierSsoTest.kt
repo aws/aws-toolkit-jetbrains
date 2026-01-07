@@ -9,17 +9,13 @@ import com.intellij.testFramework.ApplicationExtension
 import com.intellij.testFramework.junit5.TestDisposable
 import com.intellij.testFramework.replaceService
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
-import org.junit.jupiter.api.extension.RegisterExtension
 import org.mockito.kotlin.mock
 import software.amazon.awssdk.services.ssooidc.SsoOidcClient
 import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
-import software.aws.toolkits.jetbrains.core.CoreTestHelper
 import software.aws.toolkits.jetbrains.core.MockClientManager
-import software.aws.toolkits.jetbrains.core.MockClientManagerExtension
 import software.aws.toolkits.jetbrains.core.credentials.sso.DiskCache
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.NoTokenInitializedException
@@ -62,7 +58,6 @@ class ProfileCredentialsIdentifierSsoTest {
         }
         assertThat(sut.handleValidationException(exception)).isNotNull()
     }
-
 
     @Test
     fun `ignores arbitrary exception`() {

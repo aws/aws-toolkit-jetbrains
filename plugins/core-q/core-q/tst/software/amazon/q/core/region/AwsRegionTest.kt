@@ -8,8 +8,6 @@ import org.junit.Test
 import org.junit.experimental.runners.Enclosed
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
-import software.amazon.q.core.region.AwsRegion
-import software.amazon.q.core.region.mergeWithExistingEnvironmentVariables
 import software.amazon.q.core.utils.test.aString
 import kotlin.random.Random
 

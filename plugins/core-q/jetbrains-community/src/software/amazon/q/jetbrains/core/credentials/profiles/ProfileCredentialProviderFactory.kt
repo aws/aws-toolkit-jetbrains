@@ -24,6 +24,17 @@ import software.amazon.awssdk.profiles.Profile
 import software.amazon.awssdk.profiles.ProfileProperty
 import software.amazon.awssdk.services.sso.model.UnauthorizedException
 import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
+import software.amazon.q.core.credentials.CredentialIdentifier
+import software.amazon.q.core.credentials.CredentialIdentifierBase
+import software.amazon.q.core.credentials.CredentialProviderFactory
+import software.amazon.q.core.credentials.CredentialSourceId
+import software.amazon.q.core.credentials.CredentialType
+import software.amazon.q.core.credentials.CredentialsChangeEvent
+import software.amazon.q.core.credentials.CredentialsChangeListener
+import software.amazon.q.core.credentials.SsoSessionBackedCredentialIdentifier
+import software.amazon.q.core.region.AwsRegion
+import software.amazon.q.core.utils.getLogger
+import software.amazon.q.core.utils.warn
 import software.amazon.q.jetbrains.core.credentials.ChangeConnectionSettingIfValid
 import software.amazon.q.jetbrains.core.credentials.ConnectionState
 import software.amazon.q.jetbrains.core.credentials.CredentialManager
@@ -50,17 +61,6 @@ import software.amazon.q.jetbrains.utils.createShowMoreInfoDialogAction
 import software.amazon.q.jetbrains.utils.notifyError
 import software.amazon.q.jetbrains.utils.notifyInfo
 import software.amazon.q.resources.AwsCoreBundle
-import software.amazon.q.core.credentials.CredentialIdentifier
-import software.amazon.q.core.credentials.CredentialIdentifierBase
-import software.amazon.q.core.credentials.CredentialProviderFactory
-import software.amazon.q.core.credentials.CredentialSourceId
-import software.amazon.q.core.credentials.CredentialType
-import software.amazon.q.core.credentials.CredentialsChangeEvent
-import software.amazon.q.core.credentials.CredentialsChangeListener
-import software.amazon.q.core.credentials.SsoSessionBackedCredentialIdentifier
-import software.amazon.q.core.region.AwsRegion
-import software.amazon.q.core.utils.getLogger
-import software.amazon.q.core.utils.warn
 
 const val DEFAULT_PROFILE_NAME = "default"
 

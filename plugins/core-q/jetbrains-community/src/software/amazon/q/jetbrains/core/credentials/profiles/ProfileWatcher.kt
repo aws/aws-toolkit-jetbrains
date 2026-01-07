@@ -12,10 +12,10 @@ import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import com.intellij.openapi.vfs.pointers.VirtualFilePointer
 import com.intellij.util.containers.ContainerUtil
 import software.amazon.awssdk.profiles.ProfileFileLocation
-import software.amazon.q.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.amazon.q.core.utils.debug
 import software.amazon.q.core.utils.getLogger
 import software.amazon.q.core.utils.info
+import software.amazon.q.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import java.nio.file.Paths
 
 typealias ProfileWatcher = migration.software.amazon.q.jetbrains.core.credentials.profiles.ProfileWatcher

@@ -9,8 +9,6 @@ import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import software.amazon.q.core.utils.createTemporaryZipFile
-import software.amazon.q.core.utils.putNextEntry
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path

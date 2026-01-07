@@ -6,13 +6,13 @@ package software.amazon.q.jetbrains.core.credentials
 import com.intellij.notification.NotificationAction
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import software.amazon.q.core.credentials.CredentialIdentifier
+import software.amazon.q.core.region.AwsRegion
 import software.amazon.q.jetbrains.core.region.AwsRegionProvider
 import software.amazon.q.jetbrains.settings.AwsSettings
 import software.amazon.q.jetbrains.settings.UseAwsCredentialRegion
 import software.amazon.q.jetbrains.utils.notifyInfo
 import software.amazon.q.resources.AwsCoreBundle
-import software.amazon.q.core.credentials.CredentialIdentifier
-import software.amazon.q.core.region.AwsRegion
 
 /**
  * Encapsulates logic for handling of regions when a new credential identifier is selected

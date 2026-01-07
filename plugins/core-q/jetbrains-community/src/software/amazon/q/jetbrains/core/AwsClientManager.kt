@@ -16,12 +16,6 @@ import software.amazon.awssdk.awscore.client.builder.AwsClientBuilder
 import software.amazon.awssdk.core.SdkClient
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration
 import software.amazon.awssdk.http.SdkHttpClient
-import software.amazon.q.jetbrains.core.credentials.AwsConnectionManager
-import software.amazon.q.jetbrains.core.credentials.CredentialManager
-import software.amazon.q.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
-import software.amazon.q.jetbrains.core.region.AwsRegionProvider
-import software.amazon.q.jetbrains.services.telemetry.PluginResolver
-import software.amazon.q.jetbrains.settings.AwsSettings
 import software.amazon.q.core.ClientConnectionSettings
 import software.amazon.q.core.ConnectionSettings
 import software.amazon.q.core.TokenConnectionSettings
@@ -31,6 +25,12 @@ import software.amazon.q.core.credentials.CredentialIdentifier
 import software.amazon.q.core.credentials.ToolkitCredentialsChangeListener
 import software.amazon.q.core.region.ToolkitRegionProvider
 import software.amazon.q.core.utils.tryOrNull
+import software.amazon.q.jetbrains.core.credentials.AwsConnectionManager
+import software.amazon.q.jetbrains.core.credentials.CredentialManager
+import software.amazon.q.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
+import software.amazon.q.jetbrains.core.region.AwsRegionProvider
+import software.amazon.q.jetbrains.services.telemetry.PluginResolver
+import software.amazon.q.jetbrains.settings.AwsSettings
 
 open class AwsClientManager : ToolkitClientManager(), Disposable {
     init {

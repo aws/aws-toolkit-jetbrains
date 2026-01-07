@@ -17,10 +17,10 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
-import software.amazon.q.jetbrains.services.telemetry.TelemetryService
 import software.amazon.q.core.telemetry.TelemetryBatcher
 import software.amazon.q.core.telemetry.TelemetryPublisher
 import software.amazon.q.jetbrains.services.telemetry.NoOpPublisher
+import software.amazon.q.jetbrains.services.telemetry.TelemetryService
 
 @ExtendWith(ApplicationExtension::class)
 class AwsSettingsTest {

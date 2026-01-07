@@ -26,14 +26,14 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
-import software.amazon.q.jetbrains.core.credentials.CredentialManager
-import software.amazon.q.jetbrains.core.credentials.MockCredentialManagerRule
-import software.amazon.q.jetbrains.core.region.MockRegionProviderRule
 import software.amazon.q.core.ConnectionSettings
 import software.amazon.q.core.credentials.CredentialIdentifier
 import software.amazon.q.core.credentials.ToolkitCredentialsProvider
 import software.amazon.q.core.region.AwsRegion
 import software.amazon.q.core.utils.test.retryableAssert
+import software.amazon.q.jetbrains.core.credentials.CredentialManager
+import software.amazon.q.jetbrains.core.credentials.MockCredentialManagerRule
+import software.amazon.q.jetbrains.core.region.MockRegionProviderRule
 import software.amazon.q.jetbrains.utils.hasCauseWithMessage
 import software.amazon.q.jetbrains.utils.hasException
 import software.amazon.q.jetbrains.utils.hasValue

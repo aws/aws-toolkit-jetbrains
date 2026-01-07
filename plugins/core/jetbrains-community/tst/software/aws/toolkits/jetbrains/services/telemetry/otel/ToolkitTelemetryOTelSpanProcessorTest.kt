@@ -35,7 +35,7 @@ import software.aws.toolkits.telemetry.CodewhispererTriggerType
 import software.aws.toolkits.telemetry.MetricResult
 import software.aws.toolkits.telemetry.Telemetry
 import java.time.Instant
-//import software.aws.toolkits.jetbrains.core.CoreTestHelper
+// import software.aws.toolkits.jetbrains.core.CoreTestHelper
 
 @ExtendWith(ApplicationExtension::class)
 class ToolkitTelemetryOTelSpanProcessorTest {

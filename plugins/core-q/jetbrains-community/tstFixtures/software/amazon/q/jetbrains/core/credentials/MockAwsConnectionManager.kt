@@ -8,12 +8,12 @@ import com.intellij.openapi.project.Project
 import com.intellij.testFramework.ProjectRule
 import org.junit.rules.ExternalResource
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
-import software.amazon.q.jetbrains.core.region.AwsRegionProvider
-import software.amazon.q.jetbrains.utils.spinUntil
 import software.amazon.q.core.credentials.CredentialIdentifier
 import software.amazon.q.core.credentials.ToolkitCredentialsProvider
 import software.amazon.q.core.region.AwsRegion
+import software.amazon.q.jetbrains.core.region.AwsRegionProvider
 import software.amazon.q.jetbrains.utils.rules.CodeInsightTestFixtureRule
+import software.amazon.q.jetbrains.utils.spinUntil
 import java.time.Duration
 
 class MockAwsConnectionManager(project: Project) : AwsConnectionManager(project) {

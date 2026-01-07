@@ -11,7 +11,6 @@ import com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import com.github.tomakehurst.wiremock.junit.WireMockRule
 import com.github.tomakehurst.wiremock.matching.ContainsPattern
-import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.use
@@ -19,12 +18,10 @@ import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.ExtensionTestUtil
 import com.intellij.testFramework.ProjectRule
 import com.intellij.testFramework.RuleChain
-import com.intellij.testFramework.junit5.TestDisposable
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Rule
 import org.junit.Test
-import org.junit.jupiter.api.BeforeEach
 import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever

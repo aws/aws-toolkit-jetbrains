@@ -10,8 +10,8 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import software.amazon.awssdk.profiles.Profile
 import software.amazon.q.core.utils.createParentDirectories
-import software.amazon.q.core.utils.writeText
 import software.amazon.q.core.utils.test.assertPosixPermissions
+import software.amazon.q.core.utils.writeText
 import software.amazon.q.jetbrains.utils.satisfiesKt
 import java.nio.file.Paths
 

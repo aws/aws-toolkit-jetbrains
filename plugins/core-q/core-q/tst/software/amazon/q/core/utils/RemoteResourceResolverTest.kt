@@ -15,14 +15,6 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import software.amazon.q.core.lambda.LambdaManifestValidator
-import software.amazon.q.core.utils.DefaultRemoteResourceResolver
-import software.amazon.q.core.utils.RemoteResolveParser
-import software.amazon.q.core.utils.RemoteResource
-import software.amazon.q.core.utils.UrlFetcher
-import software.amazon.q.core.utils.debug
-import software.amazon.q.core.utils.exists
-import software.amazon.q.core.utils.getLogger
-import software.amazon.q.core.utils.writeText
 import java.io.InputStream
 import java.nio.file.Files
 import java.nio.file.Path

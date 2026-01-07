@@ -6,8 +6,6 @@ package software.amazon.q.core.utils
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Test
-import software.amazon.q.core.utils.Either
-import software.amazon.q.core.utils.xor
 
 class EitherTest {
     @Test

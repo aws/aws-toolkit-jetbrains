@@ -38,11 +38,6 @@ import software.amazon.awssdk.http.SdkHttpClient
 import software.amazon.awssdk.http.async.SdkAsyncHttpClient
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.lambda.LambdaClient
-import software.amazon.q.jetbrains.core.AwsClientManager.Companion.CUSTOMIZER_EP
-import software.amazon.q.jetbrains.core.credentials.CredentialManager
-import software.amazon.q.jetbrains.core.credentials.MockAwsConnectionManager.ProjectAccountSettingsManagerRule
-import software.amazon.q.jetbrains.core.credentials.MockCredentialManagerRule
-import software.amazon.q.jetbrains.core.region.MockRegionProviderRule
 import software.amazon.q.core.ConnectionSettings
 import software.amazon.q.core.TokenConnectionSettings
 import software.amazon.q.core.ToolkitClientCustomizer
@@ -52,6 +47,11 @@ import software.amazon.q.core.region.Endpoint
 import software.amazon.q.core.region.Service
 import software.amazon.q.core.region.anAwsRegion
 import software.amazon.q.core.utils.test.aString
+import software.amazon.q.jetbrains.core.AwsClientManager.Companion.CUSTOMIZER_EP
+import software.amazon.q.jetbrains.core.credentials.CredentialManager
+import software.amazon.q.jetbrains.core.credentials.MockAwsConnectionManager.ProjectAccountSettingsManagerRule
+import software.amazon.q.jetbrains.core.credentials.MockCredentialManagerRule
+import software.amazon.q.jetbrains.core.region.MockRegionProviderRule
 import java.net.URI
 import kotlin.reflect.full.declaredMemberProperties
 import kotlin.reflect.jvm.isAccessible

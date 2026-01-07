@@ -6,10 +6,10 @@ package software.amazon.q.jetbrains.core.credentials
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.extensions.ExtensionPointName
-import software.amazon.q.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.amazon.q.core.credentials.CredentialProviderFactory
 import software.amazon.q.core.utils.getLogger
 import software.amazon.q.core.utils.tryOrNull
+import software.amazon.q.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkits.telemetry.AwsTelemetry
 import java.util.concurrent.atomic.AtomicInteger
 

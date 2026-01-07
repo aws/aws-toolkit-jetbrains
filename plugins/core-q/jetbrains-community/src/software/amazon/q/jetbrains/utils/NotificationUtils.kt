@@ -15,11 +15,11 @@ import com.intellij.openapi.ui.DialogBuilder
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.ui.ScrollPaneFactory
 import org.slf4j.LoggerFactory
+import software.amazon.q.core.utils.warn
 import software.amazon.q.jetbrains.core.help.HelpIds
 import software.amazon.q.jetbrains.core.notifications.BannerNotificationService
 import software.amazon.q.jetbrains.core.notifications.NotificationDismissalState
 import software.amazon.q.resources.AwsCoreBundle
-import software.amazon.q.core.utils.warn
 import javax.swing.JLabel
 import javax.swing.JTextArea
 

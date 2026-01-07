@@ -20,12 +20,12 @@ import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import software.amazon.awssdk.services.toolkittelemetry.model.MetricUnit
-import software.amazon.q.jetbrains.services.telemetry.TelemetryService
 import software.amazon.q.core.telemetry.DefaultMetricEvent
 import software.amazon.q.core.telemetry.DefaultMetricEvent.DefaultDatum
 import software.amazon.q.core.telemetry.TelemetryBatcher
 import software.amazon.q.core.telemetry.TelemetryPublisher
 import software.amazon.q.jetbrains.services.telemetry.NoOpPublisher
+import software.amazon.q.jetbrains.services.telemetry.TelemetryService
 import software.amazon.q.jetbrains.utils.satisfiesKt
 import software.aws.toolkits.telemetry.CodewhispererAutomatedTriggerType
 import software.aws.toolkits.telemetry.CodewhispererCompletionType

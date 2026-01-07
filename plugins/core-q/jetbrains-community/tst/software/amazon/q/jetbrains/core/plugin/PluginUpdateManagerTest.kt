@@ -26,9 +26,9 @@ import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import software.amazon.q.core.utils.tryOrNull
 import software.amazon.q.jetbrains.AwsToolkit.TOOLKIT_PLUGIN_ID
 import software.amazon.q.jetbrains.settings.AwsSettings
-import software.amazon.q.core.utils.tryOrNull
 
 class PluginUpdateManagerTest {
     val applicationRule = ApplicationRule()

@@ -7,8 +7,8 @@ import com.intellij.openapi.extensions.ExtensionPoint
 import com.intellij.testFramework.replaceService
 import org.mockito.kotlin.mock
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
-import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.core.credentials.sso.MockSsoLoginCallbackProvider
+import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.services.telemetry.NoOpTelemetryService
 import software.aws.toolkits.jetbrains.settings.MockAwsSettings
 /**

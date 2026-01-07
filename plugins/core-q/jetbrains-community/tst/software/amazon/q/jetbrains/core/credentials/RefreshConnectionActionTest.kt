@@ -9,11 +9,11 @@ import com.intellij.testFramework.TestActionEvent
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
-import software.amazon.q.jetbrains.core.MockResourceCacheRule
-import software.amazon.q.jetbrains.core.dummyResource
 import software.amazon.q.core.credentials.aToolkitCredentialsProvider
 import software.amazon.q.core.region.anAwsRegion
 import software.amazon.q.core.utils.test.aString
+import software.amazon.q.jetbrains.core.MockResourceCacheRule
+import software.amazon.q.jetbrains.core.dummyResource
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit

@@ -37,11 +37,11 @@ import software.amazon.awssdk.services.ssooidc.model.SlowDownException
 import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
 import software.amazon.awssdk.services.ssooidc.model.StartDeviceAuthorizationRequest
 import software.amazon.awssdk.services.ssooidc.model.StartDeviceAuthorizationResponse
-import software.amazon.q.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
-import software.amazon.q.jetbrains.core.credentials.sso.pkce.ToolkitOAuthService
 import software.amazon.q.core.region.aRegionId
 import software.amazon.q.core.utils.delegateMock
 import software.amazon.q.core.utils.test.aString
+import software.amazon.q.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
+import software.amazon.q.jetbrains.core.credentials.sso.pkce.ToolkitOAuthService
 import software.amazon.q.jetbrains.utils.rules.RegistryRule
 import software.amazon.q.jetbrains.utils.rules.SsoLoginCallbackProviderRule
 import java.time.Clock

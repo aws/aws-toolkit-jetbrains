@@ -19,7 +19,6 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
 import software.aws.toolkits.core.telemetry.TelemetryBatcher
 import software.aws.toolkits.core.telemetry.TelemetryPublisher
-import software.aws.toolkits.jetbrains.core.CoreTestHelper
 import software.aws.toolkits.jetbrains.services.telemetry.NoOpPublisher
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 

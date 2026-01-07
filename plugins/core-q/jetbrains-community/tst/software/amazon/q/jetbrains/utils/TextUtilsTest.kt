@@ -10,10 +10,6 @@ import org.assertj.core.api.Assertions.assertThat
 import org.intellij.lang.annotations.Language
 import org.junit.Rule
 import org.junit.Test
-import software.amazon.q.jetbrains.utils.applyPatch
-import software.amazon.q.jetbrains.utils.formatText
-import software.amazon.q.jetbrains.utils.generateUnifiedPatch
-import software.amazon.q.jetbrains.utils.toHumanReadable
 import software.amazon.q.core.utils.convertMarkdownToHTML
 import software.amazon.q.core.utils.extractCodeBlockLanguage
 

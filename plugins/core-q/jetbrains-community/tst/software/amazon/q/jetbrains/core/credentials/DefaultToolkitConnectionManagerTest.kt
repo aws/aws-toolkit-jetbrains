@@ -15,10 +15,10 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import software.amazon.awssdk.services.ssooidc.SsoOidcClient
+import software.amazon.q.core.utils.test.aString
 import software.amazon.q.jetbrains.core.MockClientManagerRule
 import software.amazon.q.jetbrains.core.credentials.pinning.ConnectionPinningManager
 import software.amazon.q.jetbrains.core.credentials.pinning.FeatureWithPinnedConnection
-import software.amazon.q.core.utils.test.aString
 import software.amazon.q.jetbrains.utils.isInstanceOf
 
 class DefaultToolkitConnectionManagerTest {

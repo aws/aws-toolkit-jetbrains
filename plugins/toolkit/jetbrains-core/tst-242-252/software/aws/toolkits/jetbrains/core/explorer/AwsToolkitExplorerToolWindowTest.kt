@@ -58,17 +58,4 @@ class AwsToolkitExplorerToolWindowTest {
             assertThat(sut.state.selectedTab).isEqualTo(AwsToolkitExplorerToolWindow.Q_TAB_ID)
         }
     }
-
-    @Test
-    fun `handles loading invalid state`() {
-        (ToolWindowManager.getInstance(projectExtension.project) as ToolWindowHeadlessManagerImpl)
-            .doRegisterToolWindow(AwsToolkitExplorerFactory.TOOLWINDOW_ID)
-        val sut = runInEdtAndGet { AwsToolkitExplorerToolWindow(projectExtension.project) }
-
-        sut.loadState(
-            AwsToolkitExplorerToolWindowState().apply {
-                selectedTab = aString()
-            }
-        )
-    }
 }

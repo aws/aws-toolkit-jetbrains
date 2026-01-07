@@ -3,19 +3,16 @@
 
 package software.aws.toolkits.jetbrains.core.credentials
 
-import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.testFramework.ApplicationRule
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.ExtensionTestUtil
-import com.intellij.testFramework.junit5.TestDisposable
 import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Rule
 import org.junit.Test
-import org.junit.jupiter.api.BeforeEach
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.auth.credentials.AwsCredentials
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
@@ -30,7 +27,6 @@ import software.aws.toolkits.core.credentials.CredentialsChangeListener
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.region.anAwsRegion
 import software.aws.toolkits.core.utils.test.aString
-import software.aws.toolkits.jetbrains.core.CoreTestHelper
 import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
 import software.aws.toolkits.jetbrains.core.region.getDefaultRegion
 import software.aws.toolkits.jetbrains.utils.assertIsNonDispatchThread

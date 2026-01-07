@@ -19,8 +19,8 @@ import com.intellij.openapi.vfs.LocalFileSystem
 import icons.AwsIcons
 import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.profiles.ProfileFileLocation
-import software.amazon.q.resources.AwsCoreBundle
 import software.amazon.q.core.utils.exists
+import software.amazon.q.resources.AwsCoreBundle
 import software.aws.toolkits.telemetry.AwsTelemetry
 import java.nio.file.Path
 

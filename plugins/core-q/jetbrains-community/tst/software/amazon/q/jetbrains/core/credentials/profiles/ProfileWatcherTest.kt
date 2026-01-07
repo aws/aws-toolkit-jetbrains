@@ -19,8 +19,8 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.opentest4j.AssertionFailedError
-import software.amazon.q.jetbrains.utils.spinUntil
 import software.amazon.q.core.rules.SystemPropertyHelper
+import software.amazon.q.jetbrains.utils.spinUntil
 import java.io.File
 import java.io.IOException
 import java.time.Duration

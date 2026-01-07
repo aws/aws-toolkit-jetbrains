@@ -5,10 +5,6 @@ package software.amazon.q.core.credentials
 
 import org.mockito.kotlin.mock
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
-import software.amazon.q.core.credentials.CredentialIdentifier
-import software.amazon.q.core.credentials.CredentialIdentifierBase
-import software.amazon.q.core.credentials.CredentialType
-import software.amazon.q.core.credentials.ToolkitCredentialsProvider
 import software.amazon.q.core.utils.test.aString
 
 fun aToolkitCredentialsProvider(

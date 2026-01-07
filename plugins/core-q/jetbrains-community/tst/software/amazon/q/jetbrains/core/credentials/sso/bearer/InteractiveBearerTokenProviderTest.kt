@@ -35,6 +35,8 @@ import software.amazon.awssdk.services.ssooidc.model.AccessDeniedException
 import software.amazon.awssdk.services.ssooidc.model.CreateTokenRequest
 import software.amazon.awssdk.services.ssooidc.model.CreateTokenResponse
 import software.amazon.awssdk.services.ssooidc.model.InvalidGrantException
+import software.amazon.q.core.region.aRegionId
+import software.amazon.q.core.utils.test.aString
 import software.amazon.q.jetbrains.core.AwsClientManager
 import software.amazon.q.jetbrains.core.MockClientManager
 import software.amazon.q.jetbrains.core.MockClientManagerRule
@@ -46,8 +48,6 @@ import software.amazon.q.jetbrains.core.credentials.sso.DeviceAuthorizationGrant
 import software.amazon.q.jetbrains.core.credentials.sso.DeviceGrantAccessTokenCacheKey
 import software.amazon.q.jetbrains.core.credentials.sso.DiskCache
 import software.amazon.q.jetbrains.core.credentials.sso.PKCEAccessTokenCacheKey
-import software.amazon.q.core.region.aRegionId
-import software.amazon.q.core.utils.test.aString
 import java.time.Clock
 import java.time.Instant
 import java.time.temporal.ChronoUnit

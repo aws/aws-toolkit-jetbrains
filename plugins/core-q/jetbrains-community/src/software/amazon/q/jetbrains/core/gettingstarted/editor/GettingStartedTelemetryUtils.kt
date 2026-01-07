@@ -5,13 +5,13 @@ package software.amazon.q.jetbrains.core.gettingstarted.editor
 
 import com.intellij.configurationStore.getPersistentStateComponentStorageLocation
 import com.intellij.openapi.project.Project
+import software.amazon.q.core.utils.exists
+import software.amazon.q.core.utils.tryOrNull
 import software.amazon.q.jetbrains.core.credentials.CredentialManager
 import software.amazon.q.jetbrains.core.credentials.ToolkitAuthManager
 import software.amazon.q.jetbrains.core.credentials.profiles.ProfileCredentialsIdentifierSso
 import software.amazon.q.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
 import software.amazon.q.jetbrains.settings.AwsSettings
-import software.amazon.q.core.utils.exists
-import software.amazon.q.core.utils.tryOrNull
 import software.aws.toolkits.telemetry.AuthStatus
 import software.aws.toolkits.telemetry.StartUpState
 

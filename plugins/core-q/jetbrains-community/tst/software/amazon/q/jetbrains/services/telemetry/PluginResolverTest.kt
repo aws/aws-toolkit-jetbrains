@@ -15,7 +15,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import software.amazon.awssdk.services.toolkittelemetry.model.AWSProduct
-import software.amazon.q.jetbrains.services.telemetry.PluginResolver
 
 @ExtendWith(MockKExtension::class)
 class PluginResolverTest {

@@ -4,13 +4,13 @@
 package migration.software.amazon.q.jetbrains.core
 
 import com.intellij.openapi.components.service
-import software.amazon.q.jetbrains.core.Resource
 import software.amazon.q.core.ClientConnectionSettings
 import software.amazon.q.core.ConnectionSettings
 import software.amazon.q.core.TokenConnectionSettings
 import software.amazon.q.core.credentials.ToolkitBearerTokenProvider
 import software.amazon.q.core.credentials.ToolkitCredentialsProvider
 import software.amazon.q.core.region.AwsRegion
+import software.amazon.q.jetbrains.core.Resource
 import java.time.Duration
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.ExecutionException

@@ -9,8 +9,6 @@ import com.intellij.openapi.util.SimpleModificationTracker
 import com.intellij.util.messages.Topic
 import software.amazon.awssdk.auth.credentials.AwsCredentials
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
-import software.amazon.q.jetbrains.utils.runUnderProgressIfNeeded
-import software.amazon.q.resources.AwsCoreBundle
 import software.amazon.q.core.credentials.CredentialIdentifier
 import software.amazon.q.core.credentials.CredentialProviderFactory
 import software.amazon.q.core.credentials.CredentialProviderNotFoundException
@@ -19,6 +17,8 @@ import software.amazon.q.core.credentials.SsoSessionIdentifier
 import software.amazon.q.core.credentials.ToolkitCredentialsChangeListener
 import software.amazon.q.core.credentials.ToolkitCredentialsProvider
 import software.amazon.q.core.region.AwsRegion
+import software.amazon.q.jetbrains.utils.runUnderProgressIfNeeded
+import software.amazon.q.resources.AwsCoreBundle
 import java.util.concurrent.ConcurrentHashMap
 
 abstract class CredentialManager : SimpleModificationTracker() {

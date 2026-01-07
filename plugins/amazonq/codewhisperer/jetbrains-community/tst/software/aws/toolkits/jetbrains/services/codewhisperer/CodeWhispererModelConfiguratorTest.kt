@@ -10,7 +10,6 @@ import com.intellij.testFramework.ProjectRule
 import com.intellij.testFramework.registerServiceInstance
 import com.intellij.testFramework.replaceService
 import com.intellij.util.xmlb.XmlSerializer
-import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import org.assertj.core.api.Assertions.assertThat
 import org.jdom.output.XMLOutputter
 import org.junit.Before
@@ -50,6 +49,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileSe
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomizationState
+import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.DefaultCodeWhispererModelConfigurator
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit

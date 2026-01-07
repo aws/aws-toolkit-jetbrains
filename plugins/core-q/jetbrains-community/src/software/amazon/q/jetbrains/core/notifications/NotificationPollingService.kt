@@ -12,14 +12,14 @@ import com.intellij.util.Alarm
 import com.intellij.util.AlarmFactory
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
-import software.amazon.q.jetbrains.core.DefaultRemoteResourceResolverProvider
-import software.amazon.q.jetbrains.core.RemoteResourceResolverProvider
 import software.amazon.q.core.utils.RemoteResolveParser
 import software.amazon.q.core.utils.RemoteResource
 import software.amazon.q.core.utils.UpdateCheckResult
 import software.amazon.q.core.utils.getLogger
 import software.amazon.q.core.utils.info
 import software.amazon.q.core.utils.warn
+import software.amazon.q.jetbrains.core.DefaultRemoteResourceResolverProvider
+import software.amazon.q.jetbrains.core.RemoteResourceResolverProvider
 import software.aws.toolkits.telemetry.Component
 import software.aws.toolkits.telemetry.ToolkitTelemetry
 import java.io.InputStream

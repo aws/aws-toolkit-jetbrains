@@ -5,9 +5,9 @@ package software.amazon.q.jetbrains.core
 
 import com.intellij.openapi.application.PathManager
 import com.intellij.util.io.createDirectories
-import software.amazon.q.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.amazon.q.core.utils.DefaultRemoteResourceResolver
 import software.amazon.q.core.utils.UrlFetcher
+import software.amazon.q.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.concurrent.CompletableFuture

@@ -9,11 +9,11 @@ import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.extensions.ExtensionPointName
+import software.amazon.q.core.utils.error
+import software.amazon.q.core.utils.getLogger
 import software.amazon.q.jetbrains.core.credentials.ToolkitAuthManager
 import software.amazon.q.jetbrains.core.credentials.ToolkitConnection
 import software.amazon.q.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
-import software.amazon.q.core.utils.error
-import software.amazon.q.core.utils.getLogger
 import java.util.concurrent.ConcurrentHashMap
 
 typealias ConnectionPinningManager = migration.software.amazon.q.jetbrains.core.credentials.pinning.ConnectionPinningManager

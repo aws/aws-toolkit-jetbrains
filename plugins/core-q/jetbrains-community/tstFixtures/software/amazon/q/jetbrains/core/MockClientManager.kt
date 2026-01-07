@@ -16,7 +16,6 @@ import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.amazon.awssdk.auth.token.credentials.SdkTokenProvider
 import software.amazon.awssdk.core.SdkClient
 import software.amazon.awssdk.regions.Region
-import software.amazon.q.jetbrains.core.region.AwsRegionProvider
 import software.amazon.q.core.ToolkitClientCustomizer
 import software.amazon.q.core.ToolkitClientManager
 import software.amazon.q.core.clients.SdkClientProvider
@@ -24,6 +23,7 @@ import software.amazon.q.core.credentials.ToolkitCredentialsProvider
 import software.amazon.q.core.region.AwsRegion
 import software.amazon.q.core.region.ToolkitRegionProvider
 import software.amazon.q.core.utils.delegateMock
+import software.amazon.q.jetbrains.core.region.AwsRegionProvider
 import kotlin.reflect.KClass
 
 class MockClientManager : AwsClientManager() {

@@ -12,12 +12,12 @@ import org.junit.jupiter.api.extension.AfterEachCallback
 import org.junit.jupiter.api.extension.BeforeEachCallback
 import org.junit.jupiter.api.extension.ExtensionContext
 import org.junit.runner.Description
-import software.amazon.q.jetbrains.core.credentials.AwsConnectionManager
 import software.amazon.q.core.ClientConnectionSettings
 import software.amazon.q.core.credentials.ToolkitAuthenticationProvider
 import software.amazon.q.core.credentials.ToolkitBearerTokenProvider
 import software.amazon.q.core.credentials.ToolkitCredentialsProvider
 import software.amazon.q.core.region.AwsRegion
+import software.amazon.q.jetbrains.core.credentials.AwsConnectionManager
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.ConcurrentHashMap

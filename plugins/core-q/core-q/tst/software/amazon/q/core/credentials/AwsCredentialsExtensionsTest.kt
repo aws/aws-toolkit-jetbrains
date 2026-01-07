@@ -7,8 +7,6 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.auth.credentials.AwsSessionCredentials
-import software.amazon.q.core.credentials.mergeWithExistingEnvironmentVariables
-import software.amazon.q.core.credentials.toEnvironmentVariables
 import software.amazon.q.core.utils.test.aString
 
 class AwsCredentialsExtensionsTest {

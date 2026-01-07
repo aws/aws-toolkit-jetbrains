@@ -19,6 +19,11 @@ import kotlinx.coroutines.runBlocking
 import org.intellij.lang.annotations.Language
 import org.jetbrains.annotations.VisibleForTesting
 import org.slf4j.event.Level
+import software.amazon.q.core.region.AwsRegion
+import software.amazon.q.core.utils.debug
+import software.amazon.q.core.utils.error
+import software.amazon.q.core.utils.getLogger
+import software.amazon.q.core.utils.tryOrNull
 import software.amazon.q.jetbrains.core.coroutines.projectCoroutineScope
 import software.amazon.q.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.amazon.q.jetbrains.core.credentials.Login
@@ -40,11 +45,6 @@ import software.amazon.q.jetbrains.core.gettingstarted.editor.SourceOfEntry
 import software.amazon.q.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.amazon.q.jetbrains.utils.pollFor
 import software.amazon.q.resources.AwsCoreBundle
-import software.amazon.q.core.region.AwsRegion
-import software.amazon.q.core.utils.debug
-import software.amazon.q.core.utils.error
-import software.amazon.q.core.utils.getLogger
-import software.amazon.q.core.utils.tryOrNull
 import software.aws.toolkits.telemetry.AuthType
 import software.aws.toolkits.telemetry.AwsTelemetry
 import software.aws.toolkits.telemetry.CredentialSourceId

@@ -25,6 +25,9 @@ import software.amazon.awssdk.services.sts.StsClient
 import software.amazon.awssdk.services.sts.model.GetCallerIdentityRequest
 import software.amazon.awssdk.services.sts.model.GetCallerIdentityResponse
 import software.amazon.awssdk.services.sts.model.StsException
+import software.amazon.q.core.region.Endpoint
+import software.amazon.q.core.region.Service
+import software.amazon.q.core.utils.test.aString
 import software.amazon.q.jetbrains.core.MockClientManagerExtension
 import software.amazon.q.jetbrains.core.credentials.ConfigFilesFacade
 import software.amazon.q.jetbrains.core.credentials.UserConfigSsoSessionProfile
@@ -34,11 +37,8 @@ import software.amazon.q.jetbrains.core.credentials.sono.SONO_REGION
 import software.amazon.q.jetbrains.core.credentials.sono.SONO_URL
 import software.amazon.q.jetbrains.core.gettingstarted.editor.SourceOfEntry
 import software.amazon.q.jetbrains.core.region.MockRegionProviderExtension
-import software.amazon.q.resources.AwsCoreBundle
-import software.amazon.q.core.region.Endpoint
-import software.amazon.q.core.region.Service
-import software.amazon.q.core.utils.test.aString
 import software.amazon.q.jetbrains.utils.satisfiesKt
+import software.amazon.q.resources.AwsCoreBundle
 import software.aws.toolkits.telemetry.FeatureId
 
 @ExtendWith(MockKExtension::class)

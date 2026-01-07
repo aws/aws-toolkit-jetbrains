@@ -9,15 +9,15 @@ import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.util.Disposer
-import software.amazon.q.jetbrains.core.credentials.profiles.ProfileSsoSessionIdentifier
-import software.amazon.q.jetbrains.core.credentials.sono.SONO_URL
-import software.amazon.q.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.amazon.q.core.credentials.SsoSessionIdentifier
 import software.amazon.q.core.credentials.ToolkitCredentialsChangeListener
 import software.amazon.q.core.utils.error
 import software.amazon.q.core.utils.getLogger
 import software.amazon.q.core.utils.info
 import software.amazon.q.core.utils.warn
+import software.amazon.q.jetbrains.core.credentials.profiles.ProfileSsoSessionIdentifier
+import software.amazon.q.jetbrains.core.credentials.sono.SONO_URL
+import software.amazon.q.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import java.util.Collections
 
 typealias ToolkitAuthManager = migration.software.amazon.q.jetbrains.core.credentials.ToolkitAuthManager

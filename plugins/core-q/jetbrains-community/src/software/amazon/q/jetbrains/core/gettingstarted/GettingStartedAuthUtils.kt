@@ -4,6 +4,7 @@
 package software.amazon.q.jetbrains.core.gettingstarted
 
 import com.intellij.openapi.project.Project
+import software.amazon.q.core.utils.tryOrNull
 import software.amazon.q.jetbrains.core.credentials.LegacyManagedBearerSsoConnection
 import software.amazon.q.jetbrains.core.credentials.ManagedBearerSsoConnection
 import software.amazon.q.jetbrains.core.credentials.ProfileSsoManagedBearerSsoConnection
@@ -23,7 +24,6 @@ import software.amazon.q.jetbrains.core.gettingstarted.editor.getStartupState
 import software.amazon.q.jetbrains.core.region.AwsRegionProvider
 import software.amazon.q.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.amazon.q.resources.AwsCoreBundle
-import software.amazon.q.core.utils.tryOrNull
 import software.aws.toolkits.telemetry.AuthTelemetry
 import software.aws.toolkits.telemetry.FeatureId
 import software.aws.toolkits.telemetry.MetricResult

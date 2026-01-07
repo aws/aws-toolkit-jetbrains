@@ -19,8 +19,8 @@ import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextField
 import com.intellij.util.ui.components.BorderLayoutPanel
-import software.amazon.q.jetbrains.isDeveloperMode
 import software.amazon.q.core.telemetry.MetricEvent
+import software.amazon.q.jetbrains.isDeveloperMode
 import java.awt.BorderLayout
 import javax.swing.BorderFactory
 import javax.swing.JComponent
