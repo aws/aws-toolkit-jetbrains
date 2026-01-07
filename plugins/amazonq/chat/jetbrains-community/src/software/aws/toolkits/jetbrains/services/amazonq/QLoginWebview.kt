@@ -229,7 +229,7 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
             }
 
             is BrowserMessage.PublishWebviewTelemetry -> {
-//                publishTelemetry(message)
+                publishTelemetry(message)
             }
 
             is BrowserMessage.OpenUrl -> {

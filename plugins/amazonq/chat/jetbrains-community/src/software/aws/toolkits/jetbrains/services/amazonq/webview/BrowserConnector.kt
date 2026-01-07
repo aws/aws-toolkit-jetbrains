@@ -241,7 +241,7 @@ class BrowserConnector(
 
                 val enrichmentParams = mapOf(
                     "textDocument" to textDocumentIdentifier,
-                    "cursorState" to cursorState,
+                    "cursorState" to cursorState?.let { listOf(it) },
                 )
 
                 val serializedEnrichmentParams = serializer.objectMapper.valueToTree<ObjectNode>(enrichmentParams)

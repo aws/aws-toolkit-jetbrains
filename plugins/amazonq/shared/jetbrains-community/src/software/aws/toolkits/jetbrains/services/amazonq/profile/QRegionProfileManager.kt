@@ -179,7 +179,7 @@ class QRegionProfileManager : PersistentStateComponent<QProfileState>, Disposabl
     fun isPendingProfileSelection(project: Project): Boolean = getIdcConnectionOrNull(project)?.let { conn ->
         val profileCounts = connectionIdToProfileCount[conn.id] ?: 0
         val activeProfile = connectionIdToActiveProfile[conn.id]
-        profileCounts == 0 || (profileCounts > 1 && activeProfile?.arn.isNullOrEmpty())
+        profileCounts > 1 && activeProfile?.arn.isNullOrEmpty()
     } ?: false
 
     fun shouldDisplayProfileInfo(project: Project): Boolean = getIdcConnectionOrNull(project)?.let { conn ->
