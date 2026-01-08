@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "fix: automatically clear customization if chat receives access denied on the customization"
+}
