@@ -22,7 +22,10 @@ object CustomizationConstants {
         if (e !is CodeWhispererRuntimeException) {
             false
         } else {
-            e is AccessDeniedException && (e.message?.contains(invalidCustomizationMessage, ignoreCase = true) ?: false)
+            e is AccessDeniedException && (e.message?.let { isInvalidCustomizationMessage(it) } ?: false)
         }
     }
+
+    fun isInvalidCustomizationMessage(m: String): Boolean =
+        m.contains(invalidCustomizationMessage, ignoreCase = true) && m.contains(":customization/")
 }
