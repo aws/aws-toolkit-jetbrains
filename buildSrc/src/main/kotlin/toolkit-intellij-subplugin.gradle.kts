@@ -5,6 +5,7 @@ import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import org.jetbrains.intellij.platform.gradle.tasks.PrepareSandboxTask
 import software.aws.toolkits.gradle.findFolders
+import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.IdeVersions
 import software.aws.toolkits.gradle.intellij.toolkitIntelliJ
 
@@ -88,10 +89,18 @@ intellijPlatform {
 dependencies {
     intellijPlatform {
         val version = toolkitIntelliJ.version()
+        val versionStr = version.get()
 
         // annoying resolution issue that we don't want to bother fixing
         if (!project.name.contains("jetbrains-gateway")) {
-            val type = toolkitIntelliJ.ideFlavor.map { IntelliJPlatformType.fromCode(it.toString()) }
+            val type = toolkitIntelliJ.ideFlavor.map { flavor ->
+                // 2025.3+ uses unified distribution - use IU for community builds
+                if ((versionStr.contains("253") || versionStr.contains("2025.3")) && flavor == IdeFlavor.IC) {
+                    IntelliJPlatformType.IntellijIdeaUltimate
+                } else {
+                    IntelliJPlatformType.fromCode(flavor.toString())
+                }
+            }
 
             create(type, version, useInstaller = false)
         } else {
@@ -102,8 +111,7 @@ dependencies {
         plugins(toolkitIntelliJ.productProfile().map { it.marketplacePlugins })
 
         // OAuth modules split in 2025.3 (253) - must be explicitly bundled
-        val versionStr = version.get()
-        if (versionStr.contains("253")) {
+        if (versionStr.contains("253") || versionStr.contains("2025.3")) {
             bundledModule("intellij.platform.collaborationTools")
             bundledModule("intellij.platform.collaborationTools.auth.base")
             bundledModule("intellij.platform.collaborationTools.auth")

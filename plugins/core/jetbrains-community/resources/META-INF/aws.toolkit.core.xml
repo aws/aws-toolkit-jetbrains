@@ -18,6 +18,7 @@
         <applicationService serviceInterface="migration.software.aws.toolkits.jetbrains.settings.AwsSettings"
                             serviceImplementation="software.aws.toolkits.jetbrains.settings.DefaultAwsSettings"
                             testServiceImplementation="software.aws.toolkits.jetbrains.settings.MockAwsSettings"/>
+        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.services.cloudformation.settings.CfnSettings"/>
         <applicationService serviceInterface="migration.software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager"
                             serviceImplementation="software.aws.toolkits.jetbrains.core.credentials.DefaultToolkitAuthManager"/>
         <applicationService serviceInterface="migration.software.aws.toolkits.jetbrains.core.credentials.pinning.ConnectionPinningManager"
@@ -62,6 +63,14 @@
             bundle="software.aws.toolkits.resources.MessagesBundle"
             key="aws.settings.title"
             instance="software.aws.toolkits.jetbrains.settings.AwsSettingsSharedConfigurable"
+        />
+
+        <applicationConfigurable
+            id="aws.cloudformation"
+            parentId="aws.toolkit"
+            bundle="software.aws.toolkits.resources.MessagesBundle"
+            key="cloudformation.settings.title"
+            instance="software.aws.toolkits.jetbrains.services.cloudformation.settings.CfnSettingsConfigurable"
         />
 
         <postStartupActivity implementation="software.aws.toolkits.jetbrains.core.plugin.PluginAutoUpdater"/>
