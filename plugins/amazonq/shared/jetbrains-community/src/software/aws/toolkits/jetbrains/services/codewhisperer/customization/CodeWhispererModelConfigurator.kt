@@ -70,7 +70,9 @@ private fun notifyNewCustomization(project: Project) {
 
 @Service(Service.Level.APP)
 @State(name = "codewhispererCustomizationStates", storages = [Storage("aws.xml")])
-class DefaultCodeWhispererModelConfigurator(private val cs: CoroutineScope) : CodeWhispererModelConfigurator, PersistentStateComponent<CodeWhispererCustomizationState>, Disposable {
+class DefaultCodeWhispererModelConfigurator(
+    private val cs: CoroutineScope,
+) : CodeWhispererModelConfigurator, PersistentStateComponent<CodeWhispererCustomizationState>, Disposable {
     // TODO: refactor and clean these states, probably not need all the follwing and it's hard to maintain
     // Map to store connectionId to its active customization
     private val connectionIdToActiveCustomizationArn = Collections.synchronizedMap<String, CodeWhispererCustomization>(mutableMapOf())
@@ -203,7 +205,6 @@ class DefaultCodeWhispererModelConfigurator(private val cs: CoroutineScope) : Co
      * assigned to them via an AB feature. If so, use that customization.
      */
     override fun activeCustomization(project: Project): CodeWhispererCustomization? {
-        return CodeWhispererCustomization("arn:aws:codewhisperer:us-east-1:123456789120:customization/EDQ7NVEHA3PN")
         val selectedCustomization = calculateIfIamIdentityCenterConnection(project) { connectionIdToActiveCustomizationArn[it.id] }
 
         return selectedCustomization
