@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import software.aws.toolkits.gradle.intellij.IdeFlavor
+import software.aws.toolkits.gradle.intellij.IdeVersions
 
 plugins {
     id("toolkit-intellij-subplugin")
@@ -14,6 +15,12 @@ intellijToolkit {
 dependencies {
     intellijPlatform {
         localPlugin(project(":plugin-core"))
+        // Required for collaboration auth credentials in 2025.3+
+        val version  = IdeVersions.ideProfile(project).ultimate.sdkVersion
+        if (version.startsWith( "2025.3") ){
+            bundledModule("intellij.platform.collaborationTools.auth.base")
+            bundledModule("intellij.platform.collaborationTools.auth")
+        }
     }
 
     compileOnly(project(":plugin-core:jetbrains-community"))

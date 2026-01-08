@@ -24,8 +24,14 @@ intellijPlatform {
     pluginVerification {
         ides {
             // recommended() appears to resolve latest EAP for a product?
-            ide(provider { IntelliJPlatformType.IntellijIdeaCommunity }, toolkitIntelliJ.version())
-            ide(provider { IntelliJPlatformType.IntellijIdeaUltimate }, toolkitIntelliJ.version())
+            // Starting with 2025.3, IntelliJ IDEA is unified (no separate Community edition)
+            val version = toolkitIntelliJ.version().get()
+            if (version.startsWith("2025.3")) {
+                ide(provider { IntelliJPlatformType.IntellijIdeaUltimate }, toolkitIntelliJ.version())
+            } else {
+                ide(provider { IntelliJPlatformType.IntellijIdeaCommunity }, toolkitIntelliJ.version())
+                ide(provider { IntelliJPlatformType.IntellijIdeaUltimate }, toolkitIntelliJ.version())
+            }
         }
     }
 }
@@ -49,7 +55,12 @@ dependencies {
 
             // prefer versions declared in IdeVersions
             toolkitIntelliJ.apply {
-                ideFlavor.convention(IdeFlavor.values().firstOrNull { it.name == runIdeVariant.orNull } ?: IdeFlavor.IC)
+                val defaultFlavor = if (version().get().startsWith("2025.3") || version().get().startsWith("2026.") || version().get().startsWith("2027.")) {
+                    IdeFlavor.IU  // Use unified IntelliJ IDEA for 2025.3+
+                } else {
+                    IdeFlavor.IC  // Use Community for older versions
+                }
+                ideFlavor.convention(IdeFlavor.values().firstOrNull { it.name == runIdeVariant.orNull } ?: defaultFlavor)
             }
             val (type, version) = if (runIdeVariant.isPresent) {
                 val type = toolkitIntelliJ.ideFlavor.map { IntelliJPlatformType.fromCode(it.toString()) }
@@ -57,7 +68,12 @@ dependencies {
 
                 type to version
             } else {
-                provider { IntelliJPlatformType.IntellijIdeaCommunity } to toolkitIntelliJ.version()
+                val defaultType = if (toolkitIntelliJ.version().get().startsWith("2025.3") || toolkitIntelliJ.version().get().startsWith("2026.") || toolkitIntelliJ.version().get().startsWith("2027.")) {
+                    provider { IntelliJPlatformType.IntellijIdeaUltimate }
+                } else {
+                    provider { IntelliJPlatformType.IntellijIdeaCommunity }
+                }
+                defaultType to toolkitIntelliJ.version()
             }
 
             create(type, version, useInstaller = false)
