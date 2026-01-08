@@ -402,7 +402,6 @@ class SetupAuthenticationDialog(
                     null,
                     DataContext { if (PlatformDataKeys.PROJECT.`is`(it)) project else null }
                 )
-                ActionManager.getInstance().getAction("aws.settings.upsertCredentials").actionPerformed(actionEvent)
             }
         }
 

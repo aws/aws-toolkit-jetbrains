@@ -3,7 +3,6 @@
 
 package software.amazon.q.jetbrains.core.credentials.profiles
 
-import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
@@ -295,7 +294,6 @@ class ProfileCredentialProviderFactory(private val ssoCache: SsoCache = diskCach
                 title = AwsCoreBundle.message("credentials.profile.refresh_ok_title"),
                 content = "$loadingFailureMessage$detail",
                 notificationActions = listOf(
-                    createNotificationExpiringAction(ActionManager.getInstance().getAction("aws.settings.upsertCredentials")),
                     createNotificationExpiringAction(NeverShowAgain())
                 )
             )
@@ -335,7 +333,6 @@ class ProfileCredentialProviderFactory(private val ssoCache: SsoCache = diskCach
                     title = refreshTitle,
                     content = "$refreshBaseMessage $numErrorMessage",
                     notificationActions = listOf(
-                        createNotificationExpiringAction(ActionManager.getInstance().getAction("aws.settings.upsertCredentials")),
                         createNotificationExpiringAction(NeverShowAgain()),
                         createShowMoreInfoDialogAction(AwsCoreBundle.message("credentials.invalid.more_info"), errorDialogTitle, numErrorMessage, message)
                     )

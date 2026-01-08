@@ -287,7 +287,7 @@ abstract class AwsConnectionManager(private val project: Project) : SimpleModifi
 
         private val LOGGER = getLogger<AwsConnectionManager>()
         private const val MAX_HISTORY = 5
-        internal val AwsConnectionManager.selectedPartition get() = selectedRegion?.let { AwsRegionProvider.getInstance().partitions()[it.partitionId] }
+        val AwsConnectionManager.selectedPartition get() = selectedRegion?.let { AwsRegionProvider.getInstance().partitions()[it.partitionId] }
     }
 }
 
@@ -308,9 +308,6 @@ fun <T> Project.withAwsConnection(block: (ConnectionSettings) -> T): T {
  * state is temporary in the 'connection validation' workflow or if this is a terminal state.
  */
 sealed class ConnectionState(val displayMessage: String, val isTerminal: Boolean) {
-    protected val gettingStartedAction by lazy { ActionManager.getInstance().getAction("aws.toolkit.toolwindow.newConnection") }
-    protected val editCredsAction by lazy { ActionManager.getInstance().getAction("aws.settings.upsertCredentials") }
-
     /**
      * An optional short message to display in places where space is at a premium
      */
@@ -339,7 +336,7 @@ sealed class ConnectionState(val displayMessage: String, val isTerminal: Boolean
         },
         isTerminal = true
     ) {
-        override val actions: List<AnAction> = listOf(gettingStartedAction, editCredsAction)
+        override val actions: List<AnAction> = listOf()
     }
 
     class InvalidConnection(private val cause: Exception) :
@@ -349,7 +346,7 @@ sealed class ConnectionState(val displayMessage: String, val isTerminal: Boolean
         ) {
         override val shortMessage = AwsCoreBundle.message("settings.states.invalid.short")
 
-        override val actions: List<AnAction> = listOf(RefreshConnectionAction(AwsCoreBundle.message("settings.retry")), gettingStartedAction, editCredsAction)
+        override val actions: List<AnAction> = listOf(RefreshConnectionAction(AwsCoreBundle.message("settings.retry")))
     }
 
     class RequiresUserAction(interactiveCredentials: InteractiveCredential) :

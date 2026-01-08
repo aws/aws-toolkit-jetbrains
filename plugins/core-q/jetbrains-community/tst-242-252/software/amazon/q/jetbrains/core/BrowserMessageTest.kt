@@ -33,7 +33,7 @@ class NoOpLoginBrowser(project: Project) : LoginBrowser(project) {
 }
 
 class BrowserMessageTest {
-    private lateinit var objectMapper: ObjectMapper
+    lateinit var objectMapper: ObjectMapper
 
     companion object {
         @JvmField

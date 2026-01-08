@@ -9,15 +9,10 @@ import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.testFramework.ApplicationRule
 import com.intellij.util.concurrency.AppExecutorUtil
-import io.mockk.every
-import io.mockk.impl.annotations.MockK
 import io.mockk.junit4.MockKRule
-import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Rule
 import org.junit.Test
-import software.amazon.awssdk.services.toolkittelemetry.model.AWSProduct
-import software.amazon.q.jetbrains.services.telemetry.PluginResolver
 import java.time.Duration
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -29,9 +24,6 @@ class ThreadingUtilsKtTest {
 
     @get:Rule
     val mockkRule = MockKRule(this)
-
-    @MockK
-    private lateinit var pluginResolver: PluginResolver
 
     @Test
     fun `computeOnEdt runs on edt`() {
@@ -81,17 +73,5 @@ class ThreadingUtilsKtTest {
         assertThatThrownBy {
             sleepWithCancellation(Duration.ofHours(3), indicator)
         }.isInstanceOf<ProcessCanceledException>()
-    }
-
-    @Test
-    fun `pluginAwareExecuteOnPooledThread inherits plugin resolver`() {
-        every { pluginResolver.product } returns AWSProduct.AMAZON_Q_FOR_JET_BRAINS
-        PluginResolver.setThreadLocal(pluginResolver)
-
-        pluginAwareExecuteOnPooledThread {
-            assertThat(PluginResolver.fromCurrentThread().product).isEqualTo(AWSProduct.AMAZON_Q_FOR_JET_BRAINS)
-        }.get()
-
-        PluginResolver.setThreadLocal(PluginResolver.fromStackTrace(Thread.currentThread().stackTrace))
     }
 }

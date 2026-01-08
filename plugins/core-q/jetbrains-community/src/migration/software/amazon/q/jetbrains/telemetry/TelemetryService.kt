@@ -16,8 +16,8 @@ import software.amazon.q.core.utils.tryOrNull
 import software.amazon.q.jetbrains.core.credentials.getConnectionSettings
 import software.amazon.q.jetbrains.core.getResourceIfPresent
 import software.amazon.q.jetbrains.services.sts.StsResources
+import software.amazon.q.jetbrains.services.telemetry.ClientMetadata
 import software.amazon.q.jetbrains.services.telemetry.MetricEventMetadata
-import software.amazon.q.jetbrains.services.telemetry.PluginResolver
 import software.amazon.q.jetbrains.services.telemetry.TelemetryListener
 import software.amazon.q.jetbrains.settings.AwsSettings
 import java.util.concurrent.atomic.AtomicBoolean
@@ -38,9 +38,8 @@ abstract class TelemetryService(private val publisher: TelemetryPublisher, prote
             )
             else -> MetricEventMetadata()
         }
-        val pluginResolver = PluginResolver.fromCurrentThread()
-        metricEventMetadata.awsProduct = pluginResolver.product
-        metricEventMetadata.awsVersion = pluginResolver.version
+        metricEventMetadata.awsProduct = ClientMetadata.DEFAULT_METADATA.productName
+        metricEventMetadata.awsVersion = ClientMetadata.DEFAULT_METADATA.productVersion
         record(metricEventMetadata, buildEvent)
     }
 
@@ -62,9 +61,8 @@ abstract class TelemetryService(private val publisher: TelemetryPublisher, prote
         } else {
             MetricEventMetadata()
         }
-        val pluginResolver = PluginResolver.fromCurrentThread()
-        metricEventMetadata.awsProduct = pluginResolver.product
-        metricEventMetadata.awsVersion = pluginResolver.version
+        metricEventMetadata.awsProduct = ClientMetadata.DEFAULT_METADATA.productName
+        metricEventMetadata.awsVersion = ClientMetadata.DEFAULT_METADATA.productVersion
         record(metricEventMetadata, buildEvent)
     }
 

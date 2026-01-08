@@ -291,7 +291,7 @@ class AwsClientManagerTest {
             it.listFunctions()
         }
 
-        wireMockRule.verify(anyRequestedFor(urlPathMatching("(.*)/functions/")).withHeader("User-Agent", ContainsPattern("AWS-Toolkit-For-JetBrains/")))
+        wireMockRule.verify(anyRequestedFor(urlPathMatching("(.*)/functions/")).withHeader("User-Agent", ContainsPattern("Amazon-Q-For-JetBrains/")))
     }
 
     @Test
@@ -308,7 +308,7 @@ class AwsClientManagerTest {
             it.listFunctions()
         }
 
-        wireMockRule.verify(anyRequestedFor(urlPathMatching("(.*)/functions/")).withHeader("User-Agent", ContainsPattern("AWS-Toolkit-For-JetBrains/")))
+        wireMockRule.verify(anyRequestedFor(urlPathMatching("(.*)/functions/")).withHeader("User-Agent", ContainsPattern("Amazon-Q-For-JetBrains/")))
     }
 
     private fun mockTokenProvider() = mock<ToolkitBearerTokenProviderDelegate>().let {

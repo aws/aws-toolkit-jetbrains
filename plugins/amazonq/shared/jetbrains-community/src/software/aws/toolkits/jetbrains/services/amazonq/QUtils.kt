@@ -37,7 +37,7 @@ fun <T> calculateIfBIDConnection(project: Project, calculationTask: (connection:
         }
     }
 
-fun codeWhispererUserContext(): UserContext = ClientMetadata.getDefault().let {
+fun codeWhispererUserContext(): UserContext = ClientMetadata.DEFAULT_METADATA.let {
     val osForCodeWhisperer: OperatingSystem =
         when {
             SystemInfo.isWindows -> OperatingSystem.WINDOWS
@@ -51,7 +51,7 @@ fun codeWhispererUserContext(): UserContext = ClientMetadata.getDefault().let {
         .operatingSystem(osForCodeWhisperer)
         .product(FEATURE_EVALUATION_PRODUCT_NAME)
         .clientId(it.clientId)
-        .ideVersion(it.awsVersion)
+        .ideVersion(it.productVersion)
         .build()
 }
 

@@ -22,11 +22,11 @@ import software.amazon.q.jetbrains.core.coroutines.getCoroutineBgContext
 
 class DefaultTelemetryPublisher(
     private val clientProvider: () -> ToolkitTelemetryClient,
-    private val clientMetadataProvider: (AWSProduct, String) -> ClientMetadata,
+    private val clientMetadata: ClientMetadata,
 ) : TelemetryPublisher {
     constructor() : this(
         clientProvider = { createDefaultTelemetryClient() },
-        clientMetadataProvider = { product, version -> ClientMetadata(product, version) }
+        clientMetadata = ClientMetadata.DEFAULT_METADATA
     )
 
     private val lazyClient = lazy { clientProvider() }
@@ -36,10 +36,9 @@ class DefaultTelemetryPublisher(
         withContext(getCoroutineBgContext()) {
             metricEvents.groupBy { Pair(it.awsProduct, it.awsVersion) }
                 .forEach { (productName, productVersion), events ->
-                    val clientMetadata = clientMetadataProvider(productName, productVersion)
                     client.postMetrics {
-                        it.awsProduct(clientMetadata.awsProduct)
-                        it.awsProductVersion(clientMetadata.awsVersion)
+                        it.awsProduct(clientMetadata.productName)
+                        it.awsProductVersion(clientMetadata.productVersion)
                         it.clientID(clientMetadata.clientId)
                         it.os(clientMetadata.os)
                         it.osVersion(clientMetadata.osVersion)
@@ -53,11 +52,9 @@ class DefaultTelemetryPublisher(
 
     override suspend fun sendFeedback(sentiment: Sentiment, comment: String, metadata: Map<String, String>) {
         withContext(getCoroutineBgContext()) {
-            val pluginResolver = PluginResolver.fromCurrentThread()
-            val clientMetadata = clientMetadataProvider(pluginResolver.product, pluginResolver.version)
             client.postFeedback {
-                it.awsProduct(clientMetadata.awsProduct)
-                it.awsProductVersion(clientMetadata.awsVersion)
+                it.awsProduct(clientMetadata.productName)
+                it.awsProductVersion(clientMetadata.productVersion)
                 it.os(clientMetadata.os)
                 it.osVersion(clientMetadata.osVersion)
                 it.parentProduct(clientMetadata.parentProduct)

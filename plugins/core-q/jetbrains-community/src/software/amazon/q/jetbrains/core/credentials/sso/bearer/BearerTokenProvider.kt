@@ -72,7 +72,7 @@ interface BearerTokenProvider : SdkTokenProvider, SdkAutoCloseable, ToolkitBeare
     companion object {
         private fun tokenExpired(accessToken: AccessToken, clock: Clock) = clock.instant().isAfter(accessToken.expiresAt)
 
-        internal fun state(accessToken: AccessToken?, clock: Clock = Clock.systemUTC()) = when {
+        fun state(accessToken: AccessToken?, clock: Clock = Clock.systemUTC()) = when {
             accessToken == null -> BearerTokenAuthState.NOT_AUTHENTICATED
             tokenExpired(accessToken, clock) -> {
                 if (accessToken.refreshToken != null) {

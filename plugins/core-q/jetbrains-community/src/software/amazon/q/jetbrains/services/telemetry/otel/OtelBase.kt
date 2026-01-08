@@ -21,7 +21,7 @@ import software.amazon.q.core.utils.error
 import software.amazon.q.core.utils.getLogger
 import software.amazon.q.core.utils.warn
 import software.amazon.q.jetbrains.isDeveloperMode
-import software.amazon.q.jetbrains.services.telemetry.PluginResolver
+import software.amazon.q.jetbrains.services.telemetry.ClientMetadata
 import software.aws.toolkits.telemetry.impl.BaseSpan
 import java.time.Instant
 import java.util.concurrent.TimeUnit
@@ -31,7 +31,7 @@ import com.intellij.platform.diagnostic.telemetry.helpers.use as ijUse
 import com.intellij.platform.diagnostic.telemetry.helpers.useWithScope as ijUseWithScope
 
 val AWS_PRODUCT_CONTEXT_KEY = ContextKey.named<AWSProduct>("pluginDescriptor")
-internal val PLUGIN_NAME_ATTRIBUTE_KEY = AttributeKey.stringKey("pluginName")
+val PLUGIN_NAME_ATTRIBUTE_KEY = AttributeKey.stringKey("pluginName")
 
 class DefaultSpan(context: Context?, delegate: Span) : BaseSpan<DefaultSpan>(context, delegate)
 
@@ -174,7 +174,7 @@ abstract class AbstractSpanBuilder<
 
     private companion object {
         val LOG = getLogger<AbstractSpanBuilder<*, *>>()
-        fun resolvePluginName() = PluginResolver.Companion.fromStackTrace(Thread.currentThread().stackTrace).product
+        fun resolvePluginName() = ClientMetadata.DEFAULT_METADATA.productName
     }
 }
 

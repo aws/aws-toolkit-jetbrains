@@ -23,6 +23,9 @@ sourceSets {
     main {
         java.srcDir(generatedSrcDir)
     }
+    test {
+        java.setSrcDirs(emptySet<String>())
+    }
 }
 
 idea {

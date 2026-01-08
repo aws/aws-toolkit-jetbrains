@@ -124,7 +124,7 @@ class IdcRolePopup(
     }
 
     @VisibleForTesting
-    internal fun doOkActionWithRoleInfo(roleInfo: RoleInfo) {
+    fun doOkActionWithRoleInfo(roleInfo: RoleInfo) {
         val profileName = "$sessionName-${roleInfo.accountId()}-${roleInfo.roleName()}"
         if (profileName !in configFilesFacade.readAllProfiles().keys) {
             configFilesFacade.appendProfileToConfig(

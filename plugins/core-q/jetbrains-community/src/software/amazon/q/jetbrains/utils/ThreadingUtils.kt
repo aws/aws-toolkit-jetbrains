@@ -15,7 +15,6 @@ import com.intellij.util.ExceptionUtil
 import com.intellij.util.concurrency.AppExecutorUtil
 import com.intellij.util.concurrency.Semaphore
 import io.opentelemetry.context.Context
-import software.amazon.q.jetbrains.services.telemetry.PluginResolver
 import java.time.Duration
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
@@ -77,14 +76,8 @@ fun sleepWithCancellation(sleepAmount: Duration, indicator: ProgressIndicator?) 
 }
 
 fun <T> pluginAwareExecuteOnPooledThread(action: () -> T): Future<T> {
-    /**
-     * Ensures plugin resolution references parent thread plugin resolver since
-     * worker thread will not contain original call stack. Necessary for telemetry.
-     */
-    val pluginResolver = PluginResolver.Companion.fromCurrentThread()
     val context = Context.current()
     return ApplicationManager.getApplication().executeOnPooledThread<T> {
-        PluginResolver.Companion.setThreadLocal(pluginResolver)
         context.wrap(action).call()
     }
 }

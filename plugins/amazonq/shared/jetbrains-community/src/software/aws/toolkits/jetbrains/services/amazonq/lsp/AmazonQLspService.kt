@@ -375,10 +375,10 @@ private class AmazonQServerInstance(private val project: Project, private val cs
         }
 
     private fun createClientInfo(): ClientInfo {
-        val metadata = ClientMetadata.getDefault()
+        val metadata = ClientMetadata.DEFAULT_METADATA
         return ClientInfo().apply {
-            name = metadata.awsProduct.toString()
-            version = metadata.awsVersion
+            name = metadata.productName.toString()
+            version = metadata.productVersion
         }
     }
 

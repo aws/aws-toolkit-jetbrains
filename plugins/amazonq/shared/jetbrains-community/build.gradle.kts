@@ -2,7 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import org.jetbrains.intellij.platform.gradle.models.Coordinates
+import software.aws.toolkits.gradle.findFolders
 import software.aws.toolkits.gradle.intellij.IdeFlavor
+import software.aws.toolkits.gradle.intellij.IdeVersions
 
 plugins {
     id("toolkit-intellij-subplugin")
@@ -11,6 +13,8 @@ plugins {
 intellijToolkit {
     ideFlavor.set(IdeFlavor.IC)
 }
+
+val ideProfile = IdeVersions.ideProfile(project)
 
 dependencies {
     intellijPlatform {
@@ -27,12 +31,24 @@ dependencies {
     api(libs.lsp4j)
 
     testFixturesApi(testFixtures(project(":plugin-core-q:jetbrains-community")))
+
+    testImplementation(project(":plugin-core-q:jetbrains-community"))
 }
 
-tasks.test {
-    // Include core test sources
-    testClassesDirs += project(":plugin-core-q:jetbrains-community").sourceSets.test.get().output.classesDirs
-    classpath += project(":plugin-core-q:jetbrains-community").sourceSets.test.get().runtimeClasspath
+sourceSets {
+    test {
+        java.srcDirs(
+            findFolders(project(":plugin-core-q:jetbrains-community").project, "tst", ideProfile).map {
+                project(":plugin-core-q:jetbrains-community").project.file(it)
+            }
+        )
+        resources.srcDirs(
+            findFolders(project(":plugin-core-q:jetbrains-community").project, "tst-resources", ideProfile)
+            .map {
+                project(":plugin-core-q:jetbrains-community").project.file(it)
+            }
+        )
+    }
 }
 
 // hack because our test structure currently doesn't make complete sense

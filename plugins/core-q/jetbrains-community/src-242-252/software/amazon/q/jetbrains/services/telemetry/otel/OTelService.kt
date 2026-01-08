@@ -130,7 +130,7 @@ private object StdoutSpanProcessor : SpanProcessor {
 }
 
 @Service
-class OTelService @NonInjectable internal constructor(spanProcessors: List<SpanProcessor>) : Disposable {
+class OTelService @NonInjectable constructor(spanProcessors: List<SpanProcessor>) : Disposable {
     @Suppress("unused")
     constructor() : this(listOf(ToolkitTelemetryOTelSpanProcessor()))
 
@@ -157,7 +157,7 @@ class OTelService @NonInjectable internal constructor(spanProcessors: List<SpanP
             .setPropagators(ContextPropagators.create(W3CTraceContextPropagator.getInstance()))
             .build()
     }
-    internal val sdk: OpenTelemetrySdk by sdkDelegate
+    val sdk: OpenTelemetrySdk by sdkDelegate
 
     override fun dispose() {
         if (sdkDelegate.isInitialized()) {
