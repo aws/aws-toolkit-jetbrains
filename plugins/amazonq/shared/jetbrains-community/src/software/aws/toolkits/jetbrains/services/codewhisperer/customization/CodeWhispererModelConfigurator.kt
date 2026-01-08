@@ -17,12 +17,16 @@ import com.intellij.openapi.project.Project
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import com.intellij.util.xmlb.annotations.MapAnnotation
 import com.intellij.util.xmlb.annotations.Property
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+import org.eclipse.lsp4j.DidChangeConfigurationParams
 import software.amazon.awssdk.services.codewhispererruntime.CodeWhispererRuntimeClient
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.amazonq.calculateIfIamIdentityCenterConnection
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QProfileSwitchIntent
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
@@ -66,7 +70,9 @@ private fun notifyNewCustomization(project: Project) {
 
 @Service(Service.Level.APP)
 @State(name = "codewhispererCustomizationStates", storages = [Storage("aws.xml")])
-class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, PersistentStateComponent<CodeWhispererCustomizationState>, Disposable {
+class DefaultCodeWhispererModelConfigurator(
+    private val cs: CoroutineScope,
+) : CodeWhispererModelConfigurator, PersistentStateComponent<CodeWhispererCustomizationState>, Disposable {
     // TODO: refactor and clean these states, probably not need all the follwing and it's hard to maintain
     // Map to store connectionId to its active customization
     private val connectionIdToActiveCustomizationArn = Collections.synchronizedMap<String, CodeWhispererCustomization>(mutableMapOf())
@@ -246,6 +252,18 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
                 customizationArnOverrideV2 = newCustomization?.arn
             }
         }
+
+        // notify Flare to pick up new selection
+        // fragile; we are using an application scope to call into a project service
+        cs.launch {
+            if (project.isDisposed) {
+                return@launch
+            }
+
+            AmazonQLspService.executeAsyncIfRunning(project) { server ->
+                server.workspaceService.didChangeConfiguration(DidChangeConfigurationParams())
+            }
+        }
     }
 
     override fun invalidateCustomization(arn: String) {
@@ -316,7 +334,7 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
 
     override fun dispose() {}
 
-    private fun invalidateSelectedAndNotify(project: Project) {
+    override fun invalidateSelectedAndNotify(project: Project) {
         activeCustomization(project)?.let { selectedCustom ->
             val arn = selectedCustom.arn
             switchCustomization(project, null)
