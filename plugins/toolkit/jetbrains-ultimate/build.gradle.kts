@@ -16,7 +16,7 @@ intellijToolkit {
 }
 
 dependencies {
-    implementation(project(path = ":plugin-core", configuration = "shadow"))
+    implementation(project(":plugin-core"))
 
     compileOnlyApi(project(":plugin-toolkit:jetbrains-core"))
     compileOnlyApi(project(":plugin-core:jetbrains-ultimate"))
@@ -33,7 +33,7 @@ dependencies {
 
 // hack because our test structure currently doesn't make complete sense
 tasks.prepareTestSandbox {
-    val pluginXmlJar = project(":plugin-core").tasks.jar
+    val pluginXmlJar = project(":plugin-toolkit:intellij-standalone").tasks.jar
 
     dependsOn(pluginXmlJar)
     from(pluginXmlJar) {

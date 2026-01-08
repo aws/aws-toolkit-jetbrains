@@ -26,8 +26,8 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.extension.ExtendWith
-import software.aws.toolkits.core.utils.outputStream
-import software.aws.toolkits.core.utils.writeText
+import software.amazon.q.core.utils.outputStream
+import software.amazon.q.core.utils.writeText
 import java.math.BigInteger
 import java.net.URI
 import java.nio.file.Files

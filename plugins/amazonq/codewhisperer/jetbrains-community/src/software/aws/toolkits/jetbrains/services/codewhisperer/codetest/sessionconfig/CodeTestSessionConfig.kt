@@ -14,10 +14,10 @@ import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.isFile
 import kotlinx.coroutines.runBlocking
-import software.aws.toolkits.core.utils.createTemporaryZipFile
-import software.aws.toolkits.core.utils.debug
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.putNextEntry
+import software.amazon.q.core.utils.createTemporaryZipFile
+import software.amazon.q.core.utils.debug
+import software.amazon.q.core.utils.getLogger
+import software.amazon.q.core.utils.putNextEntry
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.Payload
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.PayloadContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.PayloadMetadata

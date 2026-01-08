@@ -12,16 +12,13 @@ import java.util.EnumMap
 object AwsToolkit {
     const val TOOLKIT_PLUGIN_ID = "aws.toolkit"
     const val Q_PLUGIN_ID = "amazon.q"
-    const val CORE_PLUGIN_ID = "aws.toolkit.core"
 
     private val TOOLKIT_PLUGIN_INFO = PluginInfo(TOOLKIT_PLUGIN_ID, "AWS Toolkit")
     private val Q_PLUGIN_INFO = PluginInfo(Q_PLUGIN_ID, "Amazon Q")
-    private val CORE_PLUGIN_INFO = PluginInfo(CORE_PLUGIN_ID, "AWS Plugin Core")
 
     val PLUGINS_INFO = EnumMap<AwsPlugin, PluginInfo>(AwsPlugin::class.java).apply {
         put(AwsPlugin.TOOLKIT, TOOLKIT_PLUGIN_INFO)
         put(AwsPlugin.Q, Q_PLUGIN_INFO)
-        put(AwsPlugin.CORE, CORE_PLUGIN_INFO)
     }
 
     const val GITHUB_URL = "https://github.com/aws/aws-toolkit-jetbrains"

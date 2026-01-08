@@ -12,15 +12,16 @@ intellijToolkit {
 }
 
 dependencies {
-    implementation(project(path = ":plugin-core", configuration = "shadow"))
+    implementation(project(":plugin-core-q"))
 
     compileOnly(project(":plugin-amazonq:codewhisperer:jetbrains-community"))
     compileOnly(project(":plugin-amazonq:shared:jetbrains-ultimate"))
 
-    compileOnly(project(":plugin-core:jetbrains-ultimate"))
-    testCompileOnly(project(":plugin-core:jetbrains-ultimate"))
+    compileOnly(project(":plugin-core-q:jetbrains-ultimate"))
+    testCompileOnly(project(":plugin-core-q:jetbrains-ultimate"))
 
     testImplementation(testFixtures(project(":plugin-amazonq:codewhisperer:jetbrains-community")))
+    testImplementation(testFixtures(project(":plugin-core-q:jetbrains-ultimate")))
     testImplementation(project(path = ":plugin-toolkit:jetbrains-ultimate", configuration = "testArtifacts"))
 }
 

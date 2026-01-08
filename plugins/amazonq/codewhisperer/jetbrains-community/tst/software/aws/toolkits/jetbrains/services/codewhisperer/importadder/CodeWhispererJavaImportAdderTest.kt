@@ -14,7 +14,7 @@ import com.intellij.testFramework.runInEdtAndGet
 import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
-import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
+import software.amazon.q.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 
 class CodeWhispererJavaImportAdderTest : CodeWhispererImportAdderTestBase(
     CodeWhispererJavaImportAdder(),

@@ -3,16 +3,19 @@
 
 package software.aws.toolkits.jetbrains.core.credentials.profiles
 
+import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.testFramework.ApplicationExtension
+import com.intellij.testFramework.junit5.TestDisposable
+import com.intellij.testFramework.replaceService
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
-import org.junit.jupiter.api.extension.RegisterExtension
 import org.mockito.kotlin.mock
 import software.amazon.awssdk.services.ssooidc.SsoOidcClient
 import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
-import software.aws.toolkits.jetbrains.core.MockClientManagerExtension
+import software.aws.toolkits.jetbrains.core.MockClientManager
 import software.aws.toolkits.jetbrains.core.credentials.sso.DiskCache
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.NoTokenInitializedException
@@ -21,9 +24,10 @@ import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.NoTokenInitia
 class ProfileCredentialsIdentifierSsoTest {
     private val sut = ProfileCredentialsIdentifierSso("", "", "", null)
 
-    @JvmField
-    @RegisterExtension
-    val mockClientManager = MockClientManagerExtension()
+//    @BeforeEach
+//    fun setUp(@TestDisposable disposable: Disposable) {
+//        CoreTestHelper.registerMissingServices(disposable)
+//    }
 
     @Test
     fun `handles SsoOidcException`() {
@@ -42,11 +46,13 @@ class ProfileCredentialsIdentifierSsoTest {
     }
 
     @Test
-    fun `handles exception from uninitialized token provider`() {
-        val cache = mock<DiskCache>()
-        mockClientManager.create<SsoOidcClient>()
+    fun `handles exception from uninitialized token provider`(@TestDisposable disposable: Disposable) {
+        val mockClientManager = MockClientManager()
+        ApplicationManager.getApplication().replaceService(migration.software.aws.toolkits.core.ToolkitClientManager::class.java, mockClientManager, disposable)
 
-        // IllegalStateException instead of more general base Exception so we know if the type changes
+        val cache = mock<DiskCache>()
+        mockClientManager.register(SsoOidcClient::class, mock<SsoOidcClient>())
+
         val exception = assertThrows<NoTokenInitializedException> {
             InteractiveBearerTokenProvider("", "us-east-1", listOf("scopes"), cache = cache, id = "test").resolveToken()
         }

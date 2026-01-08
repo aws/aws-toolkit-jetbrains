@@ -19,17 +19,17 @@ import com.intellij.util.xmlb.annotations.MapAnnotation
 import com.intellij.util.xmlb.annotations.Property
 import software.amazon.awssdk.services.codewhispererruntime.CodeWhispererRuntimeClient
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
-import software.aws.toolkits.core.utils.debug
-import software.aws.toolkits.core.utils.getLogger
+import software.amazon.q.core.utils.debug
+import software.amazon.q.core.utils.getLogger
+import software.amazon.q.jetbrains.utils.notifyInfo
+import software.amazon.q.jetbrains.utils.notifyWarn
+import software.amazon.q.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.amazonq.calculateIfIamIdentityCenterConnection
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QProfileSwitchIntent
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileSelectedListener
-import software.aws.toolkits.jetbrains.utils.notifyInfo
-import software.aws.toolkits.jetbrains.utils.notifyWarn
-import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.resources.message
 import java.util.Collections
 import java.util.concurrent.atomic.AtomicBoolean
@@ -65,7 +65,7 @@ private fun notifyNewCustomization(project: Project) {
 }
 
 @Service(Service.Level.APP)
-@State(name = "codewhispererCustomizationStates", storages = [Storage("aws.xml")])
+@State(name = "codewhispererCustomizationStates", storages = [Storage("amazonq.xml")])
 class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, PersistentStateComponent<CodeWhispererCustomizationState>, Disposable {
     // TODO: refactor and clean these states, probably not need all the follwing and it's hard to maintain
     // Map to store connectionId to its active customization

@@ -11,7 +11,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito.mock
-import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
+import software.amazon.q.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
 
 class CodeWhispererFallbackImportAdderTest : CodeWhispererImportAdderTestBase(
     CodeWhispererFallbackImportAdder(),

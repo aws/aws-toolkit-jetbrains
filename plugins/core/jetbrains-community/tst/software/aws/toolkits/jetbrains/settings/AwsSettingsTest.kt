@@ -36,6 +36,7 @@ class AwsSettingsTest {
 
     @BeforeEach
     fun setup(@TestDisposable disposable: Disposable) {
+//        CoreTestHelper.registerMissingServices(disposable)
         batcher = mock()
         telemetryService = spy(TestTelemetryService(batcher = batcher))
         awsSettings = spy(DefaultAwsSettings())

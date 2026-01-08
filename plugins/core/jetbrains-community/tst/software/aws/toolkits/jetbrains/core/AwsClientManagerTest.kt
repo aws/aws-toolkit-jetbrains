@@ -78,6 +78,11 @@ class AwsClientManagerTest {
         projectSettingsRule,
         disposableRule
     )
+//
+//    @BeforeEach
+//    fun setUp(@TestDisposable disposable: Disposable) {
+//        CoreTestHelper.registerMissingServices(disposable)
+//    }
 
     @Test
     fun canGetAnInstanceOfAClient() {

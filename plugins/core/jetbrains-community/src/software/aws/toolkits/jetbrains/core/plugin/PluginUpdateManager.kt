@@ -53,9 +53,7 @@ class PluginUpdateManager : Disposable {
                 AwsCoreBundle.message("aws.settings.auto_update.progress.message")
             ) {
                 override fun run(indicator: ProgressIndicator) {
-                    checkForUpdates(indicator, AwsPlugin.CORE)
                     checkForUpdates(indicator, AwsPlugin.TOOLKIT)
-                    checkForUpdates(indicator, AwsPlugin.Q)
                 }
             })
         }
@@ -115,7 +113,6 @@ class PluginUpdateManager : Disposable {
             return
         }
         if (!AwsSettings.getInstance().isAutoUpdateNotificationEnabled) return
-        if (plugin == AwsPlugin.CORE) return
         notifyInfo(
             title = AwsCoreBundle.message("aws.notification.auto_update.title", pluginName),
             content = AwsCoreBundle.message("aws.settings.auto_update.notification.message"),

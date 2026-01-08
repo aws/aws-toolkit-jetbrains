@@ -1,0 +1,135 @@
+<!-- Copyright 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved. -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
+<!-- This Vue File is the login webview of AWS Toolkit and Amazon Q.-->
+<template>
+    <div v-bind:class="[disabled ? 'disabled-form' : '']" class="auth-container centered-with-max-width">
+        <button v-if="!['START', 'AUTHENTICATING', 'PROFILE_SELECT'].includes(stage) || cancellable" class="back-button" @click="handleBackButtonClick" tabindex="-1">            <svg width="24" height="24" viewBox="0 -3 13 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path
+                    d="M4.98667 0.0933332L5.73333 0.786666L1.57333 4.94667H12.0267V5.96H1.57333L5.73333 10.0667L4.98667 10.8133L0.0266666 5.8V5.10667L4.98667 0.0933332Z"
+                    fill="#21A2FF"
+                />
+            </svg>
+        </button>
+
+        <LoginOptions :app="app" v-if="stage === 'START'" @backToMenu="handleBackButtonClick" @stageChanged="mutateStage" @login="login"  @emitUiClickTelemetry="sendUiClickTelemetry"/>
+        <SsoLoginForm :app="app" v-if="stage === 'SSO_FORM'" @backToMenu="handleBackButtonClick" @stageChanged="mutateStage" @login="login"  @emitUiClickTelemetry="sendUiClickTelemetry"/>
+        <AwsProfileForm v-if="stage === 'AWS_PROFILE'" @backToMenu="handleBackButtonClick" @stageChanged="mutateStage" @login="login" @emitUiClickTelemetry="sendUiClickTelemetry"/>
+        <Authenticating v-if="stage === 'AUTHENTICATING'" :selected-login-option="this.selectedLoginOption" @cancel="handleCancelButton"/>
+        <ProfileSelection v-if="stage === 'PROFILE_SELECT' && app === 'AMAZONQ'" @stageChanged="mutateStage"/>
+
+        <template v-if="stage === 'CONNECTED'"></template>
+    </div>
+</template>
+<script lang="ts">
+import {defineComponent} from 'vue'
+import SsoLoginForm from "./ssoLoginForm.vue";
+import LoginOptions from "./loginOptions.vue";
+import AwsProfileForm from "./awsProfileForm.vue";
+import Authenticating from "./authenticating.vue";
+import {BuilderId, ExistConnection, Feature, IdC, LoginIdentifier, LoginOption, LongLivedIAM, Stage} from "../../model";
+import ProfileSelection from "@/q-ui/components/profileSelection.vue";
+
+const authUiClickOptionMap = {
+    [LoginIdentifier.BUILDER_ID]: 'auth_builderIdOption',
+    [LoginIdentifier.ENTERPRISE_SSO]: 'auth_idcOption',
+    [LoginIdentifier.IAM_CREDENTIAL]: 'auth_credentialsOption',
+    [LoginIdentifier.EXISTING_LOGINS]: 'auth_existingAuthOption',
+    [LoginIdentifier.NONE]: "Unknown"
+}
+
+function getUiClickEvent(loginIdentifier: LoginIdentifier) {
+    if(!Object.keys(authUiClickOptionMap).includes(loginIdentifier)) {
+        return "Unknown"
+    }
+    return (authUiClickOptionMap)[loginIdentifier]
+}
+
+export default defineComponent({
+    name: 'Login',
+    components: {
+        SsoLoginForm,
+        LoginOptions,
+        AwsProfileForm,
+        Authenticating,
+        ProfileSelection
+    },
+    props: {
+        disabled: {
+            type: Boolean,
+            default: false,
+        },
+        app: {
+            type: String,
+            default: '',
+            required: true,
+        }
+    },
+    data() {
+        return {
+            existingLogin: {id: -1, text: '', title: ''},
+            selectedLoginOption: undefined as (LoginOption | undefined),
+            app: this.app,
+        }
+    },
+    computed: {
+        stage(): Stage {
+            return this.$store.state.stage
+        },
+        feature(): Feature {
+            return this.$store.state.feature
+        },
+        cancellable(): boolean {
+            return this.$store.state.cancellable
+        },
+    },
+    methods: {
+        mutateStage(stage: Stage) {
+            this.$store.commit('setStage', stage)
+        },
+        handleBackButtonClick() {
+            window.ideApi.postMessage({command: 'sendUiClickTelemetry', signInOptionClicked: "auth_backButton"})
+            if (this.cancellable) {
+                window.ideApi.postMessage({command: 'toggleBrowser'})
+            }
+            this.mutateStage('START')
+        },
+        handleCancelButton() {
+            window.ideClient.cancelLogin()
+            this.mutateStage('START')
+        },
+        login(type: LoginOption) {
+            window.ideApi.postMessage({command: 'sendUiClickTelemetry', signInOptionClicked: "auth_continueButton"})
+            this.selectedLoginOption = type
+            this.mutateStage('AUTHENTICATING')
+            if (type instanceof IdC) {
+                window.ideApi.postMessage({
+                    command: 'loginIdC',
+                    url: type.url,
+                    region: type.region,
+                    feature: this.feature
+                })
+            } else if (type instanceof BuilderId) {
+                window.ideApi.postMessage({command: 'loginBuilderId'})
+            } else if (type instanceof LongLivedIAM) {
+                window.ideApi.postMessage({
+                    command: 'loginIAM',
+                    profileName: type.profileName,
+                    accessKey: type.accessKey,
+                    secretKey: type.secret
+                })
+            } else if (type instanceof ExistConnection) {
+                window.ideApi.postMessage({ command: 'selectConnection', connectionId:  type.pluginConnectionId})
+            }
+        },
+        sendUiClickTelemetry(element: LoginIdentifier) {
+            window.ideApi.postMessage({command: 'sendUiClickTelemetry', signInOptionClicked: getUiClickEvent(element)})
+        }
+    },
+    mounted() {},
+    beforeUpdate() {}
+})
+</script>
+
+<style>
+</style>

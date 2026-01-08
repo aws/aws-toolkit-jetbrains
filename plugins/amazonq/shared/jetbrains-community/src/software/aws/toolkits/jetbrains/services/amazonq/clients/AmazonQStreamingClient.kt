@@ -14,8 +14,8 @@ import software.amazon.awssdk.services.codewhispererstreaming.model.ExportIntent
 import software.amazon.awssdk.services.codewhispererstreaming.model.ExportResultArchiveResponseHandler
 import software.amazon.awssdk.services.codewhispererstreaming.model.ThrottlingException
 import software.amazon.awssdk.services.codewhispererstreaming.model.ValidationException
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.warn
+import software.amazon.q.core.utils.getLogger
+import software.amazon.q.core.utils.warn
 import software.aws.toolkits.jetbrains.services.amazonq.RetryableOperation
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import java.time.Instant

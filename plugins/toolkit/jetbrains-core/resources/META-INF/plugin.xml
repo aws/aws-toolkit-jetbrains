@@ -6,11 +6,6 @@
     <name>AWS Toolkit</name>
     <version>1.0</version>
 
-    <!-- delete when fully split -->
-    <xi:include href="/META-INF/plugin-shim.xml">
-        <xi:fallback/>
-    </xi:include>
-
     <description><![CDATA[
 <h3><a href="https://aws.amazon.com/q">Amazon Q and CodeWhisperer</a></h3>
 <p>CodeWhisperer is now part of Amazon Q. <a href="https://plugins.jetbrains.com/plugin/24267-amazon-q/">Try the Amazon Q extension.</a></p>
@@ -137,6 +132,12 @@
     </projectListeners>
 
     <extensionPoints>
+        <extensionPoint qualifiedName="aws.toolkit.core.connection.pinned.feature" interface="software.aws.toolkits.jetbrains.core.credentials.pinning.FeatureWithPinnedConnection"
+                        dynamic="true"/>
+        <extensionPoint qualifiedName="aws.toolkit.core.credentialProviderFactory" interface="software.aws.toolkits.core.credentials.CredentialProviderFactory" dynamic="true"/>
+        <extensionPoint qualifiedName="aws.toolkit.core.startupAuthFactory" interface="software.aws.toolkits.jetbrains.core.credentials.ToolkitStartupAuthFactory" dynamic="true"/>
+        <extensionPoint qualifiedName="aws.toolkit.core.sdk.clientCustomizer" interface="software.aws.toolkits.core.ToolkitClientCustomizer" dynamic="true"/>
+
         <extensionPoint name="lambda.runtimeGroup" interface="software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup" dynamic="true"/>
 
         <extensionPoint name="lambda.builder" beanClass="software.aws.toolkits.jetbrains.core.IdBasedExtensionPoint" dynamic="true">
@@ -174,8 +175,92 @@
         <extensionPoint name="devTools.treeStructure" interface="software.aws.toolkits.jetbrains.core.explorer.devToolsTab.DevToolsTreeStructureProvider" dynamic="true"/>
     </extensionPoints>
 
+    <extensions defaultExtensionNs="aws.toolkit">
+        <core.credentialProviderFactory implementation="software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileCredentialProviderFactory"/>
+
+        <!-- need to resolve hard dependency on telemetry querying the status of these -->
+        <core.connection.pinned.feature implementation="software.aws.toolkits.jetbrains.core.credentials.pinning.CodeCatalystConnection"/>
+        <core.connection.pinned.feature implementation="software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection"/>
+    </extensions>
+
     <extensions defaultExtensionNs="com.intellij">
         <dependencySupport kind="executable" coordinate="aws"/>
+
+        <applicationConfigurable
+            id="aws"
+            groupId="tools"
+            bundle="software.aws.toolkits.resources.MessagesBundle"
+            key="aws.settings.title"
+            instance="software.aws.toolkits.jetbrains.settings.AwsSettingsSharedConfigurable"
+        />
+
+        <httpRequestHandler implementation="software.aws.toolkits.jetbrains.core.credentials.sso.pkce.ToolkitOAuthCallbackHandler"/>
+        <httpRequestHandler implementation="software.aws.toolkits.jetbrains.core.credentials.sso.pkce.ToolkitOAuthCallbackResultService"/>
+
+        <postStartupActivity implementation="software.aws.toolkits.jetbrains.core.plugin.PluginAutoUpdater"/>
+        <postStartupActivity implementation="software.aws.toolkits.jetbrains.core.AwsTelemetryPrompter"/>
+        <postStartupActivity implementation="software.aws.toolkits.jetbrains.services.telemetry.AwsToolkitStartupMetrics"/>
+
+        <registryKey key="aws.dev.useDAG" description="True if DAG should be used instead of authorization_grant with PKCE"
+                     defaultValue="false" restartRequired="false"/>
+        <registryKey key="aws.telemetry.endpoint" description="Endpoint to use for publishing AWS client-side telemetry"
+                     defaultValue="https://client-telemetry.us-east-1.amazonaws.com" restartRequired="true"/>
+        <registryKey key="aws.telemetry.identityPool" description="Cognito identity pool to use for publishing AWS client-side telemetry"
+                     defaultValue="us-east-1:820fd6d1-95c0-4ca4-bffb-3f01d32da842" restartRequired="true"/>
+        <registryKey key="aws.telemetry.region" description="Region to use for publishing AWS client-side telemetry" defaultValue="us-east-1"
+                     restartRequired="true"/>
+        <registryKey key="aws.toolkit.developerMode" description="Enables features to facilitate development of the toolkit" restartRequired="false"
+                     defaultValue="false"/>
+        <registryKey key="aws.toolkit.notification.endpoint" description="Endpoint for AWS Toolkit notifications"
+                     defaultValue="https://idetoolkits-hostedfiles.amazonaws.com/Notifications/Jetbrains/combined/2.x.json" restartRequired="true"/>
+
+        <webHelpProvider implementation="software.aws.toolkits.jetbrains.core.help.HelpIdTranslator"/>
+
+        <applicationService serviceInterface="migration.software.aws.toolkits.jetbrains.settings.AwsSettings"
+                            serviceImplementation="software.aws.toolkits.jetbrains.settings.DefaultAwsSettings"
+                            testServiceImplementation="software.aws.toolkits.jetbrains.settings.MockAwsSettings"/>
+        <applicationService serviceInterface="migration.software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager"
+                            serviceImplementation="software.aws.toolkits.jetbrains.core.credentials.DefaultToolkitAuthManager"/>
+        <applicationService serviceInterface="migration.software.aws.toolkits.jetbrains.core.credentials.pinning.ConnectionPinningManager"
+                            serviceImplementation="software.aws.toolkits.jetbrains.core.credentials.pinning.DefaultConnectionPinningManager"/>
+        <applicationService serviceInterface="migration.software.aws.toolkits.jetbrains.core.credentials.CredentialManager"
+                            serviceImplementation="software.aws.toolkits.jetbrains.core.credentials.DefaultCredentialManager"
+                            testServiceImplementation="software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager"/>
+        <applicationService serviceInterface="migration.software.aws.toolkits.jetbrains.services.telemetry.TelemetryService"
+                            serviceImplementation="software.aws.toolkits.jetbrains.services.telemetry.DefaultTelemetryService"
+                            testServiceImplementation="software.aws.toolkits.jetbrains.services.telemetry.NoOpTelemetryService"/>
+        <applicationService serviceInterface="migration.software.aws.toolkits.jetbrains.core.AwsResourceCache"
+                            serviceImplementation="software.aws.toolkits.jetbrains.core.DefaultAwsResourceCache"
+                            testServiceImplementation="software.aws.toolkits.jetbrains.core.MockResourceCache"/>
+        <applicationService serviceInterface="migration.software.aws.toolkits.core.region.ToolkitRegionProvider"
+                            serviceImplementation="software.aws.toolkits.jetbrains.core.region.AwsRegionProvider"
+                            testServiceImplementation="software.aws.toolkits.jetbrains.core.region.MockRegionProvider"/>
+        <applicationService serviceInterface="migration.software.aws.toolkits.jetbrains.core.RemoteResourceResolverProvider"
+                            serviceImplementation="software.aws.toolkits.jetbrains.core.DefaultRemoteResourceResolverProvider"/>
+        <applicationService serviceInterface="migration.software.aws.toolkits.core.clients.SdkClientProvider"
+                            serviceImplementation="software.aws.toolkits.jetbrains.core.AwsSdkClient"/>
+        <applicationService serviceInterface="migration.software.aws.toolkits.core.ToolkitClientManager"
+                            serviceImplementation="software.aws.toolkits.jetbrains.core.AwsClientManager"
+                            testServiceImplementation="software.aws.toolkits.jetbrains.core.MockClientManager"/>
+        <applicationService serviceInterface="migration.software.aws.toolkits.jetbrains.core.credentials.sso.SsoLoginCallbackProvider"
+                            serviceImplementation="software.aws.toolkits.jetbrains.core.credentials.sso.DefaultSsoLoginCallbackProvider"
+                            testServiceImplementation="software.aws.toolkits.jetbrains.core.credentials.sso.MockSsoLoginCallbackProvider"/>
+        <applicationService serviceInterface="migration.software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileWatcher"
+                            serviceImplementation="software.aws.toolkits.jetbrains.core.credentials.profiles.DefaultProfileWatcher"/>
+
+        <projectService serviceInterface="software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager"
+                        serviceImplementation="software.aws.toolkits.jetbrains.core.credentials.DefaultAwsConnectionManager"
+                        testServiceImplementation="software.aws.toolkits.jetbrains.core.credentials.MockAwsConnectionManager"/>
+        <projectService serviceInterface="software.aws.toolkits.jetbrains.core.credentials.CredentialsRegionHandler"
+                        serviceImplementation="software.aws.toolkits.jetbrains.core.credentials.DefaultCredentialsRegionHandler"
+                        testServiceImplementation="software.aws.toolkits.jetbrains.core.credentials.MockCredentialsRegionHandler"/>
+        <projectService serviceInterface="software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager"
+                        serviceImplementation="software.aws.toolkits.jetbrains.core.credentials.DefaultToolkitConnectionManager"/>
+
+        <applicationService serviceImplementation="migration.software.aws.toolkits.jetbrains.core.coroutines.PluginCoroutineScopeTracker"/>
+        <projectService serviceImplementation="migration.software.aws.toolkits.jetbrains.core.coroutines.PluginCoroutineScopeTracker"/>
+        <postStartupActivity implementation = "software.aws.toolkits.jetbrains.core.notifications.NotificationServiceInitializer"/>
+        <postStartupActivity implementation="software.aws.toolkits.jetbrains.services.telemetry.AwsToolkitStartupMetrics"/>
 
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.EcsExecCommandSettings"/>
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.SamDisplayDevModeWarningSettings"/>
@@ -196,7 +281,6 @@
         <statusBarWidgetFactory id="CawsSpaceProjectInfo" implementation="software.aws.toolkits.jetbrains.services.caws.CawsStatusBarInstaller"/>
 
         <postStartupActivity implementation="software.aws.toolkits.jetbrains.core.executables.ExecutableLoader"/>
-        <postStartupActivity implementation="software.aws.toolkits.jetbrains.core.startup.QMigrationActivity"/>
         <postStartupActivity implementation="software.aws.toolkits.jetbrains.core.startup.ToolWindowStartupActivity"/>
 
         <applicationService serviceInterface="software.aws.toolkits.jetbrains.core.executables.ExecutableManager"
@@ -312,8 +396,8 @@
     </extensions>
 
     <extensions defaultExtensionNs="aws.toolkit">
-        <credentialProviderFactory implementation="software.aws.toolkits.jetbrains.core.credentials.metadataservice.ContainerCredentialProviderFactory"/>
-        <credentialProviderFactory implementation="software.aws.toolkits.jetbrains.core.credentials.metadataservice.InstanceRoleCredentialProviderFactory"/>
+        <core.credentialProviderFactory implementation="software.aws.toolkits.jetbrains.core.credentials.metadataservice.ContainerCredentialProviderFactory"/>
+        <core.credentialProviderFactory implementation="software.aws.toolkits.jetbrains.core.credentials.metadataservice.InstanceRoleCredentialProviderFactory"/>
 
         <!-- Executables -->
         <executable implementation="software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable"/>
@@ -341,10 +425,13 @@
 
         <tool implementation="software.aws.toolkits.jetbrains.services.ssm.SsmPlugin"/>
 
-        <sdk.clientCustomizer implementation="software.aws.toolkits.jetbrains.services.caws.CawsClientCustomizer"/>
+        <core.sdk.clientCustomizer implementation="software.aws.toolkits.jetbrains.services.caws.CawsClientCustomizer"/>
     </extensions>
 
     <actions resource-bundle="software.aws.toolkits.resources.MessagesBundle">
+        <action id="aws.toolkit.open.telemetry.viewer" class="software.aws.toolkits.jetbrains.services.telemetry.OpenTelemetryAction"/>
+        <action class="software.aws.toolkits.jetbrains.core.credentials.CreateOrUpdateCredentialProfilesAction" id="aws.settings.upsertCredentials"/>
+
         <action id="aws.settings.refresh" class="software.aws.toolkits.jetbrains.core.credentials.RefreshConnectionAction"/>
         <action id="aws.toolkit.showFeedback" class="software.aws.toolkits.jetbrains.ui.feedback.ShowFeedbackDialogAction"/>
         <action id="aws.toolkit.open.arn.browser" class="software.aws.toolkits.jetbrains.services.federation.OpenArnInConsoleEditorPopupAction">
@@ -441,7 +528,6 @@
             <action id="lambda.function.delete"
                     class="software.aws.toolkits.jetbrains.services.lambda.actions.DeleteFunctionAction"/>
         </group>
-        
         <group id="aws.toolkit.explorer.cloudformation.stack" popup="true" compact="false">
             <action id="cloudformation.stack.view"
                     class="software.aws.toolkits.jetbrains.services.cloudformation.stack.OpenStackUiAction"/>

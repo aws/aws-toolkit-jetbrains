@@ -28,8 +28,8 @@ import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.codewhispererstreaming.CodeWhispererStreamingAsyncClient
 import software.amazon.awssdk.services.codewhispererstreaming.CodeWhispererStreamingAsyncClientBuilder
 import software.amazon.awssdk.services.codewhispererstreaming.model.GenerateAssistantResponseResponseHandler
-import software.aws.toolkits.jetbrains.core.AwsClientManager
-import software.aws.toolkits.jetbrains.core.MockClientManager.Companion.useRealImplementations
+import software.amazon.q.jetbrains.core.AwsClientManager
+import software.amazon.q.jetbrains.core.MockClientManager.Companion.useRealImplementations
 import java.util.concurrent.CountDownLatch
 
 class CodeWhispererEndpointCustomizerTest {

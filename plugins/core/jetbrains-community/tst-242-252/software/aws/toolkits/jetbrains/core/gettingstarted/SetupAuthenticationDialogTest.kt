@@ -57,6 +57,11 @@ class SetupAuthenticationDialogTest {
     @RegisterExtension
     val mockRegionProvider = MockRegionProviderExtension()
 
+//    @BeforeEach
+//    fun setUp(@TestDisposable disposable: Disposable) {
+//        CoreTestHelper.registerMissingServices(disposable)
+//    }
+
     @Test
     fun `login to IdC tab`() {
         mockkStatic(::authAndUpdateConfig)

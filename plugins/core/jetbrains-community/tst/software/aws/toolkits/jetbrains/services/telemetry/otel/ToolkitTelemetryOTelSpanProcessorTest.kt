@@ -35,6 +35,7 @@ import software.aws.toolkits.telemetry.CodewhispererTriggerType
 import software.aws.toolkits.telemetry.MetricResult
 import software.aws.toolkits.telemetry.Telemetry
 import java.time.Instant
+// import software.aws.toolkits.jetbrains.core.CoreTestHelper
 
 @ExtendWith(ApplicationExtension::class)
 class ToolkitTelemetryOTelSpanProcessorTest {
@@ -48,6 +49,7 @@ class ToolkitTelemetryOTelSpanProcessorTest {
 
     @BeforeEach
     fun setUp(@TestDisposable disposable: Disposable) {
+//        CoreTestHelper.registerMissingServices(disposable)
         batcher = mock()
         telemetryService = spy(TestTelemetryService(batcher = batcher))
         ApplicationManager.getApplication().replaceService(TelemetryService::class.java, telemetryService, disposable)

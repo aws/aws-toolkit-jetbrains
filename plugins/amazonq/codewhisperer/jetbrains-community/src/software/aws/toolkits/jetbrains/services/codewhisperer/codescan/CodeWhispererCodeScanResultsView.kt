@@ -20,8 +20,8 @@ import com.intellij.ui.components.ActionLink
 import com.intellij.ui.treeStructure.Tree
 import com.intellij.util.ui.JBUI
 import icons.AwsIcons
-import software.aws.toolkits.core.utils.error
-import software.aws.toolkits.core.utils.getLogger
+import software.amazon.q.core.utils.error
+import software.amazon.q.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.IssueGroupingStrategy
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.IssueSeverity
 import software.aws.toolkits.jetbrains.services.codewhisperer.layout.CodeWhispererLayoutConfig

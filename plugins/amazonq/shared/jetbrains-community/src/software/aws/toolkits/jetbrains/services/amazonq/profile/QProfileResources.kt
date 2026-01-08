@@ -5,13 +5,13 @@ package software.aws.toolkits.jetbrains.services.amazonq.profile
 
 import software.amazon.awssdk.awscore.exception.AwsServiceException
 import software.amazon.awssdk.services.codewhispererruntime.CodeWhispererRuntimeClient
-import software.aws.toolkits.core.ClientConnectionSettings
-import software.aws.toolkits.core.utils.debug
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.warn
-import software.aws.toolkits.jetbrains.core.AwsClientManager
-import software.aws.toolkits.jetbrains.core.Resource
-import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
+import software.amazon.q.core.ClientConnectionSettings
+import software.amazon.q.core.utils.debug
+import software.amazon.q.core.utils.getLogger
+import software.amazon.q.core.utils.warn
+import software.amazon.q.jetbrains.core.AwsClientManager
+import software.amazon.q.jetbrains.core.Resource
+import software.amazon.q.jetbrains.core.region.AwsRegionProvider
 import java.time.Duration
 
 /**

@@ -10,9 +10,9 @@ import org.junit.jupiter.api.assertDoesNotThrow
 import org.mockito.kotlin.any
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
+import software.amazon.q.jetbrains.utils.rules.RunWithRealCredentials.RequiresRealCredentials
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.jsFileName
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
-import software.aws.toolkits.jetbrains.utils.rules.RunWithRealCredentials.RequiresRealCredentials
 import software.aws.toolkits.resources.message
 
 @RequiresRealCredentials

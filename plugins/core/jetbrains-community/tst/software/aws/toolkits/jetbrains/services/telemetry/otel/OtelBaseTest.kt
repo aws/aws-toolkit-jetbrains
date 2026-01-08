@@ -60,6 +60,11 @@ class OtelBaseTest {
         fun `AbstractBaseSpan#end() does not throw if all required attributes are present`() = spanEndArgs()
     }
 
+//    @BeforeEach
+//    fun setUp(@TestDisposable disposable: Disposable) {
+//        CoreTestHelper.registerMissingServices(disposable)
+//    }
+
     @Test
     fun `context propagates from parent to child - happy case`() {
         spanBuilder("tracer", "parentSpan").use {

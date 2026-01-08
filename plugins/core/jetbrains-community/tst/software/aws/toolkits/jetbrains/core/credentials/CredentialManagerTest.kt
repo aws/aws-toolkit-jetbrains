@@ -47,6 +47,11 @@ class CredentialManagerTest {
     @JvmField
     val regionProvider = MockRegionProviderRule()
 
+//    @BeforeEach
+//    fun setUp(@TestDisposable disposable: Disposable) {
+//        CoreTestHelper.registerMissingServices(disposable)
+//    }
+
     @Test
     fun testCredentialsCanLoadFromExtensions() {
         val region = getDefaultRegion()

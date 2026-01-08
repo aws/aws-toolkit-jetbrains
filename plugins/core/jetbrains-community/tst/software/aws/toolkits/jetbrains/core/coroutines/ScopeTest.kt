@@ -52,6 +52,11 @@ class ScopeTest {
     @JvmField
     val testName = TestName()
 
+//    @BeforeEach
+//    fun setUp(@TestDisposable disposable: Disposable) {
+//        CoreTestHelper.registerMissingServices(disposable)
+//    }
+
     @Test
     fun `plugin being uploaded cancels application scope`() {
         val fakePluginScope = createFakePluginScope()
