@@ -112,8 +112,10 @@ import software.aws.toolkits.jetbrains.services.amazonqCodeScan.auth.isCodeScanA
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isCodeTransformAvailable
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanIssue
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanManager
+import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererConfigurable
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CustomizationConstants
 import software.aws.toolkits.jetbrains.settings.MeetQSettings
 import software.aws.toolkits.telemetry.MetricResult
 import software.aws.toolkits.telemetry.Telemetry
@@ -607,6 +609,12 @@ class BrowserConnector(
                     isPartialResult = false
                 )
                 browser.postChat(messageToChat)
+
+                // the underlying failure reason is not exposed by Flare, so the message is a subset of the full error and is not modeled
+                if (CustomizationConstants.isInvalidCustomizationMessage(filteredMessage)) {
+                    CodeWhispererModelConfigurator.getInstance().invalidateSelectedAndNotify(project)
+                }
+
                 chatCommunicationManager.removeInflightRequestForTab(tabId)
             } catch (e: CancellationException) {
                 LOG.warn { "Cancelled chat generation" }
