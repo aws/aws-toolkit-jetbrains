@@ -55,7 +55,7 @@ dependencies {
 
             // prefer versions declared in IdeVersions
             toolkitIntelliJ.apply {
-                val defaultFlavor = if (version().get().startsWith("2025.3") || version().get().startsWith("2026.") || version().get().startsWith("2027.")) {
+                val defaultFlavor = if (version().get().startsWith("2025.3")) {
                     IdeFlavor.IU  // Use unified IntelliJ IDEA for 2025.3+
                 } else {
                     IdeFlavor.IC  // Use Community for older versions
@@ -68,7 +68,7 @@ dependencies {
 
                 type to version
             } else {
-                val defaultType = if (toolkitIntelliJ.version().get().startsWith("2025.3") || toolkitIntelliJ.version().get().startsWith("2026.") || toolkitIntelliJ.version().get().startsWith("2027.")) {
+                val defaultType = if (toolkitIntelliJ.version().get().startsWith("2025.3")) {
                     provider { IntelliJPlatformType.IntellijIdeaUltimate }
                 } else {
                     provider { IntelliJPlatformType.IntellijIdeaCommunity }
