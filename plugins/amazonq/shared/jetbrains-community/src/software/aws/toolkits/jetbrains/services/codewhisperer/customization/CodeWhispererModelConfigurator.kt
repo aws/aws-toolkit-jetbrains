@@ -203,7 +203,6 @@ class DefaultCodeWhispererModelConfigurator(private val cs: CoroutineScope) : Co
      * assigned to them via an AB feature. If so, use that customization.
      */
     override fun activeCustomization(project: Project): CodeWhispererCustomization? {
-        return CodeWhispererCustomization("arn:aws:codewhisperer:us-east-1:123456789120:customization/EDQ7NVEHA3PN")
         val selectedCustomization = calculateIfIamIdentityCenterConnection(project) { connectionIdToActiveCustomizationArn[it.id] }
 
         return selectedCustomization
