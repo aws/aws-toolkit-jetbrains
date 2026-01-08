@@ -42,6 +42,11 @@ interface CodeWhispererModelConfigurator {
      */
     fun getPersistedCustomizationOverride(): String?
 
+    /**
+     * Mark the current customization as invalid
+     */
+    fun invalidateSelectedAndNotify(project: Project)
+
     companion object {
         fun getInstance(): CodeWhispererModelConfigurator = service()
     }
