@@ -71,8 +71,6 @@ dependencies {
 
         testFramework(TestFrameworkType.Starter, configurationName = uiTestImplementation.name)
     }
-
-    testPlugins(project(":plugin-amazonq", "pluginZip"))
 }
 
 tasks.test {

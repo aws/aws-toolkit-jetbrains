@@ -10,7 +10,6 @@ import com.intellij.testFramework.runInEdtAndGet
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
-import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.core.ToolWindowHeadlessManagerImpl
 
 class AwsToolkitExplorerToolWindowTest {

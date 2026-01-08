@@ -17,8 +17,8 @@ jobs:
   generate_artifact:
     strategy:
       matrix:
-        build_target: [ ':plugin-core:buildPlugin', ':plugin-toolkit:intellij-standalone:buildPlugin', ':plugin-amazonq:buildPlugin' ]
-        version: [ '2024.3', '2025.1', '2025.2', '2025.3' ]
+        build_target: [ ':plugin-core:buildPlugin', ':plugin-toolkit:intellij-standalone:buildPlugin' ]
+        version: [ '2025.1', '2025.2', '2025.3' ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
