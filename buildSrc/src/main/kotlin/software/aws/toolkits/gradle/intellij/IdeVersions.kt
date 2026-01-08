@@ -157,32 +157,32 @@ object IdeVersions {
                 bundledPlugins = listOf("org.jetbrains.plugins.terminal")
             ),
             community = ProductProfile(
-                sdkVersion = "253.28294-EAP-CANDIDATE-SNAPSHOT",
+                sdkVersion = "2025.3.1",
                 bundledPlugins = commonPlugins + listOf(
                     "com.intellij.java",
                     "com.intellij.gradle",
                     "org.jetbrains.idea.maven",
-                    "com.intellij.properties"
+                    "com.intellij.properties",
+                    "org.toml.lang",
+                    "com.intellij.modules.json"
                 ),
                 marketplacePlugins = listOf(
-                    "org.toml.lang:253.28294.86",
-                    "PythonCore:253.28294.51",
-                    "Docker:253.28294.90",
-                    "com.intellij.modules.json:253.28294.51"
+                    "PythonCore:253.29346.138",
+                    "Docker:253.29346.125"
                 )
             ),
             ultimate = ProductProfile(
-                sdkVersion = "253.28294-EAP-CANDIDATE-SNAPSHOT",
+                sdkVersion = "2025.3.1",
                 bundledPlugins = commonPlugins + listOf(
                     "JavaScript",
                     "JavaScriptDebugger",
                     "com.intellij.database",
-                    "com.jetbrains.codeWithMe"
+                    "com.jetbrains.codeWithMe",
+                    "com.intellij.modules.json"
                 ),
                 marketplacePlugins = listOf(
-                    "Pythonid:253.28294.51",
-                    "org.jetbrains.plugins.go:253.28294.51",
-                    "com.intellij.modules.json:253.28294.51"
+                    "Pythonid:253.29346.138",
+                    "org.jetbrains.plugins.go:253.29346.50"
                 )
             ),
             rider = RiderProfile(
