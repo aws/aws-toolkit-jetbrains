@@ -31,9 +31,6 @@ val download = tasks.register<Download>("downloadResources") {
     src(listOf("https://idetoolkits.amazonwebservices.com/endpoints.json"))
     onlyIfModified(true)
     useETag(true)
-    doFirst {
-        mkdir(resourcesDir)
-    }
 }
 
 tasks.processResources {
