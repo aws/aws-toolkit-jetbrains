@@ -13,16 +13,21 @@ import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
+import com.intellij.openapi.progress.currentThreadCoroutineScope
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.ProjectManager
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import com.intellij.util.xmlb.annotations.MapAnnotation
 import com.intellij.util.xmlb.annotations.Property
+import kotlinx.coroutines.launch
+import org.eclipse.lsp4j.DidChangeConfigurationParams
 import software.amazon.awssdk.services.codewhispererruntime.CodeWhispererRuntimeClient
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.amazonq.calculateIfIamIdentityCenterConnection
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QProfileSwitchIntent
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
@@ -244,6 +249,17 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
             }
             if (isOverride) {
                 customizationArnOverrideV2 = newCustomization?.arn
+            }
+        }
+
+        if (project.isDisposed) {
+            return
+        }
+
+        // notify Flare to pick up new selection
+        currentThreadCoroutineScope().launch {
+            AmazonQLspService.executeAsyncIfRunning(project) { server ->
+                server.workspaceService.didChangeConfiguration(DidChangeConfigurationParams())
             }
         }
     }
