@@ -153,11 +153,11 @@ object IdeVersions {
         Profile(
             name = "2025.3",
             gateway = ProductProfile(
-                sdkVersion = "253.28086.53",
+                sdkVersion = "2025.3",
                 bundledPlugins = listOf("org.jetbrains.plugins.terminal")
             ),
             community = ProductProfile(
-                sdkVersion = "253.28294-EAP-CANDIDATE-SNAPSHOT",
+                sdkVersion = "2025.3",
                 bundledPlugins = commonPlugins + listOf(
                     "com.intellij.java",
                     "com.intellij.gradle",
@@ -165,14 +165,14 @@ object IdeVersions {
                     "com.intellij.properties"
                 ),
                 marketplacePlugins = listOf(
-                    "org.toml.lang:253.28294.86",
-                    "PythonCore:253.28294.51",
-                    "Docker:253.28294.90",
-                    "com.intellij.modules.json:253.28294.51"
+                    "org.toml.lang:253.28294.334",
+                    "PythonCore:253.29346.138",
+                    "Docker:253.29346.125",
+                    "com.intellij.modules.json:253.28294.251"
                 )
             ),
             ultimate = ProductProfile(
-                sdkVersion = "253.28294-EAP-CANDIDATE-SNAPSHOT",
+                sdkVersion = "2025.3",
                 bundledPlugins = commonPlugins + listOf(
                     "JavaScript",
                     "JavaScriptDebugger",
@@ -180,9 +180,9 @@ object IdeVersions {
                     "com.jetbrains.codeWithMe"
                 ),
                 marketplacePlugins = listOf(
-                    "Pythonid:253.28294.51",
-                    "org.jetbrains.plugins.go:253.28294.51",
-                    "com.intellij.modules.json:253.28294.51"
+                    "Pythonid:253.29346.138",
+                    "org.jetbrains.plugins.go:253.29346.50",
+                    "com.intellij.modules.json:253.28294.251"
                 )
             ),
             rider = RiderProfile(
