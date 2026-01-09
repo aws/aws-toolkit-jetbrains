@@ -79,7 +79,7 @@ abstract class LoginBrowser(
     protected var currentAuthorization: PendingAuthorization? = null
 
     @VisibleForTesting
-    internal val objectMapper = jacksonObjectMapper()
+    val objectMapper = jacksonObjectMapper()
 
     abstract fun handleBrowserMessage(message: BrowserMessage?)
 

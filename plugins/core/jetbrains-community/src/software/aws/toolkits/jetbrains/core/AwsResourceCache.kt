@@ -249,7 +249,7 @@ class DefaultAwsResourceCache(
     }
 
     @VisibleForTesting
-    internal fun doRunCacheMaintenance() {
+    fun doRunCacheMaintenance() {
         var totalWeight = 0
         cache.entries.removeIf { it.value.value.isCompletedExceptionally }
         val entries = cache.entries.asSequence().filter { it.value.value.isCompleted }.onEach { totalWeight += it.value.weight }.toList()
@@ -362,7 +362,7 @@ class DefaultAwsResourceCache(
     private val Entry<*>.notExpired get() = value.isActive || clock.instant().isBefore(expiry)
 
     @VisibleForTesting
-    internal fun hasCacheEntry(resourceId: String): Boolean = cache.filterKeys { it.resourceId == resourceId }.isNotEmpty()
+    fun hasCacheEntry(resourceId: String): Boolean = cache.filterKeys { it.resourceId == resourceId }.isNotEmpty()
 
     companion object {
         private val LOG = getLogger<DefaultAwsResourceCache>()

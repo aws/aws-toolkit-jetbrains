@@ -18,7 +18,7 @@ import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.credentials.promptForMfaToken
 import java.util.function.Supplier
 
-class ProfileAssumeRoleProvider(@get:TestOnly internal val parentProvider: AwsCredentialsProvider, region: AwsRegion, profile: Profile) :
+class ProfileAssumeRoleProvider(@get:TestOnly val parentProvider: AwsCredentialsProvider, region: AwsRegion, profile: Profile) :
     AwsCredentialsProvider, SdkAutoCloseable {
     private val stsClient: StsClient
     private val credentialsProvider: StsAssumeRoleCredentialsProvider

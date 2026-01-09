@@ -25,7 +25,7 @@ interface CredentialsRegionHandler {
     }
 }
 
-internal class DefaultCredentialsRegionHandler(private val project: Project) : CredentialsRegionHandler {
+class DefaultCredentialsRegionHandler(private val project: Project) : CredentialsRegionHandler {
     override fun determineSelectedRegion(identifier: CredentialIdentifier, selectedRegion: AwsRegion?): AwsRegion? {
         val settings = AwsSettings.getInstance()
         if (settings.useDefaultCredentialRegion == UseAwsCredentialRegion.Never) {

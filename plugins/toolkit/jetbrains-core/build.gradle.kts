@@ -8,6 +8,7 @@ import org.jdom2.output.XMLOutputter
 import org.jetbrains.intellij.platform.gradle.tasks.PatchPluginXmlTask
 import software.aws.toolkits.gradle.buildMetadata
 import software.aws.toolkits.gradle.changelog.tasks.GeneratePluginChangeLog
+import software.aws.toolkits.gradle.findFolders
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.IdeVersions
 import software.aws.toolkits.gradle.isCi
@@ -199,12 +200,27 @@ dependencies {
     testImplementation(project(":plugin-core:jetbrains-community"))
 }
 
-tasks.test {
-    // Include core test sources
-    testClassesDirs += project(":plugin-core:jetbrains-community").sourceSets.test.get().output.classesDirs
-    classpath += project(":plugin-core:jetbrains-community").sourceSets.test.get().runtimeClasspath
-}
+//tasks.test {
+//    // Include core test sources
+//    testClassesDirs += project(":plugin-core:jetbrains-community").sourceSets.test.get().output.classesDirs
+//    classpath += project(":plugin-core:jetbrains-community").sourceSets.test.get().runtimeClasspath
+//}
 
+sourceSets {
+    test {
+        java.srcDirs(
+            findFolders(project(":plugin-core:jetbrains-community").project, "tst", ideProfile).map {
+                project(":plugin-core:jetbrains-community").project.file(it)
+            }
+        )
+        resources.srcDirs(
+            findFolders(project(":plugin-core:jetbrains-community").project, "tst-resources", ideProfile)
+                .map {
+                    project(":plugin-core:jetbrains-community").project.file(it)
+                }
+        )
+    }
+}
 fun transformXml(document: Document, path: Path) {
     val xmlOutput = XMLOutputter()
     xmlOutput.format.apply {

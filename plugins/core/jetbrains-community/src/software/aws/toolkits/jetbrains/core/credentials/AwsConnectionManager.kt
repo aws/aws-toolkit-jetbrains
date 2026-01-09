@@ -287,7 +287,7 @@ abstract class AwsConnectionManager(private val project: Project) : SimpleModifi
 
         private val LOGGER = getLogger<AwsConnectionManager>()
         private const val MAX_HISTORY = 5
-        internal val AwsConnectionManager.selectedPartition get() = selectedRegion?.let { AwsRegionProvider.getInstance().partitions()[it.partitionId] }
+        val AwsConnectionManager.selectedPartition get() = selectedRegion?.let { AwsRegionProvider.getInstance().partitions()[it.partitionId] }
     }
 }
 

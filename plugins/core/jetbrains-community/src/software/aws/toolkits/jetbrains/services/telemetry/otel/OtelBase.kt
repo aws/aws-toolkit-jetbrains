@@ -31,7 +31,7 @@ import com.intellij.platform.diagnostic.telemetry.helpers.use as ijUse
 import com.intellij.platform.diagnostic.telemetry.helpers.useWithScope as ijUseWithScope
 
 val AWS_PRODUCT_CONTEXT_KEY = ContextKey.named<AWSProduct>("pluginDescriptor")
-internal val PLUGIN_NAME_ATTRIBUTE_KEY = AttributeKey.stringKey("pluginName")
+val PLUGIN_NAME_ATTRIBUTE_KEY = AttributeKey.stringKey("pluginName")
 
 class DefaultSpan(context: Context?, delegate: Span) : BaseSpan<DefaultSpan>(context, delegate)
 
