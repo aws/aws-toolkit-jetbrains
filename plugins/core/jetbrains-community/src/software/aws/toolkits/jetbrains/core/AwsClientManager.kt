@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.core
 
+import com.intellij.ide.plugins.PluginManager
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ApplicationNamesInfo
@@ -29,7 +30,6 @@ import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
-import software.aws.toolkits.jetbrains.services.telemetry.PluginResolver
 import software.aws.toolkits.jetbrains.settings.AwsSettings
 
 open class AwsClientManager : ToolkitClientManager(), Disposable {
@@ -87,10 +87,10 @@ open class AwsClientManager : ToolkitClientManager(), Disposable {
         fun getInstance(): ToolkitClientManager = service()
 
         fun getUserAgent(): String {
-            val pluginResolver = PluginResolver.fromCurrentThread()
-            val pluginName = pluginResolver.product.toString().replace(" ", "-")
-            val pluginVersion = pluginResolver.version
-            return "$pluginName/$pluginVersion $platformName/$platformVersion ClientId/${AwsSettings.getInstance().clientId}"
+            val platformName = tryOrNull { ApplicationNamesInfo.getInstance().fullProductNameWithEdition.replace(' ', '-') }
+            val platformVersion = tryOrNull { ApplicationInfoEx.getInstanceEx().fullVersion.replace(' ', '-') }
+            val pluginVersion = tryOrNull { PluginManager.getPluginByClass(this::class.java)?.version }
+            return "AWS-Toolkit-For-JetBrains/$pluginVersion $platformName/$platformVersion ClientId/${AwsSettings.getInstance().clientId}"
         }
 
         private val platformName = tryOrNull { ApplicationNamesInfo.getInstance().fullProductNameWithEdition.replace(' ', '-') }

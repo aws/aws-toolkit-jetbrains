@@ -200,11 +200,11 @@ dependencies {
     testImplementation(project(":plugin-core:jetbrains-community"))
 }
 
-//tasks.test {
+// tasks.test {
 //    // Include core test sources
 //    testClassesDirs += project(":plugin-core:jetbrains-community").sourceSets.test.get().output.classesDirs
 //    classpath += project(":plugin-core:jetbrains-community").sourceSets.test.get().runtimeClasspath
-//}
+// }
 
 sourceSets {
     test {
