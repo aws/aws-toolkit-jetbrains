@@ -83,8 +83,8 @@ dependencies {
 
     intellijPlatform {
         // Required for collaboration auth credentials in 2025.3+
-        val version  = IdeVersions.ideProfile(project).ultimate.sdkVersion
-        if (version.startsWith( "2025.3") ){
+        val version = IdeVersions.ideProfile(project).ultimate.sdkVersion
+        if (version.startsWith("2025.3")) {
             bundledModule("intellij.platform.collaborationTools.auth.base")
             bundledModule("intellij.platform.collaborationTools.auth")
         }
