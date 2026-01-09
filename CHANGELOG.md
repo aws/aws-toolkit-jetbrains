@@ -1,3 +1,7 @@
+# _3.101_ (2026-01-09)
+- **(Bug Fix)** fix: automatically clear customization if chat receives access denied on the customization
+- **(Bug Fix)** Amazon Q: fix issue where changing the customization does not apply to chat until project re-open
+
 # _3.100_ (2025-12-09)
 
 # _3.99_ (2025-11-21)
