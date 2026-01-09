@@ -128,7 +128,7 @@ class AsyncComboBox<T> private constructor(
 
     @TestOnly
     @Synchronized
-    internal fun waitForSelection(): Future<T?> {
+    fun waitForSelection(): Future<T?> {
         val future = AsyncPromise<T>()
         while (loading.get()) {
             Thread.onSpinWait()

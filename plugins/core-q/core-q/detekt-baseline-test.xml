@@ -1,9 +1,0 @@
-<?xml version='1.0' encoding='UTF-8'?>
-<SmellBaseline>
-  <ManuallySuppressedIssues/>
-  <CurrentIssues>
-    <ID>UnsafeCallOnNullableType:EnvironmentVariableHelper.kt$EnvironmentVariableHelper$getField(System.getenv().javaClass, System.getenv(), "m")!!</ID>
-    <ID>UnsafeCallOnNullableType:PartitionParserTest.kt$PartitionParserTest$PartitionParser.parse(BundledResources.ENDPOINTS_FILE)!!</ID>
-    <ID>UnsafeCallOnNullableType:ZipUtilsTest.kt$ZipUtilsTest$zipFile!!</ID>
-  </CurrentIssues>
-</SmellBaseline>

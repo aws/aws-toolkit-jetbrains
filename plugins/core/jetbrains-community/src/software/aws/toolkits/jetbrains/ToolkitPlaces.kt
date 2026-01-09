@@ -8,6 +8,5 @@ object ToolkitPlaces {
     const val EXPLORER_TOOL_WINDOW = "ExplorerToolWindow"
     const val EDITOR_PSI_REFERENCE = "Editor"
     const val DEV_TOOL_WINDOW = "DeveloperToolsWindow"
-    const val CWQ_TOOL_WINDOW = "CodeWhispererQWindow"
     const val ADD_CONNECTION_DIALOG = "ToolkitAddConnectionDialog"
 }

@@ -45,7 +45,7 @@ object NotificationEndpoint {
 }
 
 @Service(Service.Level.APP)
-internal final class NotificationPollingService : Disposable {
+final class NotificationPollingService : Disposable {
     private val observers = mutableListOf<() -> Unit>()
     private val alarm = AlarmFactory.getInstance().create(Alarm.ThreadToUse.POOLED_THREAD, this)
     private val pollingIntervalMs = Duration.ofMinutes(10).toMillis()

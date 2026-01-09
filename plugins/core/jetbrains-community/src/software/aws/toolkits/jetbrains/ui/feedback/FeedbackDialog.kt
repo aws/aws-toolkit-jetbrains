@@ -214,10 +214,10 @@ abstract class FeedbackDialog(
         private const val TOOLKIT_REPOSITORY_LINK = AwsToolkit.GITHUB_URL
         private const val GITHUB_LINK_BASE = "$TOOLKIT_REPOSITORY_LINK/issues/new?body="
         private fun getToolkitMetadata(): String {
-            val metadata = ClientMetadata.getDefault()
+            val metadata = ClientMetadata.DEFAULT_METADATA
             return """
                 ---
-                Toolkit: ${metadata.awsProduct} ${metadata.awsVersion}
+                Toolkit: ${metadata.productName} ${metadata.productVersion}
                 OS: ${metadata.os} ${metadata.osVersion}
                 IDE: ${metadata.parentProduct} ${metadata.parentProductVersion}
             """.trimIndent()
