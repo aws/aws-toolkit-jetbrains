@@ -60,7 +60,12 @@ dependencies {
 
     intellijPlatform {
         val version = ideProfile.community.sdkVersion
-        intellijIdeaCommunity(version, !version.contains("SNAPSHOT"))
+        // Use unified IntelliJ IDEA for 2025.3+, Community for older versions
+        if (version.startsWith("2025.3")) {
+            intellijIdeaUltimate(version, !version.contains("SNAPSHOT"))
+        } else {
+            intellijIdeaCommunity(version, !version.contains("SNAPSHOT"))
+        }
 
         localPlugin(project(":plugin-core"))
         testImplementation(project(":plugin-core:core"))
