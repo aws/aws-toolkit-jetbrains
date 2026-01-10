@@ -11,9 +11,4 @@ object ChatConstants {
     const val CUSTOMER_MESSAGE_SIZE_LIMIT = 4_000 // Maximum size of the prompt message in characters (actual API limit: 4096)
     const val FQN_SIZE_MIN = 1 // Minimum length of fully qualified name in characters (inclusive)
     const val FQN_SIZE_LIMIT = 256 // Maximum length of fully qualified name in characters (exclusive, actual API limit: 256)
-
-    // UI Message Types (correspond to TypeScript MessageCommand types)
-    const val FOOTER_INFO_LINK_CLICK = "footer-info-link-click"
-    const val RESPONSE_BODY_LINK_CLICK = "response-body-link-click"
-    const val SOURCE_LINK_CLICK = "source-link-click"
 }
