@@ -394,11 +394,11 @@ class BrowserConnector(
             }
 
             CHAT_INFO_LINK_CLICK -> {
-                node.get("params")?.get("link")?.asText()?.let { BrowserUtil.browse(it) }
+                handleChat(AmazonQChatServer.infoLinkClick, node)
             }
 
             CHAT_SOURCE_LINK_CLICK -> {
-                node.get("params")?.get("link")?.asText()?.let { BrowserUtil.browse(it) }
+                handleChat(AmazonQChatServer.sourceLinkClick, node)
             }
 
             CHAT_FILE_CLICK -> {
