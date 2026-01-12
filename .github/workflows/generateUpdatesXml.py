@@ -21,12 +21,7 @@ if __name__ == '__main__':
     versionRegex = r'.*?\-(\d.*[.-]\d{3})\.zip$'
     for asset in data['assets']:
         name = asset['name']
-        if ('plugin-amazonq' in name):
-            plugin = 'amazon.q'
-        elif ('plugin-core' in name):
-            plugin = 'aws.toolkit.core'
-        else:
-            plugin = 'aws.toolkit'
+        plugin = 'aws.toolkit'
         build = re.match(buildRegex, name)
         if build == None:
             continue
