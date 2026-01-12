@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat
 
 import com.google.gson.Gson
 import com.google.gson.JsonObject
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
@@ -203,10 +204,13 @@ class ChatCommunicationManager(private val project: Project, private val cs: Cor
                         project.messageBus.syncPublisher(QRegionProfileSelectedListener.TOPIC)
                             .onProfileSelected(project, QRegionProfileManager.getInstance().activeProfile(project))
                     } else {
-                        QRegionProfileDialog(
-                            project,
-                            selectedProfile = null
-                        ).show()
+                        // Wrap in runInEdt to ensure dialog is shown on Event Dispatch Thread
+                        runInEdt {
+                            QRegionProfileDialog(
+                                project,
+                                selectedProfile = null
+                            ).show()
+                        }
                     }
 
                     return
