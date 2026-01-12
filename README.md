@@ -4,9 +4,9 @@
 [![Version](https://img.shields.io/jetbrains/plugin/v/11349.svg?label=version)](https://plugins.jetbrains.com/plugin/11349-aws-toolkit)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=aws_aws-toolkit-jetbrains&metric=alert_status)](https://sonarcloud.io/dashboard?id=aws_aws-toolkit-jetbrains)
  
-# AWS Toolkit for JetBrains
+# Amazon Q for JetBrains
 
-AWS Toolkit for JetBrains is a plugin for JetBrains IDEs that 
+Amazon Q for JetBrains is a plugin for JetBrains IDEs that 
 make it easier to write applications built on [Amazon Web Services](https://aws.amazon.com/)
 
 The AWS Toolkit for JetBrains is open source because we want you to be involved. We appreciate issues, feature requests, pull 
@@ -27,7 +27,7 @@ All JetBrains IDEs 2023.3+
 
 ## Installation
 
-See [Installing the AWS Toolkit for JetBrains](https://docs.aws.amazon.com/console/toolkit-for-jetbrains/install) in the AWS Toolkit for JetBrains User Guide.
+See [Installing the Amazon Q for JetBrains](https://docs.aws.amazon.com/console/toolkit-for-jetbrains/install) in the Amazon Q for JetBrains User Guide.
 
 To use this AWS Toolkit, you will first need an AWS account, a user within that account, and an access key for that 
 user. To use the AWS Toolkit to do AWS serverless application development and to run/debug AWS Lambda functions locally,

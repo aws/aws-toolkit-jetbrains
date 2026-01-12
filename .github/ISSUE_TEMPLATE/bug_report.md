@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Create a bug report to help us improve the AWS Toolkit
+about: Create a bug report to help us improve Amazon Q
 labels: bug
 ---
 
@@ -24,9 +24,7 @@ labels: bug
 - OS: 
 - JetBrains product:
 - JetBrains product version:
-- AWS Toolkit version:
-- SAM CLI version:
-- JVM/Python version:
+- Amazon Q version:
 
 **Additional context**
 <!-- Add any other context about the problem here. -->

@@ -36,21 +36,6 @@ aws-toolkit-jetbrains
 │   │   │   └── build.gradle.kts
 │   │   └── build.gradle.kts
 │   │
-│   ├── toolkit                             :plugin-toolkit
-│   │   ├── community                       :plugin-toolkit:community
-│   │   │   ├── ⋮
-│   │   │   └── build.gradle.kts
-│   │   ├── ultimate                        :plugin-toolkit:ultimate
-│   │   │   ├── ⋮
-│   │   │   └── build.gradle.kts
-│   │   ├── rider                           :plugin-toolkit:rider
-│   │   │   ├── ⋮
-│   │   │   └── build.gradle.kts
-│   │   ├── gateway                         :plugin-toolkit:gateway
-│   │   │   ├── ⋮
-│   │   │   └── build.gradle.kts
-│   │   └── build.gradle.kts
-│   │
 │   ├── amazonq                              :plugin-amazonq
 │   │   ├── codewhisperer                   :plugin-amazonq:codewhisperer
 │   │   │   ├── community                   :plugin-amazonq:codewhisperer:community
@@ -140,7 +125,6 @@ For artifacts where major functional logic is developed by multiple independent 
 
 Below is a sample of the layout and sourceset interactions for the given artifacts:
 * `plugin-core.zip`
-* `plugin-toolkit.zip`
 * `plugin-amazonq.zip`
 
 ```mermaid
@@ -148,7 +132,6 @@ flowchart LR
     common
 
     common <-. depends/input for .-> plugin-core
-    common <-. depends/input for .-> plugin-toolkit
     common <-. depends/input for .-> plugin-amazonq
 
     subgraph plugin-core
@@ -181,35 +164,6 @@ flowchart LR
         plugincorezip[plugin-core.zip\n* instrumented-community.jar\n* instrumented-ultimate.jar\n* instrumented-rider.jar\n* resources.jar\n* sdk-codegen.jar\n* common.jar]
         style plugincorezip text-align:left
     end
-
-    subgraph plugin-toolkit
-        resources-toolkit[resources]
-
-        community-toolkit --depends--> resources-toolkit
-        subgraph plugintoolkitintellij[intellij platform sourcesets]
-            community-toolkit[community]
-            ultimate-toolkit[ultimate]
-            rider-toolkit[rider]
-
-            ultimate-toolkit --depends--> community-toolkit
-            rider-toolkit --depends--> ultimate-toolkit
-            rider-toolkit --depends--> community-toolkit
-
-            community-toolkit -. input for .-> instrument-toolkit
-            rider-toolkit -. input for .-> instrument-toolkit
-            ultimate-toolkit -. input for .-> instrument-toolkit
-            instrument-toolkit[[InstrumentJarTask]]
-        end
-
-        resources-toolkit -. input for .-> build-toolkit
-        instrument-toolkit -. input for .-> build-toolkit
-        build-toolkit[[PrepareSandbox + BuildPlugin]]
-
-        build-toolkit -- emits --> plugintoolkitzip
-        plugintoolkitzip[plugin-toolkit.zip\n* instrumented-community.jar\n* instrumented-ultimate.jar\n* instrumented-rider.jar\n* resources.jar\n* common.jar]
-        style plugintoolkitzip text-align:left
-    end
-
 
     subgraph plugin-amazonq
         direction LR
@@ -258,6 +212,5 @@ flowchart LR
         style pluginamazonqzip text-align:left
     end
 
-    plugin-toolkit -. runtime dependency on API .-> plugincorezip
     plugin-amazonq -. runtime dependency on API .-> plugincorezip
 ```
