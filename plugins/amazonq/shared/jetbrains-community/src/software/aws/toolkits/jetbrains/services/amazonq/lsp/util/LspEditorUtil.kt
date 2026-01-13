@@ -11,6 +11,7 @@ import com.intellij.openapi.editor.LogicalPosition
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
@@ -98,23 +99,44 @@ object LspEditorUtil {
         }
 
     fun applyWorkspaceEdit(project: Project, edit: WorkspaceEdit) {
+        val modifiedFiles = mutableSetOf<VirtualFile>()
+
         WriteCommandAction.runWriteCommandAction(project) {
             edit.documentChanges?.forEach { change ->
                 if (change.isLeft) {
                     val textDocumentEdit = change.left
-                    applyEditsToFile(project, textDocumentEdit.textDocument.uri, textDocumentEdit.edits)
+                    applyEditsToFile(project, textDocumentEdit.textDocument.uri, textDocumentEdit.edits)?.let {
+                        modifiedFiles.add(it)
+                    }
                 }
             }
 
             edit.changes?.forEach { (uri, textEdits) ->
-                applyEditsToFile(project, uri, textEdits)
+                applyEditsToFile(project, uri, textEdits)?.let {
+                    modifiedFiles.add(it)
+                }
             }
+
+            // Save all modified documents to ensure changes are persisted
+            if (modifiedFiles.isNotEmpty()) {
+                val documentManager = FileDocumentManager.getInstance()
+                modifiedFiles.forEach { file ->
+                    documentManager.getDocument(file)?.let { doc ->
+                        documentManager.saveDocument(doc)
+                    }
+                }
+            }
+        }
+
+        // Refresh VFS for all modified files to notify the IDE of changes
+        if (modifiedFiles.isNotEmpty()) {
+            VfsUtil.markDirtyAndRefresh(false, false, true, *modifiedFiles.toTypedArray())
         }
     }
 
-    private fun applyEditsToFile(project: Project, uri: String, textEdits: List<TextEdit>) {
-        val file = VirtualFileManager.getInstance().findFileByUrl(uri) ?: return
-        val document = FileDocumentManager.getInstance().getDocument(file) ?: return
+    private fun applyEditsToFile(project: Project, uri: String, textEdits: List<TextEdit>): VirtualFile? {
+        val file = VirtualFileManager.getInstance().findFileByUrl(uri) ?: return null
+        val document = FileDocumentManager.getInstance().getDocument(file) ?: return null
         val editor = FileEditorManager.getInstance(project).getSelectedEditor(file)?.let {
             if (it is com.intellij.openapi.fileEditor.TextEditor) it.editor else null
         }
@@ -124,6 +146,8 @@ object LspEditorUtil {
             val endOffset = calculateOffset(editor, document, textEdit.range.end)
             document.replaceString(startOffset, endOffset, textEdit.newText)
         }
+
+        return file
     }
 
     private fun calculateOffset(editor: Editor?, document: Document, position: Position): Int =
