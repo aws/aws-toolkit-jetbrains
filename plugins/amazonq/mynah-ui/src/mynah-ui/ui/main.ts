@@ -86,6 +86,25 @@ export class WebviewUIHandler {
 
 
     mynahUIRef: { mynahUI: MynahUI | undefined }
+
+    /**
+     * Scrolls the chat container to the bottom to show the latest message.
+     * This is called after adding new chat items to ensure auto-scroll behavior.
+     */
+    private scrollToBottom(tabID: string): void {
+        // Use requestAnimationFrame to ensure DOM has updated before scrolling
+        requestAnimationFrame(() => {
+            const chatContainer = document.querySelector(`[data-tab-id="${tabID}"] .mynah-chat-wrapper`)
+                ?? document.querySelector('.mynah-chat-wrapper')
+            if (chatContainer) {
+                chatContainer.scrollTo({
+                    top: chatContainer.scrollHeight,
+                    behavior: 'smooth'
+                })
+            }
+        })
+    }
+
     constructor({
                     postMessage,
                     mynahUIRef,
@@ -295,6 +314,7 @@ export class WebviewUIHandler {
                     }
 
                     this.mynahUI?.addChatItem(tabID, chatItem)
+                    this.scrollToBottom(tabID)
                     this.mynahUI?.updateStore(tabID, {
                         cancelButtonWhenLoading: false,
                         loadingChat: chatItem.type !== ChatItemType.ANSWER,
@@ -382,6 +402,7 @@ export class WebviewUIHandler {
 
                 if (item.body !== undefined || item.relatedContent !== undefined || item.followUp !== undefined) {
                     this.mynahUI?.addChatItem(tabID, item)
+                    this.scrollToBottom(tabID)
                 }
 
                 if (
@@ -455,6 +476,7 @@ export class WebviewUIHandler {
                     this.tabsStorage.updateTabStatus(tabID, 'free')
 
                     this.mynahUI?.addChatItem(tabID, answer)
+                    this.scrollToBottom(tabID)
                 } else {
                     const newTabId = this.mynahUI?.updateStore('', {
                         tabTitle: 'Error',
@@ -522,6 +544,7 @@ export class WebviewUIHandler {
                         },
                     ],
                 })
+                this.scrollToBottom(tabId)
                 this.tabsStorage.updateTabStatus(tabId, 'free')
                 this.mynahUI?.updateStore(tabId, {
                     loadingChat: false,
@@ -571,6 +594,7 @@ export class WebviewUIHandler {
                     }
 
                     this.mynahUI?.addChatItem(tabID, chatItem)
+                    this.scrollToBottom(tabID)
                     this.mynahUI?.updateStore(tabID, {
                         loadingChat: chatItem.type !== ChatItemType.ANSWER
                     })
