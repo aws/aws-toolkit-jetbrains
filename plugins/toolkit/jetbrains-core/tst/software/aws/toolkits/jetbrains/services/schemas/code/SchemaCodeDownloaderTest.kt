@@ -32,11 +32,11 @@ import software.amazon.awssdk.services.schemas.model.InternalServerErrorExceptio
 import software.amazon.awssdk.services.schemas.model.NotFoundException
 import software.amazon.awssdk.services.schemas.model.PutCodeBindingRequest
 import software.amazon.awssdk.services.schemas.model.PutCodeBindingResponse
-import software.aws.toolkits.core.utils.WaiterTimeoutException
-import software.aws.toolkits.core.utils.delegateMock
+import software.aws.toolkit.core.utils.WaiterTimeoutException
+import software.aws.toolkit.core.utils.delegateMock
 import software.aws.toolkits.jetbrains.services.schemas.SchemaCodeLangs
 import software.aws.toolkits.jetbrains.services.schemas.SchemaSummary
-import software.aws.toolkits.jetbrains.utils.rules.NotificationListenerRule
+import software.aws.toolkit.jetbrains.utils.rules.NotificationListenerRule
 import java.io.File
 import java.io.FileOutputStream
 import java.math.BigInteger

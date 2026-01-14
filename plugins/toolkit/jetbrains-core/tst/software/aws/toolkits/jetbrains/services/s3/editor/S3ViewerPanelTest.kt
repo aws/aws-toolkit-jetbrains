@@ -15,7 +15,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.mock
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response
-import software.aws.toolkits.core.utils.test.aString
+import software.aws.toolkit.core.utils.test.aString
 import software.aws.toolkits.jetbrains.utils.rules.EdtDisposableRule
 
 class S3ViewerPanelTest {

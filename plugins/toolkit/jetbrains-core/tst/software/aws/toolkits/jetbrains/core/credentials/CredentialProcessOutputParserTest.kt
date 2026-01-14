@@ -9,7 +9,9 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.intellij.lang.annotations.Language
 import org.junit.Test
-import software.aws.toolkits.jetbrains.utils.isInstanceOf
+import software.aws.toolkit.jetbrains.core.credentials.CredentialProcessOutput
+import software.aws.toolkit.jetbrains.core.credentials.DefaultCredentialProcessOutputParser
+import software.aws.toolkit.jetbrains.utils.isInstanceOf
 import java.time.Instant
 
 class CredentialProcessOutputParserTest {

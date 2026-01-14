@@ -5,8 +5,8 @@ package software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights
 
 import com.intellij.ui.SimpleColoredComponent
 import com.intellij.util.ui.ColumnInfo
-import software.aws.toolkits.jetbrains.utils.ui.ResizingTextColumnRenderer
-import software.aws.toolkits.jetbrains.utils.ui.setSelectionHighlighting
+import software.aws.toolkit.jetbrains.utils.ui.ResizingTextColumnRenderer
+import software.aws.toolkit.jetbrains.utils.ui.setSelectionHighlighting
 import software.aws.toolkits.resources.message
 import java.awt.Component
 import javax.swing.JTable

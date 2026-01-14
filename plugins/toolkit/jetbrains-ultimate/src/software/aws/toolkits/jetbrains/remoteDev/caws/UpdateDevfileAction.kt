@@ -16,13 +16,13 @@ import com.intellij.openapi.progress.Task
 import com.intellij.openapi.ui.MessageDialogBuilder
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
-import software.aws.toolkits.core.utils.error
-import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkit.core.utils.error
+import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.credentials.sono.lazilyGetUserId
 import software.aws.toolkits.jetbrains.services.caws.CawsConstants
 import software.aws.toolkits.jetbrains.services.caws.envclient.CawsEnvironmentClient
 import software.aws.toolkits.jetbrains.services.caws.envclient.models.StartDevfileRequest
-import software.aws.toolkits.jetbrains.utils.notifyError
+import software.aws.toolkit.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodecatalystTelemetry
 import java.nio.file.Path

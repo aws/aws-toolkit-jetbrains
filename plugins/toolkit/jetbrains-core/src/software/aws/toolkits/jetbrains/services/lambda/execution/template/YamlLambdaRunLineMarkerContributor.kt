@@ -10,7 +10,7 @@ import com.intellij.psi.PsiElement
 import org.jetbrains.yaml.psi.YAMLKeyValue
 import software.aws.toolkits.jetbrains.services.cloudformation.Function
 import software.aws.toolkits.jetbrains.services.cloudformation.yaml.YamlCloudFormationTemplate
-import software.aws.toolkits.jetbrains.utils.isTestOrInjectedText
+import software.aws.toolkit.jetbrains.utils.isTestOrInjectedText
 
 class YamlLambdaRunLineMarkerContributor : RunLineMarkerContributor() {
 

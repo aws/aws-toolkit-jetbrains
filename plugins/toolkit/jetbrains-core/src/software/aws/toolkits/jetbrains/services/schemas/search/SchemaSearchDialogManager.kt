@@ -5,7 +5,7 @@ package software.aws.toolkits.jetbrains.services.schemas.search
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
-import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
+import software.aws.toolkit.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkits.jetbrains.services.schemas.search.SchemaSearchDialogManager.DialogStateCacheKey.AllRegistriesDialogStateCacheKey
 import software.aws.toolkits.jetbrains.services.schemas.search.SchemaSearchDialogManager.DialogStateCacheKey.SingleRegistryDialogStateCacheKey
 

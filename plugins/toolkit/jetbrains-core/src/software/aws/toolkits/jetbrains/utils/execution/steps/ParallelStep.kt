@@ -3,7 +3,7 @@
 
 package software.aws.toolkits.jetbrains.utils.execution.steps
 
-import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
+import software.aws.toolkit.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionException
 

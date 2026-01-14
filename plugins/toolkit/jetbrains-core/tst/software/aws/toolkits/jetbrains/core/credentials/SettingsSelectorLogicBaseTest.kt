@@ -9,11 +9,12 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import software.aws.toolkits.core.credentials.CredentialIdentifier
-import software.aws.toolkits.core.region.AwsRegion
+import software.aws.toolkit.jetbrains.core.credentials.MockCredentialManagerRule
+import software.aws.toolkit.core.credentials.CredentialIdentifier
+import software.aws.toolkit.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsMenuBuilder.SwitchCredentialsAction
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsMenuBuilder.SwitchRegionAction
-import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
+import software.aws.toolkit.jetbrains.core.region.MockRegionProviderRule
 import software.aws.toolkits.resources.message
 
 class SettingsSelectorLogicBaseTest {

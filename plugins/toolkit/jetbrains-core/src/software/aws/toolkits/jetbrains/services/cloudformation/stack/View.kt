@@ -10,7 +10,7 @@ import com.intellij.util.Alarm
 import com.intellij.util.AlarmFactory
 import software.amazon.awssdk.services.cloudformation.model.ResourceStatus
 import software.amazon.awssdk.services.cloudformation.model.StackStatus
-import software.aws.toolkits.jetbrains.utils.ui.BETTER_GREEN
+import software.aws.toolkit.jetbrains.utils.ui.BETTER_GREEN
 import javax.swing.Icon
 import javax.swing.JComponent
 import javax.swing.SwingUtilities

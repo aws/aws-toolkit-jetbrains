@@ -16,8 +16,8 @@ import com.intellij.ui.dsl.builder.columns
 import com.intellij.ui.dsl.builder.panel
 import software.amazon.awssdk.services.codecatalyst.CodeCatalystClient
 import software.amazon.awssdk.services.codecatalyst.model.InstanceType
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.warn
+import software.aws.toolkit.core.utils.getLogger
+import software.aws.toolkit.core.utils.warn
 import software.aws.toolkits.jetbrains.core.credentials.sono.lazilyGetUserId
 import software.aws.toolkits.jetbrains.gateway.GatewayProduct
 import software.aws.toolkits.jetbrains.gateway.Workspace
@@ -26,7 +26,7 @@ import software.aws.toolkits.jetbrains.gateway.cawsEnvironmentTimeout
 import software.aws.toolkits.jetbrains.gateway.ideVersionComboBox
 import software.aws.toolkits.jetbrains.services.caws.InactivityTimeout
 import software.aws.toolkits.jetbrains.services.caws.loadParameterDescriptions
-import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
+import software.aws.toolkit.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodecatalystTelemetry
 import software.aws.toolkits.telemetry.CodecatalystUpdateDevEnvironmentLocationType

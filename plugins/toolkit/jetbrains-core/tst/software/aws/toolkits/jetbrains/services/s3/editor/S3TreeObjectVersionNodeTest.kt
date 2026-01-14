@@ -12,7 +12,7 @@ import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.Bucket
-import software.aws.toolkits.core.utils.delegateMock
+import software.aws.toolkit.core.utils.delegateMock
 import java.time.Instant
 
 class S3TreeObjectVersionNodeTest {

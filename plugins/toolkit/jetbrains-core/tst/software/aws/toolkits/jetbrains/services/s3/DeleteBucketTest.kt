@@ -23,8 +23,8 @@ import software.amazon.awssdk.services.s3.model.ListObjectVersionsRequest
 import software.amazon.awssdk.services.s3.model.ListObjectVersionsResponse
 import software.amazon.awssdk.services.s3.model.ObjectVersion
 import software.amazon.awssdk.services.s3.paginators.ListObjectVersionsIterable
-import software.aws.toolkits.core.s3.deleteBucketAndContents
-import software.aws.toolkits.jetbrains.core.MockClientManagerRule
+import software.aws.toolkit.core.s3.deleteBucketAndContents
+import software.aws.toolkit.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.services.s3.bucketActions.DeleteBucketAction
 import software.aws.toolkits.jetbrains.services.s3.editor.S3VirtualBucket
 import software.aws.toolkits.jetbrains.utils.associateFilePattern

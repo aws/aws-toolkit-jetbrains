@@ -6,7 +6,7 @@ package software.aws.toolkits.jetbrains.services.cloudformation.stack
 import com.intellij.openapi.Disposable
 import com.intellij.util.ui.JBUI
 import software.amazon.awssdk.services.cloudformation.model.StackResource
-import software.aws.toolkits.jetbrains.utils.ui.WrappingCellRenderer
+import software.aws.toolkit.jetbrains.utils.ui.WrappingCellRenderer
 import software.aws.toolkits.resources.message
 import javax.swing.JComponent
 

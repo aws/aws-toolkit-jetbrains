@@ -9,8 +9,8 @@ import com.intellij.openapi.ui.TextFieldWithBrowseButton
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.PlatformUtils
 import software.amazon.awssdk.services.lambda.model.PackageType
-import software.aws.toolkits.core.lambda.LambdaArchitecture
-import software.aws.toolkits.core.lambda.LambdaRuntime
+import software.aws.toolkit.core.lambda.LambdaArchitecture
+import software.aws.toolkit.core.lambda.LambdaRuntime
 import software.aws.toolkits.jetbrains.services.lambda.BuiltInRuntimeGroups
 import software.aws.toolkits.jetbrains.services.lambda.wizard.IntelliJSdkSelectionPanel
 import software.aws.toolkits.jetbrains.services.lambda.wizard.LocationBasedTemplate

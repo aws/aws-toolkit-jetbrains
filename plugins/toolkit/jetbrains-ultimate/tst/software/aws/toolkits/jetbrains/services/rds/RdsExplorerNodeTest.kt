@@ -7,14 +7,14 @@ import com.intellij.testFramework.ProjectRule
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
-import software.aws.toolkits.core.utils.RuleUtils
-import software.aws.toolkits.core.utils.test.aString
-import software.aws.toolkits.core.utils.test.hasOnlyElementsOfTypeKt
-import software.aws.toolkits.jetbrains.core.MockResourceCacheRule
+import software.aws.toolkit.core.utils.RuleUtils
+import software.aws.toolkit.core.utils.test.aString
+import software.aws.toolkit.core.utils.test.hasOnlyElementsOfTypeKt
+import software.aws.toolkit.jetbrains.core.MockResourceCacheRule
 import software.aws.toolkits.jetbrains.core.explorer.nodes.RdsExplorerRootNode
 import software.aws.toolkits.jetbrains.services.rds.resources.LIST_SUPPORTED_CLUSTERS
 import software.aws.toolkits.jetbrains.services.rds.resources.LIST_SUPPORTED_INSTANCES
-import software.aws.toolkits.jetbrains.utils.allSatisfyKt
+import software.aws.toolkit.jetbrains.utils.allSatisfyKt
 
 class RdsExplorerNodeTest {
     @JvmField

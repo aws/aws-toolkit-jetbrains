@@ -18,8 +18,8 @@ import software.amazon.awssdk.services.cloudwatchlogs.model.DeleteLogGroupReques
 import software.amazon.awssdk.services.cloudwatchlogs.model.DescribeLogStreamsRequest
 import software.amazon.awssdk.services.cloudwatchlogs.model.DescribeLogStreamsResponse
 import software.amazon.awssdk.services.cloudwatchlogs.model.LogStream
-import software.aws.toolkits.core.utils.test.retryableAssert
-import software.aws.toolkits.jetbrains.core.MockClientManagerRule
+import software.aws.toolkit.core.utils.test.retryableAssert
+import software.aws.toolkit.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.ToolWindowHeadlessManagerImpl
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.DeleteGroupAction
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.toolwindow.CloudWatchLogsToolWindowFactory

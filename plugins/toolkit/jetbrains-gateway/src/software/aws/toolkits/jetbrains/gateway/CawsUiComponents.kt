@@ -25,7 +25,7 @@ import software.aws.toolkits.jetbrains.services.caws.CawsEndpoints
 import software.aws.toolkits.jetbrains.services.caws.EnvironmentParameters
 import software.aws.toolkits.jetbrains.services.caws.InactivityTimeout
 import software.aws.toolkits.jetbrains.services.caws.isSupportedInFreeTier
-import software.aws.toolkits.jetbrains.ui.AsyncComboBox
+import software.aws.toolkit.jetbrains.ui.AsyncComboBox
 import software.aws.toolkits.resources.message
 import java.awt.Component
 import javax.swing.DefaultComboBoxModel

@@ -9,15 +9,15 @@ import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.project.Project
 import com.intellij.ui.SimpleTextAttributes
-import software.aws.toolkits.jetbrains.ToolkitPlaces
-import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeCatalystConnection
+import software.aws.toolkit.jetbrains.ToolkitPlaces
+import software.aws.toolkit.jetbrains.core.credentials.pinning.CodeCatalystConnection
 import software.aws.toolkits.jetbrains.core.explorer.actions.AnActionTreeNode
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.actions.OpenWorkspaceInGateway
-import software.aws.toolkits.jetbrains.core.gettingstarted.editor.ActiveConnection
-import software.aws.toolkits.jetbrains.core.gettingstarted.editor.ActiveConnectionType
-import software.aws.toolkits.jetbrains.core.gettingstarted.editor.BearerTokenFeatureSet
-import software.aws.toolkits.jetbrains.core.gettingstarted.editor.checkBearerConnectionValidity
-import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
+import software.aws.toolkit.jetbrains.core.gettingstarted.editor.ActiveConnection
+import software.aws.toolkit.jetbrains.core.gettingstarted.editor.ActiveConnectionType
+import software.aws.toolkit.jetbrains.core.gettingstarted.editor.BearerTokenFeatureSet
+import software.aws.toolkit.jetbrains.core.gettingstarted.editor.checkBearerConnectionValidity
+import software.aws.toolkit.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.resources.message
 
 class CawsRootNode(private val nodeProject: Project) : AbstractTreeNode<String>(nodeProject, CawsServiceNode.NODE_NAME), PinnedConnectionNode {

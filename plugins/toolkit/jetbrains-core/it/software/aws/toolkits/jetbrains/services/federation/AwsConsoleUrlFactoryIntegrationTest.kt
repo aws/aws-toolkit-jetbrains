@@ -12,10 +12,10 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider
-import software.aws.toolkits.core.ConnectionSettings
-import software.aws.toolkits.core.region.AwsRegion
-import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
-import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
+import software.aws.toolkit.core.ConnectionSettings
+import software.aws.toolkit.core.region.AwsRegion
+import software.aws.toolkit.jetbrains.core.credentials.MockCredentialManagerRule
+import software.aws.toolkit.jetbrains.core.region.AwsRegionProvider
 
 @RunWith(Parameterized::class)
 class AwsConsoleUrlFactoryIntegrationTest(@Suppress("UNUSED_PARAMETER") regionId: String, private val region: AwsRegion) {

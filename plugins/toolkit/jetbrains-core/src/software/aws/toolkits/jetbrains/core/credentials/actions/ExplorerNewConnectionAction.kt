@@ -10,8 +10,8 @@ import com.intellij.openapi.project.DumbAwareAction
 import software.aws.toolkits.jetbrains.core.explorer.ShowToolkitListener
 import software.aws.toolkits.jetbrains.core.explorer.webview.ToolkitWebviewPanel
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanel
-import software.aws.toolkits.jetbrains.core.webview.BrowserState
-import software.aws.toolkits.jetbrains.utils.isQWebviewsAvailable
+import software.aws.toolkit.jetbrains.core.webview.BrowserState
+import software.aws.toolkit.jetbrains.utils.isQWebviewsAvailable
 import software.aws.toolkits.telemetry.FeatureId
 import software.aws.toolkits.telemetry.UiTelemetry
 

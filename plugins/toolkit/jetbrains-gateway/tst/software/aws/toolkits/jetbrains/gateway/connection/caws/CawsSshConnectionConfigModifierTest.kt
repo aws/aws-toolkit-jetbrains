@@ -10,7 +10,7 @@ import com.intellij.ssh.config.SshProxyConfig
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
-import software.aws.toolkits.core.region.AwsRegion
+import software.aws.toolkit.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.tools.MockToolManagerRule
 import software.aws.toolkits.jetbrains.core.tools.Tool
 import software.aws.toolkits.jetbrains.gateway.connection.AbstractSsmCommandExecutor

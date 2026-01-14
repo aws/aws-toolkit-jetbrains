@@ -6,8 +6,8 @@ package software.aws.toolkits.jetbrains.core.explorer.webview
 import com.intellij.openapi.project.Project
 import com.intellij.ui.components.panels.Wrapper
 import com.intellij.util.ui.components.BorderLayoutPanel
-import software.aws.toolkits.core.utils.error
-import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkit.core.utils.error
+import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.explorer.AwsToolkitExplorerToolWindow
 import software.aws.toolkits.jetbrains.utils.isTookitConnected
 import javax.swing.JComponent

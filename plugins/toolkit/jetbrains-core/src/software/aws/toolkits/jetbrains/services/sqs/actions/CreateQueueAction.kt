@@ -8,7 +8,7 @@ import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.project.DumbAwareAction
 import icons.AwsIcons
 import software.amazon.awssdk.services.sqs.SqsClient
-import software.aws.toolkits.jetbrains.core.awsClient
+import software.aws.toolkit.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.services.sqs.CreateQueueDialog
 import software.aws.toolkits.resources.message
 

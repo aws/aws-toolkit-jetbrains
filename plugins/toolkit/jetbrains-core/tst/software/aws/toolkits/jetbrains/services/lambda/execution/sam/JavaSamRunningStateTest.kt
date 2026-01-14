@@ -13,16 +13,16 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import software.aws.toolkits.core.lambda.LambdaRuntime
-import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
+import software.aws.toolkit.core.lambda.LambdaRuntime
+import software.aws.toolkit.jetbrains.core.credentials.MockCredentialManagerRule
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.LocalLambdaRunConfiguration
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.createHandlerBasedRunConfiguration
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.createTemplateRunConfiguration
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommonTestUtils.addSamTemplate
 import software.aws.toolkits.jetbrains.utils.getState
-import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
-import software.aws.toolkits.jetbrains.utils.rules.addClass
-import software.aws.toolkits.jetbrains.utils.rules.addModule
+import software.aws.toolkit.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
+import software.aws.toolkit.jetbrains.utils.rules.addClass
+import software.aws.toolkit.jetbrains.utils.rules.addModule
 import software.aws.toolkits.jetbrains.utils.setUpGradleProject
 
 class JavaSamRunningStateTest {

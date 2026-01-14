@@ -5,8 +5,8 @@ package software.aws.toolkits.jetbrains.gateway
 
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.util.ExecUtil
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.warn
+import software.aws.toolkit.core.utils.getLogger
+import software.aws.toolkit.core.utils.warn
 
 data class RemoteRef(
     val obj: String,

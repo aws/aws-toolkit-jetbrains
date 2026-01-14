@@ -4,12 +4,13 @@
 package software.aws.toolkits.jetbrains.core.credentials.sono
 
 import software.amazon.awssdk.profiles.ProfileProperty
-import software.aws.toolkits.jetbrains.core.credentials.DefaultConfigFilesFacade
-import software.aws.toolkits.jetbrains.core.credentials.DetectedDiskSsoSessionConnection
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitStartupAuthFactory
-import software.aws.toolkits.jetbrains.core.credentials.profiles.ssoScopes
-import software.aws.toolkits.jetbrains.utils.isCodeCatalystDevEnv
+import software.aws.toolkit.jetbrains.core.credentials.sono.SONO_URL
+import software.aws.toolkit.jetbrains.core.credentials.DefaultConfigFilesFacade
+import software.aws.toolkit.jetbrains.core.credentials.DetectedDiskSsoSessionConnection
+import software.aws.toolkit.jetbrains.core.credentials.ToolkitConnection
+import software.aws.toolkit.jetbrains.core.credentials.ToolkitStartupAuthFactory
+import software.aws.toolkit.jetbrains.core.credentials.profiles.ssoScopes
+import software.aws.toolkit.jetbrains.utils.isCodeCatalystDevEnv
 import software.aws.toolkits.resources.message
 import kotlin.jvm.optionals.getOrNull
 

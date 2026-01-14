@@ -19,9 +19,9 @@ import org.apache.http.entity.ContentType
 import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.CloseableHttpClient
 import org.apache.http.impl.client.HttpClientBuilder
-import software.aws.toolkits.core.utils.error
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.info
+import software.aws.toolkit.core.utils.error
+import software.aws.toolkit.core.utils.getLogger
+import software.aws.toolkit.core.utils.info
 import software.aws.toolkits.jetbrains.services.caws.CawsConstants
 import software.aws.toolkits.jetbrains.services.caws.envclient.models.CreateDevfileRequest
 import software.aws.toolkits.jetbrains.services.caws.envclient.models.CreateDevfileResponse
@@ -29,7 +29,7 @@ import software.aws.toolkits.jetbrains.services.caws.envclient.models.GetActivit
 import software.aws.toolkits.jetbrains.services.caws.envclient.models.GetStatusResponse
 import software.aws.toolkits.jetbrains.services.caws.envclient.models.StartDevfileRequest
 import software.aws.toolkits.jetbrains.services.caws.envclient.models.UpdateActivityRequest
-import software.aws.toolkits.jetbrains.utils.notifyError
+import software.aws.toolkit.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 
 @Service

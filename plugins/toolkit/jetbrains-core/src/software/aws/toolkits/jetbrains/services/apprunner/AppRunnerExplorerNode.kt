@@ -12,7 +12,7 @@ import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerResourceNo
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.CacheBackedAwsExplorerServiceRootNode
 import software.aws.toolkits.jetbrains.services.apprunner.resources.AppRunnerResources
-import software.aws.toolkits.jetbrains.utils.toHumanReadable
+import software.aws.toolkit.jetbrains.utils.toHumanReadable
 import software.aws.toolkits.resources.message
 
 class AppRunnerNode(project: Project, service: AwsExplorerServiceNode) :

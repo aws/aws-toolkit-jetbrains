@@ -17,8 +17,8 @@ import com.intellij.execution.runners.ProgramRunner
 import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import software.aws.toolkits.core.telemetry.DefaultMetricEvent
-import software.aws.toolkits.jetbrains.core.AwsResourceCache
+import software.aws.toolkit.core.telemetry.DefaultMetricEvent
+import software.aws.toolkit.jetbrains.core.AwsResourceCache
 import software.aws.toolkits.jetbrains.services.PathMapping
 import software.aws.toolkits.jetbrains.services.lambda.LambdaBuilder
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
@@ -29,8 +29,8 @@ import software.aws.toolkits.jetbrains.services.lambda.steps.BuildLambda
 import software.aws.toolkits.jetbrains.services.lambda.steps.BuildLambdaRequest
 import software.aws.toolkits.jetbrains.services.lambda.steps.GetPorts
 import software.aws.toolkits.jetbrains.services.lambda.steps.SamRunnerStep
-import software.aws.toolkits.jetbrains.services.sts.StsResources
-import software.aws.toolkits.jetbrains.services.telemetry.MetricEventMetadata
+import software.aws.toolkit.jetbrains.services.sts.StsResources
+import software.aws.toolkit.jetbrains.services.telemetry.MetricEventMetadata
 import software.aws.toolkits.jetbrains.utils.execution.steps.BuildViewWorkflowEmitter
 import software.aws.toolkits.jetbrains.utils.execution.steps.Context
 import software.aws.toolkits.jetbrains.utils.execution.steps.ParallelStep

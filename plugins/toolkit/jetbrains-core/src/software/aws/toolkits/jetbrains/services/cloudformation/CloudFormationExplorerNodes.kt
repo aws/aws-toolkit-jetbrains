@@ -14,7 +14,7 @@ import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceNod
 import software.aws.toolkits.jetbrains.core.explorer.nodes.CacheBackedAwsExplorerServiceRootNode
 import software.aws.toolkits.jetbrains.services.cloudformation.resources.CloudFormationResources
 import software.aws.toolkits.jetbrains.services.cloudformation.stack.StackWindowManager
-import software.aws.toolkits.jetbrains.utils.toHumanReadable
+import software.aws.toolkit.jetbrains.utils.toHumanReadable
 import software.aws.toolkits.resources.message
 
 class CloudFormationServiceNode(project: Project, service: AwsExplorerServiceNode) : CacheBackedAwsExplorerServiceRootNode<StackSummary>(

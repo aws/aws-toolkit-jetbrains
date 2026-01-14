@@ -25,10 +25,10 @@ import com.intellij.util.ui.UIUtil
 import com.intellij.util.ui.components.BorderLayoutPanel
 import com.jetbrains.rd.util.lifetime.Lifetime
 import icons.AwsIcons
-import software.aws.toolkits.core.ClientConnectionSettings
-import software.aws.toolkits.core.utils.error
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.jetbrains.core.AwsResourceCache
+import software.aws.toolkit.core.ClientConnectionSettings
+import software.aws.toolkit.core.utils.error
+import software.aws.toolkit.core.utils.getLogger
+import software.aws.toolkit.jetbrains.core.AwsResourceCache
 import software.aws.toolkits.jetbrains.gateway.welcomescreen.BottomLineBorder
 import software.aws.toolkits.jetbrains.gateway.welcomescreen.DEFAULT_WELCOME_BORDER
 import software.aws.toolkits.jetbrains.gateway.welcomescreen.PANEL_SIDE_INSET

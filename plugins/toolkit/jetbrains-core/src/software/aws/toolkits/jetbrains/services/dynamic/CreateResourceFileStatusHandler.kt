@@ -11,7 +11,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.services.cloudcontrol.model.Operation
 import software.amazon.awssdk.services.cloudcontrol.model.OperationStatus
-import software.aws.toolkits.jetbrains.core.awsClient
+import software.aws.toolkit.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.services.dynamic.explorer.OpenResourceModelSourceAction
 
 class CreateResourceFileStatusHandler(private val project: Project) : DynamicResourceStateMutationHandler {

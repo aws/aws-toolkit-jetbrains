@@ -8,7 +8,7 @@ import org.junit.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import software.amazon.awssdk.services.ecr.model.AuthorizationData
-import software.aws.toolkits.core.utils.RuleUtils
+import software.aws.toolkit.core.utils.RuleUtils
 import java.util.Base64
 
 class EcrUtilsTest {

@@ -9,6 +9,7 @@ import com.intellij.testFramework.ProjectRule
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Rule
 import org.junit.Test
+import software.aws.toolkit.jetbrains.settings.AwsSettingsSharedConfigurable
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommonTestUtils
 import java.nio.file.Path
 

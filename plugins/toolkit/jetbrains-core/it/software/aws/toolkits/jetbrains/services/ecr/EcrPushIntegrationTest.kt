@@ -17,7 +17,7 @@ import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.ecr.EcrClient
 import software.amazon.awssdk.services.ecr.model.Image
 import software.amazon.awssdk.services.ecr.model.ImageIdentifier
-import software.aws.toolkits.core.rules.EcrTemporaryRepositoryRule
+import software.aws.toolkit.core.rules.EcrTemporaryRepositoryRule
 import software.aws.toolkits.jetbrains.core.docker.ToolkitDockerAdapter
 import software.aws.toolkits.jetbrains.core.docker.getDockerServerRuntimeFacade
 import software.aws.toolkits.jetbrains.services.ecr.resources.Repository

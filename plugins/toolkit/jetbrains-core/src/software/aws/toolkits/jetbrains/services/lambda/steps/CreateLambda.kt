@@ -5,7 +5,7 @@ package software.aws.toolkits.jetbrains.services.lambda.steps
 
 import software.amazon.awssdk.services.lambda.LambdaClient
 import software.amazon.awssdk.services.lambda.model.PackageType
-import software.aws.toolkits.core.utils.AttributeBagKey
+import software.aws.toolkit.core.utils.AttributeBagKey
 import software.aws.toolkits.jetbrains.services.lambda.steps.PackageLambda.Companion.UPLOADED_CODE_LOCATION
 import software.aws.toolkits.jetbrains.services.lambda.upload.FunctionDetails
 import software.aws.toolkits.jetbrains.utils.execution.steps.Context

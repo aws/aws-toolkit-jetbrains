@@ -10,7 +10,7 @@ import software.amazon.awssdk.services.cloudformation.model.DescribeStackEventsR
 import software.amazon.awssdk.services.cloudformation.model.DescribeStackEventsResponse
 import software.amazon.awssdk.services.cloudformation.model.ResourceStatus
 import software.amazon.awssdk.services.cloudformation.model.StackEvent
-import software.aws.toolkits.jetbrains.core.MockClientManagerRule
+import software.aws.toolkit.jetbrains.core.MockClientManagerRule
 import java.time.Instant
 import javax.swing.SwingUtilities
 

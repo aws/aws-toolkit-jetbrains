@@ -7,8 +7,8 @@ import com.intellij.openapi.ui.ComboBox
 import com.intellij.ui.CollectionComboBoxModel
 import com.intellij.ui.ComboboxSpeedSearch
 import com.intellij.ui.SimpleListCellRenderer
-import software.aws.toolkits.core.region.AwsRegion
-import software.aws.toolkits.jetbrains.utils.ui.selected
+import software.aws.toolkit.core.region.AwsRegion
+import software.aws.toolkit.jetbrains.utils.ui.selected
 
 /**
  * Combo box used to select a region

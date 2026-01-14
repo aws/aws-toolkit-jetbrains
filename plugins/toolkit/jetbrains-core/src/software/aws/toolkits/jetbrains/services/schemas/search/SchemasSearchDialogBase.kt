@@ -16,13 +16,13 @@ import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.util.Alarm
-import software.aws.toolkits.core.ConnectionSettings
-import software.aws.toolkits.jetbrains.core.credentials.activeCredentialProvider
-import software.aws.toolkits.jetbrains.core.credentials.activeRegion
-import software.aws.toolkits.jetbrains.core.help.HelpIds
+import software.aws.toolkit.core.ConnectionSettings
+import software.aws.toolkit.jetbrains.core.credentials.activeCredentialProvider
+import software.aws.toolkit.jetbrains.core.credentials.activeRegion
+import software.aws.toolkit.jetbrains.core.help.HelpIds
 import software.aws.toolkits.jetbrains.services.schemas.SchemaViewer
 import software.aws.toolkits.jetbrains.services.schemas.code.DownloadCodeForSchemaDialog
-import software.aws.toolkits.jetbrains.utils.ui.selected
+import software.aws.toolkit.jetbrains.utils.ui.selected
 import software.aws.toolkits.resources.message
 import java.awt.BorderLayout
 import java.awt.Color
@@ -46,7 +46,6 @@ import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 import javax.swing.text.DefaultHighlighter
 import kotlin.concurrent.withLock
-import kotlin.streams.toList
 
 abstract class SchemasSearchDialogBase(
     protected val project: Project,

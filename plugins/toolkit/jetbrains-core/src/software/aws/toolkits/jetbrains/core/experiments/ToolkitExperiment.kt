@@ -14,10 +14,10 @@ import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.util.messages.Topic
 import com.intellij.util.xmlb.annotations.Property
-import software.aws.toolkits.core.utils.replace
-import software.aws.toolkits.jetbrains.isDeveloperMode
-import software.aws.toolkits.jetbrains.utils.createNotificationExpiringAction
-import software.aws.toolkits.jetbrains.utils.notifyInfo
+import software.aws.toolkit.core.utils.replace
+import software.aws.toolkit.jetbrains.isDeveloperMode
+import software.aws.toolkit.jetbrains.utils.createNotificationExpiringAction
+import software.aws.toolkit.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AwsTelemetry
 import software.aws.toolkits.telemetry.ExperimentState.Activated

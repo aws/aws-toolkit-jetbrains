@@ -7,8 +7,8 @@ import org.junit.jupiter.api.extension.AfterAllCallback
 import org.junit.jupiter.api.extension.ExtensionContext
 import software.amazon.awssdk.services.codecatalyst.CodeCatalystClient
 import software.amazon.awssdk.services.codecatalyst.model.CreateDevEnvironmentRequest
-import software.aws.toolkits.jetbrains.core.AwsClientManager
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
+import software.aws.toolkit.jetbrains.core.AwsClientManager
+import software.aws.toolkit.jetbrains.core.credentials.ToolkitConnection
 
 class DevEnvironmentExtension(
     connection: () -> ToolkitConnection,

@@ -16,15 +16,15 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import software.amazon.awssdk.services.toolkittelemetry.model.Sentiment
-import software.aws.toolkits.core.telemetry.TelemetryBatcher
-import software.aws.toolkits.core.telemetry.TelemetryPublisher
-import software.aws.toolkits.core.utils.test.aString
+import software.aws.toolkit.core.telemetry.TelemetryBatcher
+import software.aws.toolkit.core.telemetry.TelemetryPublisher
+import software.aws.toolkit.core.utils.test.aString
 import software.aws.toolkits.jetbrains.core.experiments.DummyExperiment
 import software.aws.toolkits.jetbrains.core.experiments.ToolkitExperimentManager
 import software.aws.toolkits.jetbrains.core.experiments.setState
-import software.aws.toolkits.jetbrains.services.telemetry.NoOpPublisher
-import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
-import software.aws.toolkits.jetbrains.ui.feedback.ENABLED_EXPERIMENTS
+import software.aws.toolkit.jetbrains.services.telemetry.NoOpPublisher
+import software.aws.toolkit.jetbrains.services.telemetry.TelemetryService
+import software.aws.toolkit.jetbrains.ui.feedback.ENABLED_EXPERIMENTS
 
 @ExtendWith(ApplicationExtension::class)
 class SendFeedbackWithExperimentsMetadataTest {

@@ -17,12 +17,12 @@ import com.intellij.ui.TreeSpeedSearch
 import com.intellij.ui.components.JBTreeTable
 import kotlinx.coroutines.launch
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException
-import software.aws.toolkits.core.utils.error
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.info
-import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
+import software.aws.toolkit.core.utils.error
+import software.aws.toolkit.core.utils.getLogger
+import software.aws.toolkit.core.utils.info
+import software.aws.toolkit.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.services.s3.objectActions.uploadObjects
-import software.aws.toolkits.jetbrains.utils.notifyError
+import software.aws.toolkit.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.Result
 import software.aws.toolkits.telemetry.S3Telemetry

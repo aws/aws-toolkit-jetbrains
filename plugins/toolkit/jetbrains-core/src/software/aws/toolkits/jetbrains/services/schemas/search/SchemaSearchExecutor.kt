@@ -8,11 +8,11 @@ import org.slf4j.LoggerFactory
 import software.amazon.awssdk.services.schemas.SchemasClient
 import software.amazon.awssdk.services.schemas.model.SearchSchemasRequest
 import software.amazon.awssdk.services.schemas.model.SearchSchemasResponse
-import software.aws.toolkits.core.utils.warn
-import software.aws.toolkits.jetbrains.core.awsClient
-import software.aws.toolkits.jetbrains.core.getResource
+import software.aws.toolkit.core.utils.warn
+import software.aws.toolkit.jetbrains.core.awsClient
+import software.aws.toolkit.jetbrains.core.getResource
 import software.aws.toolkits.jetbrains.services.schemas.resources.SchemasResources
-import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
+import software.aws.toolkit.jetbrains.utils.pluginAwareExecuteOnPooledThread
 
 class SchemaSearchExecutor(
     private val project: Project,

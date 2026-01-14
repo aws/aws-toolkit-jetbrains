@@ -9,8 +9,8 @@ import com.jetbrains.rd.util.lifetime.LifetimeDefinition
 import com.jetbrains.rd.util.reactive.adviseEternal
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.info
+import software.aws.toolkit.core.utils.getLogger
+import software.aws.toolkit.core.utils.info
 import software.aws.toolkits.jetbrains.core.credentials.sono.lazilyGetUserId
 import software.aws.toolkits.jetbrains.gateway.connection.IdeBackendActions
 import software.aws.toolkits.jetbrains.gateway.connection.ThinClientTrackerService
@@ -18,7 +18,7 @@ import software.aws.toolkits.jetbrains.gateway.connection.caws.CawsCommandExecut
 import software.aws.toolkits.jetbrains.utils.execution.steps.Context
 import software.aws.toolkits.jetbrains.utils.execution.steps.Step
 import software.aws.toolkits.jetbrains.utils.execution.steps.StepEmitter
-import software.aws.toolkits.jetbrains.utils.spinUntilValue
+import software.aws.toolkit.jetbrains.utils.spinUntilValue
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodecatalystTelemetry
 import java.net.URI

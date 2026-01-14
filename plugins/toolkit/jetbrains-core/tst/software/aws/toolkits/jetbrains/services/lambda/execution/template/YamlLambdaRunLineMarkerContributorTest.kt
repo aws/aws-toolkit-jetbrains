@@ -9,7 +9,7 @@ import org.jetbrains.yaml.psi.YAMLFile
 import org.junit.Rule
 import org.junit.Test
 import software.aws.toolkits.jetbrains.services.lambda.sam.findByLocation
-import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
+import software.aws.toolkit.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 
 class YamlLambdaRunLineMarkerContributorTest {
     @Rule

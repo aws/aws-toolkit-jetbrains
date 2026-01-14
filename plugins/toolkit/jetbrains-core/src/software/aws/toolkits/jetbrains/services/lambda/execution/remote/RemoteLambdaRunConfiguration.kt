@@ -12,8 +12,8 @@ import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.openapi.options.SettingsEditorGroup
 import com.intellij.openapi.project.Project
 import software.amazon.awssdk.services.lambda.LambdaClient
-import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
-import software.aws.toolkits.core.region.AwsRegion
+import software.aws.toolkit.core.credentials.ToolkitCredentialsProvider
+import software.aws.toolkit.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.services.lambda.execution.LambdaRunConfigurationBase
 import software.aws.toolkits.jetbrains.services.lambda.execution.LambdaRunConfigurationType
 import software.aws.toolkits.jetbrains.ui.connection.AwsConnectionSettingsEditor

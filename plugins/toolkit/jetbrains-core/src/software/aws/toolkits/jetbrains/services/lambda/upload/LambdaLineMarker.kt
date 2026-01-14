@@ -23,7 +23,7 @@ import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
 import software.aws.toolkits.jetbrains.settings.LambdaSettings
-import software.aws.toolkits.jetbrains.utils.isTestOrInjectedText
+import software.aws.toolkit.jetbrains.utils.isTestOrInjectedText
 import software.aws.toolkits.resources.message
 import javax.swing.Icon
 

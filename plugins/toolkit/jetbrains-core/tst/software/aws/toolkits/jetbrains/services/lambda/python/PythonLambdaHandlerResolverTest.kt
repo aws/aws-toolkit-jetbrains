@@ -17,7 +17,7 @@ import software.aws.toolkits.jetbrains.services.lambda.Lambda
 import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver
 import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
 import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
-import software.aws.toolkits.jetbrains.utils.rules.addFileToModule
+import software.aws.toolkit.jetbrains.utils.rules.addFileToModule
 
 class PythonLambdaHandlerResolverTest {
     @Rule

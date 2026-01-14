@@ -37,19 +37,27 @@ import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
 import com.intellij.util.ui.components.BorderLayoutPanel
 import icons.AwsIcons
-import software.aws.toolkits.jetbrains.AwsToolkit
-import software.aws.toolkits.jetbrains.core.AwsResourceCache
-import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
-import software.aws.toolkits.jetbrains.core.credentials.ProfileSsoManagedBearerSsoConnection
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
-import software.aws.toolkits.jetbrains.core.credentials.deleteSsoConnection
-import software.aws.toolkits.jetbrains.core.credentials.logoutFromSsoConnection
-import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeCatalystConnection
-import software.aws.toolkits.jetbrains.core.credentials.pinning.ConnectionPinningManagerListener
-import software.aws.toolkits.jetbrains.core.credentials.pinning.FeatureWithPinnedConnection
-import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
+import software.aws.toolkit.jetbrains.AwsToolkit
+import software.aws.toolkit.jetbrains.core.AwsResourceCache
+import software.aws.toolkit.jetbrains.core.credentials.AwsBearerTokenConnection
+import software.aws.toolkit.jetbrains.core.credentials.ProfileSsoManagedBearerSsoConnection
+import software.aws.toolkit.jetbrains.core.credentials.ToolkitConnection
+import software.aws.toolkit.jetbrains.core.credentials.ToolkitConnectionManager
+import software.aws.toolkit.jetbrains.core.credentials.ToolkitConnectionManagerListener
+import software.aws.toolkit.jetbrains.core.credentials.deleteSsoConnection
+import software.aws.toolkit.jetbrains.core.credentials.logoutFromSsoConnection
+import software.aws.toolkit.jetbrains.core.credentials.pinning.CodeCatalystConnection
+import software.aws.toolkit.jetbrains.core.credentials.pinning.ConnectionPinningManagerListener
+import software.aws.toolkit.jetbrains.core.credentials.pinning.FeatureWithPinnedConnection
+import software.aws.toolkit.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
+import software.aws.toolkit.jetbrains.core.gettingstarted.editor.ActiveConnection
+import software.aws.toolkit.jetbrains.core.gettingstarted.editor.ActiveConnectionType
+import software.aws.toolkit.jetbrains.core.gettingstarted.editor.BearerTokenFeatureSet
+import software.aws.toolkit.jetbrains.core.gettingstarted.editor.checkBearerConnectionValidity
+import software.aws.toolkit.jetbrains.core.gettingstarted.editor.checkIamConnectionValidity
+import software.aws.toolkit.jetbrains.core.gettingstarted.editor.controlPanelVisibility
+import software.aws.toolkit.jetbrains.core.gettingstarted.editor.getConnectionCount
+import software.aws.toolkit.jetbrains.core.gettingstarted.editor.getEnabledConnections
 import software.aws.toolkits.jetbrains.core.explorer.AwsToolkitExplorerToolWindow
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.DevToolsToolWindow
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.CawsServiceNode
@@ -59,12 +67,12 @@ import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStarted
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanel.PanelConstants.PANEL_TITLE_FONT
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanel.PanelConstants.PANEL_WIDTH
 import software.aws.toolkits.jetbrains.core.gettingstarted.requestCredentialsForCodeCatalyst
-import software.aws.toolkits.jetbrains.core.gettingstarted.requestCredentialsForCodeWhisperer
+import software.aws.toolkit.jetbrains.core.gettingstarted.requestCredentialsForCodeWhisperer
 import software.aws.toolkits.jetbrains.core.gettingstarted.requestCredentialsForExplorer
 import software.aws.toolkits.jetbrains.services.caws.CawsEndpoints
 import software.aws.toolkits.jetbrains.services.caws.CawsResources
 import software.aws.toolkits.jetbrains.ui.feedback.ToolkitFeedbackDialog
-import software.aws.toolkits.jetbrains.utils.ui.editorNotificationCompoundBorder
+import software.aws.toolkit.jetbrains.utils.ui.editorNotificationCompoundBorder
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.UiTelemetry
 import java.awt.Dimension
@@ -872,16 +880,23 @@ class GettingStartedPanel(
                             row {
                                 label(message("gettingstarted.auth.connected.builderid")).applyToComponent { this.icon = PanelConstants.CHECKMARK_ICON }
                             }.visible(
-                                checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q).connectionType == ActiveConnectionType.BUILDER_ID
+                                checkBearerConnectionValidity(
+                                    project,
+                                    BearerTokenFeatureSet.Q
+                                ).connectionType == ActiveConnectionType.BUILDER_ID
                             )
                             row {
                                 label(message("gettingstarted.auth.connected.idc")).applyToComponent { this.icon = PanelConstants.CHECKMARK_ICON }
                             }.visible(
-                                checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q).connectionType == ActiveConnectionType.IAM_IDC
+                                checkBearerConnectionValidity(
+                                    project,
+                                    BearerTokenFeatureSet.Q
+                                ).connectionType == ActiveConnectionType.IAM_IDC
                             )
                             row {
                                 link(message("toolkit.login.aws_builder_id.already_connected.reconnect")) {
-                                    val validConnection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q)
+                                    val validConnection =
+                                        checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q)
 
                                     val connection = validConnection.activeConnectionBearer
                                     if (connection is ProfileSsoManagedBearerSsoConnection) {
@@ -917,7 +932,10 @@ class GettingStartedPanel(
                                     )
                                 }
                             }.visible(
-                                checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q).connectionType == ActiveConnectionType.BUILDER_ID
+                                checkBearerConnectionValidity(
+                                    project,
+                                    BearerTokenFeatureSet.Q
+                                ).connectionType == ActiveConnectionType.BUILDER_ID
                             )
                             row {
                                 text("<a>${message("codewhisperer.gettingstarted.panel.login_button")}</a>") {
@@ -935,7 +953,10 @@ class GettingStartedPanel(
                                     )
                                 }
                             }.visible(
-                                checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q).connectionType == ActiveConnectionType.IAM_IDC
+                                checkBearerConnectionValidity(
+                                    project,
+                                    BearerTokenFeatureSet.Q
+                                ).connectionType == ActiveConnectionType.IAM_IDC
                             )
                         }.visible(checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q) is ActiveConnection.ValidBearer)
 
@@ -964,16 +985,23 @@ class GettingStartedPanel(
                             row {
                                 label(message("gettingstarted.auth.builderid.expired")).applyToComponent { this.icon = PanelConstants.X_ICON }
                             }.visible(
-                                checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q).connectionType == ActiveConnectionType.BUILDER_ID
+                                checkBearerConnectionValidity(
+                                    project,
+                                    BearerTokenFeatureSet.Q
+                                ).connectionType == ActiveConnectionType.BUILDER_ID
                             )
                             row {
                                 label(message("gettingstarted.auth.idc.expired")).applyToComponent { this.icon = PanelConstants.X_ICON }
                             }.visible(
-                                checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q).connectionType == ActiveConnectionType.IAM_IDC
+                                checkBearerConnectionValidity(
+                                    project,
+                                    BearerTokenFeatureSet.Q
+                                ).connectionType == ActiveConnectionType.IAM_IDC
                             )
                             row {
                                 link(message("toolkit.login.aws_builder_id.already_connected.reconnect")) {
-                                    val validConnection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q)
+                                    val validConnection =
+                                        checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q)
                                     val connection = validConnection.activeConnectionBearer
                                     if (connection is ProfileSsoManagedBearerSsoConnection) {
                                         if (validConnection.connectionType == ActiveConnectionType.IAM_IDC) {
@@ -1002,7 +1030,10 @@ class GettingStartedPanel(
                                     )
                                 }
                             }.visible(
-                                checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q).connectionType == ActiveConnectionType.BUILDER_ID
+                                checkBearerConnectionValidity(
+                                    project,
+                                    BearerTokenFeatureSet.Q
+                                ).connectionType == ActiveConnectionType.BUILDER_ID
                             )
                             row {
                                 text("<a>${message("codewhisperer.gettingstarted.panel.login_button")}</a>") {
@@ -1020,7 +1051,10 @@ class GettingStartedPanel(
                                     )
                                 }
                             }.visible(
-                                checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q).connectionType == ActiveConnectionType.IAM_IDC
+                                checkBearerConnectionValidity(
+                                    project,
+                                    BearerTokenFeatureSet.Q
+                                ).connectionType == ActiveConnectionType.IAM_IDC
                             )
                         }.visible(checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q) is ActiveConnection.ExpiredBearer)
                     }

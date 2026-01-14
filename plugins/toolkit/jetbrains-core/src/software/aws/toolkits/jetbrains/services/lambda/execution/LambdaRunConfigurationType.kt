@@ -6,7 +6,7 @@ package software.aws.toolkits.jetbrains.services.lambda.execution
 import com.intellij.execution.configurations.ConfigurationTypeBase
 import com.intellij.execution.configurations.ConfigurationTypeUtil
 import icons.AwsIcons
-import software.aws.toolkits.jetbrains.core.help.HelpIds
+import software.aws.toolkit.jetbrains.core.help.HelpIds
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.LocalLambdaRunConfigurationFactory
 import software.aws.toolkits.jetbrains.services.lambda.execution.remote.RemoteLambdaRunConfigurationFactory
 import software.aws.toolkits.resources.message

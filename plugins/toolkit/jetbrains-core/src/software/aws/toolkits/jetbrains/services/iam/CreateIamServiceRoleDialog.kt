@@ -11,10 +11,10 @@ import com.intellij.ui.dsl.builder.panel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import software.amazon.awssdk.services.iam.IamClient
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.warn
-import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineUiContext
-import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
+import software.aws.toolkit.core.utils.getLogger
+import software.aws.toolkit.core.utils.warn
+import software.aws.toolkit.jetbrains.core.coroutines.getCoroutineUiContext
+import software.aws.toolkit.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.resources.message
 import java.awt.Component
 import javax.swing.JComponent

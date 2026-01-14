@@ -28,12 +28,12 @@ import org.mockito.kotlin.stub
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.stubbing.Answer
-import software.aws.toolkits.core.utils.test.aString
+import software.aws.toolkit.core.utils.test.aString
 import software.aws.toolkits.jetbrains.core.tools.DefaultToolManager.Companion.managedToolInstallDir
 import software.aws.toolkits.jetbrains.core.tools.DefaultToolManager.Companion.managedToolMarkerFile
-import software.aws.toolkits.jetbrains.utils.assertIsNonDispatchThread
-import software.aws.toolkits.jetbrains.utils.isInstanceOf
-import software.aws.toolkits.jetbrains.utils.isInstanceOfSatisfying
+import software.aws.toolkit.jetbrains.utils.assertIsNonDispatchThread
+import software.aws.toolkit.jetbrains.utils.isInstanceOf
+import software.aws.toolkit.jetbrains.utils.isInstanceOfSatisfying
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.ToolId
 import java.nio.file.Files

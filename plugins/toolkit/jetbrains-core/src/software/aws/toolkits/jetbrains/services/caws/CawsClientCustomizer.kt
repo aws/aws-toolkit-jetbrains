@@ -14,11 +14,11 @@ import software.amazon.awssdk.core.interceptor.ExecutionAttributes
 import software.amazon.awssdk.core.interceptor.ExecutionInterceptor
 import software.amazon.awssdk.services.codecatalyst.CodeCatalystClientBuilder
 import software.amazon.awssdk.services.codecatalyst.model.CodeCatalystException
-import software.aws.toolkits.core.ToolkitClientCustomizer
-import software.aws.toolkits.core.utils.debug
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.tryOrNull
-import software.aws.toolkits.core.utils.warn
+import software.aws.toolkit.core.ToolkitClientCustomizer
+import software.aws.toolkit.core.utils.debug
+import software.aws.toolkit.core.utils.getLogger
+import software.aws.toolkit.core.utils.tryOrNull
+import software.aws.toolkit.core.utils.warn
 import java.net.URI
 
 class CawsClientCustomizer : ToolkitClientCustomizer {

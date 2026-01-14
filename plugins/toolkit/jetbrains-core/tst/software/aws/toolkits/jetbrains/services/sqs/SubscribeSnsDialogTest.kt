@@ -24,9 +24,9 @@ import software.amazon.awssdk.services.sqs.SqsClient
 import software.amazon.awssdk.services.sqs.model.GetQueueAttributesRequest
 import software.amazon.awssdk.services.sqs.model.GetQueueAttributesResponse
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName
-import software.aws.toolkits.core.region.AwsRegion
-import software.aws.toolkits.jetbrains.core.MockClientManagerRule
-import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
+import software.aws.toolkit.core.region.AwsRegion
+import software.aws.toolkit.jetbrains.core.MockClientManagerRule
+import software.aws.toolkit.jetbrains.core.region.MockRegionProviderRule
 
 class SubscribeSnsDialogTest {
     lateinit var snsClient: SnsClient

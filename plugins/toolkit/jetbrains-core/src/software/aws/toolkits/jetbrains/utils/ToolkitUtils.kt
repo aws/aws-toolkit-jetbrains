@@ -5,12 +5,12 @@ package software.aws.toolkits.jetbrains.utils
 
 import com.intellij.openapi.project.Project
 import org.slf4j.LoggerFactory
-import software.aws.toolkits.core.utils.debug
-import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
-import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeCatalystConnection
-import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
+import software.aws.toolkit.core.utils.debug
+import software.aws.toolkit.jetbrains.core.credentials.AwsBearerTokenConnection
+import software.aws.toolkit.jetbrains.core.credentials.CredentialManager
+import software.aws.toolkit.jetbrains.core.credentials.ToolkitConnectionManager
+import software.aws.toolkit.jetbrains.core.credentials.pinning.CodeCatalystConnection
+import software.aws.toolkit.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
 
 private val LOG = LoggerFactory.getLogger("ToolkitUtils")
 

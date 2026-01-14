@@ -10,7 +10,7 @@ import software.aws.toolkits.jetbrains.core.utils.getRequiredData
 import software.aws.toolkits.jetbrains.services.s3.NOT_VERSIONED_VERSION_ID
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeNode
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeObjectVersionNode
-import software.aws.toolkits.jetbrains.utils.notifyError
+import software.aws.toolkit.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.S3Telemetry
 import java.awt.datatransfer.StringSelection

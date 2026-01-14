@@ -12,7 +12,7 @@ import com.intellij.openapi.application.asContextElement
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.launch
-import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
+import software.aws.toolkit.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamEntry
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CloudwatchlogsTelemetry

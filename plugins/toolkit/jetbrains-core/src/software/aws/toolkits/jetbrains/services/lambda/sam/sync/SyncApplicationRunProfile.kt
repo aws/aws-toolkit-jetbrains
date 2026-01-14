@@ -21,11 +21,11 @@ import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
 import icons.AwsIcons
-import software.aws.toolkits.core.ConnectionSettings
-import software.aws.toolkits.core.toEnvironmentVariables
+import software.aws.toolkit.core.ConnectionSettings
+import software.aws.toolkit.core.toEnvironmentVariables
 import software.aws.toolkits.jetbrains.services.lambda.sam.getSamCli
 import software.aws.toolkits.jetbrains.services.lambda.sam.samSyncCommand
-import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
+import software.aws.toolkit.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import java.io.IOException
 import java.nio.charset.Charset
 import java.nio.file.Path

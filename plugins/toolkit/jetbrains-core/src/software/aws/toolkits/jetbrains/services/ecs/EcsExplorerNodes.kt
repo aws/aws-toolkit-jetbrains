@@ -14,7 +14,7 @@ import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceNod
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceRootNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.ResourceLocationNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.ResourceParentNode
-import software.aws.toolkits.jetbrains.core.getResourceNow
+import software.aws.toolkit.jetbrains.core.getResourceNow
 import software.aws.toolkits.jetbrains.services.ecs.resources.EcsResources
 import software.aws.toolkits.resources.message
 
