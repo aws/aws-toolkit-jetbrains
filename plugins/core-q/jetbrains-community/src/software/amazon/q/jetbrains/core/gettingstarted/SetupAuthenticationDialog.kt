@@ -3,7 +3,6 @@
 
 package software.amazon.q.jetbrains.core.gettingstarted
 
-import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.actionSystem.PlatformDataKeys
@@ -396,7 +395,7 @@ class SetupAuthenticationDialog(
     private fun iamTab() = panel {
         row {
             text(AwsCoreBundle.message("gettingstarted.setup.iam.notice")) { hyperlinkEvent ->
-                val actionEvent = AnActionEvent.createFromInputEvent(
+                AnActionEvent.createFromInputEvent(
                     hyperlinkEvent.inputEvent,
                     ToolkitPlaces.ADD_CONNECTION_DIALOG,
                     null,

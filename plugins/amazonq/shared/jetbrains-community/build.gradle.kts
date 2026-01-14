@@ -44,9 +44,9 @@ sourceSets {
         )
         resources.srcDirs(
             findFolders(project(":plugin-core-q:jetbrains-community").project, "tst-resources", ideProfile)
-            .map {
-                project(":plugin-core-q:jetbrains-community").project.file(it)
-            }
+                .map {
+                    project(":plugin-core-q:jetbrains-community").project.file(it)
+                }
         )
     }
 }

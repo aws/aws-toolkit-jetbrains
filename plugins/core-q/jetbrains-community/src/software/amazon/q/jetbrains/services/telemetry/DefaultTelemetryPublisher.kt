@@ -9,7 +9,6 @@ import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.cognitoidentity.CognitoIdentityClient
 import software.amazon.awssdk.services.toolkittelemetry.ToolkitTelemetryClient
-import software.amazon.awssdk.services.toolkittelemetry.model.AWSProduct
 import software.amazon.awssdk.services.toolkittelemetry.model.MetadataEntry
 import software.amazon.awssdk.services.toolkittelemetry.model.MetricDatum
 import software.amazon.awssdk.services.toolkittelemetry.model.Sentiment
