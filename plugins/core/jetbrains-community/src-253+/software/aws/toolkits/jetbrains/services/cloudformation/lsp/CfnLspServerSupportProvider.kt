@@ -124,8 +124,8 @@ private class CfnLspServerDescriptor private constructor(project: Project) :
         split(",").map { it.trim() }.filter { it.isNotEmpty() }
 
     private fun findNodeExecutable(): String {
-        val path = System.getenv("PATH") ?: throw IllegalStateException("PATH not set")
-
+        // Check PATH first
+        val path = System.getenv("PATH") ?: ""
         for (dir in path.split(File.pathSeparator)) {
             val node = Paths.get(dir, "node").toFile()
             if (node.canExecute()) return node.absolutePath
@@ -134,7 +134,24 @@ private class CfnLspServerDescriptor private constructor(project: Project) :
             if (nodeExe.canExecute()) return nodeExe.absolutePath
         }
 
-        throw IllegalStateException("Node.js not found in PATH")
+        // GUI apps don't inherit shell PATH - check common locations
+        val commonPaths = listOf(
+            "/opt/homebrew/bin/node",      // macOS ARM Homebrew
+            "/usr/local/bin/node",         // macOS Intel Homebrew / manual install
+            "/usr/bin/node",               // Linux system
+            System.getProperty("user.home") + "/.nvm/current/bin/node",  // nvm
+            System.getProperty("user.home") + "/.volta/bin/node",        // volta
+            System.getProperty("user.home") + "/.fnm/current/bin/node",  // fnm
+            "C:\\Program Files\\nodejs\\node.exe",      // Windows default
+            "C:\\Program Files (x86)\\nodejs\\node.exe" // Windows x86
+        )
+
+        for (nodePath in commonPaths) {
+            val node = File(nodePath)
+            if (node.canExecute()) return node.absolutePath
+        }
+
+        throw IllegalStateException("Node.js not found. Install Node.js or ensure it's in your PATH.")
     }
 
     private fun getStorageDir() = Paths.get(
