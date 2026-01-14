@@ -21,23 +21,23 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import software.amazon.awssdk.services.ssooidc.SsoOidcClient
-import software.aws.toolkits.core.ToolkitClientManager
-import software.aws.toolkits.core.telemetry.MetricEvent
-import software.aws.toolkits.core.telemetry.TelemetryBatcher
-import software.aws.toolkits.core.telemetry.TelemetryPublisher
-import software.aws.toolkits.core.utils.delegateMock
-import software.aws.toolkits.core.utils.test.aString
-import software.aws.toolkits.jetbrains.core.MockClientManager
-import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileSsoSessionIdentifier
-import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
-import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
-import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
-import software.aws.toolkits.jetbrains.services.telemetry.NoOpPublisher
-import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
-import software.aws.toolkits.jetbrains.settings.AwsSettings
-import software.aws.toolkits.jetbrains.utils.isInstanceOf
-import software.aws.toolkits.jetbrains.utils.isInstanceOfSatisfying
-import software.aws.toolkits.jetbrains.utils.satisfiesKt
+import software.aws.toolkit.core.ToolkitClientManager
+import software.aws.toolkit.core.telemetry.MetricEvent
+import software.aws.toolkit.core.telemetry.TelemetryBatcher
+import software.aws.toolkit.core.telemetry.TelemetryPublisher
+import software.aws.toolkit.core.utils.delegateMock
+import software.aws.toolkit.core.utils.test.aString
+import software.aws.toolkit.jetbrains.core.MockClientManager
+import software.aws.toolkit.jetbrains.core.credentials.profiles.ProfileSsoSessionIdentifier
+import software.aws.toolkit.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
+import software.aws.toolkit.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
+import software.aws.toolkit.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
+import software.aws.toolkit.jetbrains.services.telemetry.NoOpPublisher
+import software.aws.toolkit.jetbrains.services.telemetry.TelemetryService
+import software.aws.toolkit.jetbrains.settings.AwsSettings
+import software.aws.toolkit.jetbrains.utils.isInstanceOf
+import software.aws.toolkit.jetbrains.utils.isInstanceOfSatisfying
+import software.aws.toolkit.jetbrains.utils.satisfiesKt
 
 class DefaultToolkitAuthManagerTest : HeavyPlatformTestCase() {
     private class TestTelemetryService(

@@ -12,11 +12,11 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
-import software.aws.toolkits.core.telemetry.MetricEvent
-import software.aws.toolkits.jetbrains.core.webview.BrowserMessage
-import software.aws.toolkits.jetbrains.core.webview.BrowserState
-import software.aws.toolkits.jetbrains.core.webview.LoginBrowser
-import software.aws.toolkits.jetbrains.services.telemetry.MockTelemetryServiceExtension
+import software.aws.toolkit.core.telemetry.MetricEvent
+import software.aws.toolkit.jetbrains.core.webview.BrowserMessage
+import software.aws.toolkit.jetbrains.core.webview.BrowserState
+import software.aws.toolkit.jetbrains.core.webview.LoginBrowser
+import software.aws.toolkit.jetbrains.services.telemetry.MockTelemetryServiceExtension
 
 class TestLoginBrowser(project: Project) : LoginBrowser(project) {
     // test env can't initiate a real jcef and will throw error

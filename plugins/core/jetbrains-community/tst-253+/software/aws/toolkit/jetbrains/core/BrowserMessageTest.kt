@@ -15,9 +15,9 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.assertj.core.api.ObjectAssert
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.mockito.kotlin.mock
-import software.aws.toolkits.jetbrains.core.webview.BrowserMessage
-import software.aws.toolkits.jetbrains.core.webview.BrowserState
-import software.aws.toolkits.jetbrains.core.webview.LoginBrowser
+import software.aws.toolkit.jetbrains.core.webview.BrowserMessage
+import software.aws.toolkit.jetbrains.core.webview.BrowserState
+import software.aws.toolkit.jetbrains.core.webview.LoginBrowser
 
 class NoOpLoginBrowser(project: Project) : LoginBrowser(project) {
     override val jcefBrowser: JBCefBrowserBase = mock()

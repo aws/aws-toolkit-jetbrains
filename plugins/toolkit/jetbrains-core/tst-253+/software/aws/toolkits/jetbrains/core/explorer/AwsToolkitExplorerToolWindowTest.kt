@@ -8,7 +8,7 @@ import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.testFramework.HeavyPlatformTestCase
 import com.intellij.testFramework.runInEdtAndGet
 import org.assertj.core.api.Assertions.assertThat
-import software.aws.toolkits.core.utils.test.aString
+import software.aws.toolkit.core.utils.test.aString
 import software.aws.toolkits.jetbrains.core.ToolWindowHeadlessManagerImpl
 
 class AwsToolkitExplorerToolWindowTest : HeavyPlatformTestCase() {

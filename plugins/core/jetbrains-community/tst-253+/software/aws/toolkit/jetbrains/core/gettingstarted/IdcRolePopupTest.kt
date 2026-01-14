@@ -14,13 +14,13 @@ import org.assertj.core.api.Assertions.assertThat
 import software.amazon.awssdk.profiles.Profile
 import software.amazon.awssdk.services.sso.SsoClient
 import software.amazon.awssdk.services.sso.model.RoleInfo
-import software.aws.toolkits.core.ToolkitClientManager
-import software.aws.toolkits.core.utils.delegateMock
-import software.aws.toolkits.core.utils.test.aString
-import software.aws.toolkits.jetbrains.core.MockClientManager
-import software.aws.toolkits.jetbrains.core.credentials.ConfigFilesFacade
-import software.aws.toolkits.jetbrains.utils.satisfiesKt
-import software.aws.toolkits.resources.AwsCoreBundle
+import software.aws.toolkit.core.ToolkitClientManager
+import software.aws.toolkit.core.utils.delegateMock
+import software.aws.toolkit.core.utils.test.aString
+import software.aws.toolkit.jetbrains.core.MockClientManager
+import software.aws.toolkit.jetbrains.core.credentials.ConfigFilesFacade
+import software.aws.toolkit.jetbrains.utils.satisfiesKt
+import software.aws.toolkit.resources.AwsCoreBundle
 
 class IdcRolePopupTest : HeavyPlatformTestCase() {
     private lateinit var mockClientManager: MockClientManager
