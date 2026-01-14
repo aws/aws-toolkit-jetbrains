@@ -7,8 +7,8 @@ import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.DumbServiceImpl
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import software.aws.toolkits.jetbrains.core.coroutines.EDT
-import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
+import software.aws.toolkit.jetbrains.core.coroutines.EDT
+import software.aws.toolkit.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 
 internal inline fun runInDumbMode(projectRule: JavaCodeInsightTestFixtureRule, crossinline block: () -> Unit) {
     val dumbServiceImpl = DumbService.getInstance(projectRule.project) as DumbServiceImpl
