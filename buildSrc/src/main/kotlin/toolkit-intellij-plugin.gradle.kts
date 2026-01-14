@@ -6,22 +6,22 @@ import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.ToolkitIntelliJExtension
 
 val intellijToolkit = project.extensions.create("intellijToolkit", ToolkitIntelliJExtension::class)
-// TODO: how did this break?
+// Use convention() so that toolkit-publish-root-conventions can override with runIdeVariant
 when {
     project.name.contains("jetbrains-rider") -> {
-        intellijToolkit.ideFlavor.set(IdeFlavor.RD)
+        intellijToolkit.ideFlavor.convention(IdeFlavor.RD)
     }
 
     project.name.contains("jetbrains-ultimate") -> {
-        intellijToolkit.ideFlavor.set(IdeFlavor.IU)
+        intellijToolkit.ideFlavor.convention(IdeFlavor.IU)
     }
 
     project.name.contains("jetbrains-gateway") -> {
-        intellijToolkit.ideFlavor.set(IdeFlavor.GW)
+        intellijToolkit.ideFlavor.convention(IdeFlavor.GW)
     }
 
     else -> {
-        intellijToolkit.ideFlavor.set(IdeFlavor.IC)
+        intellijToolkit.ideFlavor.convention(IdeFlavor.IC)
     }
 }
 
