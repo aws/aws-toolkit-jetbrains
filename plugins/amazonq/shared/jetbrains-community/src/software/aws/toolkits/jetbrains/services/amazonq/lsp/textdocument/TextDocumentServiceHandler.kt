@@ -173,8 +173,12 @@ class TextDocumentServiceHandler(
     ) {
         val listener = file.getUserData(KEY_REAL_TIME_EDIT_LISTENER)
         if (listener != null) {
-            tryOrNull { FileDocumentManager.getInstance().getDocument(file)?.removeDocumentListener(listener) }
             file.putUserData(KEY_REAL_TIME_EDIT_LISTENER, null)
+            ApplicationManager.getApplication().runReadAction {
+                tryOrNull {
+                    FileDocumentManager.getInstance().getCachedDocument(file)?.removeDocumentListener(listener)
+                }
+            }
 
             trySendIfValid { languageServer ->
                 toUriString(file)?.let { uri ->

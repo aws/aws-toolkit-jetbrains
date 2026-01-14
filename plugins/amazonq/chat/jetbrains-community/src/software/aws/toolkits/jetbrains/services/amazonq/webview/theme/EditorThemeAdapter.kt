@@ -91,7 +91,7 @@ class EditorThemeAdapter {
 
                 defaultText = text,
                 inactiveText = themeColor("TextField.inactiveForeground", default = 0x8C8C8C, darkDefault = 0x808080),
-                linkText = themeColor("link.foreground", "link", "Link.activeForeground", default = 0x589DF6),
+                linkText = themeColor("link", "Link.activeForeground", default = 0x589DF6),
 
                 background = chatBackground,
                 border = getBorderColor(currentScheme),
