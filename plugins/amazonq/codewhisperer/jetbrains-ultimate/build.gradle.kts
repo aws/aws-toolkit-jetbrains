@@ -22,7 +22,6 @@ dependencies {
 
     testImplementation(testFixtures(project(":plugin-amazonq:codewhisperer:jetbrains-community")))
     testImplementation(testFixtures(project(":plugin-core-q:jetbrains-ultimate")))
-    testImplementation(project(path = ":plugin-toolkit:jetbrains-ultimate", configuration = "testArtifacts"))
 }
 
 // hack because our test structure currently doesn't make complete sense

@@ -24,7 +24,7 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import software.amazon.q.jetbrains.utils.xmlElement
-import software.aws.toolkits.jetbrains.core.ToolWindowHeadlessManagerImpl
+import com.intellij.toolWindow.ToolWindowHeadlessManagerImpl
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererLoginType
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExploreActionState
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled

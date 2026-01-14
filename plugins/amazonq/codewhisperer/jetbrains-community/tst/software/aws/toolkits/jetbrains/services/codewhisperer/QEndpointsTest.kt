@@ -12,7 +12,7 @@ import software.amazon.q.jetbrains.utils.satisfiesKt
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QDefaultServiceConfig
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QEndpoints
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionEndpoint
-import software.aws.toolkits.jetbrains.utils.rules.RegistryExtension
+import software.amazon.q.jetbrains.utils.rules.RegistryExtension
 
 @ExtendWith(ApplicationExtension::class)
 class QEndpointsTest {

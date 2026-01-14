@@ -14,8 +14,8 @@ plugins {
 
 dependencies {
     testImplementation(gradleApi())
-    testImplementation(project(":plugin-core:core"))
-    testImplementation(project(path = ":plugin-core:core", configuration = "testArtifacts"))
+    testImplementation(project(":plugin-core-q:core-q"))
+    testImplementation(project(path = ":plugin-core-q:core-q", configuration = "testArtifacts"))
     testImplementation(libs.kotlin.coroutines)
     testImplementation(libs.intellijRemoteFixtures)
     testImplementation(libs.intellijRemoteRobot)

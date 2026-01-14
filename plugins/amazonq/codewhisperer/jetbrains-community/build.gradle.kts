@@ -22,9 +22,6 @@ dependencies {
     implementation(libs.commons.collections)
 
     testFixturesApi(testFixtures(project(":plugin-core-q:jetbrains-community")))
-    testFixturesApi(project(path = ":plugin-toolkit:jetbrains-core", configuration = "testArtifacts")) {
-        isTransitive = false
-    }
 }
 
 // hack because our test structure currently doesn't make complete sense

@@ -134,8 +134,6 @@ tasks.withType<Test>().configureEach {
 
     systemProperty("log.dir", intellijPlatform.sandboxContainer.map { "$it-test/logs" }.get())
     systemProperty("testDataPath", project.rootDir.resolve("testdata").absolutePath)
-    val jetbrainsCoreTestResources = project(":plugin-toolkit:jetbrains-core").projectDir.resolve("tst-resources")
-    systemProperty("idea.log.config.properties.file", jetbrainsCoreTestResources.resolve("toolkit-test-log.properties"))
     systemProperty("org.gradle.project.ideProfileName", ideProfile.name)
 }
 

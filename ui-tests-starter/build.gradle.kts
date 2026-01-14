@@ -62,9 +62,9 @@ dependencies {
         val version = ideProfile.community.sdkVersion
         intellijIdeaCommunity(version, !version.contains("SNAPSHOT"))
 
-        testImplementation(project(":plugin-core:core"))
-        testImplementation(project(":plugin-core:jetbrains-community"))
-        testImplementation(testFixtures(project(":plugin-core:jetbrains-community")))
+        testImplementation(project(":plugin-core-q:core-q"))
+        testImplementation(project(":plugin-core-q:jetbrains-community"))
+        testImplementation(testFixtures(project(":plugin-core-q:jetbrains-community")))
 
         testFramework(TestFrameworkType.Bundled)
         testFramework(TestFrameworkType.JUnit5)

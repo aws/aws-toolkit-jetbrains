@@ -31,13 +31,8 @@ tasks.createRelease.configure {
 }
 
 dependencies {
-    aggregateCoverage(project(":plugin-toolkit:intellij-standalone"))
-    aggregateCoverage(project(":plugin-core"))
+    aggregateCoverage(project(":plugin-core-q"))
     aggregateCoverage(project(":plugin-amazonq"))
-
-    project.findProject(":plugin-toolkit:jetbrains-gateway")?.let {
-        aggregateCoverage(it)
-    }
 
     aggregateCoverage(project(":ui-tests"))
 }
