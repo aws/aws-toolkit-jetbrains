@@ -20,8 +20,8 @@ import software.amazon.awssdk.services.sqs.SqsClient
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName
 import software.amazon.awssdk.services.sqs.model.SetQueueAttributesRequest
 import software.amazon.awssdk.services.sqs.model.SetQueueAttributesResponse
-import software.aws.toolkits.jetbrains.core.MockClientManagerRule
-import software.aws.toolkits.jetbrains.core.region.getDefaultRegion
+import software.aws.toolkit.jetbrains.core.MockClientManagerRule
+import software.aws.toolkit.jetbrains.core.region.getDefaultRegion
 
 class EditAttributesDialogTest {
     lateinit var client: SqsClient

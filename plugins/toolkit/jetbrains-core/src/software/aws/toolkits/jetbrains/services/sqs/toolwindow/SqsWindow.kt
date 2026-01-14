@@ -9,7 +9,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.ui.content.Content
 import com.intellij.ui.content.ContentManager
 import software.amazon.awssdk.services.sqs.SqsClient
-import software.aws.toolkits.jetbrains.core.awsClient
+import software.aws.toolkit.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.services.sqs.Queue
 import software.aws.toolkits.jetbrains.services.sqs.telemetryType
 import software.aws.toolkits.telemetry.SqsTelemetry

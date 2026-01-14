@@ -20,7 +20,7 @@ import com.intellij.xdebugger.XDebugProcessStarter
 import com.intellij.xdebugger.XDebugSession
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
+import software.aws.toolkit.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
 import software.aws.toolkits.jetbrains.services.lambda.steps.SamRunnerStep
 import software.aws.toolkits.jetbrains.utils.execution.steps.Context

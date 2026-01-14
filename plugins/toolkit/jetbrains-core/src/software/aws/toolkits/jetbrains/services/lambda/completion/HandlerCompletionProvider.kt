@@ -8,9 +8,9 @@ import com.intellij.codeInsight.completion.CompletionResultSet
 import com.intellij.codeInsight.lookup.CharFilter.Result
 import com.intellij.openapi.project.Project
 import com.intellij.util.textCompletion.TextCompletionProvider
-import software.aws.toolkits.core.lambda.LambdaRuntime
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.info
+import software.aws.toolkit.core.lambda.LambdaRuntime
+import software.aws.toolkit.core.utils.getLogger
+import software.aws.toolkit.core.utils.info
 import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
 
 class HandlerCompletionProvider(private val project: Project, runtime: LambdaRuntime?) : TextCompletionProvider {

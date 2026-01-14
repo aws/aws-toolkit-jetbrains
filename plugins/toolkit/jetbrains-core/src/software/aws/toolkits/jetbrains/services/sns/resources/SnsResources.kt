@@ -5,8 +5,8 @@ package software.aws.toolkits.jetbrains.services.sns.resources
 
 import software.amazon.awssdk.services.sns.SnsClient
 import software.amazon.awssdk.services.sns.model.Topic
-import software.aws.toolkits.jetbrains.core.ClientBackedCachedResource
-import software.aws.toolkits.jetbrains.core.Resource
+import software.aws.toolkit.jetbrains.core.ClientBackedCachedResource
+import software.aws.toolkit.jetbrains.core.Resource
 
 object SnsResources {
     val LIST_TOPICS: Resource.Cached<List<Topic>> = ClientBackedCachedResource(SnsClient::class, "sns.list_topics") {

@@ -19,9 +19,9 @@ import com.intellij.psi.search.GlobalSearchScopes
 import software.amazon.awssdk.core.SdkBytes
 import software.amazon.awssdk.services.lambda.LambdaClient
 import software.amazon.awssdk.services.lambda.model.LogType
-import software.aws.toolkits.jetbrains.core.AwsClientManager
-import software.aws.toolkits.jetbrains.utils.formatText
-import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
+import software.aws.toolkit.jetbrains.core.AwsClientManager
+import software.aws.toolkit.jetbrains.utils.formatText
+import software.aws.toolkit.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.LambdaTelemetry
 import software.aws.toolkits.telemetry.Result

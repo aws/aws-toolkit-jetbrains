@@ -17,7 +17,7 @@ import software.amazon.awssdk.services.cloudwatchlogs.model.DescribeLogStreamsRe
 import software.amazon.awssdk.services.cloudwatchlogs.model.LogGroup
 import software.amazon.awssdk.services.cloudwatchlogs.model.LogStream
 import software.amazon.awssdk.services.cloudwatchlogs.model.ResourceNotFoundException
-import software.aws.toolkits.jetbrains.core.MockClientManagerRule
+import software.aws.toolkit.jetbrains.core.MockClientManagerRule
 
 class CloudWatchLogsTests {
     @JvmField

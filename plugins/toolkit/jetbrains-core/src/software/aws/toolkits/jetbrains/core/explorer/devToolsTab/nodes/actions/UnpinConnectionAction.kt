@@ -7,8 +7,8 @@ import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.DumbAware
-import software.aws.toolkits.jetbrains.core.credentials.pinning.ConnectionPinningManager
-import software.aws.toolkits.jetbrains.core.credentials.pinning.FeatureWithPinnedConnection
+import software.aws.toolkit.jetbrains.core.credentials.pinning.ConnectionPinningManager
+import software.aws.toolkit.jetbrains.core.credentials.pinning.FeatureWithPinnedConnection
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerTreeToolWindowDataKeys
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.PinnedConnectionNode
 import software.aws.toolkits.resources.message

@@ -25,8 +25,8 @@ import software.amazon.awssdk.services.apprunner.model.ResumeServiceRequest
 import software.amazon.awssdk.services.apprunner.model.ResumeServiceResponse
 import software.amazon.awssdk.services.apprunner.model.ServiceStatus
 import software.amazon.awssdk.services.apprunner.model.ServiceSummary
-import software.aws.toolkits.core.utils.RuleUtils
-import software.aws.toolkits.jetbrains.core.MockClientManagerRule
+import software.aws.toolkit.core.utils.RuleUtils
+import software.aws.toolkit.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.services.apprunner.AppRunnerServiceNode
 import software.aws.toolkits.resources.message
 

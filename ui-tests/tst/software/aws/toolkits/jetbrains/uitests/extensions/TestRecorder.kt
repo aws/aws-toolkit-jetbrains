@@ -5,7 +5,7 @@ package software.aws.toolkits.jetbrains.uitests.extensions
 
 import org.junit.jupiter.api.extension.AfterTestExecutionCallback
 import org.junit.jupiter.api.extension.ExtensionContext
-import software.aws.toolkits.core.utils.outputStream
+import software.aws.toolkit.core.utils.outputStream
 import java.net.URL
 import java.nio.file.Paths
 import javax.imageio.ImageIO

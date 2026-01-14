@@ -7,12 +7,12 @@ import com.intellij.openapi.project.Project
 import icons.AwsIcons
 import software.amazon.awssdk.services.apprunner.AppRunnerClient
 import software.amazon.awssdk.services.apprunner.model.ServiceSummary
+import software.aws.toolkit.jetbrains.utils.toHumanReadable
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerResourceNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.CacheBackedAwsExplorerServiceRootNode
 import software.aws.toolkits.jetbrains.services.apprunner.resources.AppRunnerResources
-import software.aws.toolkits.jetbrains.utils.toHumanReadable
 import software.aws.toolkits.resources.message
 
 class AppRunnerNode(project: Project, service: AwsExplorerServiceNode) :

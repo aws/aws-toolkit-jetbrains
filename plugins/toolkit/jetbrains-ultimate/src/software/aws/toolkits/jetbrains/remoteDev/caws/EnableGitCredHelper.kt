@@ -8,9 +8,9 @@ import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.StartupActivity
 import git4idea.config.GitVcsApplicationSettings
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.info
-import software.aws.toolkits.jetbrains.utils.isCodeCatalystDevEnv
+import software.aws.toolkit.core.utils.getLogger
+import software.aws.toolkit.core.utils.info
+import software.aws.toolkit.jetbrains.utils.isCodeCatalystDevEnv
 
 class EnableGitCredHelper : StartupActivity, DumbAware {
     override fun runActivity(project: Project) {

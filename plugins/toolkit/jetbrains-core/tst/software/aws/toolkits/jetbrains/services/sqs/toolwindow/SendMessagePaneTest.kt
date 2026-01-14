@@ -15,10 +15,10 @@ import org.mockito.kotlin.whenever
 import software.amazon.awssdk.services.sqs.SqsClient
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest
 import software.amazon.awssdk.services.sqs.model.SendMessageResponse
-import software.aws.toolkits.core.region.AwsRegion
-import software.aws.toolkits.core.utils.RuleUtils
-import software.aws.toolkits.jetbrains.core.MockClientManagerRule
-import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
+import software.aws.toolkit.core.region.AwsRegion
+import software.aws.toolkit.core.utils.RuleUtils
+import software.aws.toolkit.jetbrains.core.MockClientManagerRule
+import software.aws.toolkit.jetbrains.core.region.MockRegionProviderRule
 import software.aws.toolkits.jetbrains.services.sqs.MAX_LENGTH_OF_FIFO_ID
 import software.aws.toolkits.jetbrains.services.sqs.Queue
 import software.aws.toolkits.jetbrains.utils.waitForTrue

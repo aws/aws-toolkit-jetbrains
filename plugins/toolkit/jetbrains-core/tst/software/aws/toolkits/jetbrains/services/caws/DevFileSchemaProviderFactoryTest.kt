@@ -13,8 +13,8 @@ import com.jetbrains.jsonSchema.ide.JsonSchemaService
 import org.jetbrains.yaml.schema.YamlJsonSchemaHighlightingInspection
 import org.junit.Rule
 import org.junit.Test
-import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
-import software.aws.toolkits.jetbrains.utils.rules.openFile
+import software.aws.toolkit.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
+import software.aws.toolkit.jetbrains.utils.rules.openFile
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 

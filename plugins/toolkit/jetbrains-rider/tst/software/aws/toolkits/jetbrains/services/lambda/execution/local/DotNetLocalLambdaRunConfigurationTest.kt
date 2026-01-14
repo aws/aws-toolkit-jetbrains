@@ -15,7 +15,7 @@ import org.testng.annotations.Ignore
 import org.testng.annotations.Test
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.services.lambda.model.Runtime
-import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
+import software.aws.toolkit.jetbrains.core.credentials.MockCredentialsManager
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommonTestUtils
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable

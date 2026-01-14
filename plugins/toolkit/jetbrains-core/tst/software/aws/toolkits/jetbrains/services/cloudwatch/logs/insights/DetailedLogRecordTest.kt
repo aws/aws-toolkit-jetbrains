@@ -18,8 +18,8 @@ import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.amazon.awssdk.services.cloudwatchlogs.model.CloudWatchLogsException
 import software.amazon.awssdk.services.cloudwatchlogs.model.GetLogRecordRequest
 import software.amazon.awssdk.services.cloudwatchlogs.model.GetLogRecordResponse
-import software.aws.toolkits.jetbrains.core.MockClientManagerRule
-import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
+import software.aws.toolkit.jetbrains.core.MockClientManagerRule
+import software.aws.toolkit.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.waitForModelToBeAtLeast
 
 class DetailedLogRecordTest {

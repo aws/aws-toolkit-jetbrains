@@ -24,7 +24,7 @@ import software.amazon.awssdk.services.cloudwatchlogs.model.GetLogEventsResponse
 import software.amazon.awssdk.services.cloudwatchlogs.model.LogStream
 import software.amazon.awssdk.services.cloudwatchlogs.model.OutputLogEvent
 import software.amazon.awssdk.services.cloudwatchlogs.paginators.GetLogEventsIterable
-import software.aws.toolkits.jetbrains.core.MockClientManagerRule
+import software.aws.toolkit.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.OpenCurrentInEditorAction
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.OpenLogStreamInEditorAction
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor.LogStreamsStreamColumn

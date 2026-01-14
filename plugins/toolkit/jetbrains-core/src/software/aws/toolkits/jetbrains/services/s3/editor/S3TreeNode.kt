@@ -12,10 +12,10 @@ import com.intellij.ui.treeStructure.SimpleNode
 import kotlinx.coroutines.runBlocking
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException
 import software.amazon.awssdk.services.s3.model.S3Exception
-import software.aws.toolkits.core.utils.error
-import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkit.core.utils.error
+import software.aws.toolkit.core.utils.getLogger
+import software.aws.toolkit.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.services.s3.NOT_VERSIONED_VERSION_ID
-import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 import java.time.Instant
 

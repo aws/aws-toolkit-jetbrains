@@ -13,7 +13,7 @@ import com.intellij.util.xmlb.annotations.Attribute
 import com.intellij.util.xmlb.annotations.Property
 import com.intellij.util.xmlb.annotations.Tag
 
-@State(name = "tools", storages = [Storage("aws.xml", roamingType = RoamingType.DISABLED)])
+@State(name = "toolkitTools", storages = [Storage("awsToolkit.xml", roamingType = RoamingType.DISABLED)])
 class ToolSettings : SimplePersistentStateComponent<ExecutableOptions>(ExecutableOptions()) {
     fun getExecutablePath(executable: ToolType<*>) = state.value[executable.id]?.executablePath
 

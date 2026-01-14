@@ -10,7 +10,7 @@ import com.jetbrains.rdserver.unattendedHost.customization.GatewayExitCustomizat
 import com.jetbrains.rdserver.unattendedHost.customization.controlCenter.GatewayControlCenterProvider
 import com.jetbrains.rdserver.unattendedHost.customization.controlCenter.GatewayHostnameDisplayKind
 import icons.AwsIcons
-import software.aws.toolkits.jetbrains.utils.isCodeCatalystDevEnv
+import software.aws.toolkit.jetbrains.utils.isCodeCatalystDevEnv
 import software.aws.toolkits.resources.message
 
 class CodeCatalystGatewayClientCustomizer : GatewayClientCustomizationProvider {

@@ -8,7 +8,7 @@ import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 
-@State(name = "ecsExec", storages = [Storage("aws.xml")])
+@State(name = "toolkitEcsExec", storages = [Storage("awsToolkit.xml")])
 class EcsExecCommandSettings : PersistentStateComponent<AwsEcsExecConfiguration> {
     private var state = AwsEcsExecConfiguration()
 

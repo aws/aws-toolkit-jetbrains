@@ -7,8 +7,8 @@ import com.intellij.ide.projectView.PresentationData
 import com.intellij.ide.util.treeView.AbstractTreeNode
 import com.intellij.openapi.project.Project
 import com.intellij.ui.SimpleTextAttributes
-import software.aws.toolkits.jetbrains.core.credentials.activeCredentialProvider
-import software.aws.toolkits.jetbrains.core.credentials.activeRegion
+import software.aws.toolkit.jetbrains.core.credentials.activeCredentialProvider
+import software.aws.toolkit.jetbrains.core.credentials.activeRegion
 import software.aws.toolkits.jetbrains.core.explorer.AwsExplorerNodeProcessor
 import javax.swing.Icon
 

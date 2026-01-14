@@ -17,11 +17,13 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.reset
 import org.mockito.kotlin.stub
-import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.auth.credentials.AwsSessionCredentials
+import software.aws.toolkit.jetbrains.core.credentials.CredentialProcessOutput
+import software.aws.toolkit.jetbrains.core.credentials.CredentialProcessOutputParser
+import software.aws.toolkit.jetbrains.core.credentials.ToolkitCredentialProcessProvider
 import java.io.File
 import java.time.Duration
 import java.time.Instant

@@ -22,6 +22,7 @@ import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory
 import com.intellij.testFramework.runInEdtAndGet
 import com.intellij.testFramework.runInEdtAndWait
 import com.intellij.xdebugger.XDebuggerUtil
+import software.aws.toolkit.jetbrains.utils.rules.CodeInsightTestFixtureRule
 
 class GoCodeInsightTestFixtureRule : CodeInsightTestFixtureRule(GoLightProjectDescriptor()) {
     override fun createTestFixture(): CodeInsightTestFixture {

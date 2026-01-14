@@ -17,9 +17,9 @@ import org.jetbrains.concurrency.AsyncPromise
 import org.jetbrains.concurrency.Promise
 import org.slf4j.event.Level
 import software.amazon.awssdk.services.lambda.model.Runtime
-import software.aws.toolkits.core.lambda.validOrNull
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.tryOrNull
+import software.aws.toolkit.core.lambda.validOrNull
+import software.aws.toolkit.core.utils.getLogger
+import software.aws.toolkit.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.LocalLambdaRunConfiguration
 import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamTemplateUtils

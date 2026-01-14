@@ -4,7 +4,7 @@
 package software.aws.toolkits.jetbrains.services.dynamodb
 
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient
-import software.aws.toolkits.jetbrains.core.ClientBackedCachedResource
+import software.aws.toolkit.jetbrains.core.ClientBackedCachedResource
 
 object DynamoDbResources {
     val LIST_TABLES = ClientBackedCachedResource(DynamoDbClient::class, "dynamodb.list_tables") {

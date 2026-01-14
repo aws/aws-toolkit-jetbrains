@@ -9,10 +9,10 @@ import com.intellij.openapi.project.Project
 import com.intellij.testFramework.ReadOnlyLightVirtualFile
 import kotlinx.coroutines.withContext
 import software.amazon.awssdk.services.cloudwatchlogs.model.OutputLogEvent
-import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineUiContext
+import software.aws.toolkit.jetbrains.core.coroutines.getCoroutineUiContext
+import software.aws.toolkit.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamEntry
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.toLogStreamEntry
-import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 
 object OpenStreamInEditor {

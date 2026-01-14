@@ -17,7 +17,7 @@ import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.BucketAlreadyExistsException
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest
 import software.amazon.awssdk.services.s3.model.CreateBucketResponse
-import software.aws.toolkits.core.utils.delegateMock
+import software.aws.toolkit.core.utils.delegateMock
 
 class CreateBucketActionDialogTest {
     @Rule

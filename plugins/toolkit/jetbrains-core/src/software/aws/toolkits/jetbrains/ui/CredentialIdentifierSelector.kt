@@ -10,11 +10,11 @@ import com.intellij.ui.ColoredListCellRenderer
 import com.intellij.ui.ComboboxSpeedSearch
 import com.intellij.ui.SimpleTextAttributes
 import com.intellij.ui.layout.ValidationInfoBuilder
-import software.aws.toolkits.core.ConnectionSettings
-import software.aws.toolkits.core.credentials.CredentialIdentifier
-import software.aws.toolkits.core.credentials.CredentialType
-import software.aws.toolkits.core.region.AwsRegion
-import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
+import software.aws.toolkit.core.ConnectionSettings
+import software.aws.toolkit.core.credentials.CredentialIdentifier
+import software.aws.toolkit.core.credentials.CredentialType
+import software.aws.toolkit.core.region.AwsRegion
+import software.aws.toolkit.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.resources.message
 import javax.swing.JList
 

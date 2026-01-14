@@ -7,8 +7,8 @@ import org.intellij.lang.annotations.Language
 import software.amazon.awssdk.services.sqs.SqsClient
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName
 import software.amazon.awssdk.services.sqs.model.SqsException
-import software.aws.toolkits.core.utils.error
-import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkit.core.utils.error
+import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkits.telemetry.SqsQueueType
 
 const val MAX_NUMBER_OF_POLLED_MESSAGES = 10

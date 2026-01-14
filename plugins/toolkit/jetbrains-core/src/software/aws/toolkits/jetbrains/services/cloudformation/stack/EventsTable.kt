@@ -6,7 +6,7 @@ import com.intellij.openapi.Disposable
 import com.intellij.ui.IdeBorderFactory
 import com.intellij.ui.SideBorder
 import software.amazon.awssdk.services.cloudformation.model.StackEvent
-import software.aws.toolkits.jetbrains.utils.ui.WrappingCellRenderer
+import software.aws.toolkit.jetbrains.utils.ui.WrappingCellRenderer
 import software.aws.toolkits.resources.message
 import java.awt.Component
 import javax.swing.JComponent

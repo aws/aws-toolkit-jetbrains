@@ -15,8 +15,8 @@ import com.intellij.openapi.util.Ref
 import com.intellij.psi.PsiElement
 import org.jetbrains.yaml.psi.YAMLKeyValue
 import org.jetbrains.yaml.psi.YAMLPsiElement
-import software.aws.toolkits.core.region.AwsRegion
-import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
+import software.aws.toolkit.core.region.AwsRegion
+import software.aws.toolkit.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver
 import software.aws.toolkits.jetbrains.services.lambda.execution.LambdaRunConfigurationType
 import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup

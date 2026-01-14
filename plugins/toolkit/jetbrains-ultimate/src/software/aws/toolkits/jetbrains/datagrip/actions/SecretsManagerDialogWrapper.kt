@@ -12,13 +12,13 @@ import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.Messages
 import com.intellij.ui.SimpleListCellRenderer
 import software.amazon.awssdk.services.secretsmanager.model.SecretListEntry
+import software.aws.toolkit.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
 import software.aws.toolkits.jetbrains.datagrip.DatabaseSecret
 import software.aws.toolkits.jetbrains.datagrip.auth.SecretsManagerDbSecret
 import software.aws.toolkits.jetbrains.services.secretsmanager.SecretsManagerResources
 import software.aws.toolkits.jetbrains.services.secretsmanager.arnToName
 import software.aws.toolkits.jetbrains.ui.ResourceSelector
-import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 import java.awt.BorderLayout
 import javax.swing.JComponent

@@ -4,8 +4,8 @@
 package software.aws.toolkits.jetbrains.services.lambda.execution;
 
 import static com.intellij.openapi.application.ActionsKt.runInEdt;
-import static software.aws.toolkits.jetbrains.utils.ui.UiUtils.addQuickSelect;
-import static software.aws.toolkits.jetbrains.utils.ui.UiUtils.formatAndSet;
+import static software.aws.toolkit.jetbrains.utils.ui.UiUtils.addQuickSelect;
+import static software.aws.toolkit.jetbrains.utils.ui.UiUtils.formatAndSet;
 import static software.aws.toolkits.resources.Localization.message;
 
 import com.intellij.icons.AllIcons;
@@ -34,9 +34,9 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import software.aws.toolkits.core.lambda.LambdaSampleEvent;
-import software.aws.toolkits.core.lambda.LambdaSampleEventProvider;
-import migration.software.aws.toolkits.jetbrains.core.RemoteResourceResolverProvider;
+import software.aws.toolkit.core.lambda.LambdaSampleEvent;
+import software.aws.toolkit.core.lambda.LambdaSampleEventProvider;
+import migration.software.aws.toolkit.jetbrains.core.RemoteResourceResolverProvider;
 import software.aws.toolkits.jetbrains.ui.ProjectFileBrowseListenerKt;
 
 public class LambdaInputPanel {

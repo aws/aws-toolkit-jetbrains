@@ -4,7 +4,7 @@
 package software.aws.toolkits.jetbrains.services.secretsmanager
 
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient
-import software.aws.toolkits.jetbrains.core.ClientBackedCachedResource
+import software.aws.toolkit.jetbrains.core.ClientBackedCachedResource
 
 object SecretsManagerResources {
     val secrets = ClientBackedCachedResource(SecretsManagerClient::class, "secretsmanager.secrets") {

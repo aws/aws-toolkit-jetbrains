@@ -14,12 +14,12 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
-import software.aws.toolkits.core.rules.SystemPropertyHelper
-import software.aws.toolkits.core.utils.test.aString
+import software.aws.toolkit.core.rules.SystemPropertyHelper
+import software.aws.toolkit.core.utils.test.aString
+import software.aws.toolkit.jetbrains.utils.deserializeState
+import software.aws.toolkit.jetbrains.utils.rules.RegistryRule
+import software.aws.toolkit.jetbrains.utils.serializeState
 import software.aws.toolkits.jetbrains.core.experiments.ToolkitExperimentManager.Companion.EXPERIMENT_CHANGED
-import software.aws.toolkits.jetbrains.utils.deserializeState
-import software.aws.toolkits.jetbrains.utils.rules.RegistryRule
-import software.aws.toolkits.jetbrains.utils.serializeState
 import java.time.Duration
 import java.time.Instant
 

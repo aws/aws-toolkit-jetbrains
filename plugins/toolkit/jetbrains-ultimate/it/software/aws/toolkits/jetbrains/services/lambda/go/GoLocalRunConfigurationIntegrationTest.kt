@@ -25,11 +25,11 @@ import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.auth.credentials.AwsSessionCredentials
-import software.aws.toolkits.core.lambda.LambdaRuntime
-import software.aws.toolkits.core.utils.RuleUtils
-import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
-import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
-import software.aws.toolkits.jetbrains.core.region.getDefaultRegion
+import software.aws.toolkit.core.lambda.LambdaRuntime
+import software.aws.toolkit.core.utils.RuleUtils
+import software.aws.toolkit.jetbrains.core.credentials.MockCredentialManagerRule
+import software.aws.toolkit.jetbrains.core.credentials.MockCredentialsManager
+import software.aws.toolkit.jetbrains.core.region.getDefaultRegion
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.createHandlerBasedRunConfiguration
 import software.aws.toolkits.jetbrains.utils.FrameworkTestUtils
 import software.aws.toolkits.jetbrains.utils.checkBreakPointHit

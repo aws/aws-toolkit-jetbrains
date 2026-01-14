@@ -20,7 +20,7 @@ import org.junit.jupiter.api.io.TempDir
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException
-import software.aws.toolkits.core.s3.deleteBucketAndContents
+import software.aws.toolkit.core.s3.deleteBucketAndContents
 import software.aws.toolkits.jetbrains.uitests.CoreTest
 import software.aws.toolkits.jetbrains.uitests.extensions.uiTest
 import software.aws.toolkits.jetbrains.uitests.fixtures.IdeaFrame

@@ -23,6 +23,9 @@ sourceSets {
     main {
         java.srcDir(generatedSrcDir)
     }
+    test {
+        java.setSrcDirs(emptySet<String>())
+    }
 }
 
 idea {
@@ -40,8 +43,43 @@ val generateTelemetry = tasks.register<GenerateTelemetry>("generateTelemetry") {
     }
 }
 
-tasks.compileKotlin {
+val replaceInGeneratedSources = tasks.register<DefaultTask>("replaceInGeneratedSources") {
     dependsOn(generateTelemetry)
+
+    doLast {
+        // Define your string replacements as pairs (old -> new)
+        val replacements = mapOf(
+            "software.aws.toolkits.jetbrains.services.telemetry" to "software.aws.toolkit.jetbrains.services.telemetry",
+            "software.aws.toolkits.core" to "software.aws.toolkit.core"
+        )
+
+        // Walk through all generated source files
+        generatedSrcDir.get().asFile.walkTopDown()
+            .filter { it.isFile && (it.extension == "kt" || it.extension == "java") }
+            .forEach { file ->
+                var content = file.readText()
+                var modified = false
+
+                // Apply each replacement
+                replacements.forEach { (oldString, newString) ->
+                    val newContent = content.replace(oldString, newString)
+                    if (newContent != content) {
+                        modified = true
+                        content = newContent
+                    }
+                }
+
+                // Write back only if changes were made
+                if (modified) {
+                    file.writeText(content)
+                    println("Replaced strings in: ${file.name}")
+                }
+            }
+    }
+}
+
+tasks.compileKotlin {
+    dependsOn(replaceInGeneratedSources)
 }
 
 intellijToolkit {

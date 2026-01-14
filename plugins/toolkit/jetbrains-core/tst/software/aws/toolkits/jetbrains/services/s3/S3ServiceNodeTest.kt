@@ -7,11 +7,11 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.services.s3.model.Bucket
-import software.aws.toolkits.jetbrains.core.MockResourceCacheRule
+import software.aws.toolkit.jetbrains.core.MockResourceCacheRule
+import software.aws.toolkit.jetbrains.core.region.MockRegionProviderRule
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerEmptyNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerErrorNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.S3ExplorerRootNode
-import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
 import software.aws.toolkits.jetbrains.services.s3.resources.S3Resources
 import java.time.Instant
 import java.util.concurrent.CompletableFuture

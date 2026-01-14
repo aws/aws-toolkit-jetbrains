@@ -8,7 +8,7 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 
-@State(name = "updateLambdaState", storages = [Storage("aws.xml")])
+@State(name = "toolkitUpdateLambdaState", storages = [Storage("awsToolkit.xml")])
 private class UpdateLambdaState : PersistentStateComponent<UpdateLambda> {
     private var settings = UpdateLambda()
 

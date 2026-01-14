@@ -5,12 +5,12 @@ package software.aws.toolkits.jetbrains.ui.connection
 
 import com.intellij.openapi.project.Project
 import com.intellij.ui.PopupMenuListenerAdapter
-import software.aws.toolkits.core.ConnectionSettings
-import software.aws.toolkits.core.region.AwsRegion
-import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
-import software.aws.toolkits.jetbrains.core.credentials.profiles.DEFAULT_PROFILE_ID
-import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
+import software.aws.toolkit.core.ConnectionSettings
+import software.aws.toolkit.core.region.AwsRegion
+import software.aws.toolkit.jetbrains.core.credentials.AwsConnectionManager
+import software.aws.toolkit.jetbrains.core.credentials.CredentialManager
+import software.aws.toolkit.jetbrains.core.credentials.profiles.DEFAULT_PROFILE_ID
+import software.aws.toolkit.jetbrains.core.region.AwsRegionProvider
 import javax.swing.JComponent
 import javax.swing.event.PopupMenuEvent
 

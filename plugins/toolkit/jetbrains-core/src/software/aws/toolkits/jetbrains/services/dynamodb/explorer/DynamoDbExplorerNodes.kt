@@ -6,16 +6,16 @@ package software.aws.toolkits.jetbrains.services.dynamodb.explorer
 import com.intellij.openapi.project.Project
 import icons.AwsIcons
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient
-import software.aws.toolkits.core.utils.tryOrNull
-import software.aws.toolkits.jetbrains.core.credentials.activeRegion
+import software.aws.toolkit.core.utils.tryOrNull
+import software.aws.toolkit.jetbrains.core.credentials.activeRegion
+import software.aws.toolkit.jetbrains.core.getResourceIfPresent
+import software.aws.toolkit.jetbrains.services.sts.StsResources
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerResourceNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.CacheBackedAwsExplorerServiceRootNode
-import software.aws.toolkits.jetbrains.core.getResourceIfPresent
 import software.aws.toolkits.jetbrains.services.dynamodb.DynamoDbResources
 import software.aws.toolkits.jetbrains.services.dynamodb.editor.DynamoDbTableEditorProvider
-import software.aws.toolkits.jetbrains.services.sts.StsResources
 import software.aws.toolkits.resources.message
 
 class DynamoDbServiceNode(project: Project, service: AwsExplorerServiceNode) :

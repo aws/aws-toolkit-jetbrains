@@ -7,6 +7,8 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
+import software.aws.toolkit.jetbrains.utils.ui.addQuickSelect
+import software.aws.toolkit.jetbrains.utils.ui.find
 import java.awt.event.MouseEvent
 import javax.swing.DefaultComboBoxModel
 import javax.swing.JCheckBox

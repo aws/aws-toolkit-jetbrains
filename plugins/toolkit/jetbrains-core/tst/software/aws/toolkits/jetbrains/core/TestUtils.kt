@@ -21,7 +21,9 @@ import software.amazon.awssdk.services.lambda.model.TracingConfigResponse
 import software.amazon.awssdk.services.lambda.model.TracingMode
 import software.amazon.awssdk.services.s3.model.Bucket
 import software.amazon.awssdk.services.schemas.model.RegistrySummary
-import software.aws.toolkits.core.region.AwsRegion
+import software.aws.toolkit.core.region.AwsRegion
+import software.aws.toolkit.jetbrains.core.MockResourceCacheRule
+import software.aws.toolkit.jetbrains.core.Resource
 import software.aws.toolkits.jetbrains.services.apprunner.resources.AppRunnerResources
 import software.aws.toolkits.jetbrains.services.cloudformation.resources.CloudFormationResources
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.resources.CloudWatchResources

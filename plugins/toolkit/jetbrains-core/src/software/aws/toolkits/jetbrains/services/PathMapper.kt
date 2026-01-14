@@ -8,8 +8,8 @@ import com.intellij.openapi.util.io.FileUtil
 import com.intellij.xdebugger.XSourcePosition
 import com.jetbrains.python.debugger.PyLocalPositionConverter
 import com.jetbrains.python.debugger.PySourcePosition
-import software.aws.toolkits.core.utils.debug
-import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkit.core.utils.debug
+import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.PathMapper.Companion.normalizeLocal
 import java.nio.file.Files
 import java.nio.file.Paths

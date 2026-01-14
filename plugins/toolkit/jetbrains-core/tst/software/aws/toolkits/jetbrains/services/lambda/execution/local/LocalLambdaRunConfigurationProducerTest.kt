@@ -18,12 +18,12 @@ import org.assertj.core.api.Assertions.assertThat
 import org.jetbrains.yaml.psi.YAMLFile
 import org.junit.Rule
 import org.junit.Test
-import software.aws.toolkits.core.lambda.LambdaRuntime
+import software.aws.toolkit.core.lambda.LambdaRuntime
+import software.aws.toolkit.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
+import software.aws.toolkit.jetbrains.utils.rules.addModule
+import software.aws.toolkit.jetbrains.utils.rules.addTestClass
+import software.aws.toolkit.jetbrains.utils.rules.openClass
 import software.aws.toolkits.jetbrains.services.lambda.sam.findByLocation
-import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
-import software.aws.toolkits.jetbrains.utils.rules.addModule
-import software.aws.toolkits.jetbrains.utils.rules.addTestClass
-import software.aws.toolkits.jetbrains.utils.rules.openClass
 import kotlin.test.assertNotNull
 
 class LocalLambdaRunConfigurationProducerTest {

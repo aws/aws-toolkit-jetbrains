@@ -7,7 +7,7 @@ import com.intellij.testFramework.ProjectRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
 import org.junit.Rule
-import software.aws.toolkits.jetbrains.core.MockClientManagerRule
+import software.aws.toolkit.jetbrains.core.MockClientManagerRule
 
 /*
  * BaseCoroutineTest contains utilities that are useful for testing corutines which would otherwise

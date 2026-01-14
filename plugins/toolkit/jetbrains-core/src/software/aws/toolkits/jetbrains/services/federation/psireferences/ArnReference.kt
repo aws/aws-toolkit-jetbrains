@@ -8,7 +8,7 @@ import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
 import com.intellij.psi.SyntheticElement
 import com.intellij.psi.impl.FakePsiElement
-import software.aws.toolkits.jetbrains.ToolkitPlaces
+import software.aws.toolkit.jetbrains.ToolkitPlaces
 import software.aws.toolkits.jetbrains.services.federation.AwsConsoleUrlFactory
 
 class ArnReference(element: PsiElement, textRange: TextRange, private val arn: String) : WebReference(element, textRange) {

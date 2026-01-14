@@ -10,8 +10,9 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import software.aws.toolkits.core.utils.test.aString
-import software.aws.toolkits.core.utils.writeText
+import software.aws.toolkit.core.utils.test.aString
+import software.aws.toolkit.core.utils.writeText
+import software.aws.toolkit.jetbrains.utils.value
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
 import software.aws.toolkits.jetbrains.core.executables.setExecutablePath
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommonTestUtils
@@ -19,7 +20,6 @@ import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
 import software.aws.toolkits.jetbrains.services.lambda.steps.PackageLambda.Companion.UPLOADED_CODE_LOCATION
 import software.aws.toolkits.jetbrains.utils.execution.steps.ConsoleMessageEmitter
 import software.aws.toolkits.jetbrains.utils.execution.steps.Context
-import software.aws.toolkits.jetbrains.utils.value
 import java.nio.file.Path
 
 class PackageLambdaTest {

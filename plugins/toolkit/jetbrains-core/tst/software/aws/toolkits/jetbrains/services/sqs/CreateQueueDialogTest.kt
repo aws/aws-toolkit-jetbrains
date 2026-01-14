@@ -18,8 +18,8 @@ import software.amazon.awssdk.services.sqs.SqsClient
 import software.amazon.awssdk.services.sqs.model.CreateQueueRequest
 import software.amazon.awssdk.services.sqs.model.CreateQueueResponse
 import software.amazon.awssdk.services.sqs.model.QueueNameExistsException
-import software.aws.toolkits.core.utils.RuleUtils
-import software.aws.toolkits.jetbrains.core.MockClientManagerRule
+import software.aws.toolkit.core.utils.RuleUtils
+import software.aws.toolkit.jetbrains.core.MockClientManagerRule
 
 class CreateQueueDialogTest {
     lateinit var client: SqsClient

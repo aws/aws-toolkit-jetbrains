@@ -7,10 +7,10 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.ui.Messages
+import software.aws.toolkit.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.services.dynamic.CreateDynamicResourceVirtualFile
 import software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceUpdateManager
 import software.aws.toolkits.jetbrains.services.dynamic.InitialCreateDynamicResourceContent
-import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
 
 class SubmitResourceCreationRequestAction : AnAction(message("general.create")) {

@@ -10,7 +10,7 @@ import com.intellij.execution.actions.LazyRunConfigurationProducer
 import com.intellij.execution.configurations.ConfigurationFactory
 import com.intellij.openapi.util.Ref
 import com.intellij.psi.PsiElement
-import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
+import software.aws.toolkit.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkits.jetbrains.services.lambda.execution.LambdaRunConfigurationType
 
 class RemoteLambdaRunConfigurationProducer : LazyRunConfigurationProducer<RemoteLambdaRunConfiguration>() {

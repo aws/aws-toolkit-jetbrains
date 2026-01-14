@@ -3,7 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.sqs
 
-import software.aws.toolkits.core.region.AwsRegion
+import software.aws.toolkit.core.region.AwsRegion
 import software.aws.toolkits.resources.message
 
 // TODO This does not support FIPS

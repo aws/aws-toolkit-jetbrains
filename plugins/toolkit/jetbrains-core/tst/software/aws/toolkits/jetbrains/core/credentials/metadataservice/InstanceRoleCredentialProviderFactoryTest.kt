@@ -22,11 +22,11 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
 import software.amazon.awssdk.auth.credentials.AwsSessionCredentials
 import software.amazon.awssdk.core.SdkSystemSetting
-import software.aws.toolkits.core.credentials.CredentialType
-import software.aws.toolkits.core.credentials.CredentialsChangeEvent
-import software.aws.toolkits.core.credentials.CredentialsChangeListener
-import software.aws.toolkits.core.rules.SystemPropertyHelper
-import software.aws.toolkits.jetbrains.utils.satisfiesKt
+import software.aws.toolkit.core.credentials.CredentialType
+import software.aws.toolkit.core.credentials.CredentialsChangeEvent
+import software.aws.toolkit.core.credentials.CredentialsChangeListener
+import software.aws.toolkit.core.rules.SystemPropertyHelper
+import software.aws.toolkit.jetbrains.utils.satisfiesKt
 import java.time.Duration
 import java.time.Instant
 import java.time.format.DateTimeFormatter

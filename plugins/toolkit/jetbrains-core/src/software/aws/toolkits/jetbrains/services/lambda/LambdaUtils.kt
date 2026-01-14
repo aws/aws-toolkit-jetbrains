@@ -5,10 +5,10 @@ package software.aws.toolkits.jetbrains.services.lambda
 
 import com.intellij.util.text.SemVer
 import software.amazon.awssdk.services.lambda.LambdaClient
-import software.aws.toolkits.core.lambda.LambdaArchitecture
-import software.aws.toolkits.core.lambda.LambdaRuntime
+import software.aws.toolkit.core.lambda.LambdaArchitecture
+import software.aws.toolkit.core.lambda.LambdaRuntime
+import software.aws.toolkit.jetbrains.utils.assertIsNonDispatchThread
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
-import software.aws.toolkits.jetbrains.utils.assertIsNonDispatchThread
 
 fun LambdaRuntime.minSamDebuggingVersion(): SemVer =
     minSamDebugging?.let { SemVer.parseFromText(it) ?: throw IllegalStateException("$this has bad minSamDebuggingVersion! It should be a semver string!") }

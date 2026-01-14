@@ -17,8 +17,8 @@ import com.jetbrains.rider.projectView.solution
 import com.jetbrains.rider.projectView.workspace.getId
 import com.jetbrains.rider.projectView.workspace.getProjectModelEntities
 import com.jetbrains.rider.projectView.workspace.isProject
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.warn
+import software.aws.toolkit.core.utils.getLogger
+import software.aws.toolkit.core.utils.warn
 import software.aws.toolkits.jetbrains.protocol.HandlerExistRequest
 import software.aws.toolkits.jetbrains.protocol.lambdaPsiModel
 import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver

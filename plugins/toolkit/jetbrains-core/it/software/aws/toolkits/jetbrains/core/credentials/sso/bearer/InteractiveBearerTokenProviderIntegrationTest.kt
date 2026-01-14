@@ -14,14 +14,15 @@ import org.junit.jupiter.api.TestMethodOrder
 import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.io.TempDir
-import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
-import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
-import software.aws.toolkits.jetbrains.core.credentials.sso.DeviceAuthorizationGrantToken
-import software.aws.toolkits.jetbrains.core.credentials.sso.DeviceGrantAccessTokenCacheKey
-import software.aws.toolkits.jetbrains.core.credentials.sso.DiskCache
-import software.aws.toolkits.jetbrains.utils.extensions.SsoLogin
-import software.aws.toolkits.jetbrains.utils.extensions.SsoLoginExtension
-import software.aws.toolkits.jetbrains.utils.satisfiesKt
+import software.aws.toolkit.jetbrains.core.credentials.sono.SONO_REGION
+import software.aws.toolkit.jetbrains.core.credentials.sono.SONO_URL
+import software.aws.toolkit.jetbrains.core.credentials.sso.DeviceAuthorizationGrantToken
+import software.aws.toolkit.jetbrains.core.credentials.sso.DeviceGrantAccessTokenCacheKey
+import software.aws.toolkit.jetbrains.core.credentials.sso.DiskCache
+import software.aws.toolkit.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
+import software.aws.toolkit.jetbrains.utils.extensions.SsoLogin
+import software.aws.toolkit.jetbrains.utils.extensions.SsoLoginExtension
+import software.aws.toolkit.jetbrains.utils.satisfiesKt
 import java.nio.file.Path
 import java.time.Instant
 

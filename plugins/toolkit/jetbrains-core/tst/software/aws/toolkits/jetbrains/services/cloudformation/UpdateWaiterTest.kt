@@ -19,9 +19,9 @@ import software.amazon.awssdk.services.cloudformation.model.DescribeStacksReques
 import software.amazon.awssdk.services.cloudformation.model.DescribeStacksResponse
 import software.amazon.awssdk.services.cloudformation.model.Stack
 import software.amazon.awssdk.services.cloudformation.model.StackStatus
-import software.aws.toolkits.core.utils.WaiterTimeoutException
-import software.aws.toolkits.core.utils.WaiterUnrecoverableException
-import software.aws.toolkits.jetbrains.core.MockClientManagerRule
+import software.aws.toolkit.core.utils.WaiterTimeoutException
+import software.aws.toolkit.core.utils.WaiterUnrecoverableException
+import software.aws.toolkit.jetbrains.core.MockClientManagerRule
 import java.time.Duration
 
 class UpdateWaiterTest {

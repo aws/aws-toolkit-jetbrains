@@ -14,9 +14,9 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.extension.RegisterExtension
-import software.aws.toolkits.core.utils.deleteIfExists
-import software.aws.toolkits.core.utils.touch
-import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerExtension
+import software.aws.toolkit.core.utils.deleteIfExists
+import software.aws.toolkit.core.utils.touch
+import software.aws.toolkit.jetbrains.core.credentials.MockCredentialManagerExtension
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanel
 import software.aws.toolkits.jetbrains.settings.GettingStartedSettings
 

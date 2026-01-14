@@ -9,7 +9,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Assume.assumeTrue
 import org.junit.Rule
 import org.junit.Test
-import software.aws.toolkits.core.region.AwsRegion
+import software.aws.toolkit.core.region.AwsRegion
 
 class SsmCommandLineTest {
     @Rule

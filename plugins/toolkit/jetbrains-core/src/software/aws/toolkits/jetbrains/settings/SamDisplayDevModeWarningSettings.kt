@@ -8,7 +8,7 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 
-@State(name = "samAccDevMode", storages = [Storage("aws.xml")])
+@State(name = "toolkitSamAccDevMode", storages = [Storage("awsToolkit.xml")])
 class SamDisplayDevModeWarningSettings : PersistentStateComponent<SamDevModeWarningConfiguration> {
     private var state = SamDevModeWarningConfiguration()
 

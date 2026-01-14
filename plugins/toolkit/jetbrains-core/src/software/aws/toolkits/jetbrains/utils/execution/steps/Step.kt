@@ -4,8 +4,8 @@
 package software.aws.toolkits.jetbrains.utils.execution.steps
 
 import com.intellij.openapi.progress.ProcessCanceledException
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.info
+import software.aws.toolkit.core.utils.getLogger
+import software.aws.toolkit.core.utils.info
 
 abstract class Step {
     public abstract val stepName: String

@@ -13,9 +13,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import software.amazon.awssdk.services.sqs.SqsClient
-import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
-import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
-import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineUiContext
+import software.aws.toolkit.jetbrains.core.coroutines.disposableCoroutineScope
+import software.aws.toolkit.jetbrains.core.coroutines.getCoroutineBgContext
+import software.aws.toolkit.jetbrains.core.coroutines.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.services.sqs.Queue
 import software.aws.toolkits.jetbrains.services.sqs.telemetryType
 import software.aws.toolkits.resources.message

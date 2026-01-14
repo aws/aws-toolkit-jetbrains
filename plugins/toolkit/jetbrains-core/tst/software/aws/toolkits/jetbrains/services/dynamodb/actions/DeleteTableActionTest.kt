@@ -15,8 +15,8 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.verify
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient
 import software.amazon.awssdk.services.dynamodb.model.DeleteTableRequest
-import software.aws.toolkits.core.utils.test.aString
-import software.aws.toolkits.jetbrains.core.MockClientManagerRule
+import software.aws.toolkit.core.utils.test.aString
+import software.aws.toolkit.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.services.dynamodb.editor.DynamoDbTableEditorProvider
 import software.aws.toolkits.jetbrains.services.dynamodb.explorer.DynamoDbTableNode
 import software.aws.toolkits.jetbrains.utils.associateFilePattern

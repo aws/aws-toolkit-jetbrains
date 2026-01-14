@@ -12,13 +12,13 @@ import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.StartupActivity
 import com.intellij.openapi.util.SystemInfo
-import software.aws.toolkits.core.utils.exists
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.lastModified
-import software.aws.toolkits.core.utils.warn
+import software.aws.toolkit.core.utils.exists
+import software.aws.toolkit.core.utils.getLogger
+import software.aws.toolkit.core.utils.lastModified
+import software.aws.toolkit.core.utils.warn
+import software.aws.toolkit.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance.ExecutableWithPath
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
-import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.resources.message
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -57,7 +57,7 @@ inline fun <reified T : ExecutableType<*>> ExecutableManager.setExecutablePath(p
 
 private typealias ExecutableData = Triple<ExecutableState, ExecutableInstance?, FileTime?>
 
-@State(name = "executables", storages = [Storage("aws.xml")])
+@State(name = "toolkitExecutables", storages = [Storage("awsToolkit.xml")])
 class DefaultExecutableManager : PersistentStateComponent<ExecutableStateList>, ExecutableManager {
     private var internalState = ConcurrentHashMap<String, ExecutableData>()
 

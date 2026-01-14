@@ -9,7 +9,7 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 import com.intellij.util.xmlb.annotations.Property
-import software.aws.toolkits.core.utils.replace
+import software.aws.toolkit.core.utils.replace
 
 interface DynamicResourcesSettings {
     var selected: Set<String>
@@ -19,7 +19,7 @@ interface DynamicResourcesSettings {
     }
 }
 
-@State(name = "resources", storages = [Storage("aws.xml")])
+@State(name = "toolkitResources", storages = [Storage("awsToolkit.xml")])
 internal class DefaultDynamicResourcesSettings :
     DynamicResourcesSettings,
     SimplePersistentStateComponent<DynamicResourcesConfiguration>(DynamicResourcesConfiguration()) {

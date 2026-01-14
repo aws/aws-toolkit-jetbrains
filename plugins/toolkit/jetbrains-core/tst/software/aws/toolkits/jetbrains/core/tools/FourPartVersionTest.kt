@@ -6,8 +6,8 @@ package software.aws.toolkits.jetbrains.core.tools
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Test
-import software.aws.toolkits.jetbrains.utils.isInstanceOf
-import software.aws.toolkits.jetbrains.utils.satisfiesKt
+import software.aws.toolkit.jetbrains.utils.isInstanceOf
+import software.aws.toolkit.jetbrains.utils.satisfiesKt
 
 class FourPartVersionTest {
     @Test

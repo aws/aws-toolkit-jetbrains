@@ -10,10 +10,10 @@ import org.junit.jupiter.api.extension.RegisterExtension
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import software.amazon.awssdk.services.redshift.model.Cluster
-import software.aws.toolkits.core.utils.RuleUtils
-import software.aws.toolkits.jetbrains.core.MockResourceCacheExtension
-import software.aws.toolkits.jetbrains.core.region.getDefaultRegion
-import software.aws.toolkits.jetbrains.services.sts.StsResources
+import software.aws.toolkit.core.utils.RuleUtils
+import software.aws.toolkit.jetbrains.core.MockResourceCacheExtension
+import software.aws.toolkit.jetbrains.core.region.getDefaultRegion
+import software.aws.toolkit.jetbrains.services.sts.StsResources
 
 class RedshiftUtilsTest {
     companion object {

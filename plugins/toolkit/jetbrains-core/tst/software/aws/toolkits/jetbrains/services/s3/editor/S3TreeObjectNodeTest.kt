@@ -20,7 +20,7 @@ import software.amazon.awssdk.services.s3.model.Bucket
 import software.amazon.awssdk.services.s3.model.ListObjectVersionsRequest
 import software.amazon.awssdk.services.s3.model.ListObjectVersionsResponse
 import software.amazon.awssdk.services.s3.model.ObjectVersion
-import software.aws.toolkits.core.utils.delegateMock
+import software.aws.toolkit.core.utils.delegateMock
 import java.time.Instant
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit

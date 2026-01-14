@@ -5,8 +5,8 @@ package software.aws.toolkits.jetbrains.services.rds.resources
 
 import software.amazon.awssdk.services.rds.RdsClient
 import software.amazon.awssdk.services.rds.model.Filter
-import software.aws.toolkits.jetbrains.core.ClientBackedCachedResource
-import software.aws.toolkits.jetbrains.core.Resource
+import software.aws.toolkit.jetbrains.core.ClientBackedCachedResource
+import software.aws.toolkit.jetbrains.core.Resource
 import software.aws.toolkits.jetbrains.services.rds.Endpoint
 import software.aws.toolkits.jetbrains.services.rds.RdsDatabase
 import software.aws.toolkits.jetbrains.services.rds.RdsEngine

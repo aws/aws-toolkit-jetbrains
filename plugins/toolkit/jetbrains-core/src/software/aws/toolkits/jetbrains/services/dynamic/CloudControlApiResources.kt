@@ -10,9 +10,9 @@ import software.amazon.awssdk.services.cloudcontrol.CloudControlClient
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient
 import software.amazon.awssdk.services.cloudformation.model.RegistryType
 import software.amazon.awssdk.services.cloudformation.model.Visibility
-import software.aws.toolkits.jetbrains.core.ClientBackedCachedResource
-import software.aws.toolkits.jetbrains.core.Resource
-import software.aws.toolkits.jetbrains.core.map
+import software.aws.toolkit.jetbrains.core.ClientBackedCachedResource
+import software.aws.toolkit.jetbrains.core.Resource
+import software.aws.toolkit.jetbrains.core.map
 import software.aws.toolkits.jetbrains.services.s3.resources.S3Resources
 
 object CloudControlApiResources {

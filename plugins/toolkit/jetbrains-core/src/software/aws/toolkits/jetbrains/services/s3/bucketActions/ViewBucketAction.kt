@@ -4,10 +4,10 @@
 package software.aws.toolkits.jetbrains.services.s3.bucketActions
 
 import software.amazon.awssdk.services.s3.model.S3Exception
+import software.aws.toolkit.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.core.explorer.actions.ViewResourceAction
 import software.aws.toolkits.jetbrains.services.s3.S3ServiceNode
 import software.aws.toolkits.jetbrains.services.s3.openEditor
-import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 
 class ViewBucketAction : ViewResourceAction<S3ServiceNode>(message("action.aws.toolkit.s3.open.bucket.viewer.text"), message("s3.bucket.label")) {
