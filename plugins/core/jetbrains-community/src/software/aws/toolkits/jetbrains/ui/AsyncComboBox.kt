@@ -93,7 +93,8 @@ class AsyncComboBox<T> private constructor(
         currentIndicator?.cancel()
         loading.set(true)
         removeAllItems()
-        // Ensure repaint happens on EDT for thread safety
+        // Ensure repaint happens on EDT to avoid "Read access is allowed from inside read-action"
+        // and "Write access is allowed inside write-action only" errors when updating Swing components
         ApplicationManager.getApplication().invokeLater { repaint() }
         val indicator = EmptyProgressIndicator(ModalityState.any()).also {
             currentIndicator = it
@@ -107,7 +108,7 @@ class AsyncComboBox<T> private constructor(
                             newModel.invoke(delegatedComboBoxModel(indicator))
                         }.invokeOnCompletion {
                             loading.set(false)
-                            // Ensure repaint happens on EDT for thread safety
+                            // Ensure repaint happens on EDT to avoid Swing threading errors
                             ApplicationManager.getApplication().invokeLater { repaint() }
                         }
                     },
