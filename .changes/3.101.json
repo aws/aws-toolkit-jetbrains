@@ -1,0 +1,11 @@
+{
+  "date" : "2026-01-09",
+  "version" : "3.101",
+  "entries" : [ {
+    "type" : "bugfix",
+    "description" : "fix: automatically clear customization if chat receives access denied on the customization"
+  }, {
+    "type" : "bugfix",
+    "description" : "Amazon Q: fix issue where changing the customization does not apply to chat until project re-open"
+  } ]
+}

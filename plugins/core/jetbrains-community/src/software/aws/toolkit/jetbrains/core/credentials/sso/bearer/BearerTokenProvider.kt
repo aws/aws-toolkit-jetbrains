@@ -194,8 +194,8 @@ class InteractiveBearerTokenProvider(
     override fun resolveToken() = supplier.cachedSupplier.get()
 
     override fun close() {
-        ssoOidcClient.close()
         supplier.cachedSupplier.close()
+        ssoOidcClient.close()
     }
 
     override fun dispose() {
@@ -264,11 +264,11 @@ class ProfileSdkTokenProviderWrapper(private val sessionName: String, region: St
 
     override fun close() {
         sdkTokenManager.close()
-        if (ssoOidcClient.isInitialized()) {
-            ssoOidcClient.value.close()
-        }
         if (tokenProvider.isInitialized()) {
             tokenProvider.value.close()
+        }
+        if (ssoOidcClient.isInitialized()) {
+            ssoOidcClient.value.close()
         }
     }
 
