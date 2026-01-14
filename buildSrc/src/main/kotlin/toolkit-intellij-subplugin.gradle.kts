@@ -89,13 +89,12 @@ intellijPlatform {
 dependencies {
     intellijPlatform {
         val version = toolkitIntelliJ.version()
-        val versionStr = version.get()
 
         // annoying resolution issue that we don't want to bother fixing
         if (!project.name.contains("jetbrains-gateway")) {
             val type = toolkitIntelliJ.ideFlavor.map { flavor ->
-                // 2025.3+ uses unified distribution - use IU for community builds
-                if ((versionStr.contains("253") || versionStr.contains("2025.3")) && flavor == IdeFlavor.IC) {
+                // Starting with 2025.3, IntelliJ IDEA is unified (no separate Community edition)
+                if (version.get().startsWith("2025.3") && flavor == IdeFlavor.IC) {
                     IntelliJPlatformType.IntellijIdeaUltimate
                 } else {
                     IntelliJPlatformType.fromCode(flavor.toString())
@@ -111,7 +110,8 @@ dependencies {
         plugins(toolkitIntelliJ.productProfile().map { it.marketplacePlugins })
 
         // OAuth modules split in 2025.3 (253) - must be explicitly bundled
-        if (versionStr.contains("253") || versionStr.contains("2025.3")) {
+        val versionStr = version.get()
+        if (versionStr.contains("253")) {
             bundledModule("intellij.platform.collaborationTools")
             bundledModule("intellij.platform.collaborationTools.auth.base")
             bundledModule("intellij.platform.collaborationTools.auth")
