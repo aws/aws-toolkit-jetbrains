@@ -20,10 +20,10 @@ import software.amazon.awssdk.services.s3.model.Bucket
 import software.aws.toolkit.core.utils.test.aString
 import software.aws.toolkit.jetbrains.core.MockResourceCacheRule
 import software.aws.toolkit.jetbrains.core.credentials.activeRegion
+import software.aws.toolkit.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.services.ecr.resources.EcrResources
 import software.aws.toolkits.jetbrains.services.ecr.resources.Repository
 import software.aws.toolkits.jetbrains.services.s3.resources.S3Resources
-import software.aws.toolkit.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.waitToLoad
 
 class UpdateFunctionCodePanelTest {

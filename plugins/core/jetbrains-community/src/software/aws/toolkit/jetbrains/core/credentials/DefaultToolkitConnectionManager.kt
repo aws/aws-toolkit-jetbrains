@@ -10,14 +10,14 @@ import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.project.Project
+import software.aws.toolkit.jetbrains.core.credentials.pinning.ConnectionPinningManager
 import software.aws.toolkit.jetbrains.core.credentials.pinning.FeatureWithPinnedConnection
 import software.aws.toolkit.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkit.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
 import software.aws.toolkit.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
-import software.aws.toolkit.jetbrains.core.credentials.pinning.ConnectionPinningManager
 
 // TODO: unify with AwsConnectionManager
-@State(name = "connectionManager", storages = [Storage("aws.xml")])
+@State(name = "toolkitConnectionManager", storages = [Storage("awsToolkit.xml")])
 class DefaultToolkitConnectionManager : ToolkitConnectionManager, PersistentStateComponent<ToolkitConnectionManagerState> {
     private val project: Project?
 

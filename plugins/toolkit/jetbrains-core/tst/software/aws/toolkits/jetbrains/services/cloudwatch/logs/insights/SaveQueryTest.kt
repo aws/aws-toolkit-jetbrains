@@ -25,8 +25,8 @@ import software.aws.toolkit.core.credentials.aToolkitCredentialsProvider
 import software.aws.toolkit.core.region.anAwsRegion
 import software.aws.toolkit.jetbrains.core.MockClientManagerRule
 import software.aws.toolkit.jetbrains.core.MockResourceCacheRule
-import software.aws.toolkits.jetbrains.services.cloudwatch.logs.resources.CloudWatchResources
 import software.aws.toolkit.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
+import software.aws.toolkits.jetbrains.services.cloudwatch.logs.resources.CloudWatchResources
 import software.aws.toolkits.resources.message
 
 @RunsInEdt

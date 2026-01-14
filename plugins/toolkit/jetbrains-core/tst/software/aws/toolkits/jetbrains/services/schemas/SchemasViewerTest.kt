@@ -20,8 +20,8 @@ import software.aws.toolkit.core.ConnectionSettings
 import software.aws.toolkit.jetbrains.core.MockResourceCacheRule
 import software.aws.toolkit.jetbrains.core.credentials.MockCredentialManagerRule
 import software.aws.toolkit.jetbrains.core.region.MockRegionProviderRule
-import software.aws.toolkits.jetbrains.services.schemas.resources.SchemasResources
 import software.aws.toolkit.jetbrains.utils.rules.NotificationListenerRule
+import software.aws.toolkits.jetbrains.services.schemas.resources.SchemasResources
 import java.util.concurrent.CompletableFuture.completedFuture
 
 class SchemasViewerTest {

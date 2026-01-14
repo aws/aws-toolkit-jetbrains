@@ -5,8 +5,6 @@ package software.aws.toolkit.jetbrains.core.credentials.sso
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import software.aws.toolkit.jetbrains.core.credentials.sso.DeviceAuthorizationGrantToken
-import software.aws.toolkit.jetbrains.core.credentials.sso.PKCEAuthorizationGrantToken
 import java.time.Instant
 
 class AccessTokenTest {

@@ -24,8 +24,6 @@ import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
-import software.aws.toolkit.jetbrains.core.credentials.ConfigFilesFacade
-import software.aws.toolkit.jetbrains.core.credentials.CreateOrUpdateCredentialProfilesAction
 import java.io.File
 
 class CreateOrUpdateCredentialProfilesActionTest {

@@ -11,8 +11,6 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.auth.credentials.AwsCredentials
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
-import software.aws.toolkit.jetbrains.core.region.getDefaultRegion
-import software.aws.toolkit.jetbrains.utils.rules.ClearableLazy
 import software.aws.toolkit.core.credentials.CredentialIdentifier
 import software.aws.toolkit.core.credentials.CredentialIdentifierBase
 import software.aws.toolkit.core.credentials.CredentialProviderFactory
@@ -22,6 +20,8 @@ import software.aws.toolkit.core.credentials.SsoSessionIdentifier
 import software.aws.toolkit.core.credentials.ToolkitCredentialsProvider
 import software.aws.toolkit.core.region.AwsRegion
 import software.aws.toolkit.core.utils.test.aString
+import software.aws.toolkit.jetbrains.core.region.getDefaultRegion
+import software.aws.toolkit.jetbrains.utils.rules.ClearableLazy
 
 @Deprecated("Use MockCredentialManagerRule")
 class MockCredentialsManager : CredentialManager() {

@@ -8,8 +8,8 @@ import com.intellij.notification.NotificationType
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.ProjectActivity
-import software.aws.toolkit.jetbrains.settings.AwsSettingsSharedConfigurable
 import software.aws.toolkit.jetbrains.settings.AwsSettings
+import software.aws.toolkit.jetbrains.settings.AwsSettingsSharedConfigurable
 import software.aws.toolkit.resources.AwsCoreBundle
 
 class AwsTelemetryPrompter : ProjectActivity {

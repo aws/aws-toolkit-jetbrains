@@ -45,6 +45,9 @@ import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkit.jetbrains.core.awsClient
 import software.aws.toolkit.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkit.jetbrains.core.coroutines.projectCoroutineScope
+import software.aws.toolkit.jetbrains.utils.notifyError
+import software.aws.toolkit.jetbrains.utils.ui.installOnParent
+import software.aws.toolkit.jetbrains.utils.ui.selected
 import software.aws.toolkits.jetbrains.core.docker.DockerRuntimeFacade
 import software.aws.toolkits.jetbrains.core.docker.LocalImage
 import software.aws.toolkits.jetbrains.core.docker.ToolkitDockerAdapter
@@ -58,9 +61,6 @@ import software.aws.toolkits.jetbrains.services.ecr.getDockerLogin
 import software.aws.toolkits.jetbrains.services.ecr.resources.EcrResources
 import software.aws.toolkits.jetbrains.services.ecr.resources.Repository
 import software.aws.toolkits.jetbrains.ui.ResourceSelector
-import software.aws.toolkit.jetbrains.utils.notifyError
-import software.aws.toolkit.jetbrains.utils.ui.installOnParent
-import software.aws.toolkit.jetbrains.utils.ui.selected
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.EcrDeploySource
 import software.aws.toolkits.telemetry.EcrTelemetry

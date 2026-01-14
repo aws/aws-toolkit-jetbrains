@@ -5,9 +5,9 @@ package software.aws.toolkit.jetbrains.utils
 
 import com.intellij.idea.AppMode
 import com.intellij.ui.jcef.JBCefApp
-import software.aws.toolkit.jetbrains.isDeveloperMode
 import software.aws.toolkit.core.utils.exists
 import software.aws.toolkit.core.utils.tryOrNull
+import software.aws.toolkit.jetbrains.isDeveloperMode
 import java.nio.file.Paths
 
 /**

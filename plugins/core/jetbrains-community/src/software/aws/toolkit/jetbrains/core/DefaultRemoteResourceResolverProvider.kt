@@ -5,9 +5,9 @@ package software.aws.toolkit.jetbrains.core
 
 import com.intellij.openapi.application.PathManager
 import com.intellij.util.io.createDirectories
-import software.aws.toolkit.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkit.core.utils.DefaultRemoteResourceResolver
 import software.aws.toolkit.core.utils.UrlFetcher
+import software.aws.toolkit.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.concurrent.CompletableFuture

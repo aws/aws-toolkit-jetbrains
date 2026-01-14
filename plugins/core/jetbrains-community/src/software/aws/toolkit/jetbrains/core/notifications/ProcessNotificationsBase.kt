@@ -12,12 +12,12 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import software.aws.toolkit.jetbrains.utils.notifyStickyWithData
 import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkit.core.utils.info
 import software.aws.toolkit.core.utils.inputStream
 import software.aws.toolkit.core.utils.warn
 import software.aws.toolkit.jetbrains.core.RemoteResourceResolverProvider
+import software.aws.toolkit.jetbrains.utils.notifyStickyWithData
 import software.aws.toolkits.telemetry.Component
 import software.aws.toolkits.telemetry.Result
 import software.aws.toolkits.telemetry.ToolkitTelemetry

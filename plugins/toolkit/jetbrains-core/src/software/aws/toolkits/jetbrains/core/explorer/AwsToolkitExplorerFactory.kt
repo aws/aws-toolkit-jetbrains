@@ -32,14 +32,14 @@ import software.aws.toolkit.jetbrains.core.credentials.sono.CODECATALYST_SCOPES
 import software.aws.toolkit.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
 import software.aws.toolkit.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkit.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
-import software.aws.toolkits.jetbrains.core.experiments.ExperimentsActionGroup
-import software.aws.toolkits.jetbrains.core.explorer.webview.ToolkitWebviewPanel
-import software.aws.toolkits.jetbrains.core.explorer.webview.shouldPromptToolkitReauth
 import software.aws.toolkit.jetbrains.core.help.HelpIds
 import software.aws.toolkit.jetbrains.core.notifications.NotificationPanel
 import software.aws.toolkit.jetbrains.core.notifications.ProcessNotificationsBase
 import software.aws.toolkit.jetbrains.core.webview.BrowserState
 import software.aws.toolkit.jetbrains.utils.actions.OpenBrowserAction
+import software.aws.toolkits.jetbrains.core.experiments.ExperimentsActionGroup
+import software.aws.toolkits.jetbrains.core.explorer.webview.ToolkitWebviewPanel
+import software.aws.toolkits.jetbrains.core.explorer.webview.shouldPromptToolkitReauth
 import software.aws.toolkits.jetbrains.utils.isTookitConnected
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.FeatureId

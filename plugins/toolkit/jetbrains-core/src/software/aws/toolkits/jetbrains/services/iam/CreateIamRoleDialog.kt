@@ -15,9 +15,9 @@ import software.amazon.awssdk.services.iam.IamClient
 import software.amazon.awssdk.services.iam.model.Role
 import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkit.core.utils.warn
-import software.aws.toolkits.jetbrains.services.iam.Iam.createRoleWithPolicy
 import software.aws.toolkit.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkit.jetbrains.utils.ui.formatAndSet
+import software.aws.toolkits.jetbrains.services.iam.Iam.createRoleWithPolicy
 import software.aws.toolkits.resources.message
 import java.awt.Component
 import javax.swing.JComponent

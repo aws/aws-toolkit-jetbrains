@@ -8,10 +8,10 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.launch
+import software.aws.toolkit.core.utils.tryOrNull
 import software.aws.toolkit.jetbrains.core.coroutines.disposableCoroutineScope
 import software.aws.toolkit.jetbrains.core.credentials.profiles.DEFAULT_PROFILE_ID
 import software.aws.toolkit.jetbrains.core.region.AwsRegionProvider
-import software.aws.toolkit.core.utils.tryOrNull
 
 data class ConnectionSettingsState(
     var activeProfile: String? = null,
@@ -20,7 +20,7 @@ data class ConnectionSettingsState(
     var recentlyUsedRegions: List<String> = mutableListOf(),
 )
 
-@State(name = "accountSettings", storages = [Storage("aws.xml")])
+@State(name = "toolkitAccountSettings", storages = [Storage("awsToolkit.xml")])
 class DefaultAwsConnectionManager(project: Project) :
     AwsConnectionManager(project),
     PersistentStateComponent<ConnectionSettingsState> {

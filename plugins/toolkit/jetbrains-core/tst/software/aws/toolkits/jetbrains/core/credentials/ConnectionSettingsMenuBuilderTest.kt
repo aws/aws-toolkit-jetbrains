@@ -17,14 +17,14 @@ import software.aws.toolkit.core.credentials.CredentialIdentifier
 import software.aws.toolkit.core.region.AwsRegion
 import software.aws.toolkit.core.utils.test.aString
 import software.aws.toolkit.jetbrains.core.credentials.CredentialManager
-import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsMenuBuilder.Companion.connectionSettingsMenuBuilder
-import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsMenuBuilder.SwitchCredentialsAction
-import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsMenuBuilder.SwitchRegionAction
 import software.aws.toolkit.jetbrains.core.credentials.MockAwsConnectionManager.ProjectAccountSettingsManagerRule
 import software.aws.toolkit.jetbrains.core.credentials.MockCredentialManagerRule
 import software.aws.toolkit.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkit.jetbrains.core.region.MockRegionProviderRule
 import software.aws.toolkit.jetbrains.utils.satisfiesKt
+import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsMenuBuilder.Companion.connectionSettingsMenuBuilder
+import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsMenuBuilder.SwitchCredentialsAction
+import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsMenuBuilder.SwitchRegionAction
 import software.aws.toolkits.resources.message
 
 class ConnectionSettingsMenuBuilderTest {

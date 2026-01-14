@@ -12,11 +12,11 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import software.aws.toolkit.jetbrains.core.credentials.MockAwsConnectionManager
-import software.aws.toolkits.jetbrains.services.lambda.upload.LambdaLineMarker
-import software.aws.toolkits.jetbrains.settings.LambdaSettings
 import software.aws.toolkit.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import software.aws.toolkit.jetbrains.utils.rules.openClass
 import software.aws.toolkit.jetbrains.utils.rules.openFile
+import software.aws.toolkits.jetbrains.services.lambda.upload.LambdaLineMarker
+import software.aws.toolkits.jetbrains.settings.LambdaSettings
 
 class JavaLambdaLineMarkerTest {
     @Rule

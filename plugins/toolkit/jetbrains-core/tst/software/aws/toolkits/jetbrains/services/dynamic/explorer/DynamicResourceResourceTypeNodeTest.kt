@@ -11,11 +11,11 @@ import software.amazon.awssdk.services.cloudcontrol.model.UnsupportedActionExcep
 import software.aws.toolkit.core.utils.test.aString
 import software.aws.toolkit.core.utils.test.hasOnlyOneElementOfType
 import software.aws.toolkit.jetbrains.core.MockResourceCacheRule
+import software.aws.toolkit.jetbrains.core.id
+import software.aws.toolkit.jetbrains.utils.satisfiesKt
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerEmptyNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerErrorNode
-import software.aws.toolkit.jetbrains.core.id
 import software.aws.toolkits.jetbrains.services.dynamic.CloudControlApiResources
-import software.aws.toolkit.jetbrains.utils.satisfiesKt
 import software.aws.toolkits.resources.message
 
 class DynamicResourceResourceTypeNodeTest {

@@ -6,7 +6,6 @@ package software.aws.toolkit.jetbrains.utils
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Test
-import software.aws.toolkit.jetbrains.utils.MRUList
 
 class MRUListTest {
     private lateinit var list: MRUList<String>

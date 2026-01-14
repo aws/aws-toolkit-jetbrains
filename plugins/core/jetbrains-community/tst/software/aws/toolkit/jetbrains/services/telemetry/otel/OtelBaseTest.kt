@@ -78,9 +78,11 @@ class OtelBaseTest {
 
             assertThat(parent.parentSpanContext.traceId).isEqualTo(TraceId.getInvalid())
             assertThat(child.parentSpanContext.traceId).isEqualTo(parent.spanContext.traceId)
-            assertThat(child.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isEqualTo(parent.getAttribute(
-                PLUGIN_NAME_ATTRIBUTE_KEY
-            ))
+            assertThat(child.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isEqualTo(
+                parent.getAttribute(
+                    PLUGIN_NAME_ATTRIBUTE_KEY
+                )
+            )
         }
     }
 
@@ -96,9 +98,11 @@ class OtelBaseTest {
 
             assertThat(parent.parentSpanContext.traceId).isEqualTo(TraceId.getInvalid())
             assertThat(child.parentSpanContext.traceId).isEqualTo(parent.spanContext.traceId)
-            assertThat(child.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isEqualTo(parent.getAttribute(
-                PLUGIN_NAME_ATTRIBUTE_KEY
-            ))
+            assertThat(child.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isEqualTo(
+                parent.getAttribute(
+                    PLUGIN_NAME_ATTRIBUTE_KEY
+                )
+            )
         }
     }
 
@@ -115,9 +119,11 @@ class OtelBaseTest {
             assertThat(parent.parentSpanContext.traceId).isEqualTo(TraceId.getInvalid())
             assertThat(child.parentSpanContext.traceId).isEqualTo(parent.spanContext.traceId)
             assertThat(parent.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isEqualTo("Amazon Q For VS Code")
-            assertThat(child.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isEqualTo(parent.getAttribute(
-                PLUGIN_NAME_ATTRIBUTE_KEY
-            ))
+            assertThat(child.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isEqualTo(
+                parent.getAttribute(
+                    PLUGIN_NAME_ATTRIBUTE_KEY
+                )
+            )
         }
     }
 
@@ -134,9 +140,11 @@ class OtelBaseTest {
 
             assertThat(parent.parentSpanContext.traceId).isEqualTo(TraceId.getInvalid())
             assertThat(child.parentSpanContext.traceId).isEqualTo(parent.spanContext.traceId)
-            assertThat(parent.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isNotEqualTo(child.getAttribute(
-                PLUGIN_NAME_ATTRIBUTE_KEY
-            ))
+            assertThat(parent.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isNotEqualTo(
+                child.getAttribute(
+                    PLUGIN_NAME_ATTRIBUTE_KEY
+                )
+            )
             assertThat(child.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isEqualTo("Amazon Q For VS Code")
         }
     }
@@ -156,9 +164,11 @@ class OtelBaseTest {
             assertThat(parent.parentSpanContext.traceId).isEqualTo(TraceId.getInvalid())
             assertThat(child.parentSpanContext.traceId).isEqualTo(TraceId.getInvalid())
             assertThat(parent.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isEqualTo("Amazon Q For VS Code")
-            assertThat(child.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isNotEqualTo(parent.getAttribute(
-                PLUGIN_NAME_ATTRIBUTE_KEY
-            ))
+            assertThat(child.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isNotEqualTo(
+                parent.getAttribute(
+                    PLUGIN_NAME_ATTRIBUTE_KEY
+                )
+            )
         }
     }
 
@@ -177,9 +187,11 @@ class OtelBaseTest {
             assertThat(parent.parentSpanContext.traceId).isEqualTo(TraceId.getInvalid())
             assertThat(child.parentSpanContext.traceId).isEqualTo(parent.spanContext.traceId)
             assertThat(parent.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isEqualTo("Amazon Q For VS Code")
-            assertThat(child.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isEqualTo(parent.getAttribute(
-                PLUGIN_NAME_ATTRIBUTE_KEY
-            ))
+            assertThat(child.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isEqualTo(
+                parent.getAttribute(
+                    PLUGIN_NAME_ATTRIBUTE_KEY
+                )
+            )
         }
     }
 
@@ -200,9 +212,11 @@ class OtelBaseTest {
             assertThat(parent.parentSpanContext.traceId).isEqualTo(TraceId.getInvalid())
             assertThat(child.parentSpanContext.traceId).isEqualTo(parent.spanContext.traceId)
             assertThat(parent.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isEqualTo("Amazon Q For VS Code")
-            assertThat(child.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isEqualTo(parent.getAttribute(
-                PLUGIN_NAME_ATTRIBUTE_KEY
-            ))
+            assertThat(child.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isEqualTo(
+                parent.getAttribute(
+                    PLUGIN_NAME_ATTRIBUTE_KEY
+                )
+            )
         }
     }
 
@@ -219,9 +233,11 @@ class OtelBaseTest {
             assertThat(parent.parentSpanContext.traceId).isEqualTo(TraceId.getInvalid())
             assertThat(child.parentSpanContext.traceId).isEqualTo(parent.spanContext.traceId)
             assertThat(parent.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isEqualTo("Amazon Q For VS Code")
-            assertThat(child.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isEqualTo(parent.getAttribute(
-                PLUGIN_NAME_ATTRIBUTE_KEY
-            ))
+            assertThat(child.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isEqualTo(
+                parent.getAttribute(
+                    PLUGIN_NAME_ATTRIBUTE_KEY
+                )
+            )
         }
     }
 
@@ -238,9 +254,11 @@ class OtelBaseTest {
             assertThat(parent.parentSpanContext.traceId).isEqualTo(TraceId.getInvalid())
             assertThat(child.parentSpanContext.traceId).isEqualTo(parent.spanContext.traceId)
             assertThat(parent.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isEqualTo("Amazon Q For VS Code")
-            assertThat(child.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isEqualTo(parent.getAttribute(
-                PLUGIN_NAME_ATTRIBUTE_KEY
-            ))
+            assertThat(child.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isEqualTo(
+                parent.getAttribute(
+                    PLUGIN_NAME_ATTRIBUTE_KEY
+                )
+            )
         }
     }
 
@@ -259,9 +277,11 @@ class OtelBaseTest {
             assertThat(parent.parentSpanContext.traceId).isEqualTo(TraceId.getInvalid())
             assertThat(child.parentSpanContext.traceId).isEqualTo(TraceId.getInvalid())
             assertThat(parent.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isEqualTo("Amazon Q For VS Code")
-            assertThat(child.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isNotEqualTo(parent.getAttribute(
-                PLUGIN_NAME_ATTRIBUTE_KEY
-            ))
+            assertThat(child.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isNotEqualTo(
+                parent.getAttribute(
+                    PLUGIN_NAME_ATTRIBUTE_KEY
+                )
+            )
         }
     }
 
@@ -280,9 +300,11 @@ class OtelBaseTest {
             assertThat(parent.parentSpanContext.traceId).isEqualTo(TraceId.getInvalid())
             assertThat(child.parentSpanContext.traceId).isEqualTo(parent.spanContext.traceId)
             assertThat(parent.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isEqualTo("Amazon Q For VS Code")
-            assertThat(child.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isEqualTo(parent.getAttribute(
-                PLUGIN_NAME_ATTRIBUTE_KEY
-            ))
+            assertThat(child.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isEqualTo(
+                parent.getAttribute(
+                    PLUGIN_NAME_ATTRIBUTE_KEY
+                )
+            )
         }
     }
 
@@ -314,9 +336,11 @@ class OtelBaseTest {
             assertThat(parent.parentSpanContext.traceId).isEqualTo(TraceId.getInvalid())
             assertThat(child.parentSpanContext.traceId).isEqualTo(parent.spanContext.traceId)
             assertThat(parent.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isEqualTo("Amazon Q For VS Code")
-            assertThat(child.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isEqualTo(parent.getAttribute(
-                PLUGIN_NAME_ATTRIBUTE_KEY
-            ))
+            assertThat(child.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isEqualTo(
+                parent.getAttribute(
+                    PLUGIN_NAME_ATTRIBUTE_KEY
+                )
+            )
         }
     }
 

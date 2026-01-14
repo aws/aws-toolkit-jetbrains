@@ -8,7 +8,7 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 
-@State(name = "gettingStarted", storages = [Storage("aws.xml")])
+@State(name = "toolkitGettingStarted", storages = [Storage("awsToolkit.xml")])
 class GettingStartedSettings : PersistentStateComponent<GettingStartedSettingsConfiguration> {
     private var state = GettingStartedSettingsConfiguration()
     override fun getState(): GettingStartedSettingsConfiguration? = state

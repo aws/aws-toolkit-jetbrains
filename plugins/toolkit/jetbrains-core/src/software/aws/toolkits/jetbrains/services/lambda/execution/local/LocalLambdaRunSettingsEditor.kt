@@ -7,10 +7,10 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.options.SettingsEditor
 import com.intellij.openapi.project.Project
 import com.intellij.util.PathMappingSettings
+import software.aws.toolkit.jetbrains.utils.ui.selected
 import software.aws.toolkits.jetbrains.services.lambda.execution.registerConfigValidationListeners
 import software.aws.toolkits.jetbrains.services.lambda.execution.validateSupportedArchitecture
 import software.aws.toolkits.jetbrains.services.lambda.validation.LambdaHandlerValidator
-import software.aws.toolkit.jetbrains.utils.ui.selected
 import javax.swing.JComponent
 
 class LocalLambdaRunSettingsEditor(project: Project) : SettingsEditor<LocalLambdaRunConfiguration>() {

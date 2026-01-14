@@ -26,10 +26,10 @@ import software.aws.toolkit.core.utils.warn
 import software.aws.toolkit.jetbrains.core.coroutines.getCoroutineUiContext
 import software.aws.toolkit.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkit.jetbrains.core.map
+import software.aws.toolkit.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.services.ecs.ContainerDetails
 import software.aws.toolkits.jetbrains.services.ecs.resources.EcsResources
 import software.aws.toolkits.jetbrains.ui.ResourceSelector
-import software.aws.toolkit.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.EcsExecuteCommandType
 import software.aws.toolkits.telemetry.EcsTelemetry

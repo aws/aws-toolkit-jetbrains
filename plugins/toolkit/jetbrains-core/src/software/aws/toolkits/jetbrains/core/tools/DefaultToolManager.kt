@@ -20,10 +20,10 @@ import software.aws.toolkit.core.utils.debug
 import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkit.core.utils.readText
 import software.aws.toolkit.core.utils.warn
-import software.aws.toolkits.jetbrains.core.tools.ToolManager.Companion.MANAGED_TOOL_INSTALL_ROOT
 import software.aws.toolkit.jetbrains.utils.assertIsNonDispatchThread
 import software.aws.toolkit.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkit.jetbrains.utils.runUnderProgressIfNeeded
+import software.aws.toolkits.jetbrains.core.tools.ToolManager.Companion.MANAGED_TOOL_INSTALL_ROOT
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AwsTelemetry
 import software.aws.toolkits.telemetry.Result

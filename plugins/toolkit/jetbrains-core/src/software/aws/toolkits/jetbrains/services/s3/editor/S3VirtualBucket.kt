@@ -18,11 +18,11 @@ import software.amazon.awssdk.services.s3.model.ListObjectsV2Response
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier
 import software.aws.toolkit.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkit.jetbrains.core.coroutines.getCoroutineUiContext
+import software.aws.toolkit.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.core.explorer.refreshAwsTree
 import software.aws.toolkits.jetbrains.services.s3.download
 import software.aws.toolkits.jetbrains.services.s3.resources.S3Resources
 import software.aws.toolkits.jetbrains.services.s3.upload
-import software.aws.toolkit.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 import java.io.OutputStream
 import java.net.URL

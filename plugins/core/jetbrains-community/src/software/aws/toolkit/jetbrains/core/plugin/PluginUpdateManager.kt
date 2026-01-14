@@ -26,9 +26,9 @@ import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkit.core.utils.info
 import software.aws.toolkit.jetbrains.AwsPlugin
 import software.aws.toolkit.jetbrains.AwsToolkit
+import software.aws.toolkit.jetbrains.settings.AwsSettings
 import software.aws.toolkit.jetbrains.settings.AwsSettingsSharedConfigurable
 import software.aws.toolkit.jetbrains.utils.notifyInfo
-import software.aws.toolkit.jetbrains.settings.AwsSettings
 import software.aws.toolkit.resources.AwsCoreBundle
 import software.aws.toolkits.telemetry.Component
 import software.aws.toolkits.telemetry.Result

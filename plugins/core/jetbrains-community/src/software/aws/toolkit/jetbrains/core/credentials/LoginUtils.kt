@@ -16,6 +16,11 @@ import software.amazon.awssdk.services.ssooidc.model.InvalidGrantException
 import software.amazon.awssdk.services.ssooidc.model.InvalidRequestException
 import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
 import software.amazon.awssdk.services.sts.StsClient
+import software.aws.toolkit.core.credentials.validatedSsoIdentifierFromUrl
+import software.aws.toolkit.core.region.AwsRegion
+import software.aws.toolkit.core.utils.debug
+import software.aws.toolkit.core.utils.getLogger
+import software.aws.toolkit.core.utils.warn
 import software.aws.toolkit.jetbrains.core.AwsClientManager
 import software.aws.toolkit.jetbrains.core.credentials.profiles.SsoSessionConstants
 import software.aws.toolkit.jetbrains.core.credentials.sono.SONO_REGION
@@ -24,11 +29,6 @@ import software.aws.toolkit.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkit.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
 import software.aws.toolkit.jetbrains.core.credentials.sso.pkce.ToolkitOAuthService
 import software.aws.toolkit.jetbrains.utils.runUnderProgressIfNeeded
-import software.aws.toolkit.core.credentials.validatedSsoIdentifierFromUrl
-import software.aws.toolkit.core.region.AwsRegion
-import software.aws.toolkit.core.utils.debug
-import software.aws.toolkit.core.utils.getLogger
-import software.aws.toolkit.core.utils.warn
 import software.aws.toolkit.resources.AwsCoreBundle
 import software.aws.toolkits.telemetry.CredentialSourceId
 import java.io.IOException

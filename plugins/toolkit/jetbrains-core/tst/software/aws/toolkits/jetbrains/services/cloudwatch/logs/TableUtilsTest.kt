@@ -11,9 +11,9 @@ import org.junit.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import software.amazon.awssdk.services.cloudwatchlogs.model.LogStream
+import software.aws.toolkit.jetbrains.utils.satisfiesKt
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor.LogStreamsDateColumn
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor.LogStreamsStreamColumn
-import software.aws.toolkit.jetbrains.utils.satisfiesKt
 import java.text.SimpleDateFormat
 import java.time.ZoneId
 import java.time.ZonedDateTime

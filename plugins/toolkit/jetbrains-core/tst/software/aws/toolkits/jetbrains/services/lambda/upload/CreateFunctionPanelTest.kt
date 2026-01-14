@@ -18,10 +18,10 @@ import software.amazon.awssdk.services.s3.model.Bucket
 import software.aws.toolkit.core.utils.test.aString
 import software.aws.toolkit.jetbrains.core.MockResourceCacheRule
 import software.aws.toolkit.jetbrains.core.credentials.activeRegion
-import software.aws.toolkits.jetbrains.services.iam.IamResources
-import software.aws.toolkits.jetbrains.services.s3.resources.S3Resources
 import software.aws.toolkit.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import software.aws.toolkit.jetbrains.utils.rules.openClass
+import software.aws.toolkits.jetbrains.services.iam.IamResources
+import software.aws.toolkits.jetbrains.services.s3.resources.S3Resources
 
 class CreateFunctionPanelTest {
     @Rule

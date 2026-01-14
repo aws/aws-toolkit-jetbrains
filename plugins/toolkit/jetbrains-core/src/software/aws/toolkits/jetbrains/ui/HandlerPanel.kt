@@ -12,9 +12,9 @@ import com.intellij.util.textCompletion.TextFieldWithCompletion
 import net.miginfocom.swing.MigLayout
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkit.core.lambda.LambdaRuntime
+import software.aws.toolkit.jetbrains.utils.ui.validationInfo
 import software.aws.toolkits.jetbrains.services.lambda.Lambda.findPsiElementsForHandler
 import software.aws.toolkits.jetbrains.services.lambda.completion.HandlerCompletionProvider
-import software.aws.toolkit.jetbrains.utils.ui.validationInfo
 import software.aws.toolkits.resources.message
 import java.awt.event.ComponentAdapter
 import java.awt.event.ComponentEvent

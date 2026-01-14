@@ -4,6 +4,7 @@
 package software.aws.toolkit.jetbrains.core.gettingstarted
 
 import com.intellij.openapi.project.Project
+import software.aws.toolkit.core.utils.tryOrNull
 import software.aws.toolkit.jetbrains.core.credentials.LegacyManagedBearerSsoConnection
 import software.aws.toolkit.jetbrains.core.credentials.ManagedBearerSsoConnection
 import software.aws.toolkit.jetbrains.core.credentials.ProfileSsoManagedBearerSsoConnection
@@ -22,7 +23,6 @@ import software.aws.toolkit.jetbrains.core.gettingstarted.editor.getSourceOfEntr
 import software.aws.toolkit.jetbrains.core.gettingstarted.editor.getStartupState
 import software.aws.toolkit.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkit.jetbrains.utils.pluginAwareExecuteOnPooledThread
-import software.aws.toolkit.core.utils.tryOrNull
 import software.aws.toolkit.resources.AwsCoreBundle
 import software.aws.toolkits.telemetry.AuthTelemetry
 import software.aws.toolkits.telemetry.FeatureId

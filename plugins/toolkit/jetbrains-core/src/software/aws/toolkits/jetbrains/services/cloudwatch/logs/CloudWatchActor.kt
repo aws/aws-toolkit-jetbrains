@@ -31,10 +31,10 @@ import software.aws.toolkit.core.utils.warn
 import software.aws.toolkit.jetbrains.core.coroutines.disposableCoroutineScope
 import software.aws.toolkit.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkit.jetbrains.core.coroutines.getCoroutineUiContext
+import software.aws.toolkit.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights.LogResult
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights.identifier
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights.toLogResult
-import software.aws.toolkit.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 import java.time.Duration
 

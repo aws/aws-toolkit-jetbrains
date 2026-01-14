@@ -3,11 +3,11 @@
 
 package software.aws.toolkit.jetbrains.core.credentials.pinning
 
+import software.aws.toolkit.core.utils.debug
+import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkit.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkit.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkit.jetbrains.core.credentials.sono.CODECATALYST_SCOPES
-import software.aws.toolkit.core.utils.debug
-import software.aws.toolkit.core.utils.getLogger
 
 class CodeCatalystConnection : FeatureWithPinnedConnection {
     override val featureId: String = "aws.codecatalyst"

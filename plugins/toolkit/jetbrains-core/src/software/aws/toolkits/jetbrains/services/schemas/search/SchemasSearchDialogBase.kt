@@ -20,9 +20,9 @@ import software.aws.toolkit.core.ConnectionSettings
 import software.aws.toolkit.jetbrains.core.credentials.activeCredentialProvider
 import software.aws.toolkit.jetbrains.core.credentials.activeRegion
 import software.aws.toolkit.jetbrains.core.help.HelpIds
+import software.aws.toolkit.jetbrains.utils.ui.selected
 import software.aws.toolkits.jetbrains.services.schemas.SchemaViewer
 import software.aws.toolkits.jetbrains.services.schemas.code.DownloadCodeForSchemaDialog
-import software.aws.toolkit.jetbrains.utils.ui.selected
 import software.aws.toolkits.resources.message
 import java.awt.BorderLayout
 import java.awt.Color

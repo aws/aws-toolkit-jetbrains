@@ -6,13 +6,13 @@ package software.aws.toolkit.jetbrains.core.credentials
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.util.Disposer
+import software.aws.toolkit.core.TokenConnectionSettings
+import software.aws.toolkit.core.credentials.ToolkitBearerTokenProvider
 import software.aws.toolkit.jetbrains.core.credentials.sso.DiskCache
 import software.aws.toolkit.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
 import software.aws.toolkit.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
 import software.aws.toolkit.jetbrains.core.credentials.sso.bearer.ProfileSdkTokenProviderWrapper
 import software.aws.toolkit.jetbrains.core.region.AwsRegionProvider
-import software.aws.toolkit.core.TokenConnectionSettings
-import software.aws.toolkit.core.credentials.ToolkitBearerTokenProvider
 
 /**
  * An SSO bearer connection created through a `sso-session` declaration in a user's ~/.aws/config

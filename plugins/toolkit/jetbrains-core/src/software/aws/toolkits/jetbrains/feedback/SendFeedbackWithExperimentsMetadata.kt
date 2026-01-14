@@ -4,9 +4,9 @@
 package software.aws.toolkits.jetbrains.feedback
 
 import software.amazon.awssdk.services.toolkittelemetry.model.Sentiment
-import software.aws.toolkits.jetbrains.core.experiments.ToolkitExperimentManager
 import software.aws.toolkit.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkit.jetbrains.ui.feedback.ENABLED_EXPERIMENTS
+import software.aws.toolkits.jetbrains.core.experiments.ToolkitExperimentManager
 
 suspend fun sendFeedbackWithExperimentsMetadata(sentiment: Sentiment, comment: String, metadata: Map<String, String> = emptyMap()) {
     val experiments = ToolkitExperimentManager.enabledExperiments().joinToString(",") { it.id }

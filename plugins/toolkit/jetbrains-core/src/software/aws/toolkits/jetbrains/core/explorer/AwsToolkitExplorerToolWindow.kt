@@ -29,7 +29,7 @@ class AwsToolkitExplorerToolWindowState : BaseState() {
     var selectedTab by string()
 }
 
-@State(name = "explorerToolWindow", storages = [Storage("aws.xml")])
+@State(name = "toolkitExplorerToolWindow", storages = [Storage("awsToolkit.xml")])
 class AwsToolkitExplorerToolWindow(
     private val project: Project,
 ) : SimpleToolWindowPanel(true, true), PersistentStateComponent<AwsToolkitExplorerToolWindowState> {

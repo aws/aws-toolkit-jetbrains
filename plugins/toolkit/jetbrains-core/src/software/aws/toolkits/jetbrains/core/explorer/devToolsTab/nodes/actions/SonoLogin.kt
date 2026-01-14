@@ -11,9 +11,9 @@ import software.aws.toolkit.jetbrains.core.credentials.ReauthSource
 import software.aws.toolkit.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkit.jetbrains.core.credentials.pinning.CodeCatalystConnection
 import software.aws.toolkit.jetbrains.core.credentials.reauthConnectionIfNeeded
+import software.aws.toolkit.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.jetbrains.core.explorer.refreshDevToolTree
 import software.aws.toolkits.jetbrains.core.gettingstarted.requestCredentialsForCodeCatalyst
-import software.aws.toolkit.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.telemetry.UiTelemetry
 
 class SonoLogin : DumbAwareAction(AllIcons.Actions.Execute) {

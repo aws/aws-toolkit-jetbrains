@@ -7,8 +7,8 @@ import com.intellij.util.text.SemVer
 import software.amazon.awssdk.services.lambda.LambdaClient
 import software.aws.toolkit.core.lambda.LambdaArchitecture
 import software.aws.toolkit.core.lambda.LambdaRuntime
-import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
 import software.aws.toolkit.jetbrains.utils.assertIsNonDispatchThread
+import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
 
 fun LambdaRuntime.minSamDebuggingVersion(): SemVer =
     minSamDebugging?.let { SemVer.parseFromText(it) ?: throw IllegalStateException("$this has bad minSamDebuggingVersion! It should be a semver string!") }

@@ -9,12 +9,12 @@ import software.amazon.awssdk.core.SdkBytes
 import software.amazon.awssdk.services.lambda.LambdaClient
 import software.amazon.awssdk.services.lambda.model.InvocationType
 import software.amazon.awssdk.services.lambda.model.LambdaException
-import software.aws.toolkit.jetbrains.utils.scrubException
 import software.aws.toolkit.core.clients.nullDefaultProfileFile
 import software.aws.toolkit.core.utils.error
 import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkit.core.utils.info
 import software.aws.toolkit.core.utils.warn
+import software.aws.toolkit.jetbrains.utils.scrubException
 
 internal class MockSsoLoginCallbackProvider : SsoLoginCallbackProvider {
     internal var provider: SsoLoginCallback? = null

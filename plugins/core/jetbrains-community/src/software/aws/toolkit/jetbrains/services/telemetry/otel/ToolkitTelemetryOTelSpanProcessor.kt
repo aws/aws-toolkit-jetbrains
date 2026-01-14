@@ -13,7 +13,6 @@ import software.aws.toolkit.core.utils.tryOrNull
 import software.aws.toolkit.jetbrains.AwsPlugin
 import software.aws.toolkit.jetbrains.AwsToolkit
 import software.aws.toolkit.jetbrains.services.telemetry.MetricEventMetadata
-import software.aws.toolkit.core.telemetry.MetricEvent
 import software.aws.toolkit.jetbrains.services.telemetry.TelemetryService
 import java.time.Instant
 import kotlin.time.Duration.Companion.nanoseconds

@@ -424,7 +424,7 @@
 
         <tool implementation="software.aws.toolkits.jetbrains.services.ssm.SsmPlugin"/>
 
-        <core.sdk.clientCustomizer implementation="software.aws.toolkits.jetbrains.services.caws.CawsClientCustomizer"/>
+        <sdk.clientCustomizer implementation="software.aws.toolkits.jetbrains.services.caws.CawsClientCustomizer"/>
     </extensions>
 
     <actions resource-bundle="software.aws.toolkits.resources.MessagesBundle">

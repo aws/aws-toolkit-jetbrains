@@ -23,9 +23,9 @@ import com.intellij.openapi.util.Key
 import icons.AwsIcons
 import software.aws.toolkit.core.ConnectionSettings
 import software.aws.toolkit.core.toEnvironmentVariables
+import software.aws.toolkit.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.jetbrains.services.lambda.sam.getSamCli
 import software.aws.toolkits.jetbrains.services.lambda.sam.samSyncCommand
-import software.aws.toolkit.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import java.io.IOException
 import java.nio.charset.Charset
 import java.nio.file.Path

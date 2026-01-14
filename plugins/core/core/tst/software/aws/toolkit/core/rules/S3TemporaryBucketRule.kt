@@ -6,8 +6,8 @@ package software.aws.toolkit.core.rules
 import org.junit.rules.ExternalResource
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException
-import software.aws.toolkit.core.utils.RuleUtils
 import software.aws.toolkit.core.s3.deleteBucketAndContents
+import software.aws.toolkit.core.utils.RuleUtils
 
 class S3TemporaryBucketRule(private val s3ClientSupplier: () -> S3Client) : ExternalResource() {
     constructor(s3Client: S3Client) : this({ s3Client })

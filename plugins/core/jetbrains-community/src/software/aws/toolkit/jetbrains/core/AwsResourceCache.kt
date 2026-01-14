@@ -15,10 +15,6 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import org.jetbrains.annotations.VisibleForTesting
 import software.amazon.awssdk.core.SdkClient
-import software.aws.toolkit.jetbrains.core.coroutines.disposableCoroutineScope
-import software.aws.toolkit.jetbrains.core.credentials.getConnectionSettingsOrThrow
-import software.aws.toolkit.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
-import software.aws.toolkit.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkit.core.ClientConnectionSettings
 import software.aws.toolkit.core.ConnectionSettings
 import software.aws.toolkit.core.TokenConnectionSettings
@@ -29,8 +25,12 @@ import software.aws.toolkit.core.credentials.ToolkitCredentialsProvider
 import software.aws.toolkit.core.region.AwsRegion
 import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkit.core.utils.warn
+import software.aws.toolkit.jetbrains.core.coroutines.disposableCoroutineScope
 import software.aws.toolkit.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkit.jetbrains.core.credentials.CredentialManager
+import software.aws.toolkit.jetbrains.core.credentials.getConnectionSettingsOrThrow
+import software.aws.toolkit.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
+import software.aws.toolkit.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant

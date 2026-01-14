@@ -20,8 +20,8 @@ import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkit.core.utils.tryOrNull
 import software.aws.toolkit.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkit.jetbrains.core.credentials.CredentialManager
-import software.aws.toolkits.jetbrains.core.execution.AwsCredentialInjectionOptions.Companion.DEFAULT_OPTIONS
 import software.aws.toolkit.jetbrains.core.region.AwsRegionProvider
+import software.aws.toolkits.jetbrains.core.execution.AwsCredentialInjectionOptions.Companion.DEFAULT_OPTIONS
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AwsTelemetry
 import software.aws.toolkits.telemetry.MetricResult

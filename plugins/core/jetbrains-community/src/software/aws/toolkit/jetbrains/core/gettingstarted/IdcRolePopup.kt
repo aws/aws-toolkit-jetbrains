@@ -18,18 +18,18 @@ import software.amazon.awssdk.profiles.Profile
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.sso.SsoClient
 import software.amazon.awssdk.services.sso.model.RoleInfo
+import software.aws.toolkit.core.utils.getLogger
+import software.aws.toolkit.core.utils.warn
 import software.aws.toolkit.jetbrains.core.AwsClientManager
 import software.aws.toolkit.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkit.jetbrains.core.credentials.AwsConnectionManagerConnection
 import software.aws.toolkit.jetbrains.core.credentials.ConfigFilesFacade
+import software.aws.toolkit.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkit.jetbrains.core.credentials.DefaultConfigFilesFacade
 import software.aws.toolkit.jetbrains.core.credentials.ToolkitConnectionManager
+import software.aws.toolkit.jetbrains.core.credentials.profiles.ProfileWatcher
 import software.aws.toolkit.jetbrains.ui.AsyncComboBox
 import software.aws.toolkit.jetbrains.utils.ui.selected
-import software.aws.toolkit.core.utils.getLogger
-import software.aws.toolkit.core.utils.warn
-import software.aws.toolkit.jetbrains.core.credentials.CredentialManager
-import software.aws.toolkit.jetbrains.core.credentials.profiles.ProfileWatcher
 import software.aws.toolkit.resources.AwsCoreBundle
 
 data class IdcRolePopupState(
@@ -124,7 +124,7 @@ class IdcRolePopup(
     }
 
     @VisibleForTesting
-     fun doOkActionWithRoleInfo(roleInfo: RoleInfo) {
+    fun doOkActionWithRoleInfo(roleInfo: RoleInfo) {
         val profileName = "$sessionName-${roleInfo.accountId()}-${roleInfo.roleName()}"
         if (profileName !in configFilesFacade.readAllProfiles().keys) {
             configFilesFacade.appendProfileToConfig(

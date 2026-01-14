@@ -21,9 +21,9 @@ import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkit.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkit.jetbrains.core.credentials.ConnectionState
 import software.aws.toolkit.jetbrains.core.credentials.profiles.ProfileCredentialsIdentifier
+import software.aws.toolkit.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.jetbrains.core.experiments.ToolkitExperiment
 import software.aws.toolkits.jetbrains.core.experiments.isEnabled
-import software.aws.toolkit.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AwsTelemetry
 import software.aws.toolkits.telemetry.Result

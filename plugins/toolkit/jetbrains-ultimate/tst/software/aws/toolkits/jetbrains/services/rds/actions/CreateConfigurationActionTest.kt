@@ -21,6 +21,8 @@ import software.aws.toolkit.jetbrains.core.MockResourceCacheRule
 import software.aws.toolkit.jetbrains.core.credentials.MockAwsConnectionManager.ProjectAccountSettingsManagerRule
 import software.aws.toolkit.jetbrains.core.credentials.MockCredentialManagerRule
 import software.aws.toolkit.jetbrains.core.region.AwsRegionProvider
+import software.aws.toolkit.jetbrains.services.sts.StsResources
+import software.aws.toolkit.jetbrains.utils.satisfiesKt
 import software.aws.toolkits.jetbrains.datagrip.CREDENTIAL_ID_PROPERTY
 import software.aws.toolkits.jetbrains.datagrip.REGION_ID_PROPERTY
 import software.aws.toolkits.jetbrains.services.rds.JDBC_MYSQL
@@ -32,8 +34,6 @@ import software.aws.toolkits.jetbrains.services.rds.RdsDatabase
 import software.aws.toolkits.jetbrains.services.rds.RdsDatasourceConfiguration
 import software.aws.toolkits.jetbrains.services.rds.RdsNode
 import software.aws.toolkits.jetbrains.services.rds.auth.IamAuth
-import software.aws.toolkit.jetbrains.services.sts.StsResources
-import software.aws.toolkit.jetbrains.utils.satisfiesKt
 import java.util.concurrent.CompletableFuture
 
 class CreateConfigurationActionTest {

@@ -29,6 +29,10 @@ import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.profiles.Profile
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.sts.StsClient
+import software.aws.toolkit.core.region.AwsRegion
+import software.aws.toolkit.core.utils.error
+import software.aws.toolkit.core.utils.getLogger
+import software.aws.toolkit.core.utils.tryOrNull
 import software.aws.toolkit.jetbrains.ToolkitPlaces
 import software.aws.toolkit.jetbrains.core.AwsClientManager
 import software.aws.toolkit.jetbrains.core.credentials.ConfigFilesFacade
@@ -47,10 +51,6 @@ import software.aws.toolkit.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkit.jetbrains.utils.runUnderProgressIfNeeded
 import software.aws.toolkit.jetbrains.utils.ui.editorNotificationCompoundBorder
 import software.aws.toolkit.jetbrains.utils.ui.selected
-import software.aws.toolkit.core.region.AwsRegion
-import software.aws.toolkit.core.utils.error
-import software.aws.toolkit.core.utils.getLogger
-import software.aws.toolkit.core.utils.tryOrNull
 import software.aws.toolkit.resources.AwsCoreBundle
 import software.aws.toolkits.telemetry.CredentialSourceId
 import software.aws.toolkits.telemetry.FeatureId

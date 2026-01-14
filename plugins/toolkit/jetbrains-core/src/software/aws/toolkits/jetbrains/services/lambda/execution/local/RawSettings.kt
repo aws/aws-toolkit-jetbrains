@@ -9,12 +9,12 @@ import com.intellij.ui.CollectionComboBoxModel
 import com.intellij.ui.SortedComboBoxModel
 import software.aws.toolkit.core.lambda.LambdaArchitecture
 import software.aws.toolkit.core.lambda.LambdaRuntime
+import software.aws.toolkit.jetbrains.ui.KeyValueTextField
 import software.aws.toolkits.jetbrains.services.lambda.LambdaBuilder
 import software.aws.toolkits.jetbrains.services.lambda.LambdaWidgets.lambdaMemory
 import software.aws.toolkits.jetbrains.services.lambda.LambdaWidgets.lambdaTimeout
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
 import software.aws.toolkits.jetbrains.ui.HandlerPanel
-import software.aws.toolkit.jetbrains.ui.KeyValueTextField
 import software.aws.toolkits.jetbrains.ui.SliderPanel
 import java.util.Comparator
 import javax.swing.JComboBox

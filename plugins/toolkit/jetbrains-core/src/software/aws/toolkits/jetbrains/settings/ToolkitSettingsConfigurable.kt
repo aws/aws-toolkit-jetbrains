@@ -22,6 +22,10 @@ import com.intellij.ui.dsl.builder.bindText
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.builder.toNullableProperty
 import software.aws.toolkit.core.utils.htmlWrap
+import software.aws.toolkit.jetbrains.core.help.HelpIds
+import software.aws.toolkit.jetbrains.settings.AwsSettings
+import software.aws.toolkit.jetbrains.settings.ProfilesNotification
+import software.aws.toolkit.jetbrains.settings.UseAwsCredentialRegion
 import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance
 import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance.ExecutableWithPath
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
@@ -29,10 +33,6 @@ import software.aws.toolkits.jetbrains.core.executables.ExecutableType
 import software.aws.toolkits.jetbrains.core.experiments.ToolkitExperimentManager
 import software.aws.toolkits.jetbrains.core.experiments.isEnabled
 import software.aws.toolkits.jetbrains.core.experiments.setState
-import software.aws.toolkit.jetbrains.core.help.HelpIds
-import software.aws.toolkit.jetbrains.settings.AwsSettings
-import software.aws.toolkit.jetbrains.settings.ProfilesNotification
-import software.aws.toolkit.jetbrains.settings.UseAwsCredentialRegion
 import software.aws.toolkits.jetbrains.core.tools.AutoDetectableToolType
 import software.aws.toolkits.jetbrains.core.tools.ManagedToolType
 import software.aws.toolkits.jetbrains.core.tools.ToolManager

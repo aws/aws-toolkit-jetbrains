@@ -17,11 +17,11 @@ import io.opentelemetry.sdk.trace.ReadWriteSpan
 import kotlinx.coroutines.CoroutineScope
 import software.amazon.awssdk.services.toolkittelemetry.model.AWSProduct
 import software.amazon.awssdk.services.toolkittelemetry.model.MetricUnit
-import software.aws.toolkit.jetbrains.isDeveloperMode
-import software.aws.toolkit.jetbrains.services.telemetry.ClientMetadata
 import software.aws.toolkit.core.utils.error
 import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkit.core.utils.warn
+import software.aws.toolkit.jetbrains.isDeveloperMode
+import software.aws.toolkit.jetbrains.services.telemetry.ClientMetadata
 import software.aws.toolkits.telemetry.impl.BaseSpan
 import java.time.Instant
 import java.util.concurrent.TimeUnit

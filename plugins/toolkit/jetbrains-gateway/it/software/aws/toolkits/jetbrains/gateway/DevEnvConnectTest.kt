@@ -46,6 +46,7 @@ import software.aws.toolkit.jetbrains.core.credentials.pinning.ConnectionPinning
 import software.aws.toolkit.jetbrains.core.credentials.sono.SONO_REGION
 import software.aws.toolkit.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkit.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
+import software.aws.toolkit.jetbrains.utils.extensions.SsoLogin
 import software.aws.toolkits.jetbrains.core.tools.MockToolManagerRule
 import software.aws.toolkits.jetbrains.core.tools.ToolManager
 import software.aws.toolkits.jetbrains.gateway.connection.IDE_BACKEND_DIR
@@ -58,7 +59,6 @@ import software.aws.toolkits.jetbrains.services.ssm.SsmPlugin
 import software.aws.toolkits.jetbrains.utils.FrameworkTestUtils
 import software.aws.toolkits.jetbrains.utils.extensions.DevEnvironmentExtension
 import software.aws.toolkits.jetbrains.utils.extensions.DisposerAfterAllExtension
-import software.aws.toolkit.jetbrains.utils.extensions.SsoLogin
 import java.nio.file.Path
 import java.time.Duration
 import java.util.concurrent.TimeUnit

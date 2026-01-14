@@ -13,9 +13,9 @@ import software.amazon.awssdk.services.sts.StsClient
 import software.amazon.awssdk.services.sts.auth.StsAssumeRoleCredentialsProvider
 import software.amazon.awssdk.services.sts.model.AssumeRoleRequest
 import software.amazon.awssdk.utils.SdkAutoCloseable
+import software.aws.toolkit.core.region.AwsRegion
 import software.aws.toolkit.jetbrains.core.AwsClientManager
 import software.aws.toolkit.jetbrains.core.credentials.promptForMfaToken
-import software.aws.toolkit.core.region.AwsRegion
 import java.util.function.Supplier
 
 class ProfileAssumeRoleProvider(@get:TestOnly val parentProvider: AwsCredentialsProvider, region: AwsRegion, profile: Profile) :

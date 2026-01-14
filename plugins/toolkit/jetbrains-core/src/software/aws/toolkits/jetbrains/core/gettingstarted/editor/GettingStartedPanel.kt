@@ -58,6 +58,8 @@ import software.aws.toolkit.jetbrains.core.gettingstarted.editor.checkIamConnect
 import software.aws.toolkit.jetbrains.core.gettingstarted.editor.controlPanelVisibility
 import software.aws.toolkit.jetbrains.core.gettingstarted.editor.getConnectionCount
 import software.aws.toolkit.jetbrains.core.gettingstarted.editor.getEnabledConnections
+import software.aws.toolkit.jetbrains.core.gettingstarted.requestCredentialsForCodeWhisperer
+import software.aws.toolkit.jetbrains.utils.ui.editorNotificationCompoundBorder
 import software.aws.toolkits.jetbrains.core.explorer.AwsToolkitExplorerToolWindow
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.DevToolsToolWindow
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.CawsServiceNode
@@ -67,12 +69,10 @@ import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStarted
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanel.PanelConstants.PANEL_TITLE_FONT
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanel.PanelConstants.PANEL_WIDTH
 import software.aws.toolkits.jetbrains.core.gettingstarted.requestCredentialsForCodeCatalyst
-import software.aws.toolkit.jetbrains.core.gettingstarted.requestCredentialsForCodeWhisperer
 import software.aws.toolkits.jetbrains.core.gettingstarted.requestCredentialsForExplorer
 import software.aws.toolkits.jetbrains.services.caws.CawsEndpoints
 import software.aws.toolkits.jetbrains.services.caws.CawsResources
 import software.aws.toolkits.jetbrains.ui.feedback.ToolkitFeedbackDialog
-import software.aws.toolkit.jetbrains.utils.ui.editorNotificationCompoundBorder
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.UiTelemetry
 import java.awt.Dimension

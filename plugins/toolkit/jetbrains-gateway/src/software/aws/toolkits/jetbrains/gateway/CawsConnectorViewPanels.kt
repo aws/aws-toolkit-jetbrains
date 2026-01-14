@@ -57,11 +57,14 @@ import software.aws.toolkit.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkit.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkit.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkit.jetbrains.core.credentials.pinning.CodeCatalystConnection
+import software.aws.toolkit.jetbrains.isDeveloperMode
+import software.aws.toolkit.jetbrains.ui.AsyncComboBox
+import software.aws.toolkit.jetbrains.utils.ui.find
+import software.aws.toolkit.jetbrains.utils.ui.selected
 import software.aws.toolkits.jetbrains.core.credentials.sono.lazilyGetUserId
 import software.aws.toolkits.jetbrains.gateway.connection.IdeBackendActions
 import software.aws.toolkits.jetbrains.gateway.welcomescreen.recursivelySetBackground
 import software.aws.toolkits.jetbrains.gateway.welcomescreen.setDefaultBackgroundAndBorder
-import software.aws.toolkit.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.services.caws.CawsCodeRepository
 import software.aws.toolkits.jetbrains.services.caws.CawsEndpoints
 import software.aws.toolkits.jetbrains.services.caws.CawsProject
@@ -72,9 +75,6 @@ import software.aws.toolkits.jetbrains.services.caws.isSupportedInFreeTier
 import software.aws.toolkits.jetbrains.services.caws.listAccessibleProjectsPaginator
 import software.aws.toolkits.jetbrains.services.caws.loadParameterDescriptions
 import software.aws.toolkits.jetbrains.settings.CawsSpaceTracker
-import software.aws.toolkit.jetbrains.ui.AsyncComboBox
-import software.aws.toolkit.jetbrains.utils.ui.find
-import software.aws.toolkit.jetbrains.utils.ui.selected
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodecatalystCreateDevEnvironmentRepoType
 import software.aws.toolkits.telemetry.CodecatalystTelemetry

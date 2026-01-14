@@ -12,11 +12,11 @@ import software.amazon.awssdk.services.cloudcontrol.model.UnsupportedActionExcep
 import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkit.jetbrains.core.awsClient
 import software.aws.toolkit.jetbrains.core.credentials.getConnectionSettingsOrThrow
+import software.aws.toolkit.jetbrains.core.getResourceNow
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerEmptyNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.ResourceActionNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.ResourceParentNode
-import software.aws.toolkit.jetbrains.core.getResourceNow
 import software.aws.toolkits.jetbrains.services.dynamic.CloudControlApiResources
 import software.aws.toolkits.jetbrains.services.dynamic.DynamicResource
 import software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceIdentifier

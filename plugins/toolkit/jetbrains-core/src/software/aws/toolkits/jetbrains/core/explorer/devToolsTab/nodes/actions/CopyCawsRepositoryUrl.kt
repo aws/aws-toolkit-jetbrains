@@ -17,10 +17,10 @@ import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import software.aws.toolkit.core.ClientConnectionSettings
 import software.aws.toolkit.jetbrains.core.AwsResourceCache
+import software.aws.toolkit.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.core.credentials.sono.CodeCatalystCredentialManager
 import software.aws.toolkits.jetbrains.services.caws.CawsCodeRepository
 import software.aws.toolkits.jetbrains.services.caws.CawsResources
-import software.aws.toolkit.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
 import java.awt.datatransfer.StringSelection
 

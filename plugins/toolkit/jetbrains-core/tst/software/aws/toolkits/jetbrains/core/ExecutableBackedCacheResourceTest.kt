@@ -16,10 +16,10 @@ import org.junit.rules.TemporaryFolder
 import software.aws.toolkit.core.ConnectionSettings
 import software.aws.toolkit.core.credentials.ToolkitCredentialsProvider
 import software.aws.toolkit.jetbrains.core.credentials.MockCredentialManagerRule
+import software.aws.toolkit.jetbrains.core.region.getDefaultRegion
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
 import software.aws.toolkits.jetbrains.core.executables.ExecutableType
 import software.aws.toolkits.jetbrains.core.executables.Validatable
-import software.aws.toolkit.jetbrains.core.region.getDefaultRegion
 import java.nio.file.Path
 import java.util.concurrent.TimeUnit
 

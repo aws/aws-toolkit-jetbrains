@@ -19,7 +19,7 @@ interface DynamicResourcesSettings {
     }
 }
 
-@State(name = "resources", storages = [Storage("aws.xml")])
+@State(name = "toolkitResources", storages = [Storage("awsToolkit.xml")])
 internal class DefaultDynamicResourcesSettings :
     DynamicResourcesSettings,
     SimplePersistentStateComponent<DynamicResourcesConfiguration>(DynamicResourcesConfiguration()) {

@@ -17,9 +17,6 @@ import software.amazon.awssdk.awscore.client.builder.AwsClientBuilder
 import software.amazon.awssdk.core.SdkClient
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration
 import software.amazon.awssdk.http.SdkHttpClient
-import software.aws.toolkit.jetbrains.core.credentials.AwsConnectionManager
-import software.aws.toolkit.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
-import software.aws.toolkit.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkit.core.ClientConnectionSettings
 import software.aws.toolkit.core.ConnectionSettings
 import software.aws.toolkit.core.TokenConnectionSettings
@@ -29,7 +26,10 @@ import software.aws.toolkit.core.credentials.CredentialIdentifier
 import software.aws.toolkit.core.credentials.ToolkitCredentialsChangeListener
 import software.aws.toolkit.core.region.ToolkitRegionProvider
 import software.aws.toolkit.core.utils.tryOrNull
+import software.aws.toolkit.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkit.jetbrains.core.credentials.CredentialManager
+import software.aws.toolkit.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
+import software.aws.toolkit.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkit.jetbrains.settings.AwsSettings
 
 open class AwsClientManager : ToolkitClientManager(), Disposable {

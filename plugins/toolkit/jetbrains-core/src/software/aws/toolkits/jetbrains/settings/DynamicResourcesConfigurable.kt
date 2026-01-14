@@ -21,12 +21,12 @@ import software.aws.toolkit.core.utils.replace
 import software.aws.toolkit.jetbrains.core.coroutines.applicationCoroutineScope
 import software.aws.toolkit.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkit.jetbrains.core.coroutines.getCoroutineUiContext
+import software.aws.toolkit.jetbrains.ui.feedback.FEEDBACK_SOURCE
+import software.aws.toolkit.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerToolWindow
 import software.aws.toolkits.jetbrains.feedback.sendFeedbackWithExperimentsMetadata
 import software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceSupportedTypes
 import software.aws.toolkits.jetbrains.services.dynamic.explorer.OtherResourcesNode
-import software.aws.toolkit.jetbrains.ui.feedback.FEEDBACK_SOURCE
-import software.aws.toolkit.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.FeedbackTelemetry
 import javax.swing.ListSelectionModel

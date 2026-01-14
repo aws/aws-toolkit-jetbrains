@@ -22,10 +22,10 @@ import software.amazon.awssdk.services.cloudformation.model.StackSummary
 import software.amazon.awssdk.services.ecr.EcrClient
 import software.amazon.awssdk.services.s3.S3Client
 import software.aws.toolkit.jetbrains.core.MockClientManagerRule
+import software.aws.toolkit.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.services.cloudformation.Parameter
 import software.aws.toolkits.jetbrains.services.ecr.resources.Repository
 import software.aws.toolkits.jetbrains.services.lambda.sam.ValidateSamParameters
-import software.aws.toolkit.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import software.aws.toolkits.resources.message
 import java.nio.file.Files
 

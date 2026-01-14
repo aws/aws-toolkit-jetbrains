@@ -38,15 +38,15 @@ import software.amazon.awssdk.services.codecatalyst.model.DevEnvironmentStatus
 import software.aws.toolkit.core.utils.error
 import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkit.jetbrains.core.coroutines.applicationCoroutineScope
+import software.aws.toolkit.jetbrains.isDeveloperMode
+import software.aws.toolkit.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.jetbrains.gateway.CawsConnectionParameters
 import software.aws.toolkits.jetbrains.gateway.SsoSettings
 import software.aws.toolkits.jetbrains.gateway.Workspace
 import software.aws.toolkits.jetbrains.gateway.connection.ThinClientTrackerService
 import software.aws.toolkits.jetbrains.gateway.connection.caws.CawsCommandExecutor
 import software.aws.toolkits.jetbrains.gateway.inProgress
-import software.aws.toolkit.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.services.caws.isSubscriptionFreeTier
-import software.aws.toolkit.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.resources.message
 import java.awt.Color
 import java.awt.FlowLayout

@@ -15,10 +15,10 @@ import com.intellij.openapi.ui.DialogBuilder
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.ui.ScrollPaneFactory
 import org.slf4j.LoggerFactory
+import software.aws.toolkit.core.utils.warn
 import software.aws.toolkit.jetbrains.core.help.HelpIds
 import software.aws.toolkit.jetbrains.core.notifications.BannerNotificationService
 import software.aws.toolkit.jetbrains.core.notifications.NotificationDismissalState
-import software.aws.toolkit.core.utils.warn
 import software.aws.toolkit.resources.AwsCoreBundle
 import javax.swing.JLabel
 import javax.swing.JTextArea

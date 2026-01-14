@@ -6,12 +6,12 @@ package software.aws.toolkit.jetbrains.core.credentials
 import com.intellij.notification.NotificationAction
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import software.aws.toolkit.jetbrains.core.region.AwsRegionProvider
-import software.aws.toolkit.jetbrains.settings.UseAwsCredentialRegion
-import software.aws.toolkit.jetbrains.utils.notifyInfo
 import software.aws.toolkit.core.credentials.CredentialIdentifier
 import software.aws.toolkit.core.region.AwsRegion
+import software.aws.toolkit.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkit.jetbrains.settings.AwsSettings
+import software.aws.toolkit.jetbrains.settings.UseAwsCredentialRegion
+import software.aws.toolkit.jetbrains.utils.notifyInfo
 import software.aws.toolkit.resources.AwsCoreBundle
 
 /**

@@ -56,9 +56,9 @@ import software.aws.toolkit.jetbrains.core.credentials.loginSso
 import software.aws.toolkit.jetbrains.core.credentials.logoutFromSsoConnection
 import software.aws.toolkit.jetbrains.core.credentials.pinning.CodeCatalystConnection
 import software.aws.toolkit.jetbrains.core.credentials.sono.CODECATALYST_SCOPES
-import software.aws.toolkits.jetbrains.core.credentials.sono.CodeCatalystCredentialManager
 import software.aws.toolkit.jetbrains.core.credentials.sono.SONO_REGION
 import software.aws.toolkit.jetbrains.core.credentials.sono.SONO_URL
+import software.aws.toolkits.jetbrains.core.credentials.sono.CodeCatalystCredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.sono.lazilyGetUserId
 import software.aws.toolkits.jetbrains.gateway.connection.GET_IDE_BACKEND_VERSION_COMMAND
 import software.aws.toolkits.jetbrains.gateway.connection.GitSettings

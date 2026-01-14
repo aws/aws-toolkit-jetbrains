@@ -31,6 +31,9 @@ import software.amazon.awssdk.services.lambda.model.PackageType
 import software.amazon.awssdk.services.s3.S3Client
 import software.aws.toolkit.jetbrains.core.awsClient
 import software.aws.toolkit.jetbrains.core.map
+import software.aws.toolkit.jetbrains.ui.KeyValueTextField
+import software.aws.toolkit.jetbrains.utils.ui.validationInfo
+import software.aws.toolkit.jetbrains.utils.ui.withBinding
 import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationTemplate
 import software.aws.toolkits.jetbrains.services.cloudformation.Parameter
 import software.aws.toolkits.jetbrains.services.cloudformation.SamFunction
@@ -48,10 +51,7 @@ import software.aws.toolkits.jetbrains.services.s3.CreateS3BucketDialog
 import software.aws.toolkits.jetbrains.services.s3.resources.S3Resources
 import software.aws.toolkits.jetbrains.settings.SyncSettings
 import software.aws.toolkits.jetbrains.settings.relativeSamPath
-import software.aws.toolkit.jetbrains.ui.KeyValueTextField
 import software.aws.toolkits.jetbrains.ui.ResourceSelector
-import software.aws.toolkit.jetbrains.utils.ui.validationInfo
-import software.aws.toolkit.jetbrains.utils.ui.withBinding
 import software.aws.toolkits.resources.message
 import java.awt.Component
 

@@ -18,9 +18,9 @@ import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkit.jetbrains.core.awsClient
 import software.aws.toolkit.jetbrains.core.coroutines.getCoroutineUiContext
 import software.aws.toolkit.jetbrains.core.coroutines.projectCoroutineScope
+import software.aws.toolkit.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.core.explorer.refreshAwsTree
 import software.aws.toolkits.jetbrains.services.apprunner.resources.AppRunnerResources
-import software.aws.toolkit.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AppRunnerServiceSource
 import software.aws.toolkits.telemetry.ApprunnerTelemetry

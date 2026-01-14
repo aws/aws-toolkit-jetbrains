@@ -19,12 +19,12 @@ import software.aws.toolkit.jetbrains.core.awsClient
 import software.aws.toolkit.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkit.jetbrains.core.coroutines.getCoroutineUiContext
 import software.aws.toolkit.jetbrains.core.coroutines.projectCoroutineScope
+import software.aws.toolkit.jetbrains.utils.isCodeCatalystDevEnv
+import software.aws.toolkit.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.core.credentials.sono.CodeCatalystCredentialManager
 import software.aws.toolkits.jetbrains.services.caws.CawsConstants
 import software.aws.toolkits.jetbrains.services.caws.envclient.CawsEnvironmentClient
 import software.aws.toolkits.jetbrains.services.caws.envclient.models.UpdateActivityRequest
-import software.aws.toolkit.jetbrains.utils.isCodeCatalystDevEnv
-import software.aws.toolkit.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 import java.time.Instant
 import java.time.temporal.ChronoUnit

@@ -6,9 +6,6 @@ package software.aws.toolkit.jetbrains.core.notifications
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import software.aws.toolkit.jetbrains.core.notifications.DismissedNotification
-import software.aws.toolkit.jetbrains.core.notifications.NotificationDismissalConfiguration
-import software.aws.toolkit.jetbrains.core.notifications.NotificationDismissalState
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 

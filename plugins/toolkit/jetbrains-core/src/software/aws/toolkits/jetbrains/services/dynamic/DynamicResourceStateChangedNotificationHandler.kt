@@ -7,10 +7,10 @@ import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
 import software.amazon.awssdk.services.cloudcontrol.model.OperationStatus
 import software.aws.toolkit.jetbrains.core.AwsResourceCache
-import software.aws.toolkits.jetbrains.core.explorer.ExplorerToolWindow
-import software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceTelemetryResources.addOperationToTelemetry
 import software.aws.toolkit.jetbrains.utils.notifyError
 import software.aws.toolkit.jetbrains.utils.notifyInfo
+import software.aws.toolkits.jetbrains.core.explorer.ExplorerToolWindow
+import software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceTelemetryResources.addOperationToTelemetry
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.DynamicresourceTelemetry
 import software.aws.toolkits.telemetry.Result

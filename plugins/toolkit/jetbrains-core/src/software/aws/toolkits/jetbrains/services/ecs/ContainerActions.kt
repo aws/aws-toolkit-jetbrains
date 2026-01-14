@@ -21,10 +21,13 @@ import software.amazon.awssdk.services.ecs.model.Service
 import software.aws.toolkit.jetbrains.core.awsClient
 import software.aws.toolkit.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkit.jetbrains.core.credentials.withAwsConnection
-import software.aws.toolkits.jetbrains.core.experiments.isEnabled
-import software.aws.toolkits.jetbrains.core.explorer.actions.SingleExplorerNodeActionGroup
 import software.aws.toolkit.jetbrains.core.getResource
 import software.aws.toolkit.jetbrains.core.getResourceNow
+import software.aws.toolkit.jetbrains.utils.notifyError
+import software.aws.toolkit.jetbrains.utils.notifyInfo
+import software.aws.toolkit.jetbrains.utils.notifyWarn
+import software.aws.toolkits.jetbrains.core.experiments.isEnabled
+import software.aws.toolkits.jetbrains.core.explorer.actions.SingleExplorerNodeActionGroup
 import software.aws.toolkits.jetbrains.core.plugins.pluginIsInstalledAndEnabled
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogWindow
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.checkIfLogStreamExists
@@ -32,9 +35,6 @@ import software.aws.toolkits.jetbrains.services.ecs.exec.EcsExecUtils
 import software.aws.toolkits.jetbrains.services.ecs.exec.OpenShellInContainerDialog
 import software.aws.toolkits.jetbrains.services.ecs.exec.RunCommandDialog
 import software.aws.toolkits.jetbrains.services.ecs.resources.EcsResources
-import software.aws.toolkit.jetbrains.utils.notifyError
-import software.aws.toolkit.jetbrains.utils.notifyInfo
-import software.aws.toolkit.jetbrains.utils.notifyWarn
 import software.aws.toolkits.resources.message
 
 class ContainerActions(

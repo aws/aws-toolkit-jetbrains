@@ -8,7 +8,7 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 
-@State(name = "cawsSpace", storages = [Storage("aws.xml")])
+@State(name = "toolkitCawsSpace", storages = [Storage("awsToolkit.xml")])
 class CawsSpaceTracker : PersistentStateComponent<CawsSpaceState> {
     private val state = CawsSpaceState()
 

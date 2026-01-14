@@ -13,8 +13,11 @@ import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.services.lambda.model.PackageType
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkit.core.lambda.validOrNull
-import software.aws.toolkits.jetbrains.core.explorer.refreshAwsTree
 import software.aws.toolkit.jetbrains.core.help.HelpIds
+import software.aws.toolkit.jetbrains.utils.notifyError
+import software.aws.toolkit.jetbrains.utils.notifyInfo
+import software.aws.toolkit.jetbrains.utils.ui.selected
+import software.aws.toolkits.jetbrains.core.explorer.refreshAwsTree
 import software.aws.toolkits.jetbrains.services.lambda.Lambda.findPsiElementsForHandler
 import software.aws.toolkits.jetbrains.services.lambda.LambdaBuilder
 import software.aws.toolkits.jetbrains.services.lambda.LambdaLimits.DEFAULT_MEMORY_SIZE
@@ -28,9 +31,6 @@ import software.aws.toolkits.jetbrains.services.lambda.steps.createLambdaWorkflo
 import software.aws.toolkits.jetbrains.settings.UpdateLambdaSettings
 import software.aws.toolkits.jetbrains.utils.execution.steps.BuildViewWorkflowEmitter
 import software.aws.toolkits.jetbrains.utils.execution.steps.StepExecutor
-import software.aws.toolkit.jetbrains.utils.notifyError
-import software.aws.toolkit.jetbrains.utils.notifyInfo
-import software.aws.toolkit.jetbrains.utils.ui.selected
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.LambdaPackageType
 import software.aws.toolkits.telemetry.LambdaTelemetry

@@ -361,13 +361,15 @@ class DiskCacheTest {
 
     @Test
     fun nonExistentAccessTokenReturnsNull() {
-        assertThat(sut.loadAccessToken(
-            DeviceGrantAccessTokenCacheKey(
-                "connectionId",
-                ssoUrl,
-                listOf("scope1", "scope2")
+        assertThat(
+            sut.loadAccessToken(
+                DeviceGrantAccessTokenCacheKey(
+                    "connectionId",
+                    ssoUrl,
+                    listOf("scope1", "scope2")
+                )
             )
-        )).isNull()
+        ).isNull()
     }
 
     @Test

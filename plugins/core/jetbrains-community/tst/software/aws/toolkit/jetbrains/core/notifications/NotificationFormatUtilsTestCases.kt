@@ -3,20 +3,6 @@
 
 package software.aws.toolkit.jetbrains.core.notifications
 
-import software.aws.toolkit.jetbrains.core.notifications.AuthxType
-import software.aws.toolkit.jetbrains.core.notifications.ComputeType
-import software.aws.toolkit.jetbrains.core.notifications.ExtensionType
-import software.aws.toolkit.jetbrains.core.notifications.NotificationActionDescription
-import software.aws.toolkit.jetbrains.core.notifications.NotificationContentDescription
-import software.aws.toolkit.jetbrains.core.notifications.NotificationContentDescriptionLocale
-import software.aws.toolkit.jetbrains.core.notifications.NotificationData
-import software.aws.toolkit.jetbrains.core.notifications.NotificationDisplayCondition
-import software.aws.toolkit.jetbrains.core.notifications.NotificationExpression
-import software.aws.toolkit.jetbrains.core.notifications.NotificationFollowupActions
-import software.aws.toolkit.jetbrains.core.notifications.NotificationFollowupActionsContent
-import software.aws.toolkit.jetbrains.core.notifications.NotificationSchedule
-import software.aws.toolkit.jetbrains.core.notifications.SystemType
-
 val validComputeInvalidOs = """{
     "id": "example_id_12344",
     "schedule": {

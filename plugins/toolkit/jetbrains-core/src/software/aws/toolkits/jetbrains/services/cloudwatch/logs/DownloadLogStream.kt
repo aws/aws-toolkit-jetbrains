@@ -25,10 +25,10 @@ import software.amazon.awssdk.services.cloudwatchlogs.model.GetLogEventsRequest
 import software.aws.toolkit.core.utils.error
 import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkit.jetbrains.core.coroutines.getCoroutineUiContext
-import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.OpenStreamInEditor
-import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.buildStringFromLogsOutput
 import software.aws.toolkit.jetbrains.utils.notifyError
 import software.aws.toolkit.jetbrains.utils.notifyInfo
+import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.OpenStreamInEditor
+import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.buildStringFromLogsOutput
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CloudWatchResourceType
 import software.aws.toolkits.telemetry.CloudwatchlogsTelemetry

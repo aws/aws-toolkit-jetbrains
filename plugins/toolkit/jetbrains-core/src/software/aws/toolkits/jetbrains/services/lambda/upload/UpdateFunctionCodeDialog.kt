@@ -12,6 +12,8 @@ import com.intellij.util.text.nullize
 import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.services.lambda.model.PackageType
 import software.aws.toolkit.jetbrains.core.help.HelpIds
+import software.aws.toolkit.jetbrains.utils.notifyError
+import software.aws.toolkit.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.services.lambda.Lambda.findPsiElementsForHandler
 import software.aws.toolkits.jetbrains.services.lambda.LambdaBuilder
 import software.aws.toolkits.jetbrains.services.lambda.LambdaFunction
@@ -22,8 +24,6 @@ import software.aws.toolkits.jetbrains.services.lambda.steps.updateLambdaCodeWor
 import software.aws.toolkits.jetbrains.settings.UpdateLambdaSettings
 import software.aws.toolkits.jetbrains.utils.execution.steps.BuildViewWorkflowEmitter
 import software.aws.toolkits.jetbrains.utils.execution.steps.StepExecutor
-import software.aws.toolkit.jetbrains.utils.notifyError
-import software.aws.toolkit.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.LambdaPackageType
 import software.aws.toolkits.telemetry.LambdaTelemetry

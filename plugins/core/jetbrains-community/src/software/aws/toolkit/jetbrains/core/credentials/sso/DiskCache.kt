@@ -21,7 +21,6 @@ import com.fasterxml.jackson.databind.util.StdDateFormat
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
-import software.aws.toolkit.jetbrains.services.telemetry.scrubNames
 import software.aws.toolkit.core.utils.createParentDirectories
 import software.aws.toolkit.core.utils.deleteIfExists
 import software.aws.toolkit.core.utils.getLogger
@@ -33,6 +32,7 @@ import software.aws.toolkit.core.utils.touch
 import software.aws.toolkit.core.utils.tryDirOp
 import software.aws.toolkit.core.utils.tryFileOp
 import software.aws.toolkit.core.utils.tryOrNull
+import software.aws.toolkit.jetbrains.services.telemetry.scrubNames
 import software.aws.toolkits.telemetry.AuthTelemetry
 import software.aws.toolkits.telemetry.Result
 import java.io.InputStream

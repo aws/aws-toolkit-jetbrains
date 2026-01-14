@@ -19,12 +19,12 @@ import software.amazon.awssdk.services.toolkittelemetry.model.Sentiment
 import software.aws.toolkit.core.telemetry.TelemetryBatcher
 import software.aws.toolkit.core.telemetry.TelemetryPublisher
 import software.aws.toolkit.core.utils.test.aString
-import software.aws.toolkits.jetbrains.core.experiments.DummyExperiment
-import software.aws.toolkits.jetbrains.core.experiments.ToolkitExperimentManager
-import software.aws.toolkits.jetbrains.core.experiments.setState
 import software.aws.toolkit.jetbrains.services.telemetry.NoOpPublisher
 import software.aws.toolkit.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkit.jetbrains.ui.feedback.ENABLED_EXPERIMENTS
+import software.aws.toolkits.jetbrains.core.experiments.DummyExperiment
+import software.aws.toolkits.jetbrains.core.experiments.ToolkitExperimentManager
+import software.aws.toolkits.jetbrains.core.experiments.setState
 
 @ExtendWith(ApplicationExtension::class)
 class SendFeedbackWithExperimentsMetadataTest {

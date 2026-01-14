@@ -5,13 +5,13 @@ package software.aws.toolkit.jetbrains.core.gettingstarted.editor
 
 import com.intellij.configurationStore.getPersistentStateComponentStorageLocation
 import com.intellij.openapi.project.Project
-import software.aws.toolkit.jetbrains.core.credentials.profiles.ProfileCredentialsIdentifierSso
-import software.aws.toolkit.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
-import software.aws.toolkit.jetbrains.settings.AwsSettings
 import software.aws.toolkit.core.utils.exists
 import software.aws.toolkit.core.utils.tryOrNull
 import software.aws.toolkit.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkit.jetbrains.core.credentials.ToolkitAuthManager
+import software.aws.toolkit.jetbrains.core.credentials.profiles.ProfileCredentialsIdentifierSso
+import software.aws.toolkit.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
+import software.aws.toolkit.jetbrains.settings.AwsSettings
 import software.aws.toolkits.telemetry.AuthStatus
 import software.aws.toolkits.telemetry.StartUpState
 

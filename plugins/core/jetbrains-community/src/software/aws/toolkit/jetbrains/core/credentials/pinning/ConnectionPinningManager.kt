@@ -9,11 +9,11 @@ import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.extensions.ExtensionPointName
-import software.aws.toolkit.jetbrains.core.credentials.ToolkitConnection
-import software.aws.toolkit.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkit.core.utils.error
 import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkit.jetbrains.core.credentials.ToolkitAuthManager
+import software.aws.toolkit.jetbrains.core.credentials.ToolkitConnection
+import software.aws.toolkit.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.collections.putAll
 
@@ -30,7 +30,7 @@ interface FeatureWithPinnedConnection {
     }
 }
 
-@State(name = "connectionPinningManager", storages = [Storage("aws.xml")])
+@State(name = "toolkitConnectionPinningManager", storages = [Storage("awsToolkit.xml")])
 class DefaultConnectionPinningManager :
     ConnectionPinningManager,
     PersistentStateComponent<ConnectionPinningManagerState>,

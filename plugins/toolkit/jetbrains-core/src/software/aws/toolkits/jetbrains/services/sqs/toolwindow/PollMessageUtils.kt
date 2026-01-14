@@ -6,10 +6,10 @@ package software.aws.toolkits.jetbrains.services.sqs.toolwindow
 import com.intellij.util.ui.ColumnInfo
 import software.amazon.awssdk.services.sqs.model.Message
 import software.amazon.awssdk.services.sqs.model.MessageSystemAttributeName
-import software.aws.toolkits.jetbrains.services.sqs.MAX_LENGTH_OF_POLLED_MESSAGES
 import software.aws.toolkit.jetbrains.utils.ui.ResizingDateColumnRenderer
 import software.aws.toolkit.jetbrains.utils.ui.ResizingTextColumnRenderer
 import software.aws.toolkit.jetbrains.utils.ui.WrappingCellRenderer
+import software.aws.toolkits.jetbrains.services.sqs.MAX_LENGTH_OF_POLLED_MESSAGES
 import software.aws.toolkits.resources.message
 import javax.swing.table.TableCellRenderer
 

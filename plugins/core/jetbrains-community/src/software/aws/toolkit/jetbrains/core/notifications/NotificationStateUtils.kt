@@ -22,7 +22,7 @@ data class NotificationDismissalConfiguration(
 )
 
 @Service
-@State(name = "notificationDismissals", storages = [Storage("aws.xml")])
+@State(name = "toolkitNotificationDismissals", storages = [Storage("awsToolkit.xml")])
 class NotificationDismissalState : PersistentStateComponent<NotificationDismissalConfiguration> {
     private var state = NotificationDismissalConfiguration()
     private val retentionPeriod = Duration.ofDays(60) // 2 months
@@ -58,7 +58,7 @@ class NotificationDismissalState : PersistentStateComponent<NotificationDismissa
 }
 
 @Service
-@State(name = "notificationEtag", storages = [Storage("aws.xml")])
+@State(name = "toolkitNotificationEtag", storages = [Storage("awsToolkit.xml")])
 class NotificationEtagState : PersistentStateComponent<NotificationEtagConfiguration>, ETagProvider {
     private val state = NotificationEtagConfiguration()
 

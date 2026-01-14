@@ -15,9 +15,12 @@ import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkit.core.utils.warn
 import software.aws.toolkit.jetbrains.core.credentials.activeCredentialProvider
 import software.aws.toolkit.jetbrains.core.credentials.activeRegion
-import software.aws.toolkits.jetbrains.core.explorer.actions.SingleExplorerNodeAction
 import software.aws.toolkit.jetbrains.core.getResourceNow
 import software.aws.toolkit.jetbrains.core.help.HelpIds
+import software.aws.toolkit.jetbrains.services.sts.StsResources
+import software.aws.toolkit.jetbrains.utils.actions.OpenBrowserAction
+import software.aws.toolkit.jetbrains.utils.notifyError
+import software.aws.toolkits.jetbrains.core.explorer.actions.SingleExplorerNodeAction
 import software.aws.toolkits.jetbrains.datagrip.CREDENTIAL_ID_PROPERTY
 import software.aws.toolkits.jetbrains.datagrip.REGION_ID_PROPERTY
 import software.aws.toolkits.jetbrains.services.rds.RdsDatasourceConfiguration
@@ -25,9 +28,6 @@ import software.aws.toolkits.jetbrains.services.rds.RdsNode
 import software.aws.toolkits.jetbrains.services.rds.auth.IamAuth
 import software.aws.toolkits.jetbrains.services.rds.auth.RDS_SIGNING_HOST_PROPERTY
 import software.aws.toolkits.jetbrains.services.rds.auth.RDS_SIGNING_PORT_PROPERTY
-import software.aws.toolkit.jetbrains.services.sts.StsResources
-import software.aws.toolkit.jetbrains.utils.actions.OpenBrowserAction
-import software.aws.toolkit.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.DatabaseCredentials
 import software.aws.toolkits.telemetry.RdsTelemetry

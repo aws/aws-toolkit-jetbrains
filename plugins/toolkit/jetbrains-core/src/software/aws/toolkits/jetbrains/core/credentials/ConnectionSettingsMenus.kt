@@ -17,12 +17,12 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.ui.popup.ListPopup
 import com.intellij.util.EventDispatcher
+import software.aws.toolkit.core.credentials.CredentialIdentifier
+import software.aws.toolkit.core.region.AwsRegion
 import software.aws.toolkit.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkit.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkit.jetbrains.core.credentials.AwsConnectionManagerConnection
 import software.aws.toolkit.jetbrains.core.credentials.ToolkitConnectionManager
-import software.aws.toolkit.core.credentials.CredentialIdentifier
-import software.aws.toolkit.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.credentials.ChangeSettingsMode.BOTH
 import software.aws.toolkits.jetbrains.core.credentials.ChangeSettingsMode.CREDENTIALS
 import software.aws.toolkits.jetbrains.core.credentials.ChangeSettingsMode.NONE

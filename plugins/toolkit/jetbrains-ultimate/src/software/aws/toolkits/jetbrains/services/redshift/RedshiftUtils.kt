@@ -10,12 +10,12 @@ import software.aws.toolkit.core.region.AwsRegion
 import software.aws.toolkit.core.utils.tryOrNull
 import software.aws.toolkit.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkit.jetbrains.core.getResourceIfPresent
+import software.aws.toolkit.jetbrains.services.sts.StsResources
 import software.aws.toolkits.jetbrains.datagrip.CREDENTIAL_ID_PROPERTY
 import software.aws.toolkits.jetbrains.datagrip.REGION_ID_PROPERTY
 import software.aws.toolkits.jetbrains.datagrip.RequireSsl
 import software.aws.toolkits.jetbrains.services.redshift.auth.CLUSTER_ID_PROPERTY
 import software.aws.toolkits.jetbrains.services.redshift.auth.IamAuth
-import software.aws.toolkit.jetbrains.services.sts.StsResources
 
 object RedshiftUtils {
     private val REDSHIFT_REGION_REGEX =

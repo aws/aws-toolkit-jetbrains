@@ -17,13 +17,13 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.SmartPointerManager
 import icons.AwsIcons
 import software.amazon.awssdk.services.lambda.model.Runtime
+import software.aws.toolkit.jetbrains.utils.isTestOrInjectedText
 import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationTemplateIndex.Companion.listFunctions
 import software.aws.toolkits.jetbrains.services.lambda.LambdaBuilder
 import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
 import software.aws.toolkits.jetbrains.settings.LambdaSettings
-import software.aws.toolkit.jetbrains.utils.isTestOrInjectedText
 import software.aws.toolkits.resources.message
 import javax.swing.Icon
 

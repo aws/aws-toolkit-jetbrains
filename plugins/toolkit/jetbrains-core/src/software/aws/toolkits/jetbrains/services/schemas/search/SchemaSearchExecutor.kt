@@ -11,8 +11,8 @@ import software.amazon.awssdk.services.schemas.model.SearchSchemasResponse
 import software.aws.toolkit.core.utils.warn
 import software.aws.toolkit.jetbrains.core.awsClient
 import software.aws.toolkit.jetbrains.core.getResource
-import software.aws.toolkits.jetbrains.services.schemas.resources.SchemasResources
 import software.aws.toolkit.jetbrains.utils.pluginAwareExecuteOnPooledThread
+import software.aws.toolkits.jetbrains.services.schemas.resources.SchemasResources
 
 class SchemaSearchExecutor(
     private val project: Project,

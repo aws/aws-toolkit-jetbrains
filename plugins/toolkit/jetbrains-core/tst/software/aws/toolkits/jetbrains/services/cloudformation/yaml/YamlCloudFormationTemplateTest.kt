@@ -19,11 +19,11 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import software.aws.toolkit.core.utils.test.notNull
+import software.aws.toolkit.jetbrains.utils.rules.CodeInsightTestFixtureRule
+import software.aws.toolkit.jetbrains.utils.satisfiesKt
 import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationTemplate
 import software.aws.toolkits.jetbrains.services.cloudformation.LambdaFunction
 import software.aws.toolkits.jetbrains.services.cloudformation.SamFunction
-import software.aws.toolkit.jetbrains.utils.rules.CodeInsightTestFixtureRule
-import software.aws.toolkit.jetbrains.utils.satisfiesKt
 import software.aws.toolkits.resources.message
 import java.io.File
 

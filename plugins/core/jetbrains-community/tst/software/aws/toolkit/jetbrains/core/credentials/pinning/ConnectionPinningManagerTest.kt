@@ -20,8 +20,6 @@ import software.aws.toolkit.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkit.jetbrains.core.credentials.AwsCredentialConnection
 import software.aws.toolkit.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkit.jetbrains.core.credentials.ToolkitConnection
-import software.aws.toolkit.jetbrains.core.credentials.pinning.DefaultConnectionPinningManager
-import software.aws.toolkit.jetbrains.core.credentials.pinning.FeatureWithPinnedConnection
 
 class ConnectionPinningManagerTest {
 

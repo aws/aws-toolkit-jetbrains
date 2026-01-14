@@ -6,10 +6,10 @@ package software.aws.toolkit.jetbrains.core.credentials
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.extensions.ExtensionPointName
-import software.aws.toolkit.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkit.core.credentials.CredentialProviderFactory
 import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkit.core.utils.tryOrNull
+import software.aws.toolkit.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkits.telemetry.AwsTelemetry
 import java.util.concurrent.atomic.AtomicInteger
 

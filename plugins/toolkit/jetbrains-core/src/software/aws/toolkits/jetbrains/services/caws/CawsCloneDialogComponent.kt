@@ -41,11 +41,11 @@ import software.aws.toolkit.jetbrains.core.AwsClientManager
 import software.aws.toolkit.jetbrains.core.AwsResourceCache
 import software.aws.toolkit.jetbrains.core.coroutines.disposableCoroutineScope
 import software.aws.toolkit.jetbrains.core.coroutines.getCoroutineUiContext
+import software.aws.toolkit.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.jetbrains.core.credentials.sono.lazilyGetUserId
 import software.aws.toolkits.jetbrains.services.caws.pat.generateAndStorePat
 import software.aws.toolkits.jetbrains.services.caws.pat.patExists
 import software.aws.toolkits.jetbrains.ui.connection.CawsLoginOverlay
-import software.aws.toolkit.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodecatalystTelemetry
 import java.net.URI

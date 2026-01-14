@@ -17,8 +17,8 @@ import com.intellij.util.ExceptionUtil
 import software.amazon.awssdk.services.schemas.model.DescribeSchemaResponse
 import software.aws.toolkit.core.ConnectionSettings
 import software.aws.toolkit.jetbrains.core.AwsResourceCache
-import software.aws.toolkits.jetbrains.services.schemas.resources.SchemasResources
 import software.aws.toolkit.jetbrains.utils.notifyError
+import software.aws.toolkits.jetbrains.services.schemas.resources.SchemasResources
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.SchemasTelemetry
 import java.util.concurrent.CompletableFuture

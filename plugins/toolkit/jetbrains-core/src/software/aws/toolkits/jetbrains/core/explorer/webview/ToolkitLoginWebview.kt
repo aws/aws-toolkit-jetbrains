@@ -46,7 +46,6 @@ import software.aws.toolkit.jetbrains.core.credentials.pinning.CodeCatalystConne
 import software.aws.toolkit.jetbrains.core.credentials.sono.CODECATALYST_SCOPES
 import software.aws.toolkit.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
 import software.aws.toolkit.jetbrains.core.credentials.sono.isSono
-import software.aws.toolkits.jetbrains.core.explorer.ShowToolkitListener
 import software.aws.toolkit.jetbrains.core.gettingstarted.IdcRolePopup
 import software.aws.toolkit.jetbrains.core.gettingstarted.IdcRolePopupState
 import software.aws.toolkit.jetbrains.core.region.AwsRegionProvider
@@ -56,6 +55,7 @@ import software.aws.toolkit.jetbrains.core.webview.LocalAssetJBCefRequestHandler
 import software.aws.toolkit.jetbrains.core.webview.LoginBrowser
 import software.aws.toolkit.jetbrains.isDeveloperMode
 import software.aws.toolkit.jetbrains.utils.isQWebviewsAvailable
+import software.aws.toolkits.jetbrains.core.explorer.ShowToolkitListener
 import software.aws.toolkits.jetbrains.utils.isTookitConnected
 import software.aws.toolkits.telemetry.FeatureId
 import software.aws.toolkits.telemetry.UiTelemetry

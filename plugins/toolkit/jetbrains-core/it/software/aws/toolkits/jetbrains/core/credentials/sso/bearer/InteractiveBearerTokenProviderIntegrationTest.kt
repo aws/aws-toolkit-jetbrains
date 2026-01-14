@@ -18,8 +18,8 @@ import software.aws.toolkit.jetbrains.core.credentials.sono.SONO_REGION
 import software.aws.toolkit.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkit.jetbrains.core.credentials.sso.DeviceAuthorizationGrantToken
 import software.aws.toolkit.jetbrains.core.credentials.sso.DeviceGrantAccessTokenCacheKey
-import software.aws.toolkit.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
 import software.aws.toolkit.jetbrains.core.credentials.sso.DiskCache
+import software.aws.toolkit.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
 import software.aws.toolkit.jetbrains.utils.extensions.SsoLogin
 import software.aws.toolkit.jetbrains.utils.extensions.SsoLoginExtension
 import software.aws.toolkit.jetbrains.utils.satisfiesKt

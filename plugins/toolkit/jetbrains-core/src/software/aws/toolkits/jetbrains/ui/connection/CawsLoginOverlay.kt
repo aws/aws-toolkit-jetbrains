@@ -20,10 +20,10 @@ import icons.AwsIcons
 import software.aws.toolkit.core.ClientConnectionSettings
 import software.aws.toolkit.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkit.jetbrains.core.credentials.ToolkitConnectionManagerListener
-import software.aws.toolkits.jetbrains.core.credentials.sono.CodeCatalystCredentialManager
 import software.aws.toolkit.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
-import software.aws.toolkits.jetbrains.services.caws.CawsEndpoints
 import software.aws.toolkit.jetbrains.utils.pluginAwareExecuteOnPooledThread
+import software.aws.toolkits.jetbrains.core.credentials.sono.CodeCatalystCredentialManager
+import software.aws.toolkits.jetbrains.services.caws.CawsEndpoints
 import software.aws.toolkits.resources.message
 import javax.swing.JComponent
 

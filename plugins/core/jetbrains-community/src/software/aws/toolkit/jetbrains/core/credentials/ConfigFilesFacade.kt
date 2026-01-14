@@ -8,8 +8,6 @@ import com.intellij.openapi.fileEditor.FileDocumentManager
 import software.amazon.awssdk.profiles.Profile
 import software.amazon.awssdk.profiles.ProfileFile
 import software.amazon.awssdk.profiles.ProfileFileLocation
-import software.aws.toolkit.jetbrains.core.credentials.profiles.SsoSessionConstants
-import software.aws.toolkit.jetbrains.core.credentials.profiles.ssoSessions
 import software.aws.toolkit.core.utils.appendText
 import software.aws.toolkit.core.utils.createParentDirectories
 import software.aws.toolkit.core.utils.exists
@@ -20,6 +18,8 @@ import software.aws.toolkit.core.utils.tryDirOp
 import software.aws.toolkit.core.utils.tryFileOp
 import software.aws.toolkit.core.utils.writeText
 import software.aws.toolkit.jetbrains.core.credentials.profiles.ProfileWatcher
+import software.aws.toolkit.jetbrains.core.credentials.profiles.SsoSessionConstants
+import software.aws.toolkit.jetbrains.core.credentials.profiles.ssoSessions
 import java.nio.file.Path
 
 interface ConfigFilesFacade {

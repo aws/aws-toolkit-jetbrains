@@ -16,10 +16,10 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import software.aws.toolkit.core.rules.SystemPropertyHelper
 import software.aws.toolkit.core.utils.test.aString
-import software.aws.toolkits.jetbrains.core.experiments.ToolkitExperimentManager.Companion.EXPERIMENT_CHANGED
 import software.aws.toolkit.jetbrains.utils.deserializeState
 import software.aws.toolkit.jetbrains.utils.rules.RegistryRule
 import software.aws.toolkit.jetbrains.utils.serializeState
+import software.aws.toolkits.jetbrains.core.experiments.ToolkitExperimentManager.Companion.EXPERIMENT_CHANGED
 import java.time.Duration
 import java.time.Instant
 

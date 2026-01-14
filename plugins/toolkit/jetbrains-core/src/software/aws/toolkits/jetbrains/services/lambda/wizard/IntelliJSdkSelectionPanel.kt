@@ -8,8 +8,8 @@ import com.intellij.ide.util.projectWizard.SdkSettingsStep
 import com.intellij.ide.util.projectWizard.WizardContext
 import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.ui.ValidationInfo
-import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
 import software.aws.toolkit.jetbrains.utils.ui.validationInfo
+import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
 import software.aws.toolkits.resources.message
 import javax.swing.JComponent
 import javax.swing.JLabel

@@ -13,9 +13,9 @@ import software.amazon.awssdk.services.sso.SsoClient
 import software.amazon.awssdk.services.ssooidc.SsoOidcClient
 import software.amazon.awssdk.utils.SdkAutoCloseable
 import software.aws.toolkit.jetbrains.core.AwsClientManager
+import software.aws.toolkit.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkit.jetbrains.core.credentials.UserConfigSsoSessionProfile
 import software.aws.toolkit.jetbrains.core.credentials.sso.SsoCredentialProvider
-import software.aws.toolkit.jetbrains.core.credentials.ToolkitAuthManager
 
 class ProfileSsoSessionProvider(ssoSession: Profile, profile: Profile) : AwsCredentialsProvider, SdkAutoCloseable {
     private val ssoClient: SsoClient

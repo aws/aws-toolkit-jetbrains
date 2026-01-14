@@ -9,7 +9,7 @@ import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 
-@State(name = "lambda", storages = [Storage("aws.xml")])
+@State(name = "toolkitLambda", storages = [Storage("awsToolkit.xml")])
 class LambdaSettings(private val project: Project) : PersistentStateComponent<LambdaConfiguration> {
     private var state = LambdaConfiguration()
 

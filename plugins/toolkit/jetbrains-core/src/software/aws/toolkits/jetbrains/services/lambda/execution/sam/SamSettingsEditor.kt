@@ -9,8 +9,8 @@ import com.intellij.openapi.options.SettingsEditor
 import com.intellij.remoteServer.configuration.RemoteServersManager
 import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkit.core.utils.tryOrNull
-import software.aws.toolkits.jetbrains.core.plugins.pluginIsInstalledAndEnabled
 import software.aws.toolkit.jetbrains.utils.ui.selected
+import software.aws.toolkits.jetbrains.core.plugins.pluginIsInstalledAndEnabled
 import java.net.URI
 import javax.swing.JComponent
 

@@ -12,12 +12,12 @@ import software.aws.toolkit.core.utils.RuleUtils
 import software.aws.toolkit.jetbrains.core.credentials.MockAwsConnectionManager.ProjectAccountSettingsManagerRule
 import software.aws.toolkit.jetbrains.core.credentials.MockCredentialManagerRule
 import software.aws.toolkit.jetbrains.core.region.AwsRegionProvider
+import software.aws.toolkit.jetbrains.utils.satisfiesKt
 import software.aws.toolkits.jetbrains.datagrip.CREDENTIAL_ID_PROPERTY
 import software.aws.toolkits.jetbrains.datagrip.REGION_ID_PROPERTY
 import software.aws.toolkits.jetbrains.datagrip.auth.SECRET_ID_PROPERTY
 import software.aws.toolkits.jetbrains.datagrip.auth.SecretsManagerAuth
 import software.aws.toolkits.jetbrains.datagrip.auth.SecretsManagerDbSecret
-import software.aws.toolkit.jetbrains.utils.satisfiesKt
 
 class AddSecretsManagerConnectionTest {
     @Rule

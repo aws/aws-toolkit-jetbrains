@@ -5,9 +5,13 @@ package software.aws.toolkit.jetbrains.core.gettingstarted.editor
 
 import com.intellij.openapi.project.Project
 import com.intellij.ui.dsl.builder.Panel
+import software.aws.toolkit.core.credentials.CredentialIdentifier
+import software.aws.toolkit.core.credentials.CredentialType
 import software.aws.toolkit.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkit.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkit.jetbrains.core.credentials.ConnectionState
+import software.aws.toolkit.jetbrains.core.credentials.CredentialManager
+import software.aws.toolkit.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkit.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkit.jetbrains.core.credentials.lazyIsUnauthedBearerConnection
 import software.aws.toolkit.jetbrains.core.credentials.pinning.CodeCatalystConnection
@@ -15,10 +19,6 @@ import software.aws.toolkit.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkit.jetbrains.core.credentials.profiles.SsoSessionConstants
 import software.aws.toolkit.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkit.jetbrains.utils.isRunningOnRemoteBackend
-import software.aws.toolkit.core.credentials.CredentialIdentifier
-import software.aws.toolkit.core.credentials.CredentialType
-import software.aws.toolkit.jetbrains.core.credentials.CredentialManager
-import software.aws.toolkit.jetbrains.core.credentials.ToolkitAuthManager
 import java.util.Locale
 
 enum class ActiveConnectionType {

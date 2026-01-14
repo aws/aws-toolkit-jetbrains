@@ -35,7 +35,7 @@ enum class UseAwsCredentialRegion(private val description: String) {
 
 typealias AwsSettings = migration.software.aws.toolkit.jetbrains.settings.AwsSettings
 
-@State(name = "aws", storages = [Storage("aws.xml")])
+@State(name = "toolkit", storages = [Storage("awsToolkit.xml")])
 class DefaultAwsSettings : PersistentStateComponent<AwsConfiguration>, AwsSettings {
     private val preferences = Preferences.userRoot().node(this.javaClass.canonicalName)
     private var state = AwsConfiguration()

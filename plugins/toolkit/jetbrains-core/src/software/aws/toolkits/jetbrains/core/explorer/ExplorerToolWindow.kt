@@ -51,6 +51,8 @@ import software.aws.toolkit.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkit.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkit.jetbrains.core.credentials.ToolkitConnectionManagerListener
 import software.aws.toolkit.jetbrains.core.credentials.sono.isSono
+import software.aws.toolkit.jetbrains.core.webview.BrowserState
+import software.aws.toolkit.jetbrains.utils.isQWebviewsAvailable
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerDataKeys.SELECTED_NODES
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerDataKeys.SELECTED_RESOURCE_NODES
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerDataKeys.SELECTED_SERVICE_NODE
@@ -64,10 +66,8 @@ import software.aws.toolkits.jetbrains.core.explorer.nodes.ResourceLocationNode
 import software.aws.toolkits.jetbrains.core.explorer.webview.ToolkitWebviewPanel
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanel
 import software.aws.toolkits.jetbrains.core.gettingstarted.rolePopupFromConnection
-import software.aws.toolkit.jetbrains.core.webview.BrowserState
 import software.aws.toolkits.jetbrains.services.dynamic.explorer.DynamicResourceResourceTypeNode
 import software.aws.toolkits.jetbrains.ui.CenteredInfoPanel
-import software.aws.toolkit.jetbrains.utils.isQWebviewsAvailable
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.FeatureId
 import software.aws.toolkits.telemetry.UiTelemetry

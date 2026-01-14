@@ -14,13 +14,13 @@ import software.aws.toolkit.core.ConnectionSettings
 import software.aws.toolkit.core.credentials.aToolkitCredentialsProvider
 import software.aws.toolkit.core.region.anAwsRegion
 import software.aws.toolkit.jetbrains.core.MockResourceCacheRule
+import software.aws.toolkit.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.services.dynamic.CloudControlApiResources
 import software.aws.toolkits.jetbrains.services.dynamic.DynamicResource
 import software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceIdentifier
 import software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceSchemaMapping
 import software.aws.toolkits.jetbrains.services.dynamic.ResourceType
 import software.aws.toolkits.jetbrains.services.dynamic.ViewEditableDynamicResourceVirtualFile
-import software.aws.toolkit.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import java.util.concurrent.CompletableFuture
 
 class ResourceSchemaProviderFactoryTest {

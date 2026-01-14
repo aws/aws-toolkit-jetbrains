@@ -11,8 +11,8 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.services.toolkittelemetry.model.AWSProduct
-import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
 import software.aws.toolkit.jetbrains.services.telemetry.ClientMetadata
+import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
 
 class ExecutableCommonTest {
     @Rule

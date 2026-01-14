@@ -14,8 +14,8 @@ import software.amazon.awssdk.services.cloudwatchlogs.model.QueryDefinition
 import software.aws.toolkit.core.ConnectionSettings
 import software.aws.toolkit.core.credentials.aToolkitCredentialsProvider
 import software.aws.toolkit.core.region.anAwsRegion
-import software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights.InsightsUtils.queryDetails
 import software.aws.toolkit.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
+import software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights.InsightsUtils.queryDetails
 
 @RunsInEdt
 class RetrieveSavedQueryDialogTest {

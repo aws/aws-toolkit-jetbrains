@@ -9,8 +9,8 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.DumbAware
 import kotlinx.coroutines.launch
-import software.aws.toolkit.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkit.jetbrains.core.AwsResourceCache
+import software.aws.toolkit.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkit.resources.AwsCoreBundle
 import software.aws.toolkits.telemetry.AwsTelemetry
 

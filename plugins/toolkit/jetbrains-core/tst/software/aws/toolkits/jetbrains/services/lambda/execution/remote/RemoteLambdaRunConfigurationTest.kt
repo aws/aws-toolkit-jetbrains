@@ -16,8 +16,8 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.aws.toolkit.jetbrains.core.credentials.MockCredentialManagerRule
-import software.aws.toolkits.jetbrains.utils.getState
 import software.aws.toolkit.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
+import software.aws.toolkits.jetbrains.utils.getState
 import software.aws.toolkits.resources.message
 
 class RemoteLambdaRunConfigurationTest {

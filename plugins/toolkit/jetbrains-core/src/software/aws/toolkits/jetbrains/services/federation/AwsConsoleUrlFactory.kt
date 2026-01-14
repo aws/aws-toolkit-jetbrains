@@ -22,8 +22,8 @@ import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkit.jetbrains.core.AwsClientManager
 import software.aws.toolkit.jetbrains.core.credentials.getConnectionSettings
 import software.aws.toolkit.jetbrains.utils.notifyError
-import software.aws.toolkits.jetbrains.utils.notifyNoActiveCredentialsError
 import software.aws.toolkit.jetbrains.utils.pluginAwareExecuteOnPooledThread
+import software.aws.toolkits.jetbrains.utils.notifyNoActiveCredentialsError
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.DeeplinkTelemetry
 import software.aws.toolkits.telemetry.Result

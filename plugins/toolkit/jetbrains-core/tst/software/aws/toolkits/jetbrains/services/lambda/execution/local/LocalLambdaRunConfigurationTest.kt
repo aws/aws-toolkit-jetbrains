@@ -23,17 +23,17 @@ import software.aws.toolkit.core.lambda.LambdaArchitecture
 import software.aws.toolkit.core.lambda.LambdaRuntime
 import software.aws.toolkit.core.rules.EnvironmentVariableHelper
 import software.aws.toolkit.jetbrains.core.credentials.MockCredentialManagerRule
+import software.aws.toolkit.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
+import software.aws.toolkit.jetbrains.utils.rules.addClass
+import software.aws.toolkit.jetbrains.utils.rules.addModule
+import software.aws.toolkit.jetbrains.utils.value
+import software.aws.toolkit.jetbrains.utils.xmlElement
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamRunningState
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommonTestUtils
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
 import software.aws.toolkits.jetbrains.utils.getState
-import software.aws.toolkit.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
-import software.aws.toolkit.jetbrains.utils.rules.addClass
-import software.aws.toolkit.jetbrains.utils.rules.addModule
-import software.aws.toolkit.jetbrains.utils.value
-import software.aws.toolkit.jetbrains.utils.xmlElement
 import software.aws.toolkits.resources.message
 import java.nio.file.Paths
 

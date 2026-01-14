@@ -19,6 +19,11 @@ import kotlinx.coroutines.runBlocking
 import org.intellij.lang.annotations.Language
 import org.jetbrains.annotations.VisibleForTesting
 import org.slf4j.event.Level
+import software.aws.toolkit.core.region.AwsRegion
+import software.aws.toolkit.core.utils.debug
+import software.aws.toolkit.core.utils.error
+import software.aws.toolkit.core.utils.getLogger
+import software.aws.toolkit.core.utils.tryOrNull
 import software.aws.toolkit.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkit.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkit.jetbrains.core.credentials.Login
@@ -39,11 +44,6 @@ import software.aws.toolkit.jetbrains.core.credentials.ssoErrorMessageFromExcept
 import software.aws.toolkit.jetbrains.core.gettingstarted.editor.SourceOfEntry
 import software.aws.toolkit.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkit.jetbrains.utils.pollFor
-import software.aws.toolkit.core.region.AwsRegion
-import software.aws.toolkit.core.utils.debug
-import software.aws.toolkit.core.utils.error
-import software.aws.toolkit.core.utils.getLogger
-import software.aws.toolkit.core.utils.tryOrNull
 import software.aws.toolkit.resources.AwsCoreBundle
 import software.aws.toolkits.telemetry.AuthType
 import software.aws.toolkits.telemetry.AwsTelemetry

@@ -17,12 +17,12 @@ import com.intellij.util.Base64
 import software.amazon.awssdk.services.ecr.model.AuthorizationData
 import software.aws.toolkit.core.utils.debug
 import software.aws.toolkit.core.utils.getLogger
+import software.aws.toolkit.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.core.docker.DockerRuntimeFacade
 import software.aws.toolkits.jetbrains.core.docker.ToolkitDockerAdapter
 import software.aws.toolkits.jetbrains.core.docker.compatability.DockerRegistry
 import software.aws.toolkits.jetbrains.core.docker.getDockerServerRuntimeFacade
 import software.aws.toolkits.jetbrains.services.ecr.resources.Repository
-import software.aws.toolkit.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 import java.util.concurrent.CompletableFuture
 import software.amazon.awssdk.services.ecr.model.Repository as SdkRepository

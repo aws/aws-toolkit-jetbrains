@@ -10,7 +10,6 @@ import org.junit.Test
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
-import software.aws.toolkit.jetbrains.ui.AsyncComboBox
 import java.util.concurrent.CountDownLatch
 import javax.swing.DefaultComboBoxModel
 

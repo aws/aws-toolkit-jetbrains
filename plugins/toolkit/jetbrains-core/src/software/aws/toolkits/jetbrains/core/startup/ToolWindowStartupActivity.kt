@@ -6,8 +6,8 @@ package software.aws.toolkits.jetbrains.core.startup
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.ProjectActivity
-import software.aws.toolkits.jetbrains.core.explorer.webview.ToolkitWebviewPanel
 import software.aws.toolkit.jetbrains.core.gettingstarted.emitUserState
+import software.aws.toolkits.jetbrains.core.explorer.webview.ToolkitWebviewPanel
 import java.util.concurrent.atomic.AtomicBoolean
 
 class ToolWindowStartupActivity : ProjectActivity {

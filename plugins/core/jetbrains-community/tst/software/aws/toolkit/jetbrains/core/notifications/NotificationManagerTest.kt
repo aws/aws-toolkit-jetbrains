@@ -10,10 +10,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.extension.Extension
 import org.junit.jupiter.api.extension.RegisterExtension
-import software.aws.toolkit.jetbrains.core.notifications.NotificationActionDescription
-import software.aws.toolkit.jetbrains.core.notifications.NotificationFollowupActions
-import software.aws.toolkit.jetbrains.core.notifications.NotificationFollowupActionsContent
-import software.aws.toolkit.jetbrains.core.notifications.NotificationManager
 
 @ExtendWith(ApplicationExtension::class)
 class NotificationManagerTest {

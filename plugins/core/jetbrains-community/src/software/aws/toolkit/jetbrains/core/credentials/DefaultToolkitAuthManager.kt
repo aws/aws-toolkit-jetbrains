@@ -9,21 +9,21 @@ import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.util.Disposer
-import software.aws.toolkit.jetbrains.core.credentials.profiles.ProfileSsoSessionIdentifier
-import software.aws.toolkit.jetbrains.core.credentials.sono.SONO_URL
-import software.aws.toolkit.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkit.core.credentials.SsoSessionIdentifier
 import software.aws.toolkit.core.credentials.ToolkitCredentialsChangeListener
 import software.aws.toolkit.core.utils.error
 import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkit.core.utils.info
 import software.aws.toolkit.core.utils.warn
+import software.aws.toolkit.jetbrains.core.credentials.profiles.ProfileSsoSessionIdentifier
+import software.aws.toolkit.jetbrains.core.credentials.sono.SONO_URL
+import software.aws.toolkit.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import java.util.Collections
 
 typealias ToolkitAuthManager = migration.software.aws.toolkit.jetbrains.core.credentials.ToolkitAuthManager
 
 // TODO: unify with CredentialManager
-@State(name = "authManager", storages = [Storage("aws.xml")])
+@State(name = "toolkitAuthManager", storages = [Storage("awsToolkit.xml")])
 class DefaultToolkitAuthManager : ToolkitAuthManager, PersistentStateComponent<ToolkitAuthManagerState>, Disposable {
     private var state = ToolkitAuthManagerState()
     private val connections = Collections.synchronizedSet(linkedSetOf<ToolkitConnection>())
@@ -61,7 +61,8 @@ class DefaultToolkitAuthManager : ToolkitAuthManager, PersistentStateComponent<T
                                 if (it && connection is Disposable) {
                                     // don't invalidate because we kill the token we just retrieved
                                     ApplicationManager.getApplication().messageBus.syncPublisher(
-                                        BearerTokenProviderListener.Companion.TOPIC)
+                                        BearerTokenProviderListener.Companion.TOPIC
+                                    )
                                         .onProviderChange(connection.id)
                                     Disposer.dispose(connection)
                                 }

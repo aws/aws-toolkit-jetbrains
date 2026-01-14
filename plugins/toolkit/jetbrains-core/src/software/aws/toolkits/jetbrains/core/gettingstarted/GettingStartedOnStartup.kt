@@ -11,10 +11,10 @@ import software.aws.toolkit.core.utils.exists
 import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkit.core.utils.tryOrNull
 import software.aws.toolkit.jetbrains.core.credentials.CredentialManager
-import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanel
 import software.aws.toolkit.jetbrains.core.gettingstarted.editor.SourceOfEntry
 import software.aws.toolkit.jetbrains.core.gettingstarted.editor.getConnectionCount
 import software.aws.toolkit.jetbrains.core.gettingstarted.editor.getEnabledConnections
+import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanel
 import software.aws.toolkits.jetbrains.settings.GettingStartedSettings
 import software.aws.toolkits.telemetry.AuthTelemetry
 import software.aws.toolkits.telemetry.CredentialSourceId

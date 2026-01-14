@@ -8,7 +8,6 @@ import com.intellij.testFramework.ApplicationRule
 import org.junit.jupiter.api.extension.AfterEachCallback
 import org.junit.jupiter.api.extension.ExtensionContext
 import software.amazon.awssdk.regions.Region
-import software.aws.toolkit.jetbrains.utils.rules.ClearableLazy
 import software.aws.toolkit.core.region.AwsPartition
 import software.aws.toolkit.core.region.AwsRegion
 import software.aws.toolkit.core.region.Service
@@ -16,6 +15,7 @@ import software.aws.toolkit.core.region.ToolkitRegionProvider
 import software.aws.toolkit.core.region.aRegionId
 import software.aws.toolkit.core.region.anAwsRegion
 import software.aws.toolkit.core.utils.test.aString
+import software.aws.toolkit.jetbrains.utils.rules.ClearableLazy
 
 private class MockRegionProvider : ToolkitRegionProvider() {
     private val overrideRegions: MutableMap<String, AwsRegion> = mutableMapOf()

@@ -8,8 +8,8 @@ import com.intellij.openapi.util.SystemInfo
 import com.intellij.util.EnvironmentUtil
 import com.intellij.util.text.SemVer
 import com.intellij.util.text.nullize
-import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
 import software.aws.toolkit.jetbrains.services.telemetry.ClientMetadata
+import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
 import software.aws.toolkits.jetbrains.utils.FileInfoCache
 import software.aws.toolkits.resources.message
 import java.time.Duration

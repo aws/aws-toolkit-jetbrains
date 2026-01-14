@@ -14,10 +14,10 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import software.aws.toolkit.core.rules.EnvironmentVariableHelper
-import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
-import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
 import software.aws.toolkit.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
 import software.aws.toolkit.jetbrains.utils.rules.addModule
+import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
+import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
 import software.aws.toolkits.jetbrains.utils.setSamExecutableFromEnvironment
 import software.aws.toolkits.jetbrains.utils.setUpGradleProject
 import software.aws.toolkits.jetbrains.utils.setUpMavenProject

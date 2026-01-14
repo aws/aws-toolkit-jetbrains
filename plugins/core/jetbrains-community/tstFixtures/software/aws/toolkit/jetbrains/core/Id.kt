@@ -3,8 +3,6 @@
 
 package software.aws.toolkit.jetbrains.core
 
-import software.aws.toolkit.jetbrains.core.Resource
-
 val Resource<*>.id: String
     get() = when (this) {
         is Resource.Cached -> this.id

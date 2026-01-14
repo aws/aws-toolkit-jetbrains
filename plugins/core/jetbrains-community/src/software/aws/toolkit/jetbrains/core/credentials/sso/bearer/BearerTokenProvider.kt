@@ -23,6 +23,12 @@ import software.amazon.awssdk.utils.SdkAutoCloseable
 import software.amazon.awssdk.utils.cache.CachedSupplier
 import software.amazon.awssdk.utils.cache.NonBlocking
 import software.amazon.awssdk.utils.cache.RefreshResult
+import software.aws.toolkit.core.ToolkitClientCustomizer
+import software.aws.toolkit.core.clients.nullDefaultProfileFile
+import software.aws.toolkit.core.credentials.ToolkitBearerTokenProvider
+import software.aws.toolkit.core.credentials.ToolkitBearerTokenProviderDelegate
+import software.aws.toolkit.core.utils.getLogger
+import software.aws.toolkit.core.utils.warn
 import software.aws.toolkit.jetbrains.core.AwsClientManager
 import software.aws.toolkit.jetbrains.core.credentials.diskCache
 import software.aws.toolkit.jetbrains.core.credentials.sso.AccessToken
@@ -30,12 +36,6 @@ import software.aws.toolkit.jetbrains.core.credentials.sso.DeviceAuthorizationGr
 import software.aws.toolkit.jetbrains.core.credentials.sso.DiskCache
 import software.aws.toolkit.jetbrains.core.credentials.sso.PendingAuthorization
 import software.aws.toolkit.jetbrains.core.credentials.sso.SsoAccessTokenProvider
-import software.aws.toolkit.core.ToolkitClientCustomizer
-import software.aws.toolkit.core.clients.nullDefaultProfileFile
-import software.aws.toolkit.core.credentials.ToolkitBearerTokenProvider
-import software.aws.toolkit.core.credentials.ToolkitBearerTokenProviderDelegate
-import software.aws.toolkit.core.utils.getLogger
-import software.aws.toolkit.core.utils.warn
 import java.time.Clock
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicBoolean

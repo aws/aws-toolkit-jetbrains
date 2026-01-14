@@ -13,11 +13,11 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.services.lambda.model.Runtime
+import software.aws.toolkit.jetbrains.utils.rules.addFileToModule
 import software.aws.toolkits.jetbrains.services.lambda.Lambda
 import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver
 import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
 import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
-import software.aws.toolkit.jetbrains.utils.rules.addFileToModule
 
 class PythonLambdaHandlerResolverTest {
     @Rule

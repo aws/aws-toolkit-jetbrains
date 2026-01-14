@@ -7,7 +7,6 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.dsl.builder.panel
-import software.aws.toolkit.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkit.core.TokenConnectionSettings
 import software.aws.toolkit.core.telemetry.DefaultMetricEvent
 import software.aws.toolkit.core.utils.tryOrNull
@@ -18,12 +17,13 @@ import software.aws.toolkit.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkit.jetbrains.core.credentials.logoutFromSsoConnection
 import software.aws.toolkit.jetbrains.core.credentials.maybeReauthProviderIfNeeded
 import software.aws.toolkit.jetbrains.core.credentials.pinning.CodeCatalystConnection
+import software.aws.toolkit.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkit.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkit.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
-import software.aws.toolkits.jetbrains.core.gettingstarted.requestCredentialsForCodeCatalyst
-import software.aws.toolkits.jetbrains.services.caws.CawsResources
 import software.aws.toolkit.jetbrains.utils.computeOnEdt
 import software.aws.toolkit.jetbrains.utils.runUnderProgressIfNeeded
+import software.aws.toolkits.jetbrains.core.gettingstarted.requestCredentialsForCodeCatalyst
+import software.aws.toolkits.jetbrains.services.caws.CawsResources
 import software.aws.toolkits.resources.message
 import javax.swing.JComponent
 
