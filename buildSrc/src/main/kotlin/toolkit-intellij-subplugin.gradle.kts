@@ -91,7 +91,14 @@ dependencies {
 
         // annoying resolution issue that we don't want to bother fixing
         if (!project.name.contains("jetbrains-gateway")) {
-            val type = toolkitIntelliJ.ideFlavor.map { IntelliJPlatformType.fromCode(it.toString()) }
+            val type = toolkitIntelliJ.ideFlavor.map { flavor ->
+                // Starting with 2025.3, IntelliJ IDEA is unified (no separate Community edition)
+                if (version.get().startsWith("2025.3") && flavor == IdeFlavor.IC) {
+                    IntelliJPlatformType.IntellijIdeaUltimate
+                } else {
+                    IntelliJPlatformType.fromCode(flavor.toString())
+                }
+            }
 
             create(type, version, useInstaller = false)
         } else {
