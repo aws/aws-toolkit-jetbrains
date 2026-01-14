@@ -98,19 +98,7 @@ class CfnLspInstaller(
         }
 
         Files.deleteIfExists(zipFile)
-        return findExtractedServerDir(targetDir)
-    }
-
-    private fun findExtractedServerDir(targetDir: Path): Path {
-        val dirs = Files.list(targetDir)
-            .filter { Files.isDirectory(it) }
-            .toList()
-
-        if (dirs.size != 1) {
-            error("Expected 1 directory, found ${dirs.size}")
-        }
-
-        return dirs.first()
+        return targetDir
     }
 
     companion object {
