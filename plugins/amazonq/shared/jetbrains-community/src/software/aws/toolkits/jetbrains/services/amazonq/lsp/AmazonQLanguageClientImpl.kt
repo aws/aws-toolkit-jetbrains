@@ -587,11 +587,11 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
         val currPath = Paths.get(path)
         if (currPath.startsWith(localHistoryPath)) return
         try {
-            ApplicationManager.getApplication().executeOnPooledThread {
-                VfsUtil.markDirtyAndRefresh(false, true, true, currPath.toFile())
-            }
+            // Use synchronous refresh (async=false) to ensure IDE picks up changes immediately
+            // This is important for the agent workflow where files are modified externally
+            VfsUtil.markDirtyAndRefresh(false, true, true, currPath.toFile())
         } catch (e: Exception) {
-            LOG.warn(e) { "Could not refresh file" }
+            LOG.warn(e) { "Could not refresh file: $path" }
         }
     }
 
