@@ -1,31 +1,39 @@
-// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2025 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.services.cloudformation.settings
+package software.aws.toolkits.jetbrains.settings
 
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.PersistentStateComponent
+import com.intellij.openapi.components.RoamingType
+import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
+import com.intellij.openapi.components.service
 
-@State(name = "cloudformation", storages = [Storage("aws.xml")])
-class CfnSettings : PersistentStateComponent<CfnSettings.State> {
+@Service
+@State(name = "cfnLspSettings", storages = [Storage("aws.xml", roamingType = RoamingType.DISABLED)])
+class CfnLspSettings : PersistentStateComponent<CfnLspSettings.State> {
     private var state = State()
+
+    override fun getState(): State = state
+    override fun loadState(state: State) { this.state = state }
 
     var isLspEnabled: Boolean
         get() = state.isLspEnabled
         set(value) { state.isLspEnabled = value }
 
+    var nodeRuntimePath: String
+        get() = state.nodeRuntimePath
+        set(value) { state.nodeRuntimePath = value }
+
     var isTelemetryEnabled: Boolean
         get() = state.isTelemetryEnabled
         set(value) { state.isTelemetryEnabled = value }
 
-    // Hover settings
     var isHoverEnabled: Boolean
         get() = state.isHoverEnabled
         set(value) { state.isHoverEnabled = value }
 
-    // Completion settings
     var isCompletionEnabled: Boolean
         get() = state.isCompletionEnabled
         set(value) { state.isCompletionEnabled = value }
@@ -96,15 +104,11 @@ class CfnSettings : PersistentStateComponent<CfnSettings.State> {
         get() = state.cfnGuardRulesFile
         set(value) { state.cfnGuardRulesFile = value }
 
-    override fun getState(): State = state
-    override fun loadState(state: State) { this.state = state }
-
     data class State(
         var isLspEnabled: Boolean = true,
+        var nodeRuntimePath: String = "",
         var isTelemetryEnabled: Boolean = false,
-        // Hover
         var isHoverEnabled: Boolean = true,
-        // Completion
         var isCompletionEnabled: Boolean = true,
         var maxCompletions: Int = 100,
         // CFN-Lint
@@ -127,7 +131,7 @@ class CfnSettings : PersistentStateComponent<CfnSettings.State> {
     )
 
     companion object {
-        fun getInstance(): CfnSettings = ApplicationManager.getApplication().getService(CfnSettings::class.java)
+        fun getInstance(): CfnLspSettings = service()
 
         val GUARD_RULE_PACKS = listOf(
             "ABS-CCIGv2-Material",

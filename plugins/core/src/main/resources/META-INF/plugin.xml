@@ -11,7 +11,6 @@
     <version>1.0</version>
     <idea-version since-build="232" />
     <depends>com.intellij.modules.platform</depends>
-    <depends optional="true" config-file="aws.toolkit.cloudformation.xml">com.intellij.modules.lsp</depends>
 
     <incompatible-with>com.intellij.cwm.guest</incompatible-with>
     <incompatible-with>com.intellij.jetbrains.client</incompatible-with>

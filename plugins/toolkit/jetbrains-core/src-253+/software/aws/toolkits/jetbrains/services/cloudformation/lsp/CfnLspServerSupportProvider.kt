@@ -1,17 +1,18 @@
-// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2025 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 package software.aws.toolkits.jetbrains.services.cloudformation.lsp
 
 import com.intellij.execution.configurations.GeneralCommandLine
-import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.platform.lsp.api.LspServerSupportProvider
 import com.intellij.platform.lsp.api.ProjectWideLspServerDescriptor
-import software.aws.toolkits.jetbrains.services.cloudformation.settings.CfnSettings
-import java.io.File
-import java.nio.file.Paths
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.info
+import software.aws.toolkits.jetbrains.core.lsp.NodeRuntimeResolver
+import software.aws.toolkits.jetbrains.settings.CfnLspSettings
+import java.nio.file.Path
 
 class CfnLspServerSupportProvider : LspServerSupportProvider {
     override fun fileOpened(
@@ -19,9 +20,9 @@ class CfnLspServerSupportProvider : LspServerSupportProvider {
         file: VirtualFile,
         serverStarter: LspServerSupportProvider.LspServerStarter,
     ) {
-        if (!CfnSettings.getInstance().isLspEnabled) return
+        if (!CfnLspSettings.getInstance().isLspEnabled) return
         if (isSupportedFile(file)) {
-            serverStarter.ensureServerStarted(CfnLspServerDescriptor.getInstance(project))
+            serverStarter.ensureServerStarted(CfnLspServerDescriptor(project))
         }
     }
 
@@ -35,10 +36,10 @@ class CfnLspServerSupportProvider : LspServerSupportProvider {
     }
 }
 
-private class CfnLspServerDescriptor private constructor(project: Project) :
+private class CfnLspServerDescriptor(project: Project) :
     ProjectWideLspServerDescriptor(project, "AWS CloudFormation") {
 
-    private val installer = CfnLspInstaller(getStorageDir())
+    private val installer = CfnLspInstaller()
 
     override fun isSupportedFile(file: VirtualFile): Boolean {
         val ext = file.extension?.lowercase() ?: return false
@@ -47,16 +48,29 @@ private class CfnLspServerDescriptor private constructor(project: Project) :
 
     override fun createCommandLine(): GeneralCommandLine {
         val serverPath = installer.getServerPath()
-        val nodePath = findNodeExecutable()
+        val nodePath = resolveNodeRuntime()
 
-        LOG.info("Starting CloudFormation LSP: node=$nodePath, server=$serverPath")
+        LOG.info { "Starting CloudFormation LSP: node=$nodePath, server=$serverPath" }
 
-        return GeneralCommandLine(nodePath, serverPath.toString(), "--stdio")
+        return GeneralCommandLine(nodePath.toString(), serverPath.toString(), "--stdio")
             .withWorkDirectory(serverPath.parent.toString())
     }
 
+    private fun resolveNodeRuntime(): Path {
+        val settings = CfnLspSettings.getInstance()
+
+        // User-configured path takes precedence
+        if (settings.nodeRuntimePath.isNotBlank()) {
+            return Path.of(settings.nodeRuntimePath)
+        }
+
+        // Auto-detect from PATH
+        return NodeRuntimeResolver.resolve()
+            ?: error("Node.js not found. Install Node.js 18+ or configure the path in Settings.")
+    }
+
     override fun createInitializationOptions(): Any {
-        val settings = CfnSettings.getInstance()
+        val settings = CfnLspSettings.getInstance()
         return mapOf(
             "handledSchemaProtocols" to listOf("file"),
             "aws" to mapOf(
@@ -73,7 +87,7 @@ private class CfnLspServerDescriptor private constructor(project: Project) :
 
     override fun getWorkspaceConfiguration(item: org.eclipse.lsp4j.ConfigurationItem): Any? {
         val section = item.section ?: return null
-        val settings = CfnSettings.getInstance()
+        val settings = CfnLspSettings.getInstance()
 
         return when (section) {
             "aws.cloudformation" -> buildCfnConfiguration(settings)
@@ -82,7 +96,7 @@ private class CfnLspServerDescriptor private constructor(project: Project) :
         }
     }
 
-    private fun buildCfnConfiguration(settings: CfnSettings): Map<String, Any?> = mapOf(
+    private fun buildCfnConfiguration(settings: CfnLspSettings): Map<String, Any?> = mapOf(
         "hover" to mapOf("enabled" to settings.isHoverEnabled),
         "completion" to mapOf(
             "enabled" to settings.isCompletionEnabled,
@@ -94,7 +108,7 @@ private class CfnLspServerDescriptor private constructor(project: Project) :
         )
     )
 
-    private fun buildCfnLintConfiguration(settings: CfnSettings): Map<String, Any?> = mapOf(
+    private fun buildCfnLintConfiguration(settings: CfnLspSettings): Map<String, Any?> = mapOf(
         "enabled" to settings.isCfnLintEnabled,
         "lintOnChange" to settings.cfnLintLintOnChange,
         "delayMs" to settings.cfnLintDelayMs,
@@ -107,7 +121,7 @@ private class CfnLspServerDescriptor private constructor(project: Project) :
         "registrySchemas" to settings.cfnLintRegistrySchemas.toStringList()
     )
 
-    private fun buildCfnGuardConfiguration(settings: CfnSettings): Map<String, Any?> = mapOf(
+    private fun buildCfnGuardConfiguration(settings: CfnLspSettings): Map<String, Any?> = mapOf(
         "enabled" to settings.isCfnGuardEnabled,
         "validateOnChange" to settings.cfnGuardValidateOnChange,
         "enabledRulePacks" to settings.cfnGuardEnabledRulePacks.toStringList(),
@@ -123,49 +137,8 @@ private class CfnLspServerDescriptor private constructor(project: Project) :
     private fun String.toStringList(): List<String> =
         split(",").map { it.trim() }.filter { it.isNotEmpty() }
 
-    private fun findNodeExecutable(): String {
-        // Check PATH first
-        val path = System.getenv("PATH") ?: ""
-        for (dir in path.split(File.pathSeparator)) {
-            val node = Paths.get(dir, "node").toFile()
-            if (node.canExecute()) return node.absolutePath
-
-            val nodeExe = Paths.get(dir, "node.exe").toFile()
-            if (nodeExe.canExecute()) return nodeExe.absolutePath
-        }
-
-        // GUI apps don't inherit shell PATH - check common locations
-        val commonPaths = listOf(
-            "/opt/homebrew/bin/node",      // macOS ARM Homebrew
-            "/usr/local/bin/node",         // macOS Intel Homebrew / manual install
-            "/usr/bin/node",               // Linux system
-            System.getProperty("user.home") + "/.nvm/current/bin/node",  // nvm
-            System.getProperty("user.home") + "/.volta/bin/node",        // volta
-            System.getProperty("user.home") + "/.fnm/current/bin/node",  // fnm
-            "C:\\Program Files\\nodejs\\node.exe",      // Windows default
-            "C:\\Program Files (x86)\\nodejs\\node.exe" // Windows x86
-        )
-
-        for (nodePath in commonPaths) {
-            val node = File(nodePath)
-            if (node.canExecute()) return node.absolutePath
-        }
-
-        throw IllegalStateException("Node.js not found. Install Node.js or ensure it's in your PATH.")
-    }
-
-    private fun getStorageDir() = Paths.get(
-        System.getProperty("user.home"),
-        ".aws-toolkit-jetbrains",
-        "cloudformation-lsp"
-    )
-
     companion object {
-        private val LOG = logger<CfnLspServerDescriptor>()
+        private val LOG = getLogger<CfnLspServerDescriptor>()
         private val SUPPORTED_EXTENSIONS = listOf("yaml", "yml", "json", "template", "cfn")
-        private val instances = mutableMapOf<Project, CfnLspServerDescriptor>()
-
-        fun getInstance(project: Project): CfnLspServerDescriptor =
-            instances.getOrPut(project) { CfnLspServerDescriptor(project) }
     }
 }
