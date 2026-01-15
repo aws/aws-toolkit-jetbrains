@@ -8,6 +8,7 @@ import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.SystemInfo
+import com.intellij.util.text.SemVer
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.ActiveConnection
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.ActiveConnectionType
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.BearerTokenFeatureSet
@@ -48,7 +49,7 @@ object RulesEngine {
 
     private fun matchesIde(notificationIde: SystemType, actualIde: String, actualIdeVersion: String): Boolean {
         val ide = notificationIde.type?.let { evaluateNotificationExpression(it, actualIde) } ?: true
-        val ideVersion = notificationIde.version?.let { evaluateNotificationExpression(it, actualIdeVersion) } ?: true
+        val ideVersion = notificationIde.version?.let { evaluateNotificationExpression(it, actualIdeVersion, true) } ?: true
         return ide && ideVersion
     }
 
@@ -57,12 +58,14 @@ object RulesEngine {
         val extensionsToBeChecked = notificationExtension.map { it.id }
         val pluginVersions = actualPluginVersions.filterKeys { extensionsToBeChecked.contains(it) }
         if (pluginVersions.isEmpty()) return false
+        // SNAPSHOT versions are development versions and should not receive notifications
+        if (pluginVersions.values.any { it.contains("SNAPSHOT", ignoreCase = true) }) return false
         return notificationExtension.all { extension ->
             val actualVersion = pluginVersions[extension.id]
             if (actualVersion == null) {
                 true
             } else {
-                extension.version?.let { evaluateNotificationExpression(it, actualVersion) } ?: true
+                extension.version?.let { evaluateNotificationExpression(it, actualVersion, true) } ?: true
             }
         }
     }
@@ -89,29 +92,52 @@ object RulesEngine {
         }
     }
 
-    private fun evaluateNotificationExpression(notificationExpression: NotificationExpression, value: String): Boolean = when (notificationExpression) {
-        is NotificationExpression.NotCondition -> performNotOp(notificationExpression, value)
-        is NotificationExpression.OrCondition -> performOrOp(notificationExpression, value)
-        is NotificationExpression.AndCondition -> performAndOp(notificationExpression, value)
-        is NotificationExpression.ComparisonCondition -> notificationExpression.value == value
-        is NotificationExpression.NotEqualsCondition -> notificationExpression.value != value
-        is NotificationExpression.GreaterThanCondition -> value > notificationExpression.value
-        is NotificationExpression.LessThanCondition -> value < notificationExpression.value
-        is NotificationExpression.GreaterThanOrEqualsCondition -> value >= notificationExpression.value
-        is NotificationExpression.LessThanOrEqualsCondition -> value <= notificationExpression.value
-        is NotificationExpression.AnyOfCondition -> notificationExpression.value.contains(value)
-        is NotificationExpression.NoneOfCondition -> !notificationExpression.value.contains(value)
-        else -> true
+    fun evaluateNotificationExpression(notificationExpression: NotificationExpression, value: String, useSemverForComparison: Boolean = false): Boolean =
+        when (notificationExpression) {
+            is NotificationExpression.NotCondition -> performNotOp(notificationExpression, value, useSemverForComparison)
+            is NotificationExpression.OrCondition -> performOrOp(notificationExpression, value, useSemverForComparison)
+            is NotificationExpression.AndCondition -> performAndOp(notificationExpression, value, useSemverForComparison)
+            is NotificationExpression.ComparisonCondition -> notificationExpression.value == value
+            is NotificationExpression.NotEqualsCondition -> notificationExpression.value != value
+            is NotificationExpression.GreaterThanCondition -> if (useSemverForComparison) {
+                compareSemver(value, notificationExpression.value) > 0
+            } else {
+                value > notificationExpression.value
+            }
+            is NotificationExpression.LessThanCondition -> if (useSemverForComparison) {
+                compareSemver(value, notificationExpression.value) < 0
+            } else {
+                value < notificationExpression.value
+            }
+            is NotificationExpression.GreaterThanOrEqualsCondition -> if (useSemverForComparison) {
+                compareSemver(value, notificationExpression.value) >= 0
+            } else {
+                value >= notificationExpression.value
+            }
+            is NotificationExpression.LessThanOrEqualsCondition -> if (useSemverForComparison) {
+                compareSemver(value, notificationExpression.value) <= 0
+            } else {
+                value <= notificationExpression.value
+            }
+            is NotificationExpression.AnyOfCondition -> notificationExpression.value.contains(value)
+            is NotificationExpression.NoneOfCondition -> !notificationExpression.value.contains(value)
+            else -> true
+        }
+
+    private fun compareSemver(actual: String, expected: String): Int {
+        val actualSemver = SemVer.parseFromText(actual) ?: return actual.compareTo(expected)
+        val expectedSemver = SemVer.parseFromText(expected) ?: return actual.compareTo(expected)
+        return actualSemver.compareTo(expectedSemver)
     }
 
-    private fun performNotOp(notificationOperation: NotificationExpression.NotCondition, actualValue: String): Boolean =
-        !evaluateNotificationExpression(notificationOperation.expectedValue, actualValue)
+    private fun performNotOp(notificationOperation: NotificationExpression.NotCondition, actualValue: String, useSemverForComparison: Boolean): Boolean =
+        !evaluateNotificationExpression(notificationOperation.expectedValue, actualValue, useSemverForComparison)
 
-    private fun performOrOp(notificationOperation: NotificationExpression.OrCondition, actualValue: String): Boolean =
-        notificationOperation.expectedValueList.any { evaluateNotificationExpression(it, actualValue) }
+    private fun performOrOp(notificationOperation: NotificationExpression.OrCondition, actualValue: String, useSemverForComparison: Boolean): Boolean =
+        notificationOperation.expectedValueList.any { evaluateNotificationExpression(it, actualValue, useSemverForComparison) }
 
-    private fun performAndOp(notificationOperation: NotificationExpression.AndCondition, actualValue: String): Boolean =
-        notificationOperation.expectedValueList.all { evaluateNotificationExpression(it, actualValue) }
+    private fun performAndOp(notificationOperation: NotificationExpression.AndCondition, actualValue: String, useSemverForComparison: Boolean): Boolean =
+        notificationOperation.expectedValueList.all { evaluateNotificationExpression(it, actualValue, useSemverForComparison) }
 }
 
 fun getCurrentSystemAndConnectionDetails(): SystemDetails {
