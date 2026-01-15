@@ -4,14 +4,19 @@
 package software.aws.toolkits.jetbrains.services.cloudformation.lsp
 
 import com.intellij.execution.configurations.GeneralCommandLine
+import com.intellij.notification.NotificationAction
+import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.platform.lsp.api.LspServerSupportProvider
 import com.intellij.platform.lsp.api.ProjectWideLspServerDescriptor
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.lsp.NodeRuntimeResolver
 import software.aws.toolkits.jetbrains.settings.CfnLspSettings
+import software.aws.toolkits.jetbrains.utils.notifyError
+import software.aws.toolkits.resources.AwsToolkitBundle.message
 import java.nio.file.Path
 
 class CfnLspServerSupportProvider : LspServerSupportProvider {
@@ -47,8 +52,21 @@ private class CfnLspServerDescriptor(project: Project) :
     }
 
     override fun createCommandLine(): GeneralCommandLine {
-        val serverPath = installer.getServerPath()
-        val nodePath = resolveNodeRuntime()
+        val serverPath = try {
+            installer.getServerPath()
+        } catch (e: CfnLspException) {
+            LOG.warn(e) { "Failed to get CloudFormation LSP server" }
+            notifyLspError(e)
+            throw e
+        }
+
+        val nodePath = try {
+            resolveNodeRuntime()
+        } catch (e: CfnLspException) {
+            LOG.warn(e) { "Failed to resolve Node.js runtime" }
+            notifyNodeError()
+            throw e
+        }
 
         LOG.info { "Starting CloudFormation LSP: node=$nodePath, server=$serverPath" }
 
@@ -59,14 +77,44 @@ private class CfnLspServerDescriptor(project: Project) :
     private fun resolveNodeRuntime(): Path {
         val settings = CfnLspSettings.getInstance()
 
-        // User-configured path takes precedence
         if (settings.nodeRuntimePath.isNotBlank()) {
             return Path.of(settings.nodeRuntimePath)
         }
 
-        // Auto-detect from PATH
         return NodeRuntimeResolver.resolve()
-            ?: error("Node.js not found. Install Node.js 18+ or configure the path in Settings.")
+            ?: throw CfnLspException(
+                message("cloudformation.lsp.error.node_not_found"),
+                CfnLspException.ErrorCode.NODE_NOT_FOUND
+            )
+    }
+
+    private fun notifyLspError(e: CfnLspException) {
+        val content = when (e.errorCode) {
+            CfnLspException.ErrorCode.MANIFEST_FETCH_FAILED -> message("cloudformation.lsp.error.manifest_failed")
+            CfnLspException.ErrorCode.NO_COMPATIBLE_VERSION -> message("cloudformation.lsp.error.no_compatible_version")
+            CfnLspException.ErrorCode.DOWNLOAD_FAILED -> message("cloudformation.lsp.error.download_failed")
+            CfnLspException.ErrorCode.EXTRACTION_FAILED -> message("cloudformation.lsp.error.extraction_failed")
+            CfnLspException.ErrorCode.NODE_NOT_FOUND -> message("cloudformation.lsp.error.node_not_found")
+        }
+
+        notifyError(
+            title = message("cloudformation.lsp.error.title"),
+            content = content,
+            project = project
+        )
+    }
+
+    private fun notifyNodeError() {
+        notifyError(
+            title = message("cloudformation.lsp.error.title"),
+            content = message("cloudformation.lsp.error.node_not_found"),
+            project = project,
+            notificationActions = listOf(
+                NotificationAction.createSimple(message("cloudformation.lsp.action.configure_node")) {
+                    ShowSettingsUtil.getInstance().showSettingsDialog(project, message("aws.settings.title"))
+                }
+            )
+        )
     }
 
     override fun createInitializationOptions(): Any {
