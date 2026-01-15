@@ -33,8 +33,6 @@ tasks.createRelease.configure {
 dependencies {
     aggregateCoverage(project(":plugin-core-q"))
     aggregateCoverage(project(":plugin-amazonq"))
-
-    aggregateCoverage(project(":ui-tests"))
 }
 
 tasks.register("runIde") {

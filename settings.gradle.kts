@@ -118,7 +118,6 @@ apply(from = "kotlinResolution.settings.gradle.kts")
 rootProject.name = "aws-toolkit-jetbrains"
 
 include("detekt-rules")
-include("ui-tests")
 include("sandbox-all")
 include("ui-tests-starter")
 
