@@ -43,6 +43,7 @@ import software.amazon.q.jetbrains.core.credentials.ToolkitConnection
 import software.amazon.q.jetbrains.core.credentials.ToolkitConnectionManager
 import software.amazon.q.jetbrains.core.credentials.pinning.QConnection
 import software.amazon.q.jetbrains.core.credentials.sono.Q_SCOPES
+import software.amazon.q.jetbrains.services.telemetry.MockTelemetryServiceExtension
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
@@ -65,7 +66,6 @@ import software.aws.toolkits.jetbrains.services.cwc.messages.IncomingCwcMessage
 import software.aws.toolkits.jetbrains.services.cwc.messages.LinkType
 import software.aws.toolkits.jetbrains.services.cwc.storage.ChatSessionInfo
 import software.aws.toolkits.jetbrains.services.cwc.storage.ChatSessionStorage
-import software.aws.toolkits.jetbrains.services.telemetry.MockTelemetryServiceExtension
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.telemetry.CwsprChatConversationType
 import software.aws.toolkits.telemetry.CwsprChatInteractionType
@@ -178,7 +178,7 @@ class TelemetryHelperTest {
         mockTelemetryService.beforeEach(null)
 
         // Enable telemetry for tests
-        software.aws.toolkits.jetbrains.settings.AwsSettings.getInstance().isTelemetryEnabled = true
+        software.amazon.q.jetbrains.settings.AwsSettings.getInstance().isTelemetryEnabled = true
 
         // set up sut
         appInitContext = AmazonQAppInitContext(

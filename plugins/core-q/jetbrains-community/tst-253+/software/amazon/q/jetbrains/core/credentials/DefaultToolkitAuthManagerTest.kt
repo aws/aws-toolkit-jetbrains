@@ -21,23 +21,23 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import software.amazon.awssdk.services.ssooidc.SsoOidcClient
+import software.amazon.q.core.ToolkitClientManager
+import software.amazon.q.core.telemetry.MetricEvent
+import software.amazon.q.core.telemetry.TelemetryBatcher
+import software.amazon.q.core.telemetry.TelemetryPublisher
+import software.amazon.q.core.utils.delegateMock
+import software.amazon.q.core.utils.test.aString
 import software.amazon.q.jetbrains.core.MockClientManager
 import software.amazon.q.jetbrains.core.credentials.profiles.ProfileSsoSessionIdentifier
 import software.amazon.q.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.amazon.q.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.amazon.q.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
-import software.aws.toolkits.core.ToolkitClientManager
-import software.aws.toolkits.core.telemetry.MetricEvent
-import software.aws.toolkits.core.telemetry.TelemetryBatcher
-import software.aws.toolkits.core.telemetry.TelemetryPublisher
-import software.aws.toolkits.core.utils.delegateMock
-import software.aws.toolkits.core.utils.test.aString
-import software.aws.toolkits.jetbrains.services.telemetry.NoOpPublisher
-import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
-import software.aws.toolkits.jetbrains.settings.AwsSettings
-import software.aws.toolkits.jetbrains.utils.isInstanceOf
-import software.aws.toolkits.jetbrains.utils.isInstanceOfSatisfying
-import software.aws.toolkits.jetbrains.utils.satisfiesKt
+import software.amazon.q.jetbrains.services.telemetry.NoOpPublisher
+import software.amazon.q.jetbrains.services.telemetry.TelemetryService
+import software.amazon.q.jetbrains.settings.AwsSettings
+import software.amazon.q.jetbrains.utils.isInstanceOf
+import software.amazon.q.jetbrains.utils.isInstanceOfSatisfying
+import software.amazon.q.jetbrains.utils.satisfiesKt
 
 class DefaultToolkitAuthManagerTest : HeavyPlatformTestCase() {
     private class TestTelemetryService(
