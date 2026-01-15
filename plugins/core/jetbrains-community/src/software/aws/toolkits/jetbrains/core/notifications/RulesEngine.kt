@@ -92,20 +92,37 @@ object RulesEngine {
         }
     }
 
-    fun evaluateNotificationExpression(notificationExpression: NotificationExpression, value: String, useSemverForComparison: Boolean = false): Boolean = when (notificationExpression) {
-        is NotificationExpression.NotCondition -> performNotOp(notificationExpression, value, useSemverForComparison)
-        is NotificationExpression.OrCondition -> performOrOp(notificationExpression, value, useSemverForComparison)
-        is NotificationExpression.AndCondition -> performAndOp(notificationExpression, value, useSemverForComparison)
-        is NotificationExpression.ComparisonCondition -> notificationExpression.value == value
-        is NotificationExpression.NotEqualsCondition -> notificationExpression.value != value
-        is NotificationExpression.GreaterThanCondition -> if (useSemverForComparison) compareSemver(value, notificationExpression.value) > 0 else value > notificationExpression.value
-        is NotificationExpression.LessThanCondition -> if (useSemverForComparison) compareSemver(value, notificationExpression.value) < 0 else value < notificationExpression.value
-        is NotificationExpression.GreaterThanOrEqualsCondition -> if (useSemverForComparison) compareSemver(value, notificationExpression.value) >= 0 else value >= notificationExpression.value
-        is NotificationExpression.LessThanOrEqualsCondition -> if (useSemverForComparison) compareSemver(value, notificationExpression.value) <= 0 else value <= notificationExpression.value
-        is NotificationExpression.AnyOfCondition -> notificationExpression.value.contains(value)
-        is NotificationExpression.NoneOfCondition -> !notificationExpression.value.contains(value)
-        else -> true
-    }
+    fun evaluateNotificationExpression(notificationExpression: NotificationExpression, value: String, useSemverForComparison: Boolean = false): Boolean =
+        when (notificationExpression) {
+            is NotificationExpression.NotCondition -> performNotOp(notificationExpression, value, useSemverForComparison)
+            is NotificationExpression.OrCondition -> performOrOp(notificationExpression, value, useSemverForComparison)
+            is NotificationExpression.AndCondition -> performAndOp(notificationExpression, value, useSemverForComparison)
+            is NotificationExpression.ComparisonCondition -> notificationExpression.value == value
+            is NotificationExpression.NotEqualsCondition -> notificationExpression.value != value
+            is NotificationExpression.GreaterThanCondition -> if (useSemverForComparison) {
+                compareSemver(value, notificationExpression.value) > 0
+            } else {
+                value > notificationExpression.value
+            }
+            is NotificationExpression.LessThanCondition -> if (useSemverForComparison) {
+                compareSemver(value, notificationExpression.value) < 0
+            } else {
+                value < notificationExpression.value
+            }
+            is NotificationExpression.GreaterThanOrEqualsCondition -> if (useSemverForComparison) {
+                compareSemver(value, notificationExpression.value) >= 0
+            } else {
+                value >= notificationExpression.value
+            }
+            is NotificationExpression.LessThanOrEqualsCondition -> if (useSemverForComparison) {
+                compareSemver(value, notificationExpression.value) <= 0
+            } else {
+                value <= notificationExpression.value
+            }
+            is NotificationExpression.AnyOfCondition -> notificationExpression.value.contains(value)
+            is NotificationExpression.NoneOfCondition -> !notificationExpression.value.contains(value)
+            else -> true
+        }
 
     private fun compareSemver(actual: String, expected: String): Int {
         val actualSemver = SemVer.parseFromText(actual) ?: return actual.compareTo(expected)
