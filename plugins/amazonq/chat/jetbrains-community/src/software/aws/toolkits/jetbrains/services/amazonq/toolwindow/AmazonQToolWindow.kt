@@ -11,8 +11,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.wm.ToolWindowManager
 import kotlinx.coroutines.CoroutineScope
-import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteraction
-import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteractionType
 import software.aws.toolkits.jetbrains.services.amazonqCodeScan.runCodeScanMessage
 
 @Service(Service.Level.PROJECT)
@@ -40,10 +38,6 @@ class AmazonQToolWindow private constructor(
         fun getStarted(project: Project) {
             // Make sure the window is shown
             showChatWindow(project)
-
-            // Send the interaction message
-            val window = getInstance(project)
-            window.chatPanel.sendMessage(OnboardingPageInteraction(OnboardingPageInteractionType.CwcButtonClick), "cwc")
         }
 
         fun openScanTab(project: Project) {
