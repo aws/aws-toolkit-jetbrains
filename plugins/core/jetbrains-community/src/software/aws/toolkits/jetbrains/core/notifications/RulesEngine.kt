@@ -58,6 +58,8 @@ object RulesEngine {
         val extensionsToBeChecked = notificationExtension.map { it.id }
         val pluginVersions = actualPluginVersions.filterKeys { extensionsToBeChecked.contains(it) }
         if (pluginVersions.isEmpty()) return false
+        // SNAPSHOT versions are development versions and should not receive notifications
+        if (pluginVersions.values.any { it.contains("SNAPSHOT", ignoreCase = true) }) return false
         return notificationExtension.all { extension ->
             val actualVersion = pluginVersions[extension.id]
             if (actualVersion == null) {
