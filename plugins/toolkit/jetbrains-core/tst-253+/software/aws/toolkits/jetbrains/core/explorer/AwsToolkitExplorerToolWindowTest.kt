@@ -38,7 +38,7 @@ class AwsToolkitExplorerToolWindowTest : HeavyPlatformTestCase() {
                         AwsToolkitExplorerToolWindow.EXPLORER_TAB_ID
                 }
             )
-            assertThat(sut.state.selectedTab).isEqualTo(AwsToolkitExplorerToolWindow.Q_TAB_ID)
+            assertThat(sut.state.selectedTab).isEqualTo(AwsToolkitExplorerToolWindow.EXPLORER_TAB_ID)
 
             sut.loadState(
                 AwsToolkitExplorerToolWindowState().apply {
@@ -46,7 +46,7 @@ class AwsToolkitExplorerToolWindowTest : HeavyPlatformTestCase() {
                         AwsToolkitExplorerToolWindow.DEVTOOLS_TAB_ID
                 }
             )
-            assertThat(sut.state.selectedTab).isEqualTo(AwsToolkitExplorerToolWindow.Q_TAB_ID)
+            assertThat(sut.state.selectedTab).isEqualTo(AwsToolkitExplorerToolWindow.EXPLORER_TAB_ID)
         }
     }
 

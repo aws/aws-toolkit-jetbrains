@@ -131,13 +131,12 @@ class AwsToolkitExplorerToolWindow(
     }
 
     override fun loadState(state: AwsToolkitExplorerToolWindowState) {
-        selectTab(Q_TAB_ID)
+        selectTab(EXPLORER_TAB_ID)
     }
 
     companion object {
         val EXPLORER_TAB_ID = message("explorer.toolwindow.title")
         val DEVTOOLS_TAB_ID = message("aws.developer.tools.tab.title")
-        val Q_TAB_ID = message("aws.codewhispererq.tab.title")
 
         fun getInstance(project: Project) = project.service<AwsToolkitExplorerToolWindow>()
 

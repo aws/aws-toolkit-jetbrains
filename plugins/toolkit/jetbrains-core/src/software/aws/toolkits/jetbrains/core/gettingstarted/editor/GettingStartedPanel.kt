@@ -1071,8 +1071,6 @@ class GettingStartedPanel(
                 val tooltip = GotItTooltip("$GOT_IT_ID_PREFIX.codewhisperer", message("codewhisperer.explorer.tooltip.comment"), project)
                     .withHeader(message("codewhisperer.explorer.tooltip.title"))
                     .withPosition(Balloon.Position.above)
-
-                showGotIt(AwsToolkitExplorerToolWindow.Q_TAB_ID, message("action.q.openchat.text"), tooltip)
             } else {
                 controlPanelVisibility(panelConnectionInProgress, revertToPanel)
             }
