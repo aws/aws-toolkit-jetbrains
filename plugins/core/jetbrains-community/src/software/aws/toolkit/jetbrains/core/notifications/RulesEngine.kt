@@ -150,7 +150,6 @@ data class SystemDetails(
 fun createPluginVersionMap(): Map<String, String> {
     val pluginVersionMap = mutableMapOf<String, String>()
     val pluginIds = listOf(
-        "amazon.q",
         "aws.toolkit"
     )
     pluginIds.forEach { pluginId ->
