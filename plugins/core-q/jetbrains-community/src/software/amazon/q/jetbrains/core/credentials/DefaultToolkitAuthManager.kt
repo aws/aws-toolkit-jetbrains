@@ -245,11 +245,108 @@ class DefaultToolkitAuthManager : ToolkitAuthManager, PersistentStateComponent<T
     }
 
     override fun noStateLoaded() {
-        val state = QSettingsMigrationUtil.migrateState(
-            "qAuthManager",
-            ToolkitAuthManagerState::class.java
-        ) ?: ToolkitAuthManagerState()
-        loadState(state)
+        // Manual parsing for the nested structure
+        val element = QSettingsMigrationUtil.getRawComponentElement("qAuthManager")
+            ?: return loadState(ToolkitAuthManagerState())
+
+        val migratedState = parseAuthManagerState(element)
+        loadState(migratedState)
+    }
+
+    private fun parseAuthManagerState(element: org.w3c.dom.Element): ToolkitAuthManagerState {
+        val optionElements = element.getElementsByTagName("option")
+
+        var lastLoginIdcInfo: LastLoginIdcInfo? = null
+        val ssoProfiles = mutableListOf<ManagedSsoProfile>()
+
+        for (i in 0 until optionElements.length) {
+            val option = optionElements.item(i) as org.w3c.dom.Element
+            val optionName = option.getAttribute("name")
+
+            when (optionName) {
+                "lastLoginIdcInfo" -> {
+                    // Find the nested LastLoginIdcInfo element
+                    val idcInfoElements = option.getElementsByTagName("LastLoginIdcInfo")
+                    if (idcInfoElements.length > 0) {
+                        val idcInfo = idcInfoElements.item(0) as org.w3c.dom.Element
+                        val nestedOptions = idcInfo.getElementsByTagName("option")
+
+                        var profileName: String? = null
+                        var region: String? = null
+                        var startUrl: String? = null
+
+                        // Parse nested options
+                        for (j in 0 until nestedOptions.length) {
+                            val nestedOption = nestedOptions.item(j) as org.w3c.dom.Element
+                            when (nestedOption.getAttribute("name")) {
+                                "profileName" -> profileName = nestedOption.getAttribute("value")
+                                "region" -> region = nestedOption.getAttribute("value")
+                                "startUrl" -> startUrl = nestedOption.getAttribute("value")
+                            }
+                        }
+
+                        lastLoginIdcInfo = LastLoginIdcInfo(
+                            profileName = profileName ?: "",
+                            region = region ?: "",
+                            startUrl = startUrl ?: ""
+                        )
+                    }
+                }
+
+                "ssoProfiles" -> {
+                    // Parse the list of ManagedSsoProfile objects
+                    val listElements = option.getElementsByTagName("list")
+                    if (listElements.length > 0) {
+                        val listElement = listElements.item(0) as org.w3c.dom.Element
+                        val profileElements = listElement.getElementsByTagName("ManagedSsoProfile")
+
+                        for (j in 0 until profileElements.length) {
+                            val profileElement = profileElements.item(j) as org.w3c.dom.Element
+                            val profileOptions = profileElement.getElementsByTagName("option")
+
+                            var ssoRegion = ""
+                            var startUrl = ""
+                            val scopes = mutableListOf<String>()
+
+                            for (k in 0 until profileOptions.length) {
+                                val profileOption = profileOptions.item(k) as org.w3c.dom.Element
+                                when (profileOption.getAttribute("name")) {
+                                    "ssoRegion" -> ssoRegion = profileOption.getAttribute("value")
+                                    "startUrl" -> startUrl = profileOption.getAttribute("value")
+                                    "scopes" -> {
+                                        // Parse the scopes list
+                                        val scopesList = profileOption.getElementsByTagName("list")
+                                        if (scopesList.length > 0) {
+                                            val scopesListElement = scopesList.item(0) as org.w3c.dom.Element
+                                            val scopeOptions = scopesListElement.getElementsByTagName("option")
+                                            for (l in 0 until scopeOptions.length) {
+                                                val scopeOption = scopeOptions.item(l) as org.w3c.dom.Element
+                                                scopeOption.getAttribute("value").takeIf { it.isNotEmpty() }?.let {
+                                                    scopes.add(it)
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            ssoProfiles.add(
+                                ManagedSsoProfile(
+                                    ssoRegion = ssoRegion,
+                                    startUrl = startUrl,
+                                    scopes = scopes
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        return ToolkitAuthManagerState(
+            ssoProfiles = ssoProfiles,
+            lastLoginIdcInfo = lastLoginIdcInfo ?: LastLoginIdcInfo()
+        )
     }
 
     override fun dispose() {

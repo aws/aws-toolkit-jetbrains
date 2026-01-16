@@ -107,7 +107,7 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <applicationConfigurable
-            id="aws"
+            id="amazonq"
             groupId="tools"
             bundle="software.amazon.q.resources.MessagesBundle"
             key="amazon.q.settings.title"

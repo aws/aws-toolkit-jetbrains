@@ -57,7 +57,7 @@ class CodeWhispererConfigurable(private val project: Project) :
             return conn?.let { isInternalUser(it.startUrl) } ?: false
         }
 
-    override fun getId() = "aws.codewhisperer"
+    override fun getId() = "amazonq.codewhisperer"
 
     override fun createPanel() = panel {
         val connect = project.messageBus.connect(disposable ?: error("disposable wasn't initialized by framework"))

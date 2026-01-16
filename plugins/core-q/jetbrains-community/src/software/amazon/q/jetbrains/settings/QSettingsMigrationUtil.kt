@@ -27,7 +27,15 @@ object QSettingsMigrationUtil {
         "connectionManager" to "qConnectionManager",
         "connectionPinningManager" to "qConnectionPinningManager",
         "notificationDismissals" to "qNotificationDismissals",
-        "notificationEtag" to "qNotificationEtag"
+        "notificationEtag" to "qNotificationEtag",
+        "codemodernizerStates" to "codemodernizerStates",
+        "codewhispererStates" to "codewhispererStates",
+        "codewhispererUserGroupSettings" to "codewhispererUserGroupSettings",
+        "qProfileStates" to "qProfileStates",
+        "codewhispererCustomizationStates" to "codewhispererCustomizationStates",
+        "codewhispererSettings" to "codewhispererSettings",
+        "lspSettings" to "lspSettings",
+        "meetQPage" to "meetQPage"
     )
 
     /**
@@ -52,6 +60,12 @@ object QSettingsMigrationUtil {
             null
         }
     }
+
+    /**
+     * Gets the raw W3C DOM element for manual parsing when automatic deserialization
+     * fails (e.g., for polymorphic types).
+     */
+    fun getRawComponentElement(newComponentName: String): org.w3c.dom.Element? = getMigratedComponentElement(newComponentName)
 
     /**
      * Retrieves the component element from aws.xml for the given new component name.

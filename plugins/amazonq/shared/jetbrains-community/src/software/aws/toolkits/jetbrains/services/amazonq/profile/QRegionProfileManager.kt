@@ -30,6 +30,7 @@ import software.amazon.q.jetbrains.core.credentials.sono.isSono
 import software.amazon.q.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.amazon.q.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.amazon.q.jetbrains.core.region.AwsRegionProvider
+import software.amazon.q.jetbrains.settings.QSettingsMigrationUtil
 import software.amazon.q.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.AmazonQBundle.message
 import software.aws.toolkits.telemetry.MetricResult
@@ -241,6 +242,14 @@ class QRegionProfileManager : PersistentStateComponent<QProfileState>, Disposabl
 
         connectionIdToProfileCount.clear()
         connectionIdToProfileCount.putAll(state.connectionIdToProfileList)
+    }
+
+    override fun noStateLoaded() {
+        val state = QSettingsMigrationUtil.migrateState(
+            "qProfileStates",
+            QProfileState::class.java
+        ) ?: QProfileState()
+        loadState(state)
     }
 }
 

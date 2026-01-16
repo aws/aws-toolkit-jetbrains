@@ -9,6 +9,7 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
+import software.amazon.q.jetbrains.settings.QSettingsMigrationUtil
 
 @Service
 @State(name = "meetQPage", storages = [Storage("amazonq.xml", roamingType = RoamingType.DISABLED)])
@@ -18,6 +19,14 @@ class MeetQSettings : PersistentStateComponent<MeetQSettingsConfiguration> {
 
     override fun loadState(state: MeetQSettingsConfiguration) {
         this.state = state
+    }
+
+    override fun noStateLoaded() {
+        val state = QSettingsMigrationUtil.migrateState(
+            "meetQPage",
+            MeetQSettingsConfiguration::class.java
+        ) ?: MeetQSettingsConfiguration()
+        loadState(state)
     }
 
     var shouldDisplayPage: Boolean

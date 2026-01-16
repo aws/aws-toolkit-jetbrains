@@ -24,6 +24,7 @@ import software.amazon.awssdk.services.codewhispererruntime.CodeWhispererRuntime
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
 import software.amazon.q.core.utils.debug
 import software.amazon.q.core.utils.getLogger
+import software.amazon.q.jetbrains.settings.QSettingsMigrationUtil
 import software.amazon.q.jetbrains.utils.notifyInfo
 import software.amazon.q.jetbrains.utils.notifyWarn
 import software.amazon.q.jetbrains.utils.pluginAwareExecuteOnPooledThread
@@ -327,6 +328,14 @@ class DefaultCodeWhispererModelConfigurator(
 
         this.serviceDefaultArn = state.serviceDefaultArn
         this.customizationArnOverrideV2 = state.customizationArnOverrideV2
+    }
+
+    override fun noStateLoaded() {
+        val state = QSettingsMigrationUtil.migrateState(
+            "codewhispererCustomizationStates",
+            CodeWhispererCustomizationState::class.java
+        ) ?: CodeWhispererCustomizationState()
+        loadState(state)
     }
 
     // current latest field is customizationArnOverrideV2

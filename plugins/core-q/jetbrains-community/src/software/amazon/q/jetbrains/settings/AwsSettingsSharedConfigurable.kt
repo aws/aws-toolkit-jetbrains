@@ -47,5 +47,5 @@ class AwsSettingsSharedConfigurable : BoundConfigurable("Amazon Q"), SearchableC
         }
     }
 
-    override fun getId(): String = "aws"
+    override fun getId(): String = "amazonq"
 }

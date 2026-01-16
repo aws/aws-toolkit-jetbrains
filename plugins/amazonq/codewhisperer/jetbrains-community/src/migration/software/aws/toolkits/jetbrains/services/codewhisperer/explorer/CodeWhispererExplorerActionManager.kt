@@ -14,6 +14,7 @@ import software.amazon.q.jetbrains.core.credentials.pinning.QConnection
 import software.amazon.q.jetbrains.core.credentials.sono.isSono
 import software.amazon.q.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.amazon.q.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
+import software.amazon.q.jetbrains.settings.QSettingsMigrationUtil
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererLoginType
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExploreActionState
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExploreStateType
@@ -126,6 +127,14 @@ class CodeWhispererExplorerActionManager : PersistentStateComponent<CodeWhispere
         actionState.value.putAll(state.value)
         actionState.accountlessWarnTimestamp = state.accountlessWarnTimestamp
         actionState.accountlessErrorTimestamp = state.accountlessErrorTimestamp
+    }
+
+    override fun noStateLoaded() {
+        val state = QSettingsMigrationUtil.migrateState(
+            "codewhispererStates",
+            CodeWhispererExploreActionState::class.java
+        ) ?: CodeWhispererExploreActionState()
+        loadState(state)
     }
 
     companion object {

@@ -13,6 +13,7 @@ import org.jetbrains.annotations.VisibleForTesting
 import software.amazon.q.core.utils.tryOrNull
 import software.amazon.q.jetbrains.AwsPlugin
 import software.amazon.q.jetbrains.AwsToolkit
+import software.amazon.q.jetbrains.settings.QSettingsMigrationUtil
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
 
@@ -35,6 +36,14 @@ class CodeWhispererUserGroupSettings : PersistentStateComponent<CodeWhispererUse
 
         settings.clear()
         settings.putAll(state.settings)
+    }
+
+    override fun noStateLoaded() {
+        val state = QSettingsMigrationUtil.migrateState(
+            "codewhispererUserGroupSettings",
+            CodeWhispererUserGroupStates::class.java
+        ) ?: CodeWhispererUserGroupStates()
+        loadState(state)
     }
 
     inline fun <reified T : CodeWhispererGroup> getGroup(): T? = getGroup(T::class)

@@ -50,8 +50,8 @@
                     icon="AllIcons.Actions.Preview"/>
 
         <projectConfigurable
-            parentId="aws"
-            id="aws.codewhisperer"
+            parentId="amazonq"
+            id="amazonq.codewhisperer"
             bundle="software.amazon.q.resources.MessagesBundle"
             key="aws.settings.codewhisperer.configurable.title"
             instance="software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererConfigurable"

@@ -30,6 +30,7 @@ import software.amazon.q.core.utils.getLogger
 import software.amazon.q.core.utils.info
 import software.amazon.q.core.utils.warn
 import software.amazon.q.jetbrains.core.coroutines.projectCoroutineScope
+import software.amazon.q.jetbrains.settings.QSettingsMigrationUtil
 import software.amazon.q.jetbrains.utils.notifyStickyError
 import software.amazon.q.jetbrains.utils.notifyStickyInfo
 import software.aws.toolkits.jetbrains.services.amazonq.CODE_TRANSFORM_TROUBLESHOOT_DOC_MVN_FAILURE
@@ -758,6 +759,14 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         managerState.lastJobContext.putAll(state.lastJobContext)
         managerState.flags.clear()
         managerState.flags.putAll(state.flags)
+    }
+
+    override fun noStateLoaded() {
+        val state = QSettingsMigrationUtil.migrateState(
+            "codemodernizerStates",
+            CodeModernizerState::class.java
+        ) ?: CodeModernizerState()
+        loadState(state)
     }
 
     fun getTransformationPlan(): TransformationPlan? = codeTransformationSession?.getTransformationPlan()
