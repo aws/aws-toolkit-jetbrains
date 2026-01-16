@@ -20,7 +20,7 @@ import software.amazon.awssdk.services.s3.model.CommonPrefix
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response
 import software.amazon.awssdk.services.s3.model.S3Object
-import software.aws.toolkits.core.utils.delegateMock
+import software.aws.toolkit.core.utils.delegateMock
 import java.time.Instant
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit

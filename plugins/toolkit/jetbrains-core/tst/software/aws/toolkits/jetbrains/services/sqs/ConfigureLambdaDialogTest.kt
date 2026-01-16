@@ -22,9 +22,9 @@ import software.amazon.awssdk.services.lambda.model.CreateEventSourceMappingResp
 import software.amazon.awssdk.services.lambda.model.InvalidParameterValueException
 import software.amazon.awssdk.services.lambda.model.ResourceConflictException
 import software.amazon.awssdk.services.sqs.SqsClient
-import software.aws.toolkits.core.region.AwsRegion
-import software.aws.toolkits.jetbrains.core.MockClientManagerRule
-import software.aws.toolkits.jetbrains.core.region.getDefaultRegion
+import software.aws.toolkit.core.region.AwsRegion
+import software.aws.toolkit.jetbrains.core.MockClientManagerRule
+import software.aws.toolkit.jetbrains.core.region.getDefaultRegion
 
 class ConfigureLambdaDialogTest {
     lateinit var sqsClient: SqsClient

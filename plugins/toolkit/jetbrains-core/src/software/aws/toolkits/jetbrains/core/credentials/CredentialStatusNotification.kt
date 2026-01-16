@@ -4,9 +4,11 @@
 package software.aws.toolkits.jetbrains.core.credentials
 
 import com.intellij.openapi.project.Project
-import software.aws.toolkits.jetbrains.utils.createNotificationExpiringAction
-import software.aws.toolkits.jetbrains.utils.createShowMoreInfoDialogAction
-import software.aws.toolkits.jetbrains.utils.notifyWarn
+import software.aws.toolkit.jetbrains.core.credentials.ConnectionSettingsStateChangeNotifier
+import software.aws.toolkit.jetbrains.core.credentials.ConnectionState
+import software.aws.toolkit.jetbrains.utils.createNotificationExpiringAction
+import software.aws.toolkit.jetbrains.utils.createShowMoreInfoDialogAction
+import software.aws.toolkit.jetbrains.utils.notifyWarn
 import software.aws.toolkits.resources.message
 
 class CredentialStatusNotification(private val project: Project) : ConnectionSettingsStateChangeNotifier {

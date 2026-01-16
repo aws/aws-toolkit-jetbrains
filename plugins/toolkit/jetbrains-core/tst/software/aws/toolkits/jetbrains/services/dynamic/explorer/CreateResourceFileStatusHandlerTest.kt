@@ -20,10 +20,10 @@ import software.amazon.awssdk.services.cloudcontrol.model.GetResourceResponse
 import software.amazon.awssdk.services.cloudcontrol.model.Operation
 import software.amazon.awssdk.services.cloudcontrol.model.OperationStatus
 import software.amazon.awssdk.services.cloudcontrol.model.ResourceDescription
-import software.aws.toolkits.core.ConnectionSettings
-import software.aws.toolkits.core.credentials.aToolkitCredentialsProvider
-import software.aws.toolkits.core.region.anAwsRegion
-import software.aws.toolkits.jetbrains.core.MockClientManagerRule
+import software.aws.toolkit.core.ConnectionSettings
+import software.aws.toolkit.core.credentials.aToolkitCredentialsProvider
+import software.aws.toolkit.core.region.anAwsRegion
+import software.aws.toolkit.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.services.dynamic.CreateDynamicResourceVirtualFile
 import software.aws.toolkits.jetbrains.services.dynamic.CreateResourceFileStatusHandler
 import software.aws.toolkits.jetbrains.services.dynamic.DynamicResource

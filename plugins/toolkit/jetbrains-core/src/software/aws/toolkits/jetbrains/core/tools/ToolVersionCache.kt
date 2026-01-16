@@ -5,9 +5,9 @@ package software.aws.toolkits.jetbrains.core.tools
 
 import com.intellij.openapi.progress.util.ProgressIndicatorUtils
 import com.intellij.openapi.util.ThrowableComputable
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.lastModified
-import software.aws.toolkits.core.utils.warn
+import software.aws.toolkit.core.utils.getLogger
+import software.aws.toolkit.core.utils.lastModified
+import software.aws.toolkit.core.utils.warn
 import java.nio.file.Files
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit

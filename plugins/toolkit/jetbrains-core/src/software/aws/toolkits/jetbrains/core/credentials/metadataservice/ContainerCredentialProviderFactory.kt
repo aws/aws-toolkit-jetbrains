@@ -7,16 +7,16 @@ import com.intellij.openapi.extensions.ExtensionNotApplicableException
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.amazon.awssdk.auth.credentials.ContainerCredentialsProvider
 import software.amazon.awssdk.core.SdkSystemSetting
-import software.aws.toolkits.core.credentials.CredentialIdentifier
-import software.aws.toolkits.core.credentials.CredentialProviderFactory
-import software.aws.toolkits.core.credentials.CredentialSourceId
-import software.aws.toolkits.core.credentials.CredentialType
-import software.aws.toolkits.core.credentials.CredentialsChangeEvent
-import software.aws.toolkits.core.credentials.CredentialsChangeListener
-import software.aws.toolkits.core.region.AwsRegion
-import software.aws.toolkits.core.utils.debug
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.jetbrains.utils.isCodeCatalystDevEnv
+import software.aws.toolkit.core.credentials.CredentialIdentifier
+import software.aws.toolkit.core.credentials.CredentialProviderFactory
+import software.aws.toolkit.core.credentials.CredentialSourceId
+import software.aws.toolkit.core.credentials.CredentialType
+import software.aws.toolkit.core.credentials.CredentialsChangeEvent
+import software.aws.toolkit.core.credentials.CredentialsChangeListener
+import software.aws.toolkit.core.region.AwsRegion
+import software.aws.toolkit.core.utils.debug
+import software.aws.toolkit.core.utils.getLogger
+import software.aws.toolkit.jetbrains.utils.isCodeCatalystDevEnv
 
 class ContainerCredentialProviderFactory : CredentialProviderFactory {
     init {

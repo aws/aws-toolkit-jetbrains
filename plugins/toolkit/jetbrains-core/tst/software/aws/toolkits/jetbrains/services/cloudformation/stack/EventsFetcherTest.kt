@@ -7,7 +7,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.services.cloudformation.model.StackEvent
-import software.aws.toolkits.jetbrains.core.MockClientManagerRule
+import software.aws.toolkit.jetbrains.core.MockClientManagerRule
 
 private fun expectRange(from: String, to: String, events: List<StackEvent>, expectedSize: Int = 1024) {
     assertThat(events).withFailMessage("Wrong number of items").hasSize(expectedSize)

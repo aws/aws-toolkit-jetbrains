@@ -18,7 +18,7 @@ import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.util.KeyedExtensionCollector
 import com.intellij.util.text.SemVer
 import software.amazon.awssdk.services.lambda.model.Runtime
-import software.aws.toolkits.core.lambda.LambdaRuntime
+import software.aws.toolkit.core.lambda.LambdaRuntime
 import software.aws.toolkits.jetbrains.core.IdBasedExtensionPoint
 import software.aws.toolkits.resources.message
 

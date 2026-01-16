@@ -5,9 +5,9 @@ package software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights.action
 
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.DumbAware
-import software.aws.toolkits.core.ConnectionSettings
-import software.aws.toolkits.jetbrains.core.credentials.activeCredentialProvider
-import software.aws.toolkits.jetbrains.core.credentials.activeRegion
+import software.aws.toolkit.core.ConnectionSettings
+import software.aws.toolkit.jetbrains.core.credentials.activeCredentialProvider
+import software.aws.toolkit.jetbrains.core.credentials.activeRegion
 import software.aws.toolkits.jetbrains.core.explorer.actions.SingleResourceNodeAction
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogsNode
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights.QueryEditorDialog

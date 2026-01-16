@@ -19,9 +19,9 @@ import software.amazon.awssdk.services.sqs.model.MessageSystemAttributeName
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse
-import software.aws.toolkits.core.region.anAwsRegion
-import software.aws.toolkits.core.utils.test.aString
-import software.aws.toolkits.jetbrains.core.MockClientManagerRule
+import software.aws.toolkit.core.region.anAwsRegion
+import software.aws.toolkit.core.utils.test.aString
+import software.aws.toolkit.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.services.sqs.Queue
 import software.aws.toolkits.jetbrains.utils.waitForModelToBeAtLeast
 import software.aws.toolkits.jetbrains.utils.waitForTrue

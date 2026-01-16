@@ -33,6 +33,7 @@ import com.jetbrains.python.psi.PyFile
 import com.jetbrains.python.sdk.PythonSdkAdditionalData
 import com.jetbrains.python.sdk.flavors.PyFlavorAndData
 import com.jetbrains.python.sdk.flavors.PyFlavorData
+import software.aws.toolkit.jetbrains.utils.rules.CodeInsightTestFixtureRule
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.attribute.PosixFilePermission

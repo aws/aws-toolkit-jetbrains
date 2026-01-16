@@ -6,15 +6,16 @@ package software.aws.toolkits.jetbrains.core.gettingstarted
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
-import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
-import software.aws.toolkits.jetbrains.core.credentials.ConfigFilesFacade
-import software.aws.toolkits.jetbrains.core.credentials.DefaultConfigFilesFacade
-import software.aws.toolkits.jetbrains.core.credentials.ReauthSource
-import software.aws.toolkits.jetbrains.core.credentials.UserConfigSsoSessionProfile
-import software.aws.toolkits.jetbrains.core.credentials.authAndUpdateConfig
-import software.aws.toolkits.jetbrains.core.credentials.profiles.SsoSessionConstants
-import software.aws.toolkits.jetbrains.core.credentials.reauthConnectionIfNeeded
-import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
+import software.aws.toolkit.jetbrains.core.credentials.AwsBearerTokenConnection
+import software.aws.toolkit.jetbrains.core.credentials.ConfigFilesFacade
+import software.aws.toolkit.jetbrains.core.credentials.DefaultConfigFilesFacade
+import software.aws.toolkit.jetbrains.core.credentials.ReauthSource
+import software.aws.toolkit.jetbrains.core.credentials.UserConfigSsoSessionProfile
+import software.aws.toolkit.jetbrains.core.credentials.authAndUpdateConfig
+import software.aws.toolkit.jetbrains.core.credentials.profiles.SsoSessionConstants
+import software.aws.toolkit.jetbrains.core.credentials.reauthConnectionIfNeeded
+import software.aws.toolkit.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
+import software.aws.toolkit.jetbrains.core.gettingstarted.IdcRolePopup
 import software.aws.toolkits.resources.message
 
 fun rolePopupFromConnection(

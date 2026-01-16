@@ -13,10 +13,10 @@ import org.testng.annotations.AfterMethod
 import org.testng.annotations.BeforeMethod
 import org.testng.annotations.Test
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
-import software.aws.toolkits.core.lambda.LambdaRuntime
-import software.aws.toolkits.core.utils.writeText
-import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
-import software.aws.toolkits.jetbrains.core.region.getDefaultRegion
+import software.aws.toolkit.core.lambda.LambdaRuntime
+import software.aws.toolkit.core.utils.writeText
+import software.aws.toolkit.jetbrains.core.credentials.MockCredentialsManager
+import software.aws.toolkit.jetbrains.core.region.getDefaultRegion
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.createHandlerBasedRunConfiguration
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.createTemplateRunConfiguration
 import software.aws.toolkits.jetbrains.utils.executeRunConfigurationAndWaitRider

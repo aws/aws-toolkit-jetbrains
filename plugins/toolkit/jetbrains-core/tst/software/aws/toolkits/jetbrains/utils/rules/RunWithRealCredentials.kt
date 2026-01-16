@@ -13,19 +13,20 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.rules.TestRule
 import org.junit.runner.Description
 import org.junit.runners.model.Statement
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.warn
-import software.aws.toolkits.jetbrains.core.AwsResourceCache
-import software.aws.toolkits.jetbrains.core.DefaultAwsResourceCache
-import software.aws.toolkits.jetbrains.core.MockClientManager
-import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
-import software.aws.toolkits.jetbrains.core.credentials.DefaultAwsConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.DefaultCredentialManager
-import software.aws.toolkits.jetbrains.core.credentials.profiles.DEFAULT_PROFILE_ID
-import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileCredentialProviderFactory
-import software.aws.toolkits.jetbrains.core.credentials.waitUntilConnectionStateIsStable
-import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
+import software.aws.toolkit.core.utils.getLogger
+import software.aws.toolkit.core.utils.warn
+import software.aws.toolkit.jetbrains.core.AwsResourceCache
+import software.aws.toolkit.jetbrains.core.DefaultAwsResourceCache
+import software.aws.toolkit.jetbrains.core.MockClientManager
+import software.aws.toolkit.jetbrains.core.credentials.AwsConnectionManager
+import software.aws.toolkit.jetbrains.core.credentials.CredentialManager
+import software.aws.toolkit.jetbrains.core.credentials.DefaultAwsConnectionManager
+import software.aws.toolkit.jetbrains.core.credentials.DefaultCredentialManager
+import software.aws.toolkit.jetbrains.core.credentials.profiles.DEFAULT_PROFILE_ID
+import software.aws.toolkit.jetbrains.core.credentials.profiles.ProfileCredentialProviderFactory
+import software.aws.toolkit.jetbrains.core.credentials.waitUntilConnectionStateIsStable
+import software.aws.toolkit.jetbrains.core.region.AwsRegionProvider
+import software.aws.toolkit.jetbrains.utils.rules.CodeInsightTestFixtureRule
 
 class RunWithRealCredentials : TestRule {
     /**

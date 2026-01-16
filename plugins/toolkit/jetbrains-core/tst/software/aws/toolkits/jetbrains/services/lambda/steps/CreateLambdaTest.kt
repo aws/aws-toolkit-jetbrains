@@ -23,8 +23,8 @@ import software.amazon.awssdk.services.lambda.model.GetFunctionResponse
 import software.amazon.awssdk.services.lambda.model.PackageType
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.amazon.awssdk.services.lambda.model.State
-import software.aws.toolkits.core.utils.test.aString
-import software.aws.toolkits.jetbrains.core.MockClientManagerRule
+import software.aws.toolkit.core.utils.test.aString
+import software.aws.toolkit.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.services.iam.IamRole
 import software.aws.toolkits.jetbrains.services.lambda.steps.CreateLambda.Companion.FUNCTION_ARN
 import software.aws.toolkits.jetbrains.services.lambda.upload.FunctionDetails

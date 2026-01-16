@@ -13,8 +13,8 @@ import com.intellij.execution.process.ProcessListener
 import com.intellij.execution.process.ProcessOutputTypes
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.util.Key
-import software.aws.toolkits.core.utils.debug
-import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkit.core.utils.debug
+import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.Result
 import java.time.Instant

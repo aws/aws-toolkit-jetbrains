@@ -3,9 +3,9 @@
 
 package software.aws.toolkits.jetbrains.utils
 
-import software.aws.toolkits.core.lambda.LambdaRuntime
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.warn
+import software.aws.toolkit.core.lambda.LambdaRuntime
+import software.aws.toolkit.core.utils.getLogger
+import software.aws.toolkit.core.utils.warn
 import java.io.IOException
 
 object DotNetRuntimeUtils {
@@ -17,7 +17,7 @@ object DotNetRuntimeUtils {
     /**
      * Get information about current .NET runtime
      *
-     * @return the [software.aws.toolkits.core.lambda.LambdaRuntime] instance of current available runtime or
+     * @return the [LambdaRuntime] instance of current available runtime or
      *         defaultDotnetCoreRuntime value if not defined.
      */
     fun getCurrentDotNetCoreRuntime(): LambdaRuntime {

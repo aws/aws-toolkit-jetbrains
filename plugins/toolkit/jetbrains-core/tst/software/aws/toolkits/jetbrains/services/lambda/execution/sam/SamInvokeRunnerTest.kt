@@ -13,7 +13,7 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.mock
 import software.amazon.awssdk.services.lambda.model.Runtime
-import software.aws.toolkits.core.lambda.LambdaRuntime
+import software.aws.toolkit.core.lambda.LambdaRuntime
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.createHandlerBasedRunConfiguration
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.createTemplateRunConfiguration
 import software.aws.toolkits.jetbrains.services.lambda.execution.remote.RemoteLambdaRunConfiguration

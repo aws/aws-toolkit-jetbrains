@@ -16,7 +16,7 @@ import com.jetbrains.rider.projectView.projectTemplates.NewProjectDialogContext
 import com.jetbrains.rider.projectView.projectTemplates.ProjectTemplatesSharedModel
 import com.jetbrains.rider.projectView.projectTemplates.utils.ProjectTemplatesExpanderUtils
 import kotlinx.coroutines.launch
-import software.aws.toolkits.jetbrains.core.coroutines.applicationCoroutineScope
+import software.aws.toolkit.jetbrains.core.coroutines.applicationCoroutineScope
 import software.aws.toolkits.resources.message
 import java.io.File
 

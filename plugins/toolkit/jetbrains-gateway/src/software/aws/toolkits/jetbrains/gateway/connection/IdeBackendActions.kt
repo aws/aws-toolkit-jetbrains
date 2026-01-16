@@ -13,10 +13,11 @@ import com.jetbrains.rd.util.lifetime.Lifetime
 import software.amazon.awssdk.services.codecatalyst.CodeCatalystClient
 import software.amazon.awssdk.services.codecatalyst.model.CodeCatalystException
 import software.amazon.awssdk.services.codecatalyst.model.RepositoryInput
-import software.aws.toolkits.core.utils.debug
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.tryOrNull
-import software.aws.toolkits.core.utils.warn
+import software.aws.toolkit.core.utils.debug
+import software.aws.toolkit.core.utils.getLogger
+import software.aws.toolkit.core.utils.tryOrNull
+import software.aws.toolkit.core.utils.warn
+import software.aws.toolkit.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.core.credentials.sono.lazilyGetUserId
 import software.aws.toolkits.jetbrains.gateway.BranchCloneType
 import software.aws.toolkits.jetbrains.gateway.CawsSettings
@@ -24,7 +25,6 @@ import software.aws.toolkits.jetbrains.gateway.CawsWizardCloneType
 import software.aws.toolkits.jetbrains.gateway.Workspace
 import software.aws.toolkits.jetbrains.gateway.WorkspaceIdentifier
 import software.aws.toolkits.jetbrains.gateway.toWorkspace
-import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.telemetry.CodecatalystTelemetry
 import java.net.URI
 import java.time.Duration

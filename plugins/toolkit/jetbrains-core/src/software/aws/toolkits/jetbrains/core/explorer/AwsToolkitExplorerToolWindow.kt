@@ -20,9 +20,8 @@ import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.ui.components.JBTabbedPane
 import com.intellij.util.ui.components.BorderLayoutPanel
+import software.aws.toolkit.jetbrains.settings.ToolkitSettingsMigrationUtil
 import software.aws.toolkits.jetbrains.core.credentials.CredsComboBoxActionGroup
-import software.aws.toolkits.jetbrains.core.explorer.cwqTab.CodewhispererQToolWindow
-import software.aws.toolkits.jetbrains.core.explorer.cwqTab.isQInstalled
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.DevToolsToolWindow
 import software.aws.toolkits.resources.message
 import java.awt.Component
@@ -31,7 +30,7 @@ class AwsToolkitExplorerToolWindowState : BaseState() {
     var selectedTab by string()
 }
 
-@State(name = "explorerToolWindow", storages = [Storage("aws.xml")])
+@State(name = "toolkitExplorerToolWindow", storages = [Storage("awsToolkit.xml")])
 class AwsToolkitExplorerToolWindow(
     private val project: Project,
 ) : SimpleToolWindowPanel(true, true), PersistentStateComponent<AwsToolkitExplorerToolWindowState> {
@@ -45,16 +44,12 @@ class AwsToolkitExplorerToolWindow(
     ) {
         override fun actionPerformed(e: AnActionEvent) {
             val project = e.project ?: return
-            tabPane.remove(CodewhispererQToolWindow.getInstance(project))
         }
     }
 
     private val tabComponents = buildMap<String, () -> Component> {
         put(EXPLORER_TAB_ID, { ExplorerToolWindow.getInstance(project) })
         put(DEVTOOLS_TAB_ID, { DevToolsToolWindow.getInstance(project) })
-        if (!isQInstalled()) {
-            put(Q_TAB_ID, { CodewhispererQToolWindow.getInstance(project) })
-        }
     }
 
     init {
@@ -137,13 +132,20 @@ class AwsToolkitExplorerToolWindow(
     }
 
     override fun loadState(state: AwsToolkitExplorerToolWindowState) {
-        selectTab(Q_TAB_ID)
+        selectTab(EXPLORER_TAB_ID)
+    }
+
+    override fun noStateLoaded() {
+        val state = ToolkitSettingsMigrationUtil.migrateState(
+            "toolkitExplorerToolWindow",
+            AwsToolkitExplorerToolWindowState::class.java
+        ) ?: AwsToolkitExplorerToolWindowState()
+        loadState(state)
     }
 
     companion object {
         val EXPLORER_TAB_ID = message("explorer.toolwindow.title")
         val DEVTOOLS_TAB_ID = message("aws.developer.tools.tab.title")
-        val Q_TAB_ID = message("aws.codewhispererq.tab.title")
 
         fun getInstance(project: Project) = project.service<AwsToolkitExplorerToolWindow>()
 

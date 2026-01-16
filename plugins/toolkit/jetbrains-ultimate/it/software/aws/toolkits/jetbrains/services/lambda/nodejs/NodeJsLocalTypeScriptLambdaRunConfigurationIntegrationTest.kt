@@ -23,8 +23,8 @@ import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.services.lambda.model.Runtime
-import software.aws.toolkits.core.utils.RuleUtils
-import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
+import software.aws.toolkit.core.utils.RuleUtils
+import software.aws.toolkit.jetbrains.core.credentials.MockCredentialsManager
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.createHandlerBasedRunConfiguration
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
 import software.aws.toolkits.jetbrains.utils.FrameworkTestUtils.ensureBuiltInServerStarted

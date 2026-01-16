@@ -7,8 +7,9 @@ import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
+import software.aws.toolkit.jetbrains.settings.ToolkitSettingsMigrationUtil
 
-@State(name = "samAccDevMode", storages = [Storage("aws.xml")])
+@State(name = "toolkitSamAccDevMode", storages = [Storage("awsToolkit.xml")])
 class SamDisplayDevModeWarningSettings : PersistentStateComponent<SamDevModeWarningConfiguration> {
     private var state = SamDevModeWarningConfiguration()
 
@@ -16,6 +17,14 @@ class SamDisplayDevModeWarningSettings : PersistentStateComponent<SamDevModeWarn
 
     override fun loadState(state: SamDevModeWarningConfiguration) {
         this.state = state
+    }
+
+    override fun noStateLoaded() {
+        val state = ToolkitSettingsMigrationUtil.migrateState(
+            "toolkitSamAccDevMode",
+            SamDevModeWarningConfiguration::class.java
+        ) ?: SamDevModeWarningConfiguration()
+        loadState(state)
     }
 
     var showDevModeWarning: Boolean

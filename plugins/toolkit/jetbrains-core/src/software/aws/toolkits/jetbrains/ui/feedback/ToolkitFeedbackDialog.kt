@@ -10,7 +10,8 @@ import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
 import icons.AwsIcons
-import software.aws.toolkits.jetbrains.core.help.HelpIds
+import software.aws.toolkit.jetbrains.core.help.HelpIds
+import software.aws.toolkit.jetbrains.ui.feedback.FeedbackDialog
 import software.aws.toolkits.jetbrains.feedback.sendFeedbackWithExperimentsMetadata
 import software.aws.toolkits.resources.message
 

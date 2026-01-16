@@ -10,7 +10,7 @@ import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.services.sqs.model.Message
 import software.amazon.awssdk.services.sqs.model.MessageSystemAttributeName
-import software.aws.toolkits.core.utils.RuleUtils
+import software.aws.toolkit.core.utils.RuleUtils
 
 class PollMessageUtilsTest {
     @JvmField

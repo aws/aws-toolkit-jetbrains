@@ -21,8 +21,8 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import software.amazon.awssdk.services.sqs.SqsClient
 import software.amazon.awssdk.services.sqs.model.DeleteQueueRequest
-import software.aws.toolkits.core.region.anAwsRegion
-import software.aws.toolkits.jetbrains.core.MockClientManagerRule
+import software.aws.toolkit.core.region.anAwsRegion
+import software.aws.toolkit.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.MockToolWindow
 import software.aws.toolkits.jetbrains.services.sqs.actions.DeleteQueueAction
 import software.aws.toolkits.jetbrains.services.sqs.toolwindow.SqsWindow

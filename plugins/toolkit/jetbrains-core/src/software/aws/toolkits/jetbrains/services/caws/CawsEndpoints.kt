@@ -3,7 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.caws
 
-import software.aws.toolkits.core.utils.tryOrNull
+import software.aws.toolkit.core.utils.tryOrNull
 import java.net.URI
 
 object CawsEndpoints {

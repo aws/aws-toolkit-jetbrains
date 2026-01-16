@@ -167,6 +167,10 @@ tasks.buildPlugin {
     archiveClassifier.set(classifier)
 }
 
+tasks.buildSearchableOptions {
+    enabled = false
+}
+
 tasks.integrationTest {
     val testToken = RandomString.make(32)
     environment("CWM_HOST_STATUS_OVER_HTTP_TOKEN", testToken)

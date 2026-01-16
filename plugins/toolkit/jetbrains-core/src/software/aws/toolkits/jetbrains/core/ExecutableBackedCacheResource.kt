@@ -4,9 +4,10 @@
 package software.aws.toolkits.jetbrains.core
 
 import com.intellij.execution.configurations.GeneralCommandLine
-import software.aws.toolkits.core.ClientConnectionSettings
-import software.aws.toolkits.core.ConnectionSettings
-import software.aws.toolkits.core.credentials.toEnvironmentVariables
+import software.aws.toolkit.core.ClientConnectionSettings
+import software.aws.toolkit.core.ConnectionSettings
+import software.aws.toolkit.core.credentials.toEnvironmentVariables
+import software.aws.toolkit.jetbrains.core.Resource
 import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
 import software.aws.toolkits.jetbrains.core.executables.ExecutableType

@@ -15,9 +15,9 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.stub
 import software.amazon.awssdk.services.s3.model.S3Exception
-import software.aws.toolkits.core.utils.test.retryableAssert
-import software.aws.toolkits.core.utils.touch
-import software.aws.toolkits.jetbrains.core.MockClientManagerRule
+import software.aws.toolkit.core.utils.test.retryableAssert
+import software.aws.toolkit.core.utils.touch
+import software.aws.toolkit.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeContinuationNode
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeDirectoryNode
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeErrorNode

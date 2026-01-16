@@ -5,7 +5,7 @@ package software.aws.toolkits.jetbrains.core.explorer.devToolsTab
 
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import software.aws.toolkits.jetbrains.ToolkitPlaces
+import software.aws.toolkit.jetbrains.ToolkitPlaces
 import software.aws.toolkits.jetbrains.core.explorer.AbstractExplorerTreeToolWindow
 
 class DevToolsToolWindow(project: Project) : AbstractExplorerTreeToolWindow(

@@ -38,10 +38,10 @@ import org.jetbrains.idea.maven.utils.MavenProgressIndicator.MavenProgressTracke
 import org.jetbrains.plugins.gradle.jvmcompat.GradleJvmSupportMatrix
 import org.jetbrains.plugins.gradle.settings.GradleProjectSettings
 import org.jetbrains.plugins.gradle.util.GradleConstants
-import software.aws.toolkits.core.utils.exists
-import software.aws.toolkits.core.utils.inputStream
-import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
-import software.aws.toolkits.jetbrains.utils.rules.addFileToModule
+import software.aws.toolkit.core.utils.exists
+import software.aws.toolkit.core.utils.inputStream
+import software.aws.toolkit.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
+import software.aws.toolkit.jetbrains.utils.rules.addFileToModule
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths

@@ -11,7 +11,7 @@ import com.intellij.execution.configurations.RunnerSettings
 import com.intellij.execution.target.TargetedCommandLineBuilder
 import com.intellij.openapi.options.SettingsEditor
 import org.jdom.Element
-import software.aws.toolkits.core.utils.tryOrNull
+import software.aws.toolkit.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.core.experiments.ToolkitExperiment
 import software.aws.toolkits.jetbrains.core.experiments.isEnabled
 import software.aws.toolkits.resources.message

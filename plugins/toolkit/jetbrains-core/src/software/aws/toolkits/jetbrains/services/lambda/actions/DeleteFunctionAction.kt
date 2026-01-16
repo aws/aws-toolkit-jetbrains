@@ -4,7 +4,7 @@
 package software.aws.toolkits.jetbrains.services.lambda.actions
 
 import software.amazon.awssdk.services.lambda.LambdaClient
-import software.aws.toolkits.jetbrains.core.awsClient
+import software.aws.toolkit.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.explorer.actions.DeleteResourceAction
 import software.aws.toolkits.jetbrains.core.explorer.refreshAwsTree
 import software.aws.toolkits.jetbrains.services.lambda.LambdaFunctionNode

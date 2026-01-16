@@ -8,8 +8,8 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.util.text.DateFormatUtil
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
-import software.aws.toolkits.core.utils.error
-import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkit.core.utils.error
+import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.toolwindow.ToolkitToolWindow
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor.CloudWatchLogGroup
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor.CloudWatchLogStream

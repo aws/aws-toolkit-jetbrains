@@ -4,7 +4,7 @@
 package software.aws.toolkits.jetbrains.services.apprunner.actions
 
 import software.amazon.awssdk.services.apprunner.AppRunnerClient
-import software.aws.toolkits.jetbrains.core.awsClient
+import software.aws.toolkit.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.explorer.actions.DeleteResourceAction
 import software.aws.toolkits.jetbrains.core.explorer.refreshAwsTree
 import software.aws.toolkits.jetbrains.services.apprunner.AppRunnerServiceNode

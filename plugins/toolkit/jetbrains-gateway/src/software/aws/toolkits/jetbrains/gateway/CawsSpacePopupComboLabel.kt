@@ -13,10 +13,10 @@ import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.util.EventDispatcher
-import software.aws.toolkits.core.ClientConnectionSettings
-import software.aws.toolkits.core.utils.error
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.jetbrains.core.AwsResourceCache
+import software.aws.toolkit.core.ClientConnectionSettings
+import software.aws.toolkit.core.utils.error
+import software.aws.toolkit.core.utils.getLogger
+import software.aws.toolkit.jetbrains.core.AwsResourceCache
 import software.aws.toolkits.jetbrains.services.caws.CawsResources
 import software.aws.toolkits.jetbrains.settings.CawsSpaceTracker
 import software.aws.toolkits.jetbrains.ui.ActionPopupComboLabel

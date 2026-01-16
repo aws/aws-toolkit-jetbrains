@@ -6,7 +6,7 @@ package software.aws.toolkits.jetbrains.services.sqs
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Test
-import software.aws.toolkits.core.region.AwsRegion
+import software.aws.toolkit.core.region.AwsRegion
 
 class QueueTest {
     private val defaultRegion = AwsRegion("us-east-1", "US East (N. Virginia)", "aws")

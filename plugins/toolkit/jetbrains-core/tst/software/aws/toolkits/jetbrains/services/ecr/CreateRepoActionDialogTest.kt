@@ -22,8 +22,8 @@ import software.amazon.awssdk.services.ecr.model.CreateRepositoryResponse
 import software.amazon.awssdk.services.ecr.model.RepositoryAlreadyExistsException
 import software.amazon.awssdk.services.ecr.model.SetRepositoryPolicyRequest
 import software.amazon.awssdk.services.ecr.model.SetRepositoryPolicyResponse
-import software.aws.toolkits.core.utils.RuleUtils
-import software.aws.toolkits.jetbrains.core.MockClientManagerRule
+import software.aws.toolkit.core.utils.RuleUtils
+import software.aws.toolkit.jetbrains.core.MockClientManagerRule
 
 class CreateRepoActionDialogTest {
     @Rule

@@ -4,7 +4,7 @@
 package software.aws.toolkits.jetbrains.services.apprunner.resources
 
 import software.amazon.awssdk.services.apprunner.AppRunnerClient
-import software.aws.toolkits.jetbrains.core.ClientBackedCachedResource
+import software.aws.toolkit.jetbrains.core.ClientBackedCachedResource
 
 object AppRunnerResources {
     val LIST_SERVICES = ClientBackedCachedResource(AppRunnerClient::class, "apprunner.listServices") {

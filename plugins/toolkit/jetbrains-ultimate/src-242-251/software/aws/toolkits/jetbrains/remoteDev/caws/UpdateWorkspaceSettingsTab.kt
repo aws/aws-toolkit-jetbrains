@@ -32,9 +32,11 @@ import com.jetbrains.rd.ui.bedsl.link
 import com.jetbrains.rd.util.lifetime.Lifetime
 import com.jetbrains.rdserver.unattendedHost.customization.controlCenter.GatewayControlCenterTabProvider
 import software.amazon.awssdk.services.codecatalyst.CodeCatalystClient
-import software.aws.toolkits.core.utils.error
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.jetbrains.core.awsClient
+import software.aws.toolkit.core.utils.error
+import software.aws.toolkit.core.utils.getLogger
+import software.aws.toolkit.jetbrains.core.awsClient
+import software.aws.toolkit.jetbrains.utils.isCodeCatalystDevEnv
+import software.aws.toolkit.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.core.credentials.sono.CodeCatalystCredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.sono.lazilyGetUserId
 import software.aws.toolkits.jetbrains.services.caws.CawsConstants
@@ -43,8 +45,6 @@ import software.aws.toolkits.jetbrains.services.caws.envclient.CawsEnvironmentCl
 import software.aws.toolkits.jetbrains.services.caws.isSubscriptionFreeTier
 import software.aws.toolkits.jetbrains.services.caws.isSupportedInFreeTier
 import software.aws.toolkits.jetbrains.services.caws.loadParameterDescriptions
-import software.aws.toolkits.jetbrains.utils.isCodeCatalystDevEnv
-import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodecatalystTelemetry
 import software.aws.toolkits.telemetry.CodecatalystUpdateDevEnvironmentLocationType

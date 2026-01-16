@@ -7,8 +7,8 @@ import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
-import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
-import software.aws.toolkits.jetbrains.utils.rules.openFile
+import software.aws.toolkit.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
+import software.aws.toolkit.jetbrains.utils.rules.openFile
 import software.aws.toolkits.resources.message
 
 class CloudFormationTemplateCanDeployTest {

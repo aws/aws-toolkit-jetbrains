@@ -17,8 +17,8 @@ import com.intellij.testFramework.runInEdtAndGet
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
-import software.aws.toolkits.jetbrains.utils.rules.CodeInsightTestFixtureRule
-import software.aws.toolkits.jetbrains.utils.satisfiesKt
+import software.aws.toolkit.jetbrains.utils.rules.CodeInsightTestFixtureRule
+import software.aws.toolkit.jetbrains.utils.satisfiesKt
 
 class ArnPsiReferenceProviderTest {
     @Rule

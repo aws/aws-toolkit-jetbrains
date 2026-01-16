@@ -8,10 +8,10 @@ import com.intellij.openapi.project.Project
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withTimeout
-import software.aws.toolkits.core.utils.AttributeBag
-import software.aws.toolkits.core.utils.AttributeBagKey
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.tryOrNull
+import software.aws.toolkit.core.utils.AttributeBag
+import software.aws.toolkit.core.utils.AttributeBagKey
+import software.aws.toolkit.core.utils.getLogger
+import software.aws.toolkit.core.utils.tryOrNull
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
 

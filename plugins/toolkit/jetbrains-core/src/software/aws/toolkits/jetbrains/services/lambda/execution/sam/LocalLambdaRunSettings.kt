@@ -5,9 +5,9 @@ package software.aws.toolkits.jetbrains.services.lambda.execution.sam
 
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.PathMappingSettings.PathMapping
-import software.aws.toolkits.core.ConnectionSettings
-import software.aws.toolkits.core.lambda.LambdaArchitecture
-import software.aws.toolkits.core.lambda.LambdaRuntime
+import software.aws.toolkit.core.ConnectionSettings
+import software.aws.toolkit.core.lambda.LambdaArchitecture
+import software.aws.toolkit.core.lambda.LambdaRuntime
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions

@@ -17,8 +17,8 @@ import org.jetbrains.yaml.psi.YAMLKeyValue
 import org.jetbrains.yaml.psi.YAMLMapping
 import org.jetbrains.yaml.psi.YAMLScalar
 import org.jetbrains.yaml.psi.YAMLSequence
-import software.aws.toolkits.core.utils.debug
-import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkit.core.utils.debug
+import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationParameter
 import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationTemplate
 import software.aws.toolkits.jetbrains.services.cloudformation.NamedMap

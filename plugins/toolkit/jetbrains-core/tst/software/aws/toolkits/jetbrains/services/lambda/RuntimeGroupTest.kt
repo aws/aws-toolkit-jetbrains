@@ -15,8 +15,8 @@ import org.junit.Rule
 import org.junit.Test
 import org.mockito.kotlin.mock
 import software.amazon.awssdk.services.lambda.model.Runtime
-import software.aws.toolkits.core.lambda.LambdaRuntime
-import software.aws.toolkits.core.lambda.validOrNull
+import software.aws.toolkit.core.lambda.LambdaRuntime
+import software.aws.toolkit.core.lambda.validOrNull
 import software.aws.toolkits.jetbrains.utils.rules.PyTestSdk
 import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
 

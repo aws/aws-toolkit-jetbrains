@@ -10,7 +10,7 @@ import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.ui.dsl.builder.panel
 import software.amazon.awssdk.services.schemas.SchemasClient
-import software.aws.toolkits.core.lambda.LambdaRuntime
+import software.aws.toolkit.core.lambda.LambdaRuntime
 import software.aws.toolkits.jetbrains.services.lambda.BuiltInRuntimeGroups
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup

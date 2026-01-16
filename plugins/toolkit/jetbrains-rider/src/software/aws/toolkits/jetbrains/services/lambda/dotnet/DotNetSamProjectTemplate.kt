@@ -3,7 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.dotnet
 
-import software.aws.toolkits.core.lambda.LambdaRuntime
+import software.aws.toolkit.core.lambda.LambdaRuntime
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SamAppTemplateBased
 import software.aws.toolkits.resources.message
 

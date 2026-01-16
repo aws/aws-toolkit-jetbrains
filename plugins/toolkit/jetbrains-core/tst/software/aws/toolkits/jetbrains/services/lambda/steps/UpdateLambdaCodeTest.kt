@@ -22,8 +22,8 @@ import software.amazon.awssdk.services.lambda.model.UpdateFunctionCodeRequest
 import software.amazon.awssdk.services.lambda.model.UpdateFunctionCodeResponse
 import software.amazon.awssdk.services.lambda.model.UpdateFunctionConfigurationRequest
 import software.amazon.awssdk.services.lambda.model.UpdateFunctionConfigurationResponse
-import software.aws.toolkits.core.utils.test.aString
-import software.aws.toolkits.jetbrains.core.MockClientManagerRule
+import software.aws.toolkit.core.utils.test.aString
+import software.aws.toolkit.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.utils.execution.steps.ConsoleMessageEmitter
 import software.aws.toolkits.jetbrains.utils.execution.steps.Context
 

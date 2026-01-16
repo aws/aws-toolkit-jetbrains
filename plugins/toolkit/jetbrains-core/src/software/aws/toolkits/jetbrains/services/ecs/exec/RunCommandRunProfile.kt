@@ -19,7 +19,7 @@ import com.intellij.execution.runners.ProgramRunner
 import com.intellij.execution.ui.RunContentManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
-import software.aws.toolkits.core.ConnectionSettings
+import software.aws.toolkit.core.ConnectionSettings
 import software.aws.toolkits.jetbrains.services.ecs.ContainerDetails
 import javax.swing.Icon
 

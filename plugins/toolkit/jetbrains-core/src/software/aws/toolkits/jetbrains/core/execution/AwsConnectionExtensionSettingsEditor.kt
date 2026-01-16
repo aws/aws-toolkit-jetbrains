@@ -7,10 +7,10 @@ import com.intellij.execution.configurations.RunConfigurationBase
 import com.intellij.openapi.options.SettingsEditor
 import com.intellij.openapi.project.Project
 import com.intellij.ui.dsl.builder.panel
-import software.aws.toolkits.core.credentials.CredentialIdentifier
-import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
-import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
+import software.aws.toolkit.core.credentials.CredentialIdentifier
+import software.aws.toolkit.jetbrains.core.credentials.AwsConnectionManager
+import software.aws.toolkit.jetbrains.core.credentials.CredentialManager
+import software.aws.toolkit.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.ui.CredentialProviderSelector
 import software.aws.toolkits.resources.message
 import javax.swing.JComponent

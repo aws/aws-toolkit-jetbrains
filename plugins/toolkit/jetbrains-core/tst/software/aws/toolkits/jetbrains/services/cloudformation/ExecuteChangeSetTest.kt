@@ -21,7 +21,7 @@ import software.amazon.awssdk.services.cloudformation.model.ExecuteChangeSetRequ
 import software.amazon.awssdk.services.cloudformation.model.ExecuteChangeSetResponse
 import software.amazon.awssdk.services.cloudformation.model.Stack
 import software.amazon.awssdk.services.cloudformation.model.StackStatus
-import software.aws.toolkits.jetbrains.core.MockClientManagerRule
+import software.aws.toolkit.jetbrains.core.MockClientManagerRule
 
 class ExecuteChangeSetTest {
     @JvmField

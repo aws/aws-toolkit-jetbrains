@@ -11,7 +11,7 @@ import com.intellij.openapi.projectRoots.JavaSdkType
 import com.intellij.openapi.projectRoots.JavaSdkVersion
 import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.projectRoots.SdkType
-import software.aws.toolkits.core.lambda.LambdaRuntime
+import software.aws.toolkit.core.lambda.LambdaRuntime
 import software.aws.toolkits.jetbrains.services.lambda.BuiltInRuntimeGroups
 import software.aws.toolkits.jetbrains.services.lambda.SdkBasedRuntimeGroup
 

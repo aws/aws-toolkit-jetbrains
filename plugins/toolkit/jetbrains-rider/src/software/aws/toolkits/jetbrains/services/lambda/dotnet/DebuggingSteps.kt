@@ -10,7 +10,7 @@ import com.intellij.util.text.nullize
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.intellij.lang.annotations.Language
-import software.aws.toolkits.core.utils.AttributeBagKey
+import software.aws.toolkit.core.utils.AttributeBagKey
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamDebugSupport
 import software.aws.toolkits.jetbrains.services.lambda.steps.GetPorts.Companion.DEBUG_PORTS
 import software.aws.toolkits.jetbrains.utils.execution.steps.Context

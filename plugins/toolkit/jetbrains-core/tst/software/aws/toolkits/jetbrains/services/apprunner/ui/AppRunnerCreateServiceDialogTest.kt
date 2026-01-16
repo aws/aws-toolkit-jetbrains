@@ -16,9 +16,9 @@ import software.amazon.awssdk.services.apprunner.model.ProviderType
 import software.amazon.awssdk.services.apprunner.model.Runtime
 import software.amazon.awssdk.services.apprunner.model.SourceCodeVersionType
 import software.amazon.awssdk.services.iam.model.Role
-import software.aws.toolkits.core.utils.RuleUtils
-import software.aws.toolkits.core.utils.test.aString
-import software.aws.toolkits.jetbrains.core.MockResourceCacheRule
+import software.aws.toolkit.core.utils.RuleUtils
+import software.aws.toolkit.core.utils.test.aString
+import software.aws.toolkit.jetbrains.core.MockResourceCacheRule
 import software.aws.toolkits.jetbrains.services.apprunner.resources.AppRunnerResources
 import software.aws.toolkits.jetbrains.services.iam.IamResources
 import java.util.concurrent.CompletableFuture

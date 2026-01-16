@@ -16,7 +16,7 @@ import com.jetbrains.python.console.PythonDebugLanguageConsoleView
 import com.jetbrains.python.debugger.PyDebugProcess
 import com.jetbrains.python.debugger.PyDebugRunner
 import com.jetbrains.python.sdk.PythonSdkType
-import software.aws.toolkits.core.lambda.LambdaRuntime
+import software.aws.toolkit.core.lambda.LambdaRuntime
 import software.aws.toolkits.jetbrains.services.PathMapper
 import software.aws.toolkits.jetbrains.services.PathMapping
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.ImageDebugSupport

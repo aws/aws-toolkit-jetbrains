@@ -14,10 +14,10 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import software.aws.toolkits.core.rules.SystemPropertyHelper
+import software.aws.toolkit.core.rules.SystemPropertyHelper
+import software.aws.toolkit.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.core.credentials.CredentialsFileHelpNotificationProvider.CredentialFileNotificationPanel
 import software.aws.toolkits.jetbrains.core.getEditorNotifications
-import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
 
 @RunsInEdt
 class CredentialsFileHelpNotificationProviderTest {

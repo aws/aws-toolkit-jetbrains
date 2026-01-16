@@ -11,11 +11,11 @@ import com.intellij.execution.process.ProcessOutput
 import com.intellij.execution.process.ProcessOutputTypes
 import com.intellij.execution.util.ExecUtil
 import com.intellij.openapi.util.Key
-import software.aws.toolkits.core.region.AwsRegion
-import software.aws.toolkits.core.utils.debug
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.info
-import software.aws.toolkits.core.utils.warn
+import software.aws.toolkit.core.region.AwsRegion
+import software.aws.toolkit.core.utils.debug
+import software.aws.toolkit.core.utils.getLogger
+import software.aws.toolkit.core.utils.info
+import software.aws.toolkit.core.utils.warn
 import software.aws.toolkits.jetbrains.gateway.GitWrappers
 import java.nio.file.Path
 import java.time.Duration

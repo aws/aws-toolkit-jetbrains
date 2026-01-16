@@ -10,9 +10,9 @@ import com.intellij.openapi.util.SystemInfo
 import com.intellij.util.io.Decompressor
 import com.intellij.util.system.CpuArch
 import org.jetbrains.annotations.VisibleForTesting
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.jetbrains.core.getTextFromUrl
-import software.aws.toolkits.jetbrains.core.saveFileFromUrl
+import software.aws.toolkit.core.utils.getLogger
+import software.aws.toolkit.jetbrains.core.getTextFromUrl
+import software.aws.toolkit.jetbrains.core.saveFileFromUrl
 import software.aws.toolkits.jetbrains.core.tools.BaseToolType
 import software.aws.toolkits.jetbrains.core.tools.DocumentedToolType
 import software.aws.toolkits.jetbrains.core.tools.FourPartVersion

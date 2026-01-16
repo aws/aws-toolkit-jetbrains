@@ -11,9 +11,9 @@ import com.intellij.psi.codeStyle.CodeStyleManager
 import com.intellij.psi.util.PsiUtilCore
 import com.intellij.testFramework.LightVirtualFile
 import software.amazon.awssdk.services.cloudcontrol.CloudControlClient
-import software.aws.toolkits.core.ConnectionSettings
+import software.aws.toolkit.core.ConnectionSettings
+import software.aws.toolkit.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.services.dynamic.explorer.OpenResourceModelSourceAction
-import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.DynamicresourceTelemetry
 

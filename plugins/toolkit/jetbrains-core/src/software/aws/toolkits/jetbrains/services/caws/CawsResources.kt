@@ -4,7 +4,7 @@
 package software.aws.toolkits.jetbrains.services.caws
 
 import software.amazon.awssdk.services.codecatalyst.CodeCatalystClient
-import software.aws.toolkits.jetbrains.core.ClientBackedCachedResource
+import software.aws.toolkit.jetbrains.core.ClientBackedCachedResource
 import java.time.Duration
 
 object CawsResources {

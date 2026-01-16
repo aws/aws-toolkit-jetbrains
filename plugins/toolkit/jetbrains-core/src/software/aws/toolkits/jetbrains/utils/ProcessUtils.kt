@@ -5,8 +5,8 @@ package software.aws.toolkits.jetbrains.utils
 
 import com.intellij.execution.process.ProcessOutput
 import org.slf4j.Logger
-import software.aws.toolkits.core.utils.debug
-import software.aws.toolkits.core.utils.info
+import software.aws.toolkit.core.utils.debug
+import software.aws.toolkit.core.utils.info
 
 fun ProcessOutput.checkSuccess(logger: Logger): Boolean {
     val code = exitCode

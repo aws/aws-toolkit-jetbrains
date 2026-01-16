@@ -11,8 +11,8 @@ import org.junit.rules.TemporaryFolder
 import software.amazon.awssdk.http.apache.ApacheHttpClient
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
-import software.aws.toolkits.core.rules.S3TemporaryBucketRule
-import software.aws.toolkits.jetbrains.utils.value
+import software.aws.toolkit.core.rules.S3TemporaryBucketRule
+import software.aws.toolkit.jetbrains.utils.value
 
 class TransferUtilsIntegrationTest {
     private val s3Client = S3Client.builder()

@@ -18,7 +18,6 @@ import com.jetbrains.rd.framework.Protocol
 import com.jetbrains.rd.framework.Serializers
 import com.jetbrains.rd.framework.SocketWire
 import com.jetbrains.rd.util.lifetime.isAlive
-import com.jetbrains.rd.util.lifetime.onTermination
 import com.jetbrains.rd.util.put
 import com.jetbrains.rd.util.reactive.adviseUntil
 import com.jetbrains.rdclient.protocol.RdDispatcher
@@ -34,12 +33,12 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.jetbrains.concurrency.AsyncPromise
-import software.aws.toolkits.core.utils.debug
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.warn
-import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
-import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
-import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineUiContext
+import software.aws.toolkit.core.utils.debug
+import software.aws.toolkit.core.utils.getLogger
+import software.aws.toolkit.core.utils.warn
+import software.aws.toolkit.jetbrains.core.coroutines.disposableCoroutineScope
+import software.aws.toolkit.jetbrains.core.coroutines.getCoroutineBgContext
+import software.aws.toolkit.jetbrains.core.coroutines.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.services.lambda.dotnet.FindDockerContainer.Companion.DOCKER_CONTAINER
 import software.aws.toolkits.jetbrains.services.lambda.dotnet.FindPid.Companion.DOTNET_PID
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamDebugSupport

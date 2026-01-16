@@ -21,7 +21,7 @@ import com.intellij.platform.HideableProjectGenerator
 import com.intellij.platform.ProjectGeneratorPeer
 import com.intellij.platform.ProjectTemplate
 import icons.AwsIcons
-import software.aws.toolkits.jetbrains.core.help.HelpIds
+import software.aws.toolkit.jetbrains.core.help.HelpIds
 import software.aws.toolkits.resources.message
 import javax.swing.Icon
 import javax.swing.JComponent

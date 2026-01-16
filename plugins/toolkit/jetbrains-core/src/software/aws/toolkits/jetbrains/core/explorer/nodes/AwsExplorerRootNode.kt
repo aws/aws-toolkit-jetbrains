@@ -7,7 +7,7 @@ import com.intellij.ide.projectView.PresentationData
 import com.intellij.ide.util.treeView.AbstractTreeNode
 import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.project.Project
-import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
+import software.aws.toolkit.jetbrains.core.credentials.AwsConnectionManager
 
 /**
  * The root node of the AWS explorer tree.

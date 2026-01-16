@@ -15,7 +15,7 @@ import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.runInEdt
 import org.jetbrains.concurrency.AsyncPromise
 import org.jetbrains.concurrency.Promise
-import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
+import software.aws.toolkit.jetbrains.utils.pluginAwareExecuteOnPooledThread
 
 class RemoteLambdaRunner : AsyncProgramRunner<RunnerSettings>() {
     override fun getRunnerId(): String = "Remote AWS Lambda"

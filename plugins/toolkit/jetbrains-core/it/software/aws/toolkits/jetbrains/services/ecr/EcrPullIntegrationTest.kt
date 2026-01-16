@@ -14,7 +14,7 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.ecr.EcrClient
-import software.aws.toolkits.core.rules.EcrTemporaryRepositoryRule
+import software.aws.toolkit.core.rules.EcrTemporaryRepositoryRule
 import software.aws.toolkits.jetbrains.core.docker.ToolkitDockerAdapter
 import software.aws.toolkits.jetbrains.core.docker.getDockerServerRuntimeFacade
 import software.aws.toolkits.jetbrains.services.ecr.resources.Repository

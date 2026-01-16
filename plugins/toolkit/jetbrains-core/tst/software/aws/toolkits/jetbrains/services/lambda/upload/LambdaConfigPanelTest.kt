@@ -17,12 +17,12 @@ import org.junit.rules.TemporaryFolder
 import software.amazon.awssdk.services.iam.model.Role
 import software.amazon.awssdk.services.lambda.model.PackageType
 import software.amazon.awssdk.services.lambda.model.Runtime
-import software.aws.toolkits.core.utils.test.aString
-import software.aws.toolkits.jetbrains.core.MockResourceCacheRule
+import software.aws.toolkit.core.utils.test.aString
+import software.aws.toolkit.jetbrains.core.MockResourceCacheRule
+import software.aws.toolkit.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
+import software.aws.toolkit.jetbrains.utils.rules.openClass
 import software.aws.toolkits.jetbrains.services.iam.IamResources
 import software.aws.toolkits.jetbrains.services.iam.IamRole
-import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
-import software.aws.toolkits.jetbrains.utils.rules.openClass
 import software.aws.toolkits.jetbrains.utils.waitToLoad
 
 class LambdaConfigPanelTest {

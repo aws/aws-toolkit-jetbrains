@@ -19,17 +19,17 @@ import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.yaml.YAMLFileType
 import software.amazon.awssdk.services.cloudformation.model.StackSummary
-import software.aws.toolkits.jetbrains.ToolkitPlaces
+import software.aws.toolkit.jetbrains.ToolkitPlaces
+import software.aws.toolkit.jetbrains.ui.KeyValueTextField
+import software.aws.toolkit.jetbrains.utils.computeOnEdt
+import software.aws.toolkit.jetbrains.utils.notifyError
+import software.aws.toolkit.jetbrains.utils.ui.find
 import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
 import software.aws.toolkits.jetbrains.core.executables.getExecutable
 import software.aws.toolkits.jetbrains.services.cloudformation.Parameter
 import software.aws.toolkits.jetbrains.services.cloudformation.validateSamTemplateHasResources
-import software.aws.toolkits.jetbrains.ui.KeyValueTextField
 import software.aws.toolkits.jetbrains.ui.ResourceSelector
-import software.aws.toolkits.jetbrains.utils.computeOnEdt
-import software.aws.toolkits.jetbrains.utils.notifyError
-import software.aws.toolkits.jetbrains.utils.ui.find
 import software.aws.toolkits.resources.message
 import java.util.regex.PatternSyntaxException
 

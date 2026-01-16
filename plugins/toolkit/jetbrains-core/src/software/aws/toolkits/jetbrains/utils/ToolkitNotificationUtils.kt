@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.utils
 import com.intellij.notification.NotificationListener
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
+import software.aws.toolkit.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.core.credentials.ChangeSettingsMode
 import software.aws.toolkits.jetbrains.core.credentials.ConfigureAwsConnectionAction
 import software.aws.toolkits.jetbrains.settings.ToolkitSettingsConfigurable

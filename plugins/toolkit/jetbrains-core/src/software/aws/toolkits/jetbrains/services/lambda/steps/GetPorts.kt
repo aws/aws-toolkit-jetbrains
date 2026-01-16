@@ -4,7 +4,7 @@
 package software.aws.toolkits.jetbrains.services.lambda.steps
 
 import com.intellij.util.net.NetUtils
-import software.aws.toolkits.core.utils.AttributeBagKey
+import software.aws.toolkit.core.utils.AttributeBagKey
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.LocalLambdaRunSettings
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.resolveDebuggerSupport
 import software.aws.toolkits.jetbrains.utils.execution.steps.Context

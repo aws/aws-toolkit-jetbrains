@@ -8,8 +8,8 @@ import com.intellij.openapi.progress.ProgressManager
 import software.amazon.awssdk.services.codecatalyst.CodeCatalystClient
 import software.amazon.awssdk.services.codecatalyst.model.DevEnvironmentStatus
 import software.amazon.awssdk.services.codecatalyst.model.GetDevEnvironmentResponse
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.info
+import software.aws.toolkit.core.utils.getLogger
+import software.aws.toolkit.core.utils.info
 import software.aws.toolkits.resources.message
 import kotlin.system.measureTimeMillis
 

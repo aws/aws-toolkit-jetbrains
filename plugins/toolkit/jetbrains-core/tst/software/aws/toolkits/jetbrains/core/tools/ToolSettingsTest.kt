@@ -7,9 +7,9 @@ import com.intellij.testFramework.ApplicationRule
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
-import software.aws.toolkits.core.utils.test.aString
-import software.aws.toolkits.jetbrains.utils.deserializeState
-import software.aws.toolkits.jetbrains.utils.serializeState
+import software.aws.toolkit.core.utils.test.aString
+import software.aws.toolkit.jetbrains.utils.deserializeState
+import software.aws.toolkit.jetbrains.utils.serializeState
 import java.nio.file.Path
 
 class ToolSettingsTest {

@@ -11,6 +11,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.services.toolkittelemetry.model.Sentiment
+import software.aws.toolkit.jetbrains.ui.feedback.FeedbackDialog
 
 class FeedbackTest {
     @Rule

@@ -14,8 +14,12 @@
     <incompatible-with>com.intellij.modules.python</incompatible-with>
     <incompatible-with>com.intellij.java</incompatible-with>
 
+    <xi:include href="/META-INF/module-core.xml" />
+
     <extensions defaultExtensionNs="com.intellij">
-        <applicationService serviceInterface="software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager"
-                            serviceImplementation="software.aws.toolkits.jetbrains.core.credentials.DefaultToolkitConnectionManager"/>
+        <applicationService serviceInterface="software.aws.toolkit.jetbrains.core.credentials.ToolkitConnectionManager"
+                            serviceImplementation="software.aws.toolkit.jetbrains.core.credentials.DefaultToolkitConnectionManager"/>
+<!--        <applicationService serviceImplementation="migration.software.aws.toolkits.jetbrains.core.coroutines.PluginCoroutineScopeTracker"/>-->
+        <projectService serviceImplementation="migration.software.aws.toolkit.jetbrains.core.coroutines.PluginCoroutineScopeTracker"/>
     </extensions>
 </idea-plugin>

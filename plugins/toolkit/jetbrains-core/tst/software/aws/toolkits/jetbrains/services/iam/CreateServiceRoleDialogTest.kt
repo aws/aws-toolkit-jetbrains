@@ -20,8 +20,8 @@ import software.amazon.awssdk.services.iam.model.CreateRoleRequest
 import software.amazon.awssdk.services.iam.model.CreateRoleResponse
 import software.amazon.awssdk.services.iam.model.DeleteRoleRequest
 import software.amazon.awssdk.services.iam.model.DeleteRoleResponse
-import software.aws.toolkits.core.utils.RuleUtils
-import software.aws.toolkits.jetbrains.core.MockClientManagerRule
+import software.aws.toolkit.core.utils.RuleUtils
+import software.aws.toolkit.jetbrains.core.MockClientManagerRule
 
 class CreateServiceRoleDialogTest {
     private lateinit var client: IamClient

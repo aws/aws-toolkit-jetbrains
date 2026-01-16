@@ -18,9 +18,9 @@ import com.intellij.ui.SearchTextField
 import com.intellij.ui.components.breadcrumbs.Breadcrumbs
 import kotlinx.coroutines.launch
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
-import software.aws.toolkits.jetbrains.core.awsClient
-import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
-import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineUiContext
+import software.aws.toolkit.jetbrains.core.awsClient
+import software.aws.toolkit.jetbrains.core.coroutines.disposableCoroutineScope
+import software.aws.toolkit.jetbrains.core.coroutines.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogsActor
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamEntry
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.OpenCurrentInEditorAction

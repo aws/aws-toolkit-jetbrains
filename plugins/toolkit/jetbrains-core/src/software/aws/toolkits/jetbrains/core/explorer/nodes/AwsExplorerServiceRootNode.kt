@@ -4,8 +4,8 @@
 package software.aws.toolkits.jetbrains.core.explorer.nodes
 
 import com.intellij.openapi.project.Project
-import software.aws.toolkits.jetbrains.core.Resource
-import software.aws.toolkits.jetbrains.core.getResourceNow
+import software.aws.toolkit.jetbrains.core.Resource
+import software.aws.toolkit.jetbrains.core.getResourceNow
 
 /**
  * Top level node for any AWS service node

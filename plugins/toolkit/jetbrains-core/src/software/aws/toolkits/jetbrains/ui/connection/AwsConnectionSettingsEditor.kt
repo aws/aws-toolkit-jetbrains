@@ -12,10 +12,10 @@ import com.intellij.openapi.project.Project
 import com.intellij.util.xmlb.XmlSerializer
 import com.intellij.util.xmlb.annotations.Property
 import org.jdom.Element
-import software.aws.toolkits.core.credentials.CredentialProviderNotFoundException
-import software.aws.toolkits.core.region.AwsRegion
-import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
-import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
+import software.aws.toolkit.core.credentials.CredentialProviderNotFoundException
+import software.aws.toolkit.core.region.AwsRegion
+import software.aws.toolkit.jetbrains.core.credentials.CredentialManager
+import software.aws.toolkit.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.resources.message
 import javax.swing.JComponent
 

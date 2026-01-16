@@ -5,8 +5,8 @@ package software.aws.toolkits.jetbrains.core.explorer.nodes
 
 import com.intellij.execution.ExecutionException
 import com.intellij.openapi.project.Project
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.info
+import software.aws.toolkit.core.utils.getLogger
+import software.aws.toolkit.core.utils.info
 
 /**
  * Implemented by explorer resources that have children

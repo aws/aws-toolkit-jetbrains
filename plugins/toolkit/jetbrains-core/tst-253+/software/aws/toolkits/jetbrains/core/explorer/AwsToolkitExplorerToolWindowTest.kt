@@ -8,7 +8,7 @@ import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.testFramework.HeavyPlatformTestCase
 import com.intellij.testFramework.runInEdtAndGet
 import org.assertj.core.api.Assertions.assertThat
-import software.aws.toolkits.core.utils.test.aString
+import software.aws.toolkit.core.utils.test.aString
 import software.aws.toolkits.jetbrains.core.ToolWindowHeadlessManagerImpl
 
 class AwsToolkitExplorerToolWindowTest : HeavyPlatformTestCase() {
@@ -38,7 +38,7 @@ class AwsToolkitExplorerToolWindowTest : HeavyPlatformTestCase() {
                         AwsToolkitExplorerToolWindow.EXPLORER_TAB_ID
                 }
             )
-            assertThat(sut.state.selectedTab).isEqualTo(AwsToolkitExplorerToolWindow.Q_TAB_ID)
+            assertThat(sut.state.selectedTab).isEqualTo(AwsToolkitExplorerToolWindow.EXPLORER_TAB_ID)
 
             sut.loadState(
                 AwsToolkitExplorerToolWindowState().apply {
@@ -46,7 +46,7 @@ class AwsToolkitExplorerToolWindowTest : HeavyPlatformTestCase() {
                         AwsToolkitExplorerToolWindow.DEVTOOLS_TAB_ID
                 }
             )
-            assertThat(sut.state.selectedTab).isEqualTo(AwsToolkitExplorerToolWindow.Q_TAB_ID)
+            assertThat(sut.state.selectedTab).isEqualTo(AwsToolkitExplorerToolWindow.EXPLORER_TAB_ID)
         }
     }
 

@@ -6,7 +6,7 @@ package software.aws.toolkits.jetbrains.services.sqs
 import com.intellij.openapi.project.Project
 import icons.AwsIcons
 import software.amazon.awssdk.services.sqs.SqsClient
-import software.aws.toolkits.jetbrains.core.credentials.activeRegion
+import software.aws.toolkit.jetbrains.core.credentials.activeRegion
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerResourceNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceNode

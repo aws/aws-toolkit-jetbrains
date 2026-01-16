@@ -10,8 +10,8 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.services.schemas.model.DescribeSchemaResponse
-import software.aws.toolkits.jetbrains.core.MockResourceCacheRule
-import software.aws.toolkits.jetbrains.core.credentials.MockAwsConnectionManager.ProjectAccountSettingsManagerRule
+import software.aws.toolkit.jetbrains.core.MockResourceCacheRule
+import software.aws.toolkit.jetbrains.core.credentials.MockAwsConnectionManager.ProjectAccountSettingsManagerRule
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SchemaResourceSelector.Companion.DEFAULT_EVENT_DETAIL_TYPE
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SchemaResourceSelector.Companion.DEFAULT_EVENT_SOURCE
 import software.aws.toolkits.jetbrains.services.schemas.SchemaTemplateParameters

@@ -7,7 +7,7 @@ import com.intellij.testFramework.ProjectRule
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
-import software.aws.toolkits.jetbrains.core.id
+import software.aws.toolkit.jetbrains.core.id
 import software.aws.toolkits.jetbrains.services.dynamic.CloudControlApiResources
 import software.aws.toolkits.jetbrains.services.s3.resources.S3Resources
 

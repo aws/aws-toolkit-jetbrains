@@ -6,8 +6,8 @@ package software.aws.toolkits.jetbrains.services.s3.bucketActions
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import software.amazon.awssdk.services.s3.S3Client
-import software.aws.toolkits.core.s3.deleteBucketAndContents
-import software.aws.toolkits.jetbrains.core.awsClient
+import software.aws.toolkit.core.s3.deleteBucketAndContents
+import software.aws.toolkit.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.explorer.actions.DeleteResourceAction
 import software.aws.toolkits.jetbrains.core.explorer.refreshAwsTree
 import software.aws.toolkits.jetbrains.services.s3.S3BucketNode

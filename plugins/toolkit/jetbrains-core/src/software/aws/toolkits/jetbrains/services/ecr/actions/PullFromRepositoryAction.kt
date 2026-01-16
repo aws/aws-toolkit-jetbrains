@@ -14,9 +14,9 @@ import com.intellij.ui.dsl.builder.panel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import software.amazon.awssdk.services.ecr.EcrClient
-import software.aws.toolkits.jetbrains.core.awsClient
-import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
-import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
+import software.aws.toolkit.jetbrains.core.awsClient
+import software.aws.toolkit.jetbrains.core.coroutines.getCoroutineBgContext
+import software.aws.toolkit.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.core.docker.DockerRuntimeFacade
 import software.aws.toolkits.jetbrains.core.docker.ToolkitDockerAdapter
 import software.aws.toolkits.jetbrains.services.ecr.EcrLogin

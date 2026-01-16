@@ -10,7 +10,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.services.sqs.SqsClient
-import software.aws.toolkits.jetbrains.core.MockClientManagerRule
+import software.aws.toolkit.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.services.sqs.actions.SubscribeSnsAction
 
 class SubscribeSnsActionTest {

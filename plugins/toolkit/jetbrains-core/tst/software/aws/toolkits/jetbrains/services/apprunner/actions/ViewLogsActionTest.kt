@@ -26,8 +26,8 @@ import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.amazon.awssdk.services.cloudwatchlogs.model.DescribeLogGroupsRequest
 import software.amazon.awssdk.services.cloudwatchlogs.model.DescribeLogGroupsResponse
 import software.amazon.awssdk.services.cloudwatchlogs.model.LogGroup
-import software.aws.toolkits.core.utils.test.aString
-import software.aws.toolkits.jetbrains.core.MockClientManagerRule
+import software.aws.toolkit.core.utils.test.aString
+import software.aws.toolkit.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.ToolWindowHeadlessManagerImpl
 import software.aws.toolkits.jetbrains.core.toolwindow.ToolkitToolWindow
 import software.aws.toolkits.jetbrains.services.apprunner.AppRunnerServiceNode

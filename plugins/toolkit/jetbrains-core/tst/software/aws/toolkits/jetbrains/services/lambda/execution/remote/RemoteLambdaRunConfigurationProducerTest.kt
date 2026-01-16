@@ -16,8 +16,8 @@ import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.services.lambda.model.PackageType
 import software.amazon.awssdk.services.lambda.model.Runtime
-import software.aws.toolkits.core.region.AwsRegion
-import software.aws.toolkits.jetbrains.core.credentials.MockAwsConnectionManager
+import software.aws.toolkit.core.region.AwsRegion
+import software.aws.toolkit.jetbrains.core.credentials.MockAwsConnectionManager
 import software.aws.toolkits.jetbrains.services.iam.IamRole
 import software.aws.toolkits.jetbrains.services.lambda.LambdaFunction
 

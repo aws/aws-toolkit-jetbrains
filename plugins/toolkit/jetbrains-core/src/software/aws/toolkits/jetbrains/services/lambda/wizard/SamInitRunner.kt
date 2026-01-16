@@ -9,8 +9,8 @@ import com.intellij.execution.process.CapturingProcessHandler
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.info
+import software.aws.toolkit.core.utils.getLogger
+import software.aws.toolkit.core.utils.info
 import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
 import software.aws.toolkits.jetbrains.core.executables.getExecutable

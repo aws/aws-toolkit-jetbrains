@@ -6,7 +6,7 @@ package software.aws.toolkits.jetbrains.core.credentials.sono
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.DumbAwareAction
-import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
+import software.aws.toolkit.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
 
 class SonoLogoutAction : DumbAwareAction() {
     override fun getActionUpdateThread() = ActionUpdateThread.BGT

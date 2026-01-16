@@ -15,7 +15,7 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import software.aws.toolkits.jetbrains.utils.rules.CodeInsightTestFixtureRule
+import software.aws.toolkit.jetbrains.utils.rules.CodeInsightTestFixtureRule
 import java.io.File
 
 class DockerfileParserTest {

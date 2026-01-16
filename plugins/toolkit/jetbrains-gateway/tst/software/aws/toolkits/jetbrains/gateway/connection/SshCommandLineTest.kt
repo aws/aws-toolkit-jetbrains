@@ -22,7 +22,7 @@ import org.junit.Assume.assumeFalse
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import software.aws.toolkits.core.utils.readText
+import software.aws.toolkit.core.utils.readText
 import java.util.Base64
 
 class SshCommandLineTest {

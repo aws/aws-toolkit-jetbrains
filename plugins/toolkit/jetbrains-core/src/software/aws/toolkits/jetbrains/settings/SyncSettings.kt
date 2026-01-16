@@ -9,7 +9,7 @@ import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleServiceManager
 import software.aws.toolkits.jetbrains.services.lambda.deploy.CreateCapabilities
 
-@State(name = "syncSettings")
+@State(name = "toolkitSyncSettings")
 class SyncSettings : PersistentStateComponent<SyncConfigs> {
     private var state = SyncConfigs()
 

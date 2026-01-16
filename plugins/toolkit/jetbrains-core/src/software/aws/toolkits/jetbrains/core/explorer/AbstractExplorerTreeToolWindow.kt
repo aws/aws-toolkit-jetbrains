@@ -33,11 +33,11 @@ import com.intellij.ui.treeStructure.Tree
 import com.intellij.util.concurrency.Invoker
 import com.intellij.util.ui.UIUtil
 import com.intellij.util.ui.tree.TreeUtil
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
-import software.aws.toolkits.jetbrains.core.credentials.pinning.ConnectionPinningManagerListener
-import software.aws.toolkits.jetbrains.core.credentials.pinning.FeatureWithPinnedConnection
-import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
+import software.aws.toolkit.jetbrains.core.credentials.ToolkitConnection
+import software.aws.toolkit.jetbrains.core.credentials.ToolkitConnectionManagerListener
+import software.aws.toolkit.jetbrains.core.credentials.pinning.ConnectionPinningManagerListener
+import software.aws.toolkit.jetbrains.core.credentials.pinning.FeatureWithPinnedConnection
+import software.aws.toolkit.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.AbstractActionTreeNode
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.ActionGroupOnRightClick
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.PinnedConnectionNode

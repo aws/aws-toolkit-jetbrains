@@ -10,10 +10,10 @@ import com.intellij.testFramework.TestActionEvent
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
-import software.aws.toolkits.core.credentials.CredentialIdentifier
-import software.aws.toolkits.core.credentials.aCredentialsIdentifier
-import software.aws.toolkits.core.region.AwsRegion
-import software.aws.toolkits.core.region.anAwsRegion
+import software.aws.toolkit.core.credentials.CredentialIdentifier
+import software.aws.toolkit.core.credentials.aCredentialsIdentifier
+import software.aws.toolkit.core.region.AwsRegion
+import software.aws.toolkit.core.region.anAwsRegion
 
 class SettingsSelectorComboBoxActionTest {
     @Rule

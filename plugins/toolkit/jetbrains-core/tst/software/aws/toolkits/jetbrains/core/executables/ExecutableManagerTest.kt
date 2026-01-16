@@ -10,11 +10,11 @@ import org.assertj.core.api.ObjectAssert
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import software.aws.toolkits.core.utils.test.retryableAssert
-import software.aws.toolkits.core.utils.writeText
-import software.aws.toolkits.jetbrains.utils.isInstanceOf
-import software.aws.toolkits.jetbrains.utils.value
-import software.aws.toolkits.jetbrains.utils.wait
+import software.aws.toolkit.core.utils.test.retryableAssert
+import software.aws.toolkit.core.utils.writeText
+import software.aws.toolkit.jetbrains.utils.isInstanceOf
+import software.aws.toolkit.jetbrains.utils.value
+import software.aws.toolkit.jetbrains.utils.wait
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.Duration

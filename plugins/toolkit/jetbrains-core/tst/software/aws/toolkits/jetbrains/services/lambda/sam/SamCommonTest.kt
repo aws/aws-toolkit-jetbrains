@@ -11,11 +11,11 @@ import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
-import software.aws.toolkits.core.utils.exists
+import software.aws.toolkit.core.utils.exists
+import software.aws.toolkit.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
+import software.aws.toolkit.jetbrains.utils.satisfiesKt
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommonTestUtils.makeATestSam
-import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
-import software.aws.toolkits.jetbrains.utils.satisfiesKt
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.concurrent.TimeUnit

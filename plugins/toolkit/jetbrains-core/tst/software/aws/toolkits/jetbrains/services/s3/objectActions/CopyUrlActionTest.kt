@@ -12,7 +12,7 @@ import org.junit.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.stub
-import software.aws.toolkits.jetbrains.core.credentials.MockAwsConnectionManager
+import software.aws.toolkit.jetbrains.core.credentials.MockAwsConnectionManager
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeContinuationNode
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeDirectoryNode
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeErrorNode

@@ -8,7 +8,7 @@ import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.DumbAwareAction
-import software.aws.toolkits.jetbrains.services.amazonq.QConstants
+import software.aws.toolkit.jetbrains.services.amazonq.QConstants
 import java.net.URI
 
 class CredentialsHelpAction : DumbAwareAction(AllIcons.General.ContextHelp) {

@@ -14,7 +14,7 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyBlocking
-import software.aws.toolkits.core.utils.test.retryableAssert
+import software.aws.toolkit.core.utils.test.retryableAssert
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeContinuationNode
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeDirectoryNode
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeErrorNode

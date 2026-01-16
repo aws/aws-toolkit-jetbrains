@@ -15,13 +15,13 @@ import org.junit.Test
 import software.amazon.awssdk.services.iam.model.Role
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.amazon.awssdk.services.s3.model.Bucket
-import software.aws.toolkits.core.utils.test.aString
-import software.aws.toolkits.jetbrains.core.MockResourceCacheRule
-import software.aws.toolkits.jetbrains.core.credentials.activeRegion
+import software.aws.toolkit.core.utils.test.aString
+import software.aws.toolkit.jetbrains.core.MockResourceCacheRule
+import software.aws.toolkit.jetbrains.core.credentials.activeRegion
+import software.aws.toolkit.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
+import software.aws.toolkit.jetbrains.utils.rules.openClass
 import software.aws.toolkits.jetbrains.services.iam.IamResources
 import software.aws.toolkits.jetbrains.services.s3.resources.S3Resources
-import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
-import software.aws.toolkits.jetbrains.utils.rules.openClass
 
 class CreateFunctionPanelTest {
     @Rule

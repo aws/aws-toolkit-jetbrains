@@ -4,7 +4,7 @@
 package software.aws.toolkits.jetbrains.core.tools
 
 import com.intellij.openapi.ui.ValidationInfo
-import software.aws.toolkits.core.utils.htmlWrap
+import software.aws.toolkit.core.utils.htmlWrap
 import software.aws.toolkits.resources.message
 import javax.swing.JComponent
 

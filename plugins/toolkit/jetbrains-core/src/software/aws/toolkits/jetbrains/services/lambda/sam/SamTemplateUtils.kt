@@ -14,11 +14,11 @@ import com.intellij.testFramework.LightVirtualFile
 import software.amazon.awssdk.services.lambda.model.Architecture
 import software.amazon.awssdk.services.lambda.model.PackageType
 import software.amazon.awssdk.services.lambda.model.Runtime
-import software.aws.toolkits.core.utils.exists
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.inputStream
-import software.aws.toolkits.core.utils.warn
-import software.aws.toolkits.core.utils.writeText
+import software.aws.toolkit.core.utils.exists
+import software.aws.toolkit.core.utils.getLogger
+import software.aws.toolkit.core.utils.inputStream
+import software.aws.toolkit.core.utils.warn
+import software.aws.toolkit.core.utils.writeText
 import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationTemplate
 import software.aws.toolkits.jetbrains.services.cloudformation.Function
 import software.aws.toolkits.jetbrains.services.cloudformation.SERVERLESS_FUNCTION_TYPE

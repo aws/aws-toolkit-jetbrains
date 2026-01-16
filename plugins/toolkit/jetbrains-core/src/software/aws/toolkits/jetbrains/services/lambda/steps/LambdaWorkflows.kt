@@ -5,9 +5,9 @@ package software.aws.toolkits.jetbrains.services.lambda.steps
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import software.aws.toolkits.core.credentials.toEnvironmentVariables
-import software.aws.toolkits.jetbrains.core.awsClient
-import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
+import software.aws.toolkit.core.credentials.toEnvironmentVariables
+import software.aws.toolkit.jetbrains.core.awsClient
+import software.aws.toolkit.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkits.jetbrains.services.lambda.deploy.DeployServerlessApplicationSettings
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.ValidateDocker
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon

@@ -4,7 +4,9 @@
 package software.aws.toolkits.jetbrains.core.credentials
 
 import com.intellij.openapi.project.Project
-import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileCredentialsIdentifier
+import software.aws.toolkit.jetbrains.core.credentials.AwsConnectionManager
+import software.aws.toolkit.jetbrains.core.credentials.ChangeConnectionSettingIfValid
+import software.aws.toolkit.jetbrains.core.credentials.profiles.ProfileCredentialsIdentifier
 
 class RefreshExplorerCredentials(val project: Project) : ChangeConnectionSettingIfValid {
 

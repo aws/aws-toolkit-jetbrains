@@ -41,10 +41,10 @@ import software.amazon.awssdk.services.s3.model.ListObjectsV2Response
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
 import software.amazon.awssdk.services.s3.model.PutObjectResponse
-import software.aws.toolkits.core.region.AwsRegion
-import software.aws.toolkits.jetbrains.core.AwsClientManager
-import software.aws.toolkits.jetbrains.core.MockClientManagerRule
-import software.aws.toolkits.jetbrains.core.credentials.MockAwsConnectionManager.ProjectAccountSettingsManagerRule
+import software.aws.toolkit.core.region.AwsRegion
+import software.aws.toolkit.jetbrains.core.AwsClientManager
+import software.aws.toolkit.jetbrains.core.MockClientManagerRule
+import software.aws.toolkit.jetbrains.core.credentials.MockAwsConnectionManager.ProjectAccountSettingsManagerRule
 import software.aws.toolkits.jetbrains.services.s3.editor.S3VirtualBucket
 import java.net.URL
 import java.time.Instant

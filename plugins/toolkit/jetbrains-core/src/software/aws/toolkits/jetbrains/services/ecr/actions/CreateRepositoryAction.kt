@@ -7,7 +7,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.LangDataKeys
 import com.intellij.openapi.project.DumbAwareAction
 import software.amazon.awssdk.services.ecr.EcrClient
-import software.aws.toolkits.jetbrains.core.awsClient
+import software.aws.toolkit.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.services.ecr.CreateEcrRepoDialog
 import software.aws.toolkits.resources.message
 

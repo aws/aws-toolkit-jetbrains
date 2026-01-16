@@ -7,7 +7,7 @@ import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.util.ExecUtil
 import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.progress.ProgressIndicator
-import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.ssm.SsmPlugin
 import software.aws.toolkits.jetbrains.utils.checkSuccess
 import software.aws.toolkits.telemetry.ToolId

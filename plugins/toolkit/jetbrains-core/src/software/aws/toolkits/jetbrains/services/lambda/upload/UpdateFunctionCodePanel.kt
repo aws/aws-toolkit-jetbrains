@@ -9,8 +9,8 @@ import com.intellij.openapi.ui.TextFieldWithBrowseButton
 import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.ui.IdeBorderFactory
 import software.amazon.awssdk.services.lambda.model.PackageType
+import software.aws.toolkit.jetbrains.utils.ui.validationInfo
 import software.aws.toolkits.jetbrains.ui.HandlerPanel
-import software.aws.toolkits.jetbrains.utils.ui.validationInfo
 import software.aws.toolkits.resources.message
 import java.nio.file.Paths
 import javax.swing.JLabel

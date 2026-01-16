@@ -4,8 +4,8 @@
 package software.aws.toolkits.jetbrains.services.ecr.resources
 
 import software.amazon.awssdk.services.ecr.EcrClient
-import software.aws.toolkits.jetbrains.core.ClientBackedCachedResource
-import software.aws.toolkits.jetbrains.core.Resource
+import software.aws.toolkit.jetbrains.core.ClientBackedCachedResource
+import software.aws.toolkit.jetbrains.core.Resource
 import software.aws.toolkits.jetbrains.services.ecr.toToolkitEcrRepository
 
 object EcrResources {

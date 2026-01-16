@@ -10,10 +10,10 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import software.amazon.awssdk.services.sqs.SqsClient
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.warn
-import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineUiContext
-import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
+import software.aws.toolkit.core.utils.getLogger
+import software.aws.toolkit.core.utils.warn
+import software.aws.toolkit.jetbrains.core.coroutines.getCoroutineUiContext
+import software.aws.toolkit.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.core.explorer.refreshAwsTree
 import software.aws.toolkits.jetbrains.services.sqs.resources.SqsResources
 import software.aws.toolkits.resources.message

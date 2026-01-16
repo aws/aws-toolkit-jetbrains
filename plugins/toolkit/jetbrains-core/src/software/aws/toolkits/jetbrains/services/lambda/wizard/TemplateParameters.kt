@@ -3,8 +3,8 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.wizard
 
-import software.aws.toolkits.core.lambda.LambdaArchitecture
-import software.aws.toolkits.core.lambda.LambdaRuntime
+import software.aws.toolkit.core.lambda.LambdaArchitecture
+import software.aws.toolkit.core.lambda.LambdaRuntime
 
 sealed class TemplateParameters
 

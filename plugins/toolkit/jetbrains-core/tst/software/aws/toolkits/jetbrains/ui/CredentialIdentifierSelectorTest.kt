@@ -12,8 +12,8 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import software.aws.toolkits.core.credentials.CredentialIdentifier
-import software.aws.toolkits.core.credentials.aCredentialsIdentifier
+import software.aws.toolkit.core.credentials.CredentialIdentifier
+import software.aws.toolkit.core.credentials.aCredentialsIdentifier
 import software.aws.toolkits.jetbrains.ui.CredentialIdentifierSelector.Companion.validateSelection
 
 class CredentialIdentifierSelectorTest {

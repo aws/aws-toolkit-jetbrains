@@ -3,7 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.s3
 
-import software.aws.toolkits.core.region.AwsRegion
+import software.aws.toolkit.core.region.AwsRegion
 
 fun bucketArn(bucketName: String, region: AwsRegion) = "arn:${region.partitionId}:s3:::$bucketName"
 

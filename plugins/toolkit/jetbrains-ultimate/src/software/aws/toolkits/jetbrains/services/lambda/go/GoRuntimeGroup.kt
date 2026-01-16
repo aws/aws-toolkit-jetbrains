@@ -10,7 +10,7 @@ import com.intellij.openapi.module.ModuleType
 import com.intellij.openapi.module.WebModuleTypeBase
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.projectRoots.Sdk
-import software.aws.toolkits.core.lambda.LambdaRuntime
+import software.aws.toolkit.core.lambda.LambdaRuntime
 import software.aws.toolkits.jetbrains.services.lambda.BuiltInRuntimeGroups
 import software.aws.toolkits.jetbrains.services.lambda.SdkBasedRuntimeGroup
 

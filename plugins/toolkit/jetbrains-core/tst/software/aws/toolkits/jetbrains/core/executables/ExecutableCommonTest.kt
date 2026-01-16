@@ -11,8 +11,8 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.services.toolkittelemetry.model.AWSProduct
+import software.aws.toolkit.jetbrains.services.telemetry.ClientMetadata
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
-import software.aws.toolkits.jetbrains.services.telemetry.ClientMetadata
 
 class ExecutableCommonTest {
     @Rule
@@ -37,8 +37,8 @@ class ExecutableCommonTest {
         val path = "/foo/bar"
         val name = "sam.cmd"
         val clientMetadata = ClientMetadata(
-            awsProduct = AWSProduct.AWS_TOOLKIT_FOR_JET_BRAINS,
-            awsVersion = "1.0",
+            productName = AWSProduct.AWS_TOOLKIT_FOR_JET_BRAINS,
+            productVersion = "1.0",
             clientId = "foo",
             parentProduct = "JetBrains",
             parentProductVersion = "191",

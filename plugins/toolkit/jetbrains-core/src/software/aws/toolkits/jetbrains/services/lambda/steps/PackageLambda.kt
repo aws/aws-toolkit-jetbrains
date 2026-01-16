@@ -4,7 +4,7 @@
 package software.aws.toolkits.jetbrains.services.lambda.steps
 
 import com.intellij.execution.configurations.GeneralCommandLine
-import software.aws.toolkits.core.utils.AttributeBagKey
+import software.aws.toolkit.core.utils.AttributeBagKey
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamTemplateUtils
 import software.aws.toolkits.jetbrains.services.lambda.sam.samPackageCommand
 import software.aws.toolkits.jetbrains.utils.execution.steps.Context

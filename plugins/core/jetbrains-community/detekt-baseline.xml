@@ -2,9 +2,9 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
-    <ID>Filename:DEFAULT_PROFILE_ID.kt$software.aws.toolkits.jetbrains.core.credentials.profiles.DEFAULT_PROFILE_ID.kt</ID>
-    <ID>Filename:contexts.kt$software.aws.toolkits.jetbrains.core.coroutines.contexts.kt</ID>
-    <ID>Filename:scopes.kt$software.aws.toolkits.jetbrains.core.coroutines.scopes.kt</ID>
+    <ID>Filename:DEFAULT_PROFILE_ID.kt$software.aws.toolkit.jetbrains.core.credentials.profiles.DEFAULT_PROFILE_ID.kt</ID>
+    <ID>Filename:contexts.kt$software.aws.toolkit.jetbrains.core.coroutines.contexts.kt</ID>
+    <ID>Filename:scopes.kt$software.aws.toolkit.jetbrains.core.coroutines.scopes.kt</ID>
     <ID>FunctionNaming:CreateOrUpdateCredentialProfilesActionTest.kt$CreateOrUpdateCredentialProfilesActionTest$@Test fun bothFilesOpened_bothFilesExists()</ID>
     <ID>FunctionNaming:CreateOrUpdateCredentialProfilesActionTest.kt$CreateOrUpdateCredentialProfilesActionTest$@Test fun configFileOpened_onlyConfigExists()</ID>
     <ID>FunctionNaming:CreateOrUpdateCredentialProfilesActionTest.kt$CreateOrUpdateCredentialProfilesActionTest$@Test fun confirmConfigFileCreated_bothFilesDoNotExist()</ID>

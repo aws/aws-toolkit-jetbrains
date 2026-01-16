@@ -11,7 +11,7 @@ import software.amazon.awssdk.services.lambda.model.FunctionConfiguration
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.amazon.awssdk.services.lambda.model.TracingConfigResponse
 import software.amazon.awssdk.services.lambda.model.TracingMode
-import software.aws.toolkits.jetbrains.core.MockResourceCacheRule
+import software.aws.toolkit.jetbrains.core.MockResourceCacheRule
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerEmptyNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerErrorNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.LambdaExplorerRootNode

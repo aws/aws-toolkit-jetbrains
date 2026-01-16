@@ -12,11 +12,11 @@ import com.intellij.util.io.HttpRequests
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.presigner.S3Presigner
-import software.aws.toolkits.core.ConnectionSettings
-import software.aws.toolkits.core.utils.exists
-import software.aws.toolkits.jetbrains.core.awsClient
-import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
-import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
+import software.aws.toolkit.core.ConnectionSettings
+import software.aws.toolkit.core.utils.exists
+import software.aws.toolkit.jetbrains.core.awsClient
+import software.aws.toolkit.jetbrains.core.credentials.CredentialManager
+import software.aws.toolkit.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.gateway.GatewayProduct
 import software.aws.toolkits.jetbrains.gateway.ToolkitInstallSettings
 import software.aws.toolkits.jetbrains.gateway.connection.AbstractSsmCommandExecutor

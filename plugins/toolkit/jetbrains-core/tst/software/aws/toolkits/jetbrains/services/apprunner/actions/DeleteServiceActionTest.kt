@@ -15,8 +15,8 @@ import software.amazon.awssdk.services.apprunner.AppRunnerClient
 import software.amazon.awssdk.services.apprunner.model.DeleteServiceRequest
 import software.amazon.awssdk.services.apprunner.model.DeleteServiceResponse
 import software.amazon.awssdk.services.apprunner.model.ServiceSummary
-import software.aws.toolkits.core.utils.test.aString
-import software.aws.toolkits.jetbrains.core.MockClientManagerRule
+import software.aws.toolkit.core.utils.test.aString
+import software.aws.toolkit.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.services.apprunner.AppRunnerServiceNode
 
 class DeleteServiceActionTest {

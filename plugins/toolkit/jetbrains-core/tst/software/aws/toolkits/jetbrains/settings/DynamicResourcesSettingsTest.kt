@@ -5,8 +5,8 @@ package software.aws.toolkits.jetbrains.settings
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
-import software.aws.toolkits.jetbrains.utils.deserializeState
-import software.aws.toolkits.jetbrains.utils.serializeState
+import software.aws.toolkit.jetbrains.utils.deserializeState
+import software.aws.toolkit.jetbrains.utils.serializeState
 
 class DynamicResourcesSettingsTest {
     @Test

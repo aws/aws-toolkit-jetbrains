@@ -14,10 +14,11 @@ import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.util.messages.Topic
 import com.intellij.util.xmlb.annotations.Property
-import software.aws.toolkits.core.utils.replace
-import software.aws.toolkits.jetbrains.isDeveloperMode
-import software.aws.toolkits.jetbrains.utils.createNotificationExpiringAction
-import software.aws.toolkits.jetbrains.utils.notifyInfo
+import software.aws.toolkit.core.utils.replace
+import software.aws.toolkit.jetbrains.isDeveloperMode
+import software.aws.toolkit.jetbrains.settings.ToolkitSettingsMigrationUtil
+import software.aws.toolkit.jetbrains.utils.createNotificationExpiringAction
+import software.aws.toolkit.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AwsTelemetry
 import software.aws.toolkits.telemetry.ExperimentState.Activated
@@ -30,7 +31,7 @@ import java.time.Instant
  *
  * Use the `aws.toolkit.experiment` extensionpoint to register experiments. This surfaces the configuration in the AWS Settings panel - and in sub-menus.
  *
- * @param hidden determines whether this experiment should surface in the settings/menus; hidden experiments can only be enabled by system property or manually modifying config in aws.xml
+ * @param hidden determines whether this experiment should surface in the settings/menus; hidden experiments can only be enabled by system property or manually modifying config in awsToolkit.xml
  * @param default determines the default state of an experiment
  * @param suggestionSnooze how long to wait between prompting a suggestion to enable the experiment (when using the experiment suggestion system ([ToolkitExperiment.suggest]))
  *
@@ -93,7 +94,7 @@ private class NeverShowAgain(private val experiment: ToolkitExperiment) : DumbAw
     }
 }
 
-@State(name = "experiments", storages = [Storage("aws.xml")])
+@State(name = "toolkitExperiments", storages = [Storage("awsToolkit.xml")])
 internal class ToolkitExperimentManager : PersistentStateComponent<ExperimentState> {
     private val state = ExperimentState()
     private val enabledState get() = state.value
@@ -126,6 +127,14 @@ internal class ToolkitExperimentManager : PersistentStateComponent<ExperimentSta
     override fun loadState(loadedState: ExperimentState) {
         state.value.replace(loadedState.value)
         state.nextSuggestion.replace(loadedState.nextSuggestion)
+    }
+
+    override fun noStateLoaded() {
+        val state = ToolkitSettingsMigrationUtil.migrateState(
+            "toolkitExperiments",
+            ExperimentState::class.java
+        ) ?: ExperimentState()
+        loadState(state)
     }
 
     private fun getDefault(experiment: ToolkitExperiment): Boolean {

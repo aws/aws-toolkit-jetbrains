@@ -9,16 +9,16 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.services.redshift.model.Cluster
-import software.aws.toolkits.core.utils.RuleUtils
-import software.aws.toolkits.jetbrains.core.credentials.MockAwsConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
-import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
+import software.aws.toolkit.core.utils.RuleUtils
+import software.aws.toolkit.jetbrains.core.credentials.MockAwsConnectionManager
+import software.aws.toolkit.jetbrains.core.credentials.MockCredentialManagerRule
+import software.aws.toolkit.jetbrains.core.region.AwsRegionProvider
+import software.aws.toolkit.jetbrains.utils.satisfiesKt
 import software.aws.toolkits.jetbrains.datagrip.CREDENTIAL_ID_PROPERTY
 import software.aws.toolkits.jetbrains.datagrip.REGION_ID_PROPERTY
 import software.aws.toolkits.jetbrains.services.redshift.auth.CLUSTER_ID_PROPERTY
 import software.aws.toolkits.jetbrains.services.redshift.auth.IamAuth
 import software.aws.toolkits.jetbrains.services.redshift.createDatasource
-import software.aws.toolkits.jetbrains.utils.satisfiesKt
 
 class CreateDataSourceActionTest {
     @Rule

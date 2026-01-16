@@ -20,9 +20,9 @@ import org.junit.Test
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
-import software.aws.toolkits.core.rules.SystemPropertyHelper
-import software.aws.toolkits.jetbrains.utils.rules.NotificationListenerRule
-import software.aws.toolkits.jetbrains.utils.satisfiesKt
+import software.aws.toolkit.core.rules.SystemPropertyHelper
+import software.aws.toolkit.jetbrains.utils.rules.NotificationListenerRule
+import software.aws.toolkit.jetbrains.utils.satisfiesKt
 import java.util.Calendar
 
 class MinimumVersionChangeTest {

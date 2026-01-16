@@ -7,7 +7,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.util.text.SemVer
-import software.aws.toolkits.core.lambda.LambdaArchitecture
+import software.aws.toolkit.core.lambda.LambdaArchitecture
 import software.aws.toolkits.jetbrains.core.executables.AutoResolvable
 import software.aws.toolkits.jetbrains.core.executables.ExecutableCommon
 import software.aws.toolkits.jetbrains.core.executables.ExecutableType

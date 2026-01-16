@@ -8,8 +8,8 @@ import com.intellij.ui.CollectionComboBoxModel
 import com.intellij.ui.ComboboxSpeedSearch
 import com.intellij.ui.SimpleListCellRenderer
 import com.intellij.util.containers.OrderedSet
-import software.aws.toolkits.core.credentials.CredentialIdentifier
-import software.aws.toolkits.jetbrains.utils.ui.selected
+import software.aws.toolkit.core.credentials.CredentialIdentifier
+import software.aws.toolkit.jetbrains.utils.ui.selected
 
 /**
  * Combo box used to select a credential provider

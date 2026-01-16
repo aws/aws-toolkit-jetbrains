@@ -11,7 +11,7 @@ import com.intellij.openapi.actionSystem.UpdateInBackground
 import com.intellij.psi.PsiElement
 import com.intellij.psi.SmartPsiElementPointer
 import icons.AwsIcons
-import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
+import software.aws.toolkit.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationTemplateIndex
 import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver
 import software.aws.toolkits.jetbrains.services.lambda.runtime

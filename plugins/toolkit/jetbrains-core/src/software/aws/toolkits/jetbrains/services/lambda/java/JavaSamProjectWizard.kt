@@ -15,9 +15,9 @@ import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.idea.maven.project.MavenProjectsManager
 import org.jetbrains.plugins.gradle.settings.GradleProjectSettings
 import org.jetbrains.plugins.gradle.util.GradleConstants
-import software.aws.toolkits.core.lambda.LambdaRuntime
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.logWhenNull
+import software.aws.toolkit.core.lambda.LambdaRuntime
+import software.aws.toolkit.core.utils.getLogger
+import software.aws.toolkit.core.utils.logWhenNull
 import software.aws.toolkits.jetbrains.services.lambda.BuiltInRuntimeGroups
 import software.aws.toolkits.jetbrains.services.lambda.wizard.IntelliJSdkSelectionPanel
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SamAppTemplateBased

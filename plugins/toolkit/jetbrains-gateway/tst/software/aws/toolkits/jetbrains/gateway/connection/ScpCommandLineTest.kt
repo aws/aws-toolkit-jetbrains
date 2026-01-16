@@ -14,8 +14,8 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import software.aws.toolkits.core.utils.test.notNull
-import software.aws.toolkits.jetbrains.utils.satisfiesKt
+import software.aws.toolkit.core.utils.test.notNull
+import software.aws.toolkit.jetbrains.utils.satisfiesKt
 import java.nio.file.Path
 import java.nio.file.attribute.PosixFilePermission
 import java.util.UUID

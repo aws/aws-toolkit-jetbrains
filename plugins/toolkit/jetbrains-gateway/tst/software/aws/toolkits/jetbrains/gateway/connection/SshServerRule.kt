@@ -15,8 +15,8 @@ import org.apache.sshd.sftp.server.SftpSubsystemFactory
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.rules.ExternalResource
 import org.junit.rules.TemporaryFolder
-import software.aws.toolkits.core.utils.exists
-import software.aws.toolkits.core.utils.readText
+import software.aws.toolkit.core.utils.exists
+import software.aws.toolkit.core.utils.readText
 import java.net.InetAddress
 import java.nio.file.Paths
 

@@ -15,9 +15,9 @@ import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.psi.PsiElement
-import software.aws.toolkits.core.utils.exists
-import software.aws.toolkits.core.utils.inputStream
-import software.aws.toolkits.core.utils.writeText
+import software.aws.toolkit.core.utils.exists
+import software.aws.toolkit.core.utils.inputStream
+import software.aws.toolkit.core.utils.writeText
 import software.aws.toolkits.jetbrains.services.lambda.Lambda
 import software.aws.toolkits.jetbrains.services.lambda.LambdaBuilder
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.HandlerRunSettings

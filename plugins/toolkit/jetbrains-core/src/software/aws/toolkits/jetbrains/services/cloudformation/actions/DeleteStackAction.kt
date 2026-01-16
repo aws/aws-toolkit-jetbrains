@@ -5,7 +5,7 @@ package software.aws.toolkits.jetbrains.services.cloudformation.actions
 
 import com.intellij.openapi.application.runInEdt
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient
-import software.aws.toolkits.jetbrains.core.awsClient
+import software.aws.toolkit.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.explorer.actions.DeleteResourceAction
 import software.aws.toolkits.jetbrains.core.explorer.refreshAwsTree
 import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationStackNode

@@ -51,26 +51,6 @@ aws-toolkit-jetbrains
 │   │   │   └── build.gradle.kts
 │   │   └── build.gradle.kts
 │   │
-│   ├── amazonq                              :plugin-amazonq
-│   │   ├── codewhisperer                   :plugin-amazonq:codewhisperer
-│   │   │   ├── community                   :plugin-amazonq:codewhisperer:community
-│   │   │   │   ├── ⋮
-│   │   │   │   └── build.gradle.kts
-│   │   │   ├── ultimate                    :plugin-amazonq:codewhisperer:ultimate
-│   │   │   │   ├── ⋮
-│   │   │   │   └── build.gradle.kts
-│   │   │   └── build.gradle.kts
-│   │   ├── codemodernizer                  :plugin-amazonq:codemodernizer
-│   │   │   ├── community                   :plugin-amazonq:codemodernizer:community
-│   │   │   │   ├── ⋮
-│   │   │   │   └── build.gradle.kts
-│   │   │   └── build.gradle.kts
-│   │   ├── ⋮
-│   │   ├── mynah-ui                        :plugin-amazonq:mynah-ui  
-│   │   │   ├── ⋮
-│   │   │   └── build.gradle.kts
-│   │   └── build.gradle.kts 
-│   │
 │   └── toolbox                             :plugin-toolbox
 │       ├── ⋮
 │       └── build.gradle.kts 
@@ -139,17 +119,13 @@ Full documentation on the supported folder patterns can be found on the `findFol
 For artifacts where major functional logic is developed by multiple independent teams, we optionally support another layer of subprojects to increase code locality during development 
 
 Below is a sample of the layout and sourceset interactions for the given artifacts:
-* `plugin-core.zip`
 * `plugin-toolkit.zip`
-* `plugin-amazonq.zip`
 
 ```mermaid
 flowchart LR
     common
 
-    common <-. depends/input for .-> plugin-core
     common <-. depends/input for .-> plugin-toolkit
-    common <-. depends/input for .-> plugin-amazonq
 
     subgraph plugin-core
         resources-core[resources]
@@ -210,54 +186,5 @@ flowchart LR
         style plugintoolkitzip text-align:left
     end
 
-
-    subgraph plugin-amazonq
-        direction LR
-        mynah-ui
-
-        subgraph codewhisperer[codewhisperer: intellij platform sourcesets]
-            community-codewhisperer[community]
-            ultimate-codewhisperer[ultimate]
-
-            ultimate-codewhisperer --depends--> community-codewhisperer
-
-            community-codewhisperer -. input for .-> instrument-codewhisperer
-            ultimate-codewhisperer -. input for .-> instrument-codewhisperer
-            instrument-codewhisperer[[InstrumentJarTask]]
-        end
-
-        subgraph amazonq[amazonq shared: intellij platform sourcesets]
-            community-amazonq[community]
-            ultimate-amazonq[ultimate]
-            
-            ultimate-amazonq --depends--> community-amazonq
-
-            community-amazonq -. input for .-> instrument-amazonq
-            ultimate-amazonq -. input for .-> instrument-amazonq
-            instrument-amazonq[[InstrumentJarTask]]
-        end
-
-        subgraph codemodernizer[codemodernizer: intellij platform sourcesets]
-            community-codemodernizer[community]
-
-            community-codemodernizer -. input for .-> instrument-codemodernizer
-            instrument-codemodernizer[[InstrumentJarTask]]
-        end
-
-        codewhisperer --depends---> amazonq
-        codemodernizer --depends---> amazonq
-
-        mynah-ui -. input for .-> build-amazonq
-        instrument-amazonq -. input for .-> build-amazonq
-        instrument-codewhisperer -. input for .-> build-amazonq
-        instrument-codemodernizer -. input for .-> build-amazonq
-        build-amazonq[[PrepareSandbox + BuildPlugin]]
-        
-        build-amazonq -- emits --> pluginamazonqzip
-        pluginamazonqzip[plugin-amazonq.zip\n* mynah-ui.jar\n* instrumented-amazonqshared-community.jar\n* instrumented-amazonqshared-ultimate.jar\n* instrumented-codewhisperer-community.jar\n* instrumented-codewhisperer-ultimate.jar\n* instrumented-chat-community.jar\n* instrumented-codemodernizer-community.jar\n* common.jar]
-        style pluginamazonqzip text-align:left
-    end
-
     plugin-toolkit -. runtime dependency on API .-> plugincorezip
-    plugin-amazonq -. runtime dependency on API .-> plugincorezip
 ```

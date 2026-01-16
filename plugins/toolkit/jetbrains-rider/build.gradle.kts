@@ -75,7 +75,6 @@ configurations {
 
 dependencies {
     intellijPlatform {
-        localPlugin(project(":plugin-core"))
         testFramework(TestFrameworkType.Bundled)
 
         // FIX_WHEN_MIN_IS_251: https://github.com/JetBrains/intellij-platform-gradle-plugin/issues/1774

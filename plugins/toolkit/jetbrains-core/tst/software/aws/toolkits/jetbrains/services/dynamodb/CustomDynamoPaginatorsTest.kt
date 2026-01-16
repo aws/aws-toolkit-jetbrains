@@ -13,7 +13,7 @@ import org.mockito.kotlin.verify
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient
 import software.amazon.awssdk.services.dynamodb.model.ExecuteStatementRequest
 import software.amazon.awssdk.services.dynamodb.model.ExecuteStatementResponse
-import software.aws.toolkits.core.utils.delegateMock
+import software.aws.toolkit.core.utils.delegateMock
 import software.aws.toolkits.jetbrains.services.dynamodb.DynamoDbUtils.executeStatementPaginator
 
 class CustomDynamoPaginatorsTest {

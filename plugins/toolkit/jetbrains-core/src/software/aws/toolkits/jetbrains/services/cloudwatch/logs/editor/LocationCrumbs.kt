@@ -14,8 +14,8 @@ import com.intellij.ui.SideBorder
 import com.intellij.ui.components.breadcrumbs.Breadcrumbs
 import com.intellij.ui.components.breadcrumbs.Crumb
 import kotlinx.coroutines.runBlocking
-import software.aws.toolkits.jetbrains.core.credentials.activeCredentialProvider
-import software.aws.toolkits.jetbrains.core.credentials.activeRegion
+import software.aws.toolkit.jetbrains.core.credentials.activeCredentialProvider
+import software.aws.toolkit.jetbrains.core.credentials.activeRegion
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogWindow
 import software.aws.toolkits.resources.message
 import java.awt.event.ActionEvent
