@@ -12,6 +12,7 @@ import software.amazon.q.core.utils.tryOrNull
 import software.amazon.q.jetbrains.core.coroutines.disposableCoroutineScope
 import software.amazon.q.jetbrains.core.credentials.profiles.DEFAULT_PROFILE_ID
 import software.amazon.q.jetbrains.core.region.AwsRegionProvider
+import software.amazon.q.jetbrains.settings.QSettingsMigrationUtil
 
 data class ConnectionSettingsState(
     var activeProfile: String? = null,
@@ -32,10 +33,6 @@ class DefaultAwsConnectionManager(project: Project) :
         recentlyUsedProfiles = recentlyUsedProfiles.elements(),
         recentlyUsedRegions = recentlyUsedRegions.elements()
     )
-
-    override fun noStateLoaded() {
-        loadState(ConnectionSettingsState())
-    }
 
     override fun loadState(state: ConnectionSettingsState) {
         // This can be called more than once, so we need to re-do our init sequence
@@ -60,5 +57,13 @@ class DefaultAwsConnectionManager(project: Project) :
 
             changeConnectionSettings(credentials, region)
         }
+    }
+
+    override fun noStateLoaded() {
+        val state = QSettingsMigrationUtil.migrateState(
+            "qAccountSettings",
+            ConnectionSettingsState::class.java
+        ) ?: ConnectionSettingsState()
+        loadState(state)
     }
 }

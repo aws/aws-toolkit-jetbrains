@@ -15,6 +15,7 @@ import software.amazon.q.jetbrains.core.credentials.pinning.FeatureWithPinnedCon
 import software.amazon.q.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.amazon.q.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
 import software.amazon.q.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
+import software.amazon.q.jetbrains.settings.QSettingsMigrationUtil
 
 // TODO: unify with AwsConnectionManager
 @State(name = "qConnectionManager", storages = [Storage("amazonq.xml")])
@@ -113,6 +114,14 @@ class DefaultToolkitConnectionManager : ToolkitConnectionManager, PersistentStat
                 }
             connection = ToolkitAuthManager.getInstance().getConnection(activeConnectionIdWithRegion)
         }
+    }
+
+    override fun noStateLoaded() {
+        val state = QSettingsMigrationUtil.migrateState(
+            "qConnectionManager",
+            ToolkitConnectionManagerState::class.java
+        ) ?: ToolkitConnectionManagerState()
+        loadState(state)
     }
 
     @Synchronized

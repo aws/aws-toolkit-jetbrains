@@ -6,7 +6,7 @@ package software.amazon.q.resources
 import com.intellij.DynamicBundle
 import org.jetbrains.annotations.PropertyKey
 
-internal const val BUNDLE_FQN: String = "software.aws.toolkits.resources.MessagesBundle"
+internal const val BUNDLE_FQN: String = "software.amazon.q.resources.MessagesBundle"
 
 object AwsCoreBundle {
     private val BUNDLE = DynamicBundle(AwsCoreBundle::class.java, BUNDLE_FQN)

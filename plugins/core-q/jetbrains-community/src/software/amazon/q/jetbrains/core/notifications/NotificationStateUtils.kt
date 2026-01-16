@@ -9,6 +9,7 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 import software.amazon.q.core.utils.ETagProvider
+import software.amazon.q.jetbrains.settings.QSettingsMigrationUtil
 import java.time.Duration
 import java.time.Instant
 
@@ -32,6 +33,14 @@ class NotificationDismissalState : PersistentStateComponent<NotificationDismissa
     override fun loadState(state: NotificationDismissalConfiguration) {
         this.state = state
         cleanExpiredNotifications()
+    }
+
+    override fun noStateLoaded() {
+        val state = QSettingsMigrationUtil.migrateState(
+            "qNotificationDismissals",
+            NotificationDismissalConfiguration::class.java
+        ) ?: NotificationDismissalConfiguration()
+        loadState(state)
     }
 
     fun isDismissed(notificationId: String): Boolean =
@@ -70,6 +79,14 @@ class NotificationEtagState : PersistentStateComponent<NotificationEtagConfigura
 
     override fun loadState(state: NotificationEtagConfiguration) {
         this.state.etag = state.etag
+    }
+
+    override fun noStateLoaded() {
+        val state = QSettingsMigrationUtil.migrateState(
+            "qNotificationEtag",
+            NotificationEtagConfiguration::class.java
+        ) ?: NotificationEtagConfiguration()
+        loadState(state)
     }
 
     override var etag: String?

@@ -14,6 +14,7 @@ import software.amazon.q.core.utils.getLogger
 import software.amazon.q.jetbrains.core.credentials.ToolkitAuthManager
 import software.amazon.q.jetbrains.core.credentials.ToolkitConnection
 import software.amazon.q.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
+import software.amazon.q.jetbrains.settings.QSettingsMigrationUtil
 import java.util.concurrent.ConcurrentHashMap
 
 typealias ConnectionPinningManager = migration.software.amazon.q.jetbrains.core.credentials.pinning.ConnectionPinningManager
@@ -122,6 +123,14 @@ class DefaultConnectionPinningManager :
                 authManager.getConnection(v)?.let { k to it }
             }
         )
+    }
+
+    override fun noStateLoaded() {
+        val state = QSettingsMigrationUtil.migrateState(
+            "qConnectionPinningManager",
+            ConnectionPinningManagerState::class.java
+        ) ?: ConnectionPinningManagerState()
+        loadState(state)
     }
 
     override fun dispose() {}

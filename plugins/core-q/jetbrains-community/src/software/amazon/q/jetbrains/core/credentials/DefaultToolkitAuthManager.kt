@@ -18,6 +18,7 @@ import software.amazon.q.core.utils.warn
 import software.amazon.q.jetbrains.core.credentials.profiles.ProfileSsoSessionIdentifier
 import software.amazon.q.jetbrains.core.credentials.sono.SONO_URL
 import software.amazon.q.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
+import software.amazon.q.jetbrains.settings.QSettingsMigrationUtil
 import java.util.Collections
 
 typealias ToolkitAuthManager = migration.software.amazon.q.jetbrains.core.credentials.ToolkitAuthManager
@@ -241,6 +242,14 @@ class DefaultToolkitAuthManager : ToolkitAuthManager, PersistentStateComponent<T
 
         connections.clear()
         connections.addAll(newConnections)
+    }
+
+    override fun noStateLoaded() {
+        val state = QSettingsMigrationUtil.migrateState(
+            "qAuthManager",
+            ToolkitAuthManagerState::class.java
+        ) ?: ToolkitAuthManagerState()
+        loadState(state)
     }
 
     override fun dispose() {

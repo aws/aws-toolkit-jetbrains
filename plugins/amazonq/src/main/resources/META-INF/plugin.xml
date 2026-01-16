@@ -58,7 +58,7 @@
     <idea-version since-build="232" />
     <depends>com.intellij.modules.platform</depends>
     <depends optional="true">org.jetbrains.idea.maven</depends>
-    <resource-bundle>software.aws.toolkits.resources.MessagesBundle</resource-bundle>
+    <resource-bundle>software.amazon.q.resources.MessagesBundle</resource-bundle>
 
     <depends>com.intellij.modules.lang</depends>
 
@@ -109,8 +109,8 @@
         <applicationConfigurable
             id="aws"
             groupId="tools"
-            bundle="software.aws.toolkits.resources.MessagesBundle"
-            key="aws.settings.title"
+            bundle="software.amazon.q.resources.MessagesBundle"
+            key="amazon.q.settings.title"
             instance="software.amazon.q.jetbrains.settings.AwsSettingsSharedConfigurable"
         />
 
