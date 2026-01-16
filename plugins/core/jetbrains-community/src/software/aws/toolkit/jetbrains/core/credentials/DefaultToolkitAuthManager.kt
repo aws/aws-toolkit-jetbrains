@@ -288,9 +288,9 @@ class DefaultToolkitAuthManager : ToolkitAuthManager, PersistentStateComponent<T
                         }
 
                         lastLoginIdcInfo = LastLoginIdcInfo(
-                            profileName = profileName ?: "",
-                            region = region ?: "",
-                            startUrl = startUrl ?: ""
+                            profileName = profileName.orEmpty(),
+                            region = region.orEmpty(),
+                            startUrl = startUrl.orEmpty()
                         )
                     }
                 }
