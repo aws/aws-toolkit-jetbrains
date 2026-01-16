@@ -19,6 +19,11 @@ import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.AwsToolkitBundle.message
 import java.nio.file.Path
 
+private val SUPPORTED_EXTENSIONS = setOf("yaml", "yml", "json", "template", "cfn")
+
+private fun VirtualFile.isCfnTemplate(): Boolean =
+    extension?.lowercase() in SUPPORTED_EXTENSIONS
+
 class CfnLspServerSupportProvider : LspServerSupportProvider {
     override fun fileOpened(
         project: Project,
@@ -26,18 +31,9 @@ class CfnLspServerSupportProvider : LspServerSupportProvider {
         serverStarter: LspServerSupportProvider.LspServerStarter,
     ) {
         if (!CfnLspSettings.getInstance().isLspEnabled) return
-        if (isSupportedFile(file)) {
+        if (file.isCfnTemplate()) {
             serverStarter.ensureServerStarted(CfnLspServerDescriptor(project))
         }
-    }
-
-    private fun isSupportedFile(file: VirtualFile): Boolean {
-        val ext = file.extension?.lowercase() ?: return false
-        return ext in SUPPORTED_EXTENSIONS
-    }
-
-    companion object {
-        private val SUPPORTED_EXTENSIONS = listOf("yaml", "yml", "json", "template", "cfn")
     }
 }
 
@@ -46,10 +42,7 @@ private class CfnLspServerDescriptor(project: Project) :
 
     private val installer = CfnLspInstaller()
 
-    override fun isSupportedFile(file: VirtualFile): Boolean {
-        val ext = file.extension?.lowercase() ?: return false
-        return ext in SUPPORTED_EXTENSIONS
-    }
+    override fun isSupportedFile(file: VirtualFile) = file.isCfnTemplate()
 
     override fun createCommandLine(): GeneralCommandLine {
         val serverPath = try {
@@ -187,6 +180,5 @@ private class CfnLspServerDescriptor(project: Project) :
 
     companion object {
         private val LOG = getLogger<CfnLspServerDescriptor>()
-        private val SUPPORTED_EXTENSIONS = listOf("yaml", "yml", "json", "template", "cfn")
     }
 }
