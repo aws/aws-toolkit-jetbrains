@@ -3,10 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.cfnlsp.server
 
-import com.intellij.openapi.progress.ProgressIndicator
-import com.intellij.openapi.progress.ProgressManager
-import com.intellij.openapi.progress.Task
-import com.intellij.openapi.project.Project
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
@@ -19,8 +15,6 @@ import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.nio.file.Files
 import java.nio.file.Path
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.TimeUnit
 
 class CfnLspInstaller(private val storageDir: Path = defaultStorageDir()) {
     private val httpClient = HttpClient.newBuilder()
@@ -30,34 +24,7 @@ class CfnLspInstaller(private val storageDir: Path = defaultStorageDir()) {
     private val manifestAdapter = GitHubManifestAdapter(CfnLspEnvironment.PROD)
 
     fun getServerPath(): Path =
-        findExistingServer() ?: downloadAndInstallSync()
-
-    fun getServerPathAsync(project: Project): CompletableFuture<Path> {
-        findExistingServer()?.let {
-            LOG.info { "Found existing CloudFormation LSP server: $it" }
-            return CompletableFuture.completedFuture(it)
-        }
-
-        val future = CompletableFuture<Path>()
-
-        ProgressManager.getInstance().run(object : Task.Backgroundable(
-            project,
-            message("cloudformation.lsp.downloading"),
-            true
-        ) {
-            override fun run(indicator: ProgressIndicator) {
-                try {
-                    indicator.isIndeterminate = false
-                    val path = downloadAndInstall(indicator)
-                    future.complete(path)
-                } catch (e: Exception) {
-                    future.completeExceptionally(e)
-                }
-            }
-        })
-
-        return future
-    }
+        findExistingServer() ?: downloadAndInstall()
 
     private fun findExistingServer(): Path? {
         if (!Files.exists(storageDir)) return null
@@ -69,14 +36,8 @@ class CfnLspInstaller(private val storageDir: Path = defaultStorageDir()) {
             ?.also { LOG.info { "Found existing CloudFormation LSP server: $it" } }
     }
 
-    private fun downloadAndInstallSync(): Path {
+    private fun downloadAndInstall(): Path {
         LOG.info { "CloudFormation LSP server not found, downloading..." }
-        return downloadAndInstall(null)
-    }
-
-    private fun downloadAndInstall(indicator: ProgressIndicator?): Path {
-        indicator?.text = message("cloudformation.lsp.fetching_manifest")
-        indicator?.fraction = 0.1
 
         val release = try {
             manifestAdapter.getLatestRelease()
@@ -100,13 +61,10 @@ class CfnLspInstaller(private val storageDir: Path = defaultStorageDir()) {
             )
         }
 
-        indicator?.text = message("cloudformation.lsp.downloading_version", release.tagName)
-        indicator?.fraction = 0.3
-
         LOG.info { "Downloading CloudFormation LSP ${release.tagName}" }
 
         val zipBytes = try {
-            downloadAsset(asset.browserDownloadUrl, indicator)
+            downloadAsset(asset.browserDownloadUrl)
         } catch (e: Exception) {
             LOG.warn(e) { "Failed to download CloudFormation LSP" }
             throw CfnLspException(
@@ -115,9 +73,6 @@ class CfnLspInstaller(private val storageDir: Path = defaultStorageDir()) {
                 e
             )
         }
-
-        indicator?.text = message("cloudformation.lsp.extracting")
-        indicator?.fraction = 0.8
 
         val targetDir = storageDir.resolve(release.tagName)
         try {
@@ -132,14 +87,12 @@ class CfnLspInstaller(private val storageDir: Path = defaultStorageDir()) {
             )
         }
 
-        indicator?.fraction = 1.0
-
         val serverPath = targetDir.resolve(CfnLspServerConfig.SERVER_FILE)
         LOG.info { "CloudFormation LSP installed to: $serverPath" }
         return serverPath
     }
 
-    private fun downloadAsset(url: String, indicator: ProgressIndicator?): ByteArray {
+    private fun downloadAsset(url: String): ByteArray {
         val request = HttpRequest.newBuilder()
             .uri(URI.create(url))
             .timeout(java.time.Duration.ofMinutes(5))
@@ -152,7 +105,6 @@ class CfnLspInstaller(private val storageDir: Path = defaultStorageDir()) {
             throw RuntimeException("HTTP ${response.statusCode()}")
         }
 
-        indicator?.fraction = 0.7
         return response.body()
     }
 

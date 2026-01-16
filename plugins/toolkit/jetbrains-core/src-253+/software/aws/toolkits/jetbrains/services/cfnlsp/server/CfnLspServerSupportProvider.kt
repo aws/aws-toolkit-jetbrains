@@ -10,10 +10,13 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.platform.lsp.api.LspServerSupportProvider
 import com.intellij.platform.lsp.api.ProjectWideLspServerDescriptor
+import org.eclipse.lsp4j.services.LanguageServer
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.lsp.NodeRuntimeResolver
+import software.aws.toolkits.jetbrains.services.cfnlsp.CfnCredentialsService
+import software.aws.toolkits.jetbrains.services.cfnlsp.CfnLspServer
 import software.aws.toolkits.jetbrains.settings.CfnLspSettings
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.AwsToolkitBundle.message
@@ -41,6 +44,8 @@ private class CfnLspServerDescriptor(project: Project) :
     ProjectWideLspServerDescriptor(project, "AWS CloudFormation") {
 
     private val installer = CfnLspInstaller()
+
+    override val lsp4jServerClass: Class<out LanguageServer> = CfnLspServer::class.java
 
     override fun isSupportedFile(file: VirtualFile) = file.isCfnTemplate()
 
@@ -112,6 +117,8 @@ private class CfnLspServerDescriptor(project: Project) :
 
     override fun createInitializationOptions(): Any {
         val settings = CfnLspSettings.getInstance()
+        val credentialsService = CfnCredentialsService.getInstance(project)
+
         return mapOf(
             "handledSchemaProtocols" to listOf("file"),
             "aws" to mapOf(
@@ -121,7 +128,11 @@ private class CfnLspServerDescriptor(project: Project) :
                         "version" to "1.0.0"
                     )
                 ),
-                "telemetryEnabled" to settings.isTelemetryEnabled
+                "telemetryEnabled" to settings.isTelemetryEnabled,
+                "encryption" to mapOf(
+                    "key" to credentialsService.encryptionKeyBase64,
+                    "algorithm" to "A256GCM"
+                )
             )
         )
     }
