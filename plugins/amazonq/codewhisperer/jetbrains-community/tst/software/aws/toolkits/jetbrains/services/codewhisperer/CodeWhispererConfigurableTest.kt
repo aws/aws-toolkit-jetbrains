@@ -29,7 +29,7 @@ class CodeWhispererConfigurableTest : CodeWhispererTestBase() {
         // not configured in the tests if we don't do this
         configurable.reset()
 
-        assertThat(configurable.id).isEqualTo("aws.codewhisperer")
+        assertThat(configurable.id).isEqualTo("amazonq.codewhisperer")
         val panel = configurable.createPanel()
         mockCodeWhispererEnabledStatus(false)
 
