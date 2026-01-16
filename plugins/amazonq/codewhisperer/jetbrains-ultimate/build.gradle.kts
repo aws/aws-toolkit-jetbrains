@@ -12,18 +12,16 @@ intellijToolkit {
 }
 
 dependencies {
-    intellijPlatform {
-        localPlugin(project(":plugin-core"))
-    }
+    implementation(project(":plugin-core-q"))
 
     compileOnly(project(":plugin-amazonq:codewhisperer:jetbrains-community"))
     compileOnly(project(":plugin-amazonq:shared:jetbrains-ultimate"))
 
-    compileOnly(project(":plugin-core:jetbrains-ultimate"))
-    testCompileOnly(project(":plugin-core:jetbrains-ultimate"))
+    compileOnly(project(":plugin-core-q:jetbrains-ultimate"))
+    testCompileOnly(project(":plugin-core-q:jetbrains-ultimate"))
 
     testImplementation(testFixtures(project(":plugin-amazonq:codewhisperer:jetbrains-community")))
-    testImplementation(project(path = ":plugin-toolkit:jetbrains-ultimate", configuration = "testArtifacts"))
+    testImplementation(testFixtures(project(":plugin-core-q:jetbrains-ultimate")))
 }
 
 // hack because our test structure currently doesn't make complete sense

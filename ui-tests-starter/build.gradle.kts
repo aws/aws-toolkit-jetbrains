@@ -67,10 +67,9 @@ dependencies {
             intellijIdeaCommunity(version, !version.contains("SNAPSHOT"))
         }
 
-        localPlugin(project(":plugin-core"))
-        testImplementation(project(":plugin-core:core"))
-        testImplementation(project(":plugin-core:jetbrains-community"))
-        testImplementation(testFixtures(project(":plugin-core:jetbrains-community")))
+        testImplementation(project(":plugin-core-q:core-q"))
+        testImplementation(project(":plugin-core-q:jetbrains-community"))
+        testImplementation(testFixtures(project(":plugin-core-q:jetbrains-community")))
 
         testFramework(TestFrameworkType.Bundled)
         testFramework(TestFrameworkType.JUnit5)
@@ -79,7 +78,6 @@ dependencies {
     }
 
     testPlugins(project(":plugin-amazonq", "pluginZip"))
-    testPlugins(project(":plugin-core", "pluginZip"))
 }
 
 tasks.test {

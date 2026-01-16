@@ -21,13 +21,15 @@ import io.mockk.verify
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseMessage
-import software.aws.toolkits.core.TokenConnectionSettings
-import software.aws.toolkits.core.credentials.ToolkitBearerTokenProvider
-import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.sso.PKCEAuthorizationGrantToken
-import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
-import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
+import software.amazon.q.core.TokenConnectionSettings
+import software.amazon.q.core.credentials.ToolkitBearerTokenProvider
+import software.amazon.q.jetbrains.core.credentials.AwsBearerTokenConnection
+import software.amazon.q.jetbrains.core.credentials.ToolkitConnectionManager
+import software.amazon.q.jetbrains.core.credentials.sso.PKCEAuthorizationGrantToken
+import software.amazon.q.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
+import software.amazon.q.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
+import software.amazon.q.jetbrains.utils.isQConnected
+import software.amazon.q.jetbrains.utils.isQExpired
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLanguageServer
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
@@ -35,8 +37,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LspServerC
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.ConnectionMetadata
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.SsoProfileData
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.UpdateCredentialsPayload
-import software.aws.toolkits.jetbrains.utils.isQConnected
-import software.aws.toolkits.jetbrains.utils.isQExpired
 import java.time.Instant
 import java.util.concurrent.CompletableFuture
 

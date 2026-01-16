@@ -28,15 +28,18 @@ import org.mockito.kotlin.timeout
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import software.amazon.awssdk.services.codewhispererruntime.model.GenerateCompletionsResponse
-import software.aws.toolkits.core.TokenConnectionSettings
-import software.aws.toolkits.core.credentials.ToolkitBearerTokenProvider
-import software.aws.toolkits.jetbrains.core.MockClientManager
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
-import software.aws.toolkits.jetbrains.core.credentials.loginSso
-import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
-import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
-import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
-import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
+import software.amazon.q.core.TokenConnectionSettings
+import software.amazon.q.core.credentials.ToolkitBearerTokenProvider
+import software.amazon.q.jetbrains.core.MockClientManager
+import software.amazon.q.jetbrains.core.credentials.ToolkitAuthManager
+import software.amazon.q.jetbrains.core.credentials.loginSso
+import software.amazon.q.jetbrains.core.credentials.sono.Q_SCOPES
+import software.amazon.q.jetbrains.core.credentials.sono.SONO_REGION
+import software.amazon.q.jetbrains.core.credentials.sono.SONO_URL
+import software.amazon.q.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
+import software.amazon.q.jetbrains.utils.rules.CodeInsightTestFixtureRule
+import software.amazon.q.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
+import software.amazon.q.jetbrains.utils.rules.RunWithRealCredentials
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.codeWhispererRecommendationActionId
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonFileName
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonTestLeftContext
@@ -58,9 +61,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhisp
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
-import software.aws.toolkits.jetbrains.utils.rules.CodeInsightTestFixtureRule
-import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
-import software.aws.toolkits.jetbrains.utils.rules.RunWithRealCredentials
 
 open class CodeWhispererIntegrationTestBase(val projectRule: CodeInsightTestFixtureRule = PythonCodeInsightTestFixtureRule()) {
 

@@ -8,8 +8,8 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.SimpleModificationTracker
 import org.jetbrains.annotations.VisibleForTesting
-import software.aws.toolkits.core.utils.error
-import software.aws.toolkits.core.utils.getLogger
+import software.amazon.q.core.utils.error
+import software.amazon.q.core.utils.getLogger
 import kotlin.reflect.KMutableProperty
 
 class CodeInsightsSettingsFacade : SimpleModificationTracker(), Disposable {

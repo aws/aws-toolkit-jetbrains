@@ -12,10 +12,10 @@ import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import com.intellij.openapi.util.io.FileUtil.createTempDirectory
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
-import software.aws.toolkits.core.utils.error
-import software.aws.toolkits.core.utils.exists
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.warn
+import software.amazon.q.core.utils.error
+import software.amazon.q.core.utils.exists
+import software.amazon.q.core.utils.getLogger
+import software.amazon.q.core.utils.warn
 import software.aws.toolkits.jetbrains.services.codemodernizer.TransformationSummary
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.unzipFile
 import java.io.File

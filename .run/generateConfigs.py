@@ -60,8 +60,6 @@ if __name__ == '__main__':
     ]
     plugins = [
         PluginVariant("Amazon Q", "amazonq", ":plugin-amazonq"),
-        PluginVariant("AWS Toolkit", "toolkit/intellij-standalone", ":plugin-toolkit:intellij-standalone"),
-        PluginVariant("All", "sandbox-all", ":sandbox-all"),
     ]
 
 
@@ -70,7 +68,3 @@ if __name__ == '__main__':
         for ide in ides:
             for plugin in plugins:
                 write_config(mv, ide, plugin)
-
-    # gateway only supported from last 'stable' version onwards
-    for mv in mvs[2:]:
-        write_config(mv, IdeVariant("Gateway", "GW"), PluginVariant("AWS Toolkit", "toolkit/jetbrains-gateway", ":plugin-toolkit:jetbrains-gateway"))

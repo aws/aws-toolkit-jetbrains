@@ -11,9 +11,10 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 import com.intellij.util.text.nullize
+import software.amazon.q.jetbrains.settings.QSettingsMigrationUtil
 
 @Service
-@State(name = "lspSettings", storages = [Storage("aws.xml", roamingType = RoamingType.DISABLED)])
+@State(name = "lspSettings", storages = [Storage("amazonq.xml", roamingType = RoamingType.DISABLED)])
 class LspSettings : PersistentStateComponent<LspConfiguration> {
     private var state = LspConfiguration()
 
@@ -21,6 +22,14 @@ class LspSettings : PersistentStateComponent<LspConfiguration> {
 
     override fun loadState(state: LspConfiguration) {
         this.state = state
+    }
+
+    override fun noStateLoaded() {
+        val state = QSettingsMigrationUtil.migrateState(
+            "lspSettings",
+            LspConfiguration::class.java
+        ) ?: LspConfiguration()
+        loadState(state)
     }
 
     fun getArtifactPath() = state.artifactPath

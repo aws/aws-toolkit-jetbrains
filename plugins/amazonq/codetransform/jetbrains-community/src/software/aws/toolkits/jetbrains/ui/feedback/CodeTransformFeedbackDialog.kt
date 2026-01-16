@@ -4,8 +4,10 @@
 package software.aws.toolkits.jetbrains.ui.feedback
 
 import com.intellij.openapi.project.Project
+import software.amazon.q.jetbrains.services.telemetry.TelemetryService
+import software.amazon.q.jetbrains.ui.feedback.FEEDBACK_SOURCE
+import software.amazon.q.jetbrains.ui.feedback.FeedbackDialog
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeModernizerSessionState
-import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.resources.message
 
 class CodeTransformFeedbackDialog(project: Project) : FeedbackDialog(project) {

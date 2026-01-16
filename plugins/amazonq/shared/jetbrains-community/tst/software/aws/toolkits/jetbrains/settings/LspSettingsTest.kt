@@ -8,7 +8,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.jdom.output.XMLOutputter
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import software.aws.toolkits.jetbrains.utils.xmlElement
+import software.amazon.q.jetbrains.utils.xmlElement
 
 class LspSettingsTest {
     private lateinit var lspSettings: LspSettings

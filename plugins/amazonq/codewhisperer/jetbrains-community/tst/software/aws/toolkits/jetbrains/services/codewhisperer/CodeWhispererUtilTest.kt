@@ -19,13 +19,15 @@ import software.amazon.awssdk.services.codewhispererruntime.model.OptOutPreferen
 import software.amazon.awssdk.services.codewhispererruntime.model.Position
 import software.amazon.awssdk.services.codewhispererruntime.model.Range
 import software.amazon.awssdk.services.ssooidc.SsoOidcClient
-import software.aws.toolkits.core.utils.test.aStringWithLineCount
-import software.aws.toolkits.jetbrains.core.MockClientManagerRule
-import software.aws.toolkits.jetbrains.core.credentials.LegacyManagedBearerSsoConnection
-import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
-import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
-import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
-import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
+import software.amazon.q.core.utils.test.aStringWithLineCount
+import software.amazon.q.jetbrains.core.MockClientManagerRule
+import software.amazon.q.jetbrains.core.credentials.LegacyManagedBearerSsoConnection
+import software.amazon.q.jetbrains.core.credentials.sono.Q_SCOPES
+import software.amazon.q.jetbrains.core.credentials.sono.SONO_REGION
+import software.amazon.q.jetbrains.core.credentials.sono.SONO_URL
+import software.amazon.q.jetbrains.core.region.MockRegionProviderRule
+import software.amazon.q.jetbrains.settings.AwsSettings
+import software.amazon.q.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getCompletionType
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getTelemetryOptOutPreference
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.convertSeverity
@@ -35,8 +37,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.isWithin
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.runIfIdcConnectionOrTelemetryEnabled
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.toCodeChunk
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.truncateLineByLine
-import software.aws.toolkits.jetbrains.settings.AwsSettings
-import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 
 class CodeWhispererUtilTest {

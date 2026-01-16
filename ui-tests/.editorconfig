@@ -1,3 +1,0 @@
-[{*.kts,*.kt}]
-# Disable log rule, due to this code is using a logger that isn't compatible with the lazy syntax
-disabled_rules = log-not-lazy

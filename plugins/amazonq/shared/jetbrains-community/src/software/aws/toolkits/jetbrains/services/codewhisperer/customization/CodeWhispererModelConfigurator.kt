@@ -22,8 +22,12 @@ import kotlinx.coroutines.launch
 import org.eclipse.lsp4j.DidChangeConfigurationParams
 import software.amazon.awssdk.services.codewhispererruntime.CodeWhispererRuntimeClient
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
-import software.aws.toolkits.core.utils.debug
-import software.aws.toolkits.core.utils.getLogger
+import software.amazon.q.core.utils.debug
+import software.amazon.q.core.utils.getLogger
+import software.amazon.q.jetbrains.settings.QSettingsMigrationUtil
+import software.amazon.q.jetbrains.utils.notifyInfo
+import software.amazon.q.jetbrains.utils.notifyWarn
+import software.amazon.q.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.amazonq.calculateIfIamIdentityCenterConnection
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
@@ -31,9 +35,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.profile.QProfileSwitchIn
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileSelectedListener
-import software.aws.toolkits.jetbrains.utils.notifyInfo
-import software.aws.toolkits.jetbrains.utils.notifyWarn
-import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.resources.message
 import java.util.Collections
 import java.util.concurrent.atomic.AtomicBoolean
@@ -69,7 +70,7 @@ private fun notifyNewCustomization(project: Project) {
 }
 
 @Service(Service.Level.APP)
-@State(name = "codewhispererCustomizationStates", storages = [Storage("aws.xml")])
+@State(name = "codewhispererCustomizationStates", storages = [Storage("amazonq.xml")])
 class DefaultCodeWhispererModelConfigurator(
     private val cs: CoroutineScope,
 ) : CodeWhispererModelConfigurator, PersistentStateComponent<CodeWhispererCustomizationState>, Disposable {
@@ -327,6 +328,14 @@ class DefaultCodeWhispererModelConfigurator(
 
         this.serviceDefaultArn = state.serviceDefaultArn
         this.customizationArnOverrideV2 = state.customizationArnOverrideV2
+    }
+
+    override fun noStateLoaded() {
+        val state = QSettingsMigrationUtil.migrateState(
+            "codewhispererCustomizationStates",
+            CodeWhispererCustomizationState::class.java
+        ) ?: CodeWhispererCustomizationState()
+        loadState(state)
     }
 
     // current latest field is customizationArnOverrideV2

@@ -5,8 +5,8 @@ package software.aws.toolkits.jetbrains.services.amazonq.profile
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.openapi.util.registry.Registry
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.warn
+import software.amazon.q.core.utils.getLogger
+import software.amazon.q.core.utils.warn
 
 data class QRegionEndpoint(val region: String, val endpoint: String)
 

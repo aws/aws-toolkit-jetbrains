@@ -18,8 +18,8 @@ import org.eclipse.lsp4j.Position
 import org.eclipse.lsp4j.Range
 import org.eclipse.lsp4j.TextEdit
 import org.eclipse.lsp4j.WorkspaceEdit
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.warn
+import software.amazon.q.core.utils.getLogger
+import software.amazon.q.core.utils.warn
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CursorPosition
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CursorRange
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CursorState

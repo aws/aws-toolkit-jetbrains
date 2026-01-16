@@ -18,9 +18,9 @@ import software.amazon.awssdk.services.codewhispererruntime.model.ThrottlingExce
 import software.amazon.awssdk.services.codewhispererruntime.model.UploadContext
 import software.amazon.awssdk.services.codewhispererruntime.model.UploadIntent
 import software.amazon.awssdk.utils.IoUtils
-import software.aws.toolkits.core.utils.debug
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.jetbrains.core.AwsClientManager
+import software.amazon.q.core.utils.debug
+import software.amazon.q.core.utils.getLogger
+import software.amazon.q.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.services.amazonq.RetryableOperation
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanServerException

@@ -1,9 +1,0 @@
-/NuGet.Config
-/testData/NuGet.Config
-ReSharper.AWS.sln.DotSettings.user
-
-# Generated files
-*Generated.kt
-
-# Rider tests tmp files
-**/gold/*.tmp

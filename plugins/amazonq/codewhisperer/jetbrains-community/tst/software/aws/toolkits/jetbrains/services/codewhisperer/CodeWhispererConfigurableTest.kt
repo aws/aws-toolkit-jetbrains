@@ -9,7 +9,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 import org.mockito.kotlin.doNothing
 import org.mockito.kotlin.whenever
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
+import software.amazon.q.jetbrains.core.credentials.ToolkitConnectionManagerListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererConfigurable
 import software.aws.toolkits.resources.message
 import javax.swing.JCheckBox
@@ -29,7 +29,7 @@ class CodeWhispererConfigurableTest : CodeWhispererTestBase() {
         // not configured in the tests if we don't do this
         configurable.reset()
 
-        assertThat(configurable.id).isEqualTo("aws.codewhisperer")
+        assertThat(configurable.id).isEqualTo("amazonq.codewhisperer")
         val panel = configurable.createPanel()
         mockCodeWhispererEnabledStatus(false)
 

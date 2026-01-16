@@ -21,8 +21,8 @@ dependencies {
         }
     }
     compileOnly(project(":plugin-amazonq:shared:jetbrains-community"))
-    compileOnly(project(":plugin-core:jetbrains-ultimate"))
+    compileOnly(project(":plugin-core-q:jetbrains-ultimate"))
 
-    testFixturesApi(testFixtures(project(":plugin-core:jetbrains-community")))
-    testFixturesApi(testFixtures(project(":plugin-core:jetbrains-ultimate")))
+    testFixturesApi(testFixtures(project(":plugin-core-q:jetbrains-community")))
+    testFixturesApi(testFixtures(project(":plugin-core-q:jetbrains-ultimate")))
 }

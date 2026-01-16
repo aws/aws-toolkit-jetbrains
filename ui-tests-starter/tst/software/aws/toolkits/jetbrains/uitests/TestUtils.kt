@@ -93,7 +93,7 @@ fun setupTestEnvironment() {
 }
 
 fun writeToAwsXml(@Language("XML") configContent: String) {
-    val path = Paths.get("tstData", "configAmazonQTests", "options", "aws.xml")
+    val path = Paths.get("tstData", "configAmazonQTests", "options", "amazonq.xml")
 
     Files.createDirectories(path.parent)
     Files.write(

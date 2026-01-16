@@ -8,15 +8,15 @@ import org.junit.Rule
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import software.aws.toolkits.core.rules.SystemPropertyHelper
-import software.aws.toolkits.jetbrains.core.credentials.LegacyManagedBearerSsoConnection
-import software.aws.toolkits.jetbrains.core.credentials.ManagedBearerSsoConnection
-import software.aws.toolkits.jetbrains.core.credentials.pinning.ConnectionPinningManager
-import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
-import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
-import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
-import software.aws.toolkits.jetbrains.utils.extensions.SsoLogin
-import software.aws.toolkits.jetbrains.utils.extensions.SsoLoginExtension
+import software.amazon.q.core.rules.SystemPropertyHelper
+import software.amazon.q.jetbrains.core.credentials.LegacyManagedBearerSsoConnection
+import software.amazon.q.jetbrains.core.credentials.ManagedBearerSsoConnection
+import software.amazon.q.jetbrains.core.credentials.pinning.ConnectionPinningManager
+import software.amazon.q.jetbrains.core.credentials.pinning.QConnection
+import software.amazon.q.jetbrains.core.credentials.sono.Q_SCOPES
+import software.amazon.q.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
+import software.amazon.q.jetbrains.utils.extensions.SsoLogin
+import software.amazon.q.jetbrains.utils.extensions.SsoLoginExtension
 
 @ExtendWith(ApplicationExtension::class, SsoLoginExtension::class)
 @SsoLogin("amazonq-test-account")

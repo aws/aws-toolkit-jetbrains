@@ -9,11 +9,11 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiFile
+import software.amazon.q.jetbrains.utils.computeOnEdt
+import software.amazon.q.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.jetbrains.services.amazonq.webview.FqnWebviewAdapter
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.file.util.LanguageExtractor
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.file.util.MatchPolicyExtractor
-import software.aws.toolkits.jetbrains.utils.computeOnEdt
-import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 
 class FileContextExtractor(private val fqnWebviewAdapter: FqnWebviewAdapter?, private val project: Project) {
     private val languageExtractor: LanguageExtractor = LanguageExtractor()

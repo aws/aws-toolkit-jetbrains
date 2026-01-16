@@ -6,9 +6,9 @@
         <listener class="software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformProjectStartupSettingListener"
                   topic="com.intellij.openapi.wm.ex.ToolWindowManagerListener"/>
         <listener class="software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformProjectStartupSettingListener"
-                  topic="software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener"/>
+                  topic="software.amazon.q.jetbrains.core.credentials.ToolkitConnectionManagerListener"/>
         <listener class="software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformProjectStartupSettingListener"
-                  topic="software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener"/>
+                  topic="software.amazon.q.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener"/>
     </projectListeners>
 
     <extensions defaultExtensionNs="com.intellij">

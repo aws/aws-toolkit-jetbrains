@@ -14,7 +14,6 @@ intellijToolkit {
 
 dependencies {
     intellijPlatform {
-        localPlugin(project(":plugin-core"))
         // Required for collaboration auth credentials in 2025.3+
         val version = IdeVersions.ideProfile(project).ultimate.sdkVersion
         if (version.startsWith("2025.3")) {
@@ -23,15 +22,15 @@ dependencies {
         }
     }
 
-    compileOnly(project(":plugin-core:jetbrains-community"))
+    implementation(project(":plugin-core-q"))
+    compileOnly(project(":plugin-core-q:jetbrains-community"))
 
     implementation(project(":plugin-amazonq:shared:jetbrains-community"))
     implementation(libs.lsp4j)
     // CodeWhispererTelemetryService uses a CircularFifoQueue, previously transitive from zjsonpatch
     implementation(libs.commons.collections)
 
-    testFixturesApi(testFixtures(project(":plugin-core:jetbrains-community")))
-    testFixturesApi(project(path = ":plugin-toolkit:jetbrains-core", configuration = "testArtifacts"))
+    testFixturesApi(testFixtures(project(":plugin-core-q:jetbrains-community")))
 }
 
 // hack because our test structure currently doesn't make complete sense

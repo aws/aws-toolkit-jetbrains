@@ -17,7 +17,7 @@ jobs:
   generate_artifact:
     strategy:
       matrix:
-        build_target: [ ':plugin-core:buildPlugin', ':plugin-toolkit:intellij-standalone:buildPlugin', ':plugin-amazonq:buildPlugin' ]
+        build_target: [ ':plugin-amazonq:buildPlugin' ]
         version: [ '2024.3', '2025.1', '2025.2', '2025.3' ]
     runs-on: ubuntu-latest
     steps:
@@ -118,7 +118,7 @@ jobs:
         # "prerelease" (main branch) or "pre-<feature>"
         if: "env.TAG_NAME == 'prerelease' || startsWith(env.TAG_NAME, 'pre-')"
         run: |
-          echo "SUBJECT=AWS Toolkit ${AWS_TOOLKIT_VERSION}: ${FEAT_NAME:-${TAG_NAME}}" >> $GITHUB_ENV
+          echo "SUBJECT=Amazon Q ${AWS_TOOLKIT_VERSION}: ${FEAT_NAME:-${TAG_NAME}}" >> $GITHUB_ENV
           gh release delete "$TAG_NAME" --cleanup-tag --yes || true
       - name: Publish to GitHub Releases
         run: |

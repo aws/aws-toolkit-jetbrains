@@ -6,9 +6,9 @@ package software.aws.toolkits.jetbrains.services.codemodernizer.model
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
-import software.aws.toolkits.core.utils.error
-import software.aws.toolkits.core.utils.exists
-import software.aws.toolkits.core.utils.getLogger
+import software.amazon.q.core.utils.error
+import software.amazon.q.core.utils.exists
+import software.amazon.q.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.unzipFile
 import java.io.File
 import java.nio.file.Path

@@ -8,10 +8,10 @@ import com.intellij.openapi.util.text.StringUtil
 import com.intellij.util.io.DigestUtil
 import com.intellij.util.system.CpuArch
 import org.apache.commons.io.FileUtils
-import software.aws.toolkits.core.utils.ZIP_PROPERTY_POSIX
-import software.aws.toolkits.core.utils.createParentDirectories
-import software.aws.toolkits.core.utils.exists
-import software.aws.toolkits.core.utils.hasPosixFilePermissions
+import software.amazon.q.core.utils.ZIP_PROPERTY_POSIX
+import software.amazon.q.core.utils.createParentDirectories
+import software.amazon.q.core.utils.exists
+import software.amazon.q.core.utils.hasPosixFilePermissions
 import java.io.FileNotFoundException
 import java.net.URI
 import java.nio.file.FileSystems

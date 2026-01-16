@@ -11,11 +11,12 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 import com.intellij.util.xmlb.annotations.Property
-import software.aws.toolkits.jetbrains.utils.notifyInfo
+import software.amazon.q.jetbrains.settings.QSettingsMigrationUtil
+import software.amazon.q.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.AmazonQBundle
 
 @Service
-@State(name = "codewhispererSettings", storages = [Storage("aws.xml")])
+@State(name = "codewhispererSettings", storages = [Storage("amazonq.xml")])
 class CodeWhispererSettings : PersistentStateComponent<CodeWhispererConfiguration> {
     private val state = CodeWhispererConfiguration()
 
@@ -155,6 +156,14 @@ class CodeWhispererSettings : PersistentStateComponent<CodeWhispererConfiguratio
         this.state.intValue.putAll(state.intValue)
         this.state.stringValue.putAll(state.stringValue)
         this.state.autoBuildSetting.putAll(state.autoBuildSetting)
+    }
+
+    override fun noStateLoaded() {
+        val state = QSettingsMigrationUtil.migrateState(
+            "codewhispererSettings",
+            CodeWhispererConfiguration::class.java
+        ) ?: CodeWhispererConfiguration()
+        loadState(state)
     }
 
     companion object {

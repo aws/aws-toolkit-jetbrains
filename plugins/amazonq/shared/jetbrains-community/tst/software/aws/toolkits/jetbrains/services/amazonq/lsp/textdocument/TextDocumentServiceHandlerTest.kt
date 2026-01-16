@@ -41,12 +41,12 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestName
-import software.aws.toolkits.jetbrains.core.coroutines.EDT
+import software.amazon.q.jetbrains.core.coroutines.EDT
+import software.amazon.q.jetbrains.utils.rules.CodeInsightTestFixtureRule
+import software.amazon.q.jetbrains.utils.satisfiesKt
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLanguageServer
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.LspEditorUtil
-import software.aws.toolkits.jetbrains.utils.rules.CodeInsightTestFixtureRule
-import software.aws.toolkits.jetbrains.utils.satisfiesKt
 import java.net.URI
 import java.nio.file.Path
 import java.util.concurrent.CompletableFuture

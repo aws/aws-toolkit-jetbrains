@@ -5,14 +5,14 @@ package software.aws.toolkits.jetbrains.services.amazonq.auth
 
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.warn
-import software.aws.toolkits.jetbrains.core.gettingstarted.editor.ActiveConnection
-import software.aws.toolkits.jetbrains.core.gettingstarted.editor.ActiveConnectionType
-import software.aws.toolkits.jetbrains.core.gettingstarted.editor.BearerTokenFeatureSet
-import software.aws.toolkits.jetbrains.core.gettingstarted.editor.checkBearerConnectionValidity
-import software.aws.toolkits.jetbrains.core.gettingstarted.reauthenticateWithQ
-import software.aws.toolkits.jetbrains.core.gettingstarted.requestCredentialsForQ
+import software.amazon.q.core.utils.getLogger
+import software.amazon.q.core.utils.warn
+import software.amazon.q.jetbrains.core.gettingstarted.editor.ActiveConnection
+import software.amazon.q.jetbrains.core.gettingstarted.editor.ActiveConnectionType
+import software.amazon.q.jetbrains.core.gettingstarted.editor.BearerTokenFeatureSet
+import software.amazon.q.jetbrains.core.gettingstarted.editor.checkBearerConnectionValidity
+import software.amazon.q.jetbrains.core.gettingstarted.reauthenticateWithQ
+import software.amazon.q.jetbrains.core.gettingstarted.requestCredentialsForQ
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.TelemetryHelper
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
 import software.aws.toolkits.resources.message
