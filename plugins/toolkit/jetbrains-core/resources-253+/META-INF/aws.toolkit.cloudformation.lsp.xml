@@ -4,6 +4,6 @@
 <idea-plugin>
     <extensions defaultExtensionNs="com.intellij">
         <platform.lsp.serverSupportProvider
-            implementation="software.aws.toolkits.jetbrains.services.cloudformation.lsp.CfnLspServerSupportProvider"/>
+            implementation="software.aws.toolkits.jetbrains.services.cfnlsp.server.CfnLspServerSupportProvider"/>
     </extensions>
 </idea-plugin>

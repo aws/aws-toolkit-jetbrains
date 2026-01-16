@@ -1,7 +1,7 @@
 // Copyright 2025 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.services.cloudformation.lsp
+package software.aws.toolkits.jetbrains.services.cfnlsp.server
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
