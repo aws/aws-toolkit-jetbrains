@@ -12,6 +12,7 @@ import software.aws.toolkit.core.utils.tryOrNull
 import software.aws.toolkit.jetbrains.core.coroutines.disposableCoroutineScope
 import software.aws.toolkit.jetbrains.core.credentials.profiles.DEFAULT_PROFILE_ID
 import software.aws.toolkit.jetbrains.core.region.AwsRegionProvider
+import software.aws.toolkit.jetbrains.settings.ToolkitSettingsMigrationUtil
 
 data class ConnectionSettingsState(
     var activeProfile: String? = null,
@@ -34,7 +35,11 @@ class DefaultAwsConnectionManager(project: Project) :
     )
 
     override fun noStateLoaded() {
-        loadState(ConnectionSettingsState())
+        val state = ToolkitSettingsMigrationUtil.migrateState(
+            "toolkitAccountSettings",
+            ConnectionSettingsState::class.java
+        ) ?: ConnectionSettingsState()
+        loadState(state)
     }
 
     override fun loadState(state: ConnectionSettingsState) {

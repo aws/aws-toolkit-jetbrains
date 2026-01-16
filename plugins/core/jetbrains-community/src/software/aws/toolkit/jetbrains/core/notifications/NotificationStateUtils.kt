@@ -9,6 +9,7 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 import software.aws.toolkit.core.utils.ETagProvider
+import software.aws.toolkit.jetbrains.settings.ToolkitSettingsMigrationUtil
 import java.time.Duration
 import java.time.Instant
 
@@ -32,6 +33,14 @@ class NotificationDismissalState : PersistentStateComponent<NotificationDismissa
     override fun loadState(state: NotificationDismissalConfiguration) {
         this.state = state
         cleanExpiredNotifications()
+    }
+
+    override fun noStateLoaded() {
+        val state = ToolkitSettingsMigrationUtil.migrateState(
+            "toolkitNotificationDismissals",
+            NotificationDismissalConfiguration::class.java
+        ) ?: NotificationDismissalConfiguration()
+        loadState(state)
     }
 
     fun isDismissed(notificationId: String): Boolean =
@@ -70,6 +79,14 @@ class NotificationEtagState : PersistentStateComponent<NotificationEtagConfigura
 
     override fun loadState(state: NotificationEtagConfiguration) {
         this.state.etag = state.etag
+    }
+
+    override fun noStateLoaded() {
+        val state = ToolkitSettingsMigrationUtil.migrateState(
+            "toolkitNotificationEtag",
+            NotificationEtagConfiguration::class.java
+        ) ?: NotificationEtagConfiguration()
+        loadState(state)
     }
 
     override var etag: String?

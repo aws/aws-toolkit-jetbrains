@@ -16,6 +16,7 @@ import software.aws.toolkit.core.utils.exists
 import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkit.core.utils.lastModified
 import software.aws.toolkit.core.utils.warn
+import software.aws.toolkit.jetbrains.settings.ToolkitSettingsMigrationUtil
 import software.aws.toolkit.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance.ExecutableWithPath
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
@@ -76,6 +77,14 @@ class DefaultExecutableManager : PersistentStateComponent<ExecutableStateList>, 
         ExecutableType.executables().forEach {
             getExecutable(it)
         }
+    }
+
+    override fun noStateLoaded() {
+        val state = ToolkitSettingsMigrationUtil.migrateState(
+            "toolkitExecutables",
+            ExecutableStateList::class.java
+        ) ?: ExecutableStateList()
+        loadState(state)
     }
 
     override fun getExecutableIfPresent(type: ExecutableType<*>): ExecutableInstance {

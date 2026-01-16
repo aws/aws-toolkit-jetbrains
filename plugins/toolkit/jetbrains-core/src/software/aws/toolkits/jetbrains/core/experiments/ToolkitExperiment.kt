@@ -16,6 +16,7 @@ import com.intellij.util.messages.Topic
 import com.intellij.util.xmlb.annotations.Property
 import software.aws.toolkit.core.utils.replace
 import software.aws.toolkit.jetbrains.isDeveloperMode
+import software.aws.toolkit.jetbrains.settings.ToolkitSettingsMigrationUtil
 import software.aws.toolkit.jetbrains.utils.createNotificationExpiringAction
 import software.aws.toolkit.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
@@ -126,6 +127,14 @@ internal class ToolkitExperimentManager : PersistentStateComponent<ExperimentSta
     override fun loadState(loadedState: ExperimentState) {
         state.value.replace(loadedState.value)
         state.nextSuggestion.replace(loadedState.nextSuggestion)
+    }
+
+    override fun noStateLoaded() {
+        val state = ToolkitSettingsMigrationUtil.migrateState(
+            "toolkitExperiments",
+            ExperimentState::class.java
+        ) ?: ExperimentState()
+        loadState(state)
     }
 
     private fun getDefault(experiment: ToolkitExperiment): Boolean {

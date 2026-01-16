@@ -7,6 +7,7 @@ import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
+import software.aws.toolkit.jetbrains.settings.ToolkitSettingsMigrationUtil
 
 @State(name = "toolkitCawsSpace", storages = [Storage("awsToolkit.xml")])
 class CawsSpaceTracker : PersistentStateComponent<CawsSpaceState> {
@@ -16,6 +17,14 @@ class CawsSpaceTracker : PersistentStateComponent<CawsSpaceState> {
 
     override fun loadState(state: CawsSpaceState) {
         this.state.lastSpaceName = state.lastSpaceName
+    }
+
+    override fun noStateLoaded() {
+        val state = ToolkitSettingsMigrationUtil.migrateState(
+            "toolkitCawsSpace",
+            CawsSpaceState::class.java
+        ) ?: CawsSpaceState()
+        loadState(state)
     }
 
     fun lastSpaceName() = state.lastSpaceName

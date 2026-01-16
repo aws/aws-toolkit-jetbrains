@@ -20,6 +20,7 @@ import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.ui.components.JBTabbedPane
 import com.intellij.util.ui.components.BorderLayoutPanel
+import software.aws.toolkit.jetbrains.settings.ToolkitSettingsMigrationUtil
 import software.aws.toolkits.jetbrains.core.credentials.CredsComboBoxActionGroup
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.DevToolsToolWindow
 import software.aws.toolkits.resources.message
@@ -132,6 +133,14 @@ class AwsToolkitExplorerToolWindow(
 
     override fun loadState(state: AwsToolkitExplorerToolWindowState) {
         selectTab(EXPLORER_TAB_ID)
+    }
+
+    override fun noStateLoaded() {
+        val state = ToolkitSettingsMigrationUtil.migrateState(
+            "toolkitExplorerToolWindow",
+            AwsToolkitExplorerToolWindowState::class.java
+        ) ?: AwsToolkitExplorerToolWindowState()
+        loadState(state)
     }
 
     companion object {

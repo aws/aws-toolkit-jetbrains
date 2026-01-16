@@ -15,6 +15,7 @@ import software.aws.toolkit.jetbrains.core.credentials.pinning.FeatureWithPinned
 import software.aws.toolkit.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkit.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
 import software.aws.toolkit.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
+import software.aws.toolkit.jetbrains.settings.ToolkitSettingsMigrationUtil
 
 // TODO: unify with AwsConnectionManager
 @State(name = "toolkitConnectionManager", storages = [Storage("awsToolkit.xml")])
@@ -114,6 +115,14 @@ class DefaultToolkitConnectionManager : ToolkitConnectionManager, PersistentStat
                 }
             connection = ToolkitAuthManager.getInstance().getConnection(activeConnectionIdWithRegion)
         }
+    }
+
+    override fun noStateLoaded() {
+        val state = ToolkitSettingsMigrationUtil.migrateState(
+            "toolkitConnectionManager",
+            ToolkitConnectionManagerState::class.java
+        ) ?: ToolkitConnectionManagerState()
+        loadState(state)
     }
 
     @Synchronized

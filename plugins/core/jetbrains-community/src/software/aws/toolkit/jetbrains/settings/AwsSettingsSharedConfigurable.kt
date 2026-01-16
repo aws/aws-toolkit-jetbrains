@@ -12,7 +12,7 @@ import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.layout.selected
 import software.aws.toolkit.resources.AwsCoreBundle
 
-class AwsSettingsSharedConfigurable : BoundConfigurable("AWS"), SearchableConfigurable {
+class AwsSettingsSharedConfigurable : BoundConfigurable("AWS Toolkit"), SearchableConfigurable {
     val enableTelemetry: JBCheckBox = JBCheckBox(AwsCoreBundle.message("aws.settings.telemetry.option"))
     private val enableAutoUpdate: JBCheckBox = JBCheckBox(AwsCoreBundle.message("aws.settings.auto_update.text"))
     private val enableAutoUpdateNotification: JBCheckBox = JBCheckBox(AwsCoreBundle.message("aws.settings.auto_update.notification_enable.text"))

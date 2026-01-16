@@ -14,6 +14,7 @@ import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkit.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkit.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkit.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
+import software.aws.toolkit.jetbrains.settings.ToolkitSettingsMigrationUtil
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.collections.putAll
 
@@ -123,6 +124,14 @@ class DefaultConnectionPinningManager :
                 authManager.getConnection(v)?.let { k to it }
             }
         )
+    }
+
+    override fun noStateLoaded() {
+        val state = ToolkitSettingsMigrationUtil.migrateState(
+            "toolkitConnectionPinningManager",
+            ConnectionPinningManagerState::class.java
+        ) ?: ConnectionPinningManagerState()
+        loadState(state)
     }
 
     override fun dispose() {}

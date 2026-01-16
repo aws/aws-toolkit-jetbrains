@@ -7,6 +7,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
+import software.aws.toolkit.jetbrains.settings.ToolkitSettingsMigrationUtil
 
 @State(name = "toolkitEcsExec", storages = [Storage("awsToolkit.xml")])
 class EcsExecCommandSettings : PersistentStateComponent<AwsEcsExecConfiguration> {
@@ -16,6 +17,14 @@ class EcsExecCommandSettings : PersistentStateComponent<AwsEcsExecConfiguration>
 
     override fun loadState(state: AwsEcsExecConfiguration) {
         this.state = state
+    }
+
+    override fun noStateLoaded() {
+        val state = ToolkitSettingsMigrationUtil.migrateState(
+            "toolkitEcsExec",
+            AwsEcsExecConfiguration::class.java
+        ) ?: AwsEcsExecConfiguration()
+        loadState(state)
     }
 
     var showExecuteCommandWarning: Boolean

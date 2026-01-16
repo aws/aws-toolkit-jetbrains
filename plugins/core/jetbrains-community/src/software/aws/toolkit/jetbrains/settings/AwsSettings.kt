@@ -46,6 +46,14 @@ class DefaultAwsSettings : PersistentStateComponent<AwsConfiguration>, AwsSettin
         this.state = state
     }
 
+    override fun noStateLoaded() {
+        val state = ToolkitSettingsMigrationUtil.migrateState(
+            "toolkit",
+            AwsConfiguration::class.java
+        ) ?: AwsConfiguration()
+        loadState(state)
+    }
+
     override var isTelemetryEnabled: Boolean
         get() = state.isTelemetryEnabled ?: true
         set(value) {

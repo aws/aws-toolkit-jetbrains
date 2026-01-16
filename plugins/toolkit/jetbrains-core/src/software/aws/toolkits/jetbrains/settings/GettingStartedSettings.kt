@@ -7,6 +7,7 @@ import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
+import software.aws.toolkit.jetbrains.settings.ToolkitSettingsMigrationUtil
 
 @State(name = "toolkitGettingStarted", storages = [Storage("awsToolkit.xml")])
 class GettingStartedSettings : PersistentStateComponent<GettingStartedSettingsConfiguration> {
@@ -15,6 +16,14 @@ class GettingStartedSettings : PersistentStateComponent<GettingStartedSettingsCo
 
     override fun loadState(state: GettingStartedSettingsConfiguration) {
         this.state = state
+    }
+
+    override fun noStateLoaded() {
+        val state = ToolkitSettingsMigrationUtil.migrateState(
+            "toolkitGettingStarted",
+            GettingStartedSettingsConfiguration::class.java
+        ) ?: GettingStartedSettingsConfiguration()
+        loadState(state)
     }
 
     var shouldDisplayPage: Boolean
