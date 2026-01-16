@@ -264,6 +264,13 @@
             key="aws.settings.dynamic_resources_configurable.title"
             instance="software.aws.toolkits.jetbrains.settings.DynamicResourcesConfigurable"
         />
+        <applicationConfigurable
+            parentId="aws.toolkit"
+            id="aws.cloudformation"
+            bundle="software.aws.toolkits.resources.MessagesBundle"
+            key="cloudformation.settings.title"
+            instance="software.aws.toolkits.jetbrains.settings.CfnLspSettingsConfigurable"
+        />
 
         <programRunner implementation="software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamInvokeRunner"/>
         <programRunner implementation="software.aws.toolkits.jetbrains.services.lambda.execution.remote.RemoteLambdaRunner"/>
