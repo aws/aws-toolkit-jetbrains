@@ -5,6 +5,7 @@ import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import org.jetbrains.intellij.platform.gradle.tasks.PrepareSandboxTask
 import software.aws.toolkits.gradle.findFolders
+import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.IdeVersions
 import software.aws.toolkits.gradle.intellij.toolkitIntelliJ
 
@@ -91,7 +92,14 @@ dependencies {
 
         // annoying resolution issue that we don't want to bother fixing
         if (!project.name.contains("jetbrains-gateway")) {
-            val type = toolkitIntelliJ.ideFlavor.map { IntelliJPlatformType.fromCode(it.toString()) }
+            val type = toolkitIntelliJ.ideFlavor.map { flavor ->
+                // Starting with 2025.3, IntelliJ IDEA is unified (no separate Community edition)
+                if (version.get().startsWith("2025.3") && flavor == IdeFlavor.IC) {
+                    IntelliJPlatformType.IntellijIdeaUltimate
+                } else {
+                    IntelliJPlatformType.fromCode(flavor.toString())
+                }
+            }
 
             create(type, version, useInstaller = false)
         } else {
