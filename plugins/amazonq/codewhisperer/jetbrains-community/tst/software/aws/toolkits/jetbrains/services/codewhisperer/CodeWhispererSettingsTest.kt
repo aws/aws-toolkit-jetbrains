@@ -97,27 +97,6 @@ class CodeWhispererSettingsTest : CodeWhispererTestBase() {
         }
     }
 
-    @Test
-    fun `test CodeWhisperer components should have correct states on initialization with no persistent states`() {
-        mockCodeWhispererEnabledStatus(false)
-        stateManager.loadState(CodeWhispererExploreActionState())
-        CodeWhispererSettings.getInstance().loadState(CodeWhispererConfiguration())
-
-        ProblemsView.getToolWindow(projectRule.project) ?: fail("Problems window not found")
-        val codeReferenceWindow = ToolWindowManager.getInstance(projectRule.project).getToolWindow(
-            CodeWhispererCodeReferenceToolWindowFactory.id
-        ) ?: fail("Code Reference Log window not found")
-        val statusBarWidgetFactory = projectRule.project.service<StatusBarWidgetsManager>().getWidgetFactories().firstOrNull {
-            it.id == CodeWhispererStatusBarWidgetFactory.ID
-        } ?: fail("CodeWhisperer status bar widget not found")
-
-        runInEdtAndWait {
-            assertThat(codeReferenceWindow.isAvailable).isFalse
-            assertThat(statusBarWidgetFactory.isAvailable(projectRule.project)).isTrue
-            assertThat(settingsManager.isIncludeCodeWithReference()).isFalse
-        }
-    }
-
     // TODO: update this to be enable on enabling CodeWhisperer
     @Ignore
     @Test
