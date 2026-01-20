@@ -7,8 +7,8 @@ import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.PropertyNamingStrategies
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.info
+import software.aws.toolkit.core.utils.getLogger
+import software.aws.toolkit.core.utils.info
 import software.aws.toolkits.jetbrains.core.lsp.getCurrentArchitecture
 import software.aws.toolkits.jetbrains.core.lsp.getCurrentOS
 import java.net.URI
