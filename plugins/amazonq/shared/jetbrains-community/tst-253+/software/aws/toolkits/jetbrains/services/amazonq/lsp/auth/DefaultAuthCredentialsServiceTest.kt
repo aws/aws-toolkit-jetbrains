@@ -106,7 +106,7 @@ class DefaultAuthCredentialsServiceTest : HeavyPlatformTestCase() {
             every { connectionStateForFeature(any()) } returns BearerTokenAuthState.AUTHORIZED
         }
         spyProject.replaceService(ToolkitConnectionManager::class.java, mockConnectionManager, spyProject)
-        mockkStatic("software.aws.toolkits.jetbrains.utils.FunctionUtilsKt")
+        mockkStatic("software.amazon.q.jetbrains.utils.FunctionUtilsKt")
         // these set so init doesn't always emit
         every { isQConnected(any()) } returns false
         every { isQExpired(any()) } returns true

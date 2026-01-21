@@ -41,7 +41,7 @@ tasks.processResources {
 }
 
 val validateLocalizedMessages = tasks.register<ValidateMessages>("validateLocalizedMessages") {
-    paths.from("resources/software/aws/toolkits/resources/MessagesBundle.properties")
+    paths.from("resources/software/amazon/q/resources/MessagesBundle.properties")
 }
 
 tasks.check {
