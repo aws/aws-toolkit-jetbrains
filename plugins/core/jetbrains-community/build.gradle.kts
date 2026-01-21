@@ -86,9 +86,9 @@ tasks.compileKotlin {
 intellijToolkit {
     val ideProfile = providers.gradleProperty("ideProfileName").orNull
     val defaultFlavor = if (ideProfile?.startsWith("2025.3") == true) {
-        IdeFlavor.IU  // Use unified IntelliJ IDEA for 2025.3+
+        IdeFlavor.IU // Use unified IntelliJ IDEA for 2025.3+
     } else {
-        IdeFlavor.IC  // Use Community for older versions
+        IdeFlavor.IC // Use Community for older versions
     }
     ideFlavor.set(defaultFlavor)
 }
