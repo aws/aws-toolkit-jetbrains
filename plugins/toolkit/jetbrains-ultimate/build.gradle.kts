@@ -1,6 +1,7 @@
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 
 plugins {
@@ -18,6 +19,8 @@ intellijToolkit {
 dependencies {
     intellijPlatform {
         localPlugin(project(":plugin-core"))
+
+        testFramework(TestFrameworkType.Plugin.Go)
     }
     compileOnlyApi(project(":plugin-toolkit:jetbrains-core"))
     compileOnlyApi(project(":plugin-core:jetbrains-ultimate"))
