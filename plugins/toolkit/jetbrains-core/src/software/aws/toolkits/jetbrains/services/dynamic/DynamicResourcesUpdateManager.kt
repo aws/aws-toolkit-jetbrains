@@ -15,11 +15,11 @@ import software.amazon.awssdk.services.cloudcontrol.model.Operation
 import software.amazon.awssdk.services.cloudcontrol.model.OperationStatus
 import software.amazon.awssdk.services.cloudcontrol.model.ProgressEvent
 import software.amazon.awssdk.services.cloudcontrol.model.RequestTokenNotFoundException
-import software.aws.toolkits.core.ConnectionSettings
-import software.aws.toolkits.jetbrains.core.awsClient
-import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
+import software.aws.toolkit.core.ConnectionSettings
+import software.aws.toolkit.jetbrains.core.awsClient
+import software.aws.toolkit.jetbrains.core.coroutines.projectCoroutineScope
+import software.aws.toolkit.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceTelemetryResources.addOperationToTelemetry
-import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.DynamicResourceOperation
 import software.aws.toolkits.telemetry.DynamicresourceTelemetry

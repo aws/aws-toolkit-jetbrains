@@ -12,7 +12,7 @@ import com.intellij.ui.components.JBScrollPane
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
 import com.michaelbaranov.microba.calendar.DatePicker
-import software.aws.toolkits.jetbrains.utils.ui.find
+import software.aws.toolkit.jetbrains.utils.ui.find
 import software.aws.toolkits.resources.message
 import java.text.NumberFormat
 import java.time.temporal.ChronoUnit

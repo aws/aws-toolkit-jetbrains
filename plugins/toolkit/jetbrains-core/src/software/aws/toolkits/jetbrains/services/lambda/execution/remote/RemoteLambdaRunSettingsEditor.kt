@@ -5,11 +5,11 @@ package software.aws.toolkits.jetbrains.services.lambda.execution.remote
 
 import com.intellij.openapi.options.SettingsEditor
 import com.intellij.openapi.project.Project
-import software.aws.toolkits.core.ConnectionSettings
-import software.aws.toolkits.core.region.AwsRegion
-import software.aws.toolkits.core.utils.tryOrNull
-import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
-import software.aws.toolkits.jetbrains.core.map
+import software.aws.toolkit.core.ConnectionSettings
+import software.aws.toolkit.core.region.AwsRegion
+import software.aws.toolkit.core.utils.tryOrNull
+import software.aws.toolkit.jetbrains.core.credentials.CredentialManager
+import software.aws.toolkit.jetbrains.core.map
 import software.aws.toolkits.jetbrains.services.lambda.resources.LambdaResources
 import software.aws.toolkits.jetbrains.ui.ResourceSelector
 import java.util.concurrent.atomic.AtomicReference

@@ -12,10 +12,10 @@ import org.junit.Test
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
-import software.aws.toolkits.core.region.AwsRegion
-import software.aws.toolkits.core.utils.RuleUtils
-import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
-import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
+import software.aws.toolkit.core.region.AwsRegion
+import software.aws.toolkit.core.utils.RuleUtils
+import software.aws.toolkit.jetbrains.core.credentials.MockCredentialManagerRule
+import software.aws.toolkit.jetbrains.core.region.MockRegionProviderRule
 
 class DatagripUtilsTest {
     @Rule

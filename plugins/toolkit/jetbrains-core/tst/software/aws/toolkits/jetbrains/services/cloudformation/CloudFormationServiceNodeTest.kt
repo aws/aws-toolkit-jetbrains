@@ -9,7 +9,7 @@ import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.services.cloudformation.model.StackStatus
 import software.amazon.awssdk.services.cloudformation.model.StackSummary
-import software.aws.toolkits.jetbrains.core.MockResourceCacheRule
+import software.aws.toolkit.jetbrains.core.MockResourceCacheRule
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerEmptyNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.CloudFormationExplorerRootNode
 import software.aws.toolkits.jetbrains.services.cloudformation.resources.CloudFormationResources

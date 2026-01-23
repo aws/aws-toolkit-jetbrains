@@ -29,11 +29,11 @@ import software.amazon.awssdk.auth.credentials.AwsSessionCredentials
 import software.amazon.awssdk.services.sts.StsClient
 import software.amazon.awssdk.services.sts.model.GetFederationTokenRequest
 import software.amazon.awssdk.services.sts.model.GetFederationTokenResponse
-import software.aws.toolkits.core.ConnectionSettings
-import software.aws.toolkits.core.utils.tryOrNull
-import software.aws.toolkits.jetbrains.core.MockClientManagerRule
-import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
-import software.aws.toolkits.jetbrains.core.region.getDefaultRegion
+import software.aws.toolkit.core.ConnectionSettings
+import software.aws.toolkit.core.utils.tryOrNull
+import software.aws.toolkit.jetbrains.core.MockClientManagerRule
+import software.aws.toolkit.jetbrains.core.credentials.MockCredentialManagerRule
+import software.aws.toolkit.jetbrains.core.region.getDefaultRegion
 import java.net.InetAddress
 
 class AwsConsoleUrlFactoryTest {

@@ -6,9 +6,9 @@ package software.aws.toolkits.jetbrains.settings
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
-import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
-import software.aws.toolkits.jetbrains.utils.rules.addFileToModule
-import software.aws.toolkits.jetbrains.utils.rules.addModule
+import software.aws.toolkit.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
+import software.aws.toolkit.jetbrains.utils.rules.addFileToModule
+import software.aws.toolkit.jetbrains.utils.rules.addModule
 import java.nio.file.Paths
 
 class DeploySettingsTest {

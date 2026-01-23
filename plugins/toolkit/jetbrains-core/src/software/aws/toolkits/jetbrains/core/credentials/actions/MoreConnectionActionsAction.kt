@@ -12,10 +12,10 @@ import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.JBPopupFactory
-import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManagerConnection
+import software.aws.toolkit.jetbrains.core.credentials.AwsConnectionManagerConnection
+import software.aws.toolkit.jetbrains.core.credentials.ToolkitConnectionManager
+import software.aws.toolkit.jetbrains.core.credentials.lazyGetUnauthedBearerConnections
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsMenuBuilder.Companion.connectionSettingsMenuBuilder
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.lazyGetUnauthedBearerConnections
 import software.aws.toolkits.resources.message
 
 class MoreConnectionActionsAction : DumbAwareAction(AllIcons.Actions.MoreHorizontal) {
@@ -36,7 +36,7 @@ class MoreConnectionActionsAction : DumbAwareAction(AllIcons.Actions.MoreHorizon
 
                 project?.let { project ->
                     if (ToolkitConnectionManager.getInstance(project).activeConnection() is AwsConnectionManagerConnection) {
-                        add(actionManager.getAction("aws.settings.upsertCredentials"))
+                        add(actionManager.getAction("aws.toolkit.settings.upsertCredentials"))
                     }
                 }
 

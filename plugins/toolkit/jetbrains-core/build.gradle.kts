@@ -8,6 +8,7 @@ import org.jdom2.output.XMLOutputter
 import org.jetbrains.intellij.platform.gradle.tasks.PatchPluginXmlTask
 import software.aws.toolkits.gradle.buildMetadata
 import software.aws.toolkits.gradle.changelog.tasks.GeneratePluginChangeLog
+import software.aws.toolkits.gradle.findFolders
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.IdeVersions
 import software.aws.toolkits.gradle.isCi
@@ -33,11 +34,10 @@ intellijToolkit {
 
 dependencies {
     intellijPlatform {
-        localPlugin(project(":plugin-core"))
-
         bundledModule("intellij.platform.vcs.dvcs.impl")
         bundledModule("intellij.libraries.microba")
     }
+    implementation(project(":plugin-core"))
 }
 
 val changelog = tasks.register<GeneratePluginChangeLog>("pluginChangeLog") {
@@ -197,8 +197,30 @@ dependencies {
     implementation(libs.zjsonpatch)
 
     testFixturesApi(testFixtures(project(":plugin-core:jetbrains-community")))
+    testImplementation(project(":plugin-core:jetbrains-community"))
 }
 
+// tasks.test {
+//    // Include core test sources
+//    testClassesDirs += project(":plugin-core:jetbrains-community").sourceSets.test.get().output.classesDirs
+//    classpath += project(":plugin-core:jetbrains-community").sourceSets.test.get().runtimeClasspath
+// }
+
+sourceSets {
+    test {
+        java.srcDirs(
+            findFolders(project(":plugin-core:jetbrains-community").project, "tst", ideProfile).map {
+                project(":plugin-core:jetbrains-community").project.file(it)
+            }
+        )
+        resources.srcDirs(
+            findFolders(project(":plugin-core:jetbrains-community").project, "tst-resources", ideProfile)
+                .map {
+                    project(":plugin-core:jetbrains-community").project.file(it)
+                }
+        )
+    }
+}
 fun transformXml(document: Document, path: Path) {
     val xmlOutput = XMLOutputter()
     xmlOutput.format.apply {
@@ -210,5 +232,15 @@ fun transformXml(document: Document, path: Path) {
     StringWriter().use {
         xmlOutput.output(document, it)
         path.writeText(text = it.toString())
+    }
+}
+
+// hack because our test structure currently doesn't make complete sense
+tasks.prepareTestSandbox {
+    val pluginXmlJar = project(":plugin-toolkit:intellij-standalone").tasks.jar
+
+    dependsOn(pluginXmlJar)
+    from(pluginXmlJar) {
+        into(intellijPlatform.projectName.map { "$it/lib" })
     }
 }

@@ -10,7 +10,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import software.aws.toolkits.core.rules.EnvironmentVariableHelper
+import software.aws.toolkit.core.rules.EnvironmentVariableHelper
 import java.io.File
 
 abstract class ExecutableDetectorTestBase {

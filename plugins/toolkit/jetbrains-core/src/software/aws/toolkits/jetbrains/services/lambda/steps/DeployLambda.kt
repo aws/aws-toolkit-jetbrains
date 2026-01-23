@@ -4,8 +4,8 @@
 package software.aws.toolkits.jetbrains.services.lambda.steps
 
 import com.intellij.execution.configurations.GeneralCommandLine
-import software.aws.toolkits.core.region.AwsRegion
-import software.aws.toolkits.core.utils.AttributeBagKey
+import software.aws.toolkit.core.region.AwsRegion
+import software.aws.toolkit.core.utils.AttributeBagKey
 import software.aws.toolkits.jetbrains.services.lambda.deploy.DeployServerlessApplicationSettings
 import software.aws.toolkits.jetbrains.services.lambda.sam.samDeployCommand
 import software.aws.toolkits.jetbrains.utils.execution.steps.Context

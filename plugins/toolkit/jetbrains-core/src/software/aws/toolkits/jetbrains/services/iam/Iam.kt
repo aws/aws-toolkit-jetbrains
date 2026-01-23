@@ -6,12 +6,10 @@ package software.aws.toolkits.jetbrains.services.iam
 import org.intellij.lang.annotations.Language
 import software.amazon.awssdk.services.iam.IamClient
 import software.amazon.awssdk.services.iam.model.Role
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.warn
-import software.aws.toolkits.jetbrains.core.ClientBackedCachedResource
-import software.aws.toolkits.jetbrains.core.Resource
-import software.aws.toolkits.jetbrains.core.filter
-import software.aws.toolkits.jetbrains.core.map
+import software.aws.toolkit.core.utils.getLogger
+import software.aws.toolkit.core.utils.warn
+import software.aws.toolkit.jetbrains.core.ClientBackedCachedResource
+import software.aws.toolkit.jetbrains.core.Resource
 import software.aws.toolkits.jetbrains.services.lambda.upload.LAMBDA_PRINCIPAL
 
 data class IamRole(val arn: String) {

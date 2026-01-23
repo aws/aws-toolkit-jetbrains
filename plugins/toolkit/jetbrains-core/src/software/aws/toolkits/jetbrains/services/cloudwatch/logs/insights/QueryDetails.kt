@@ -3,7 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights
 
-import software.aws.toolkits.core.ConnectionSettings
+import software.aws.toolkit.core.ConnectionSettings
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneId

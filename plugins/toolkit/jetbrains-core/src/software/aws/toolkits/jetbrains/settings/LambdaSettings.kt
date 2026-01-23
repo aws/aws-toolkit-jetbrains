@@ -8,8 +8,9 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import software.aws.toolkit.jetbrains.settings.ToolkitSettingsMigrationUtil
 
-@State(name = "lambda", storages = [Storage("aws.xml")])
+@State(name = "toolkitLambda", storages = [Storage("awsToolkit.xml")])
 class LambdaSettings(private val project: Project) : PersistentStateComponent<LambdaConfiguration> {
     private var state = LambdaConfiguration()
 
@@ -17,6 +18,14 @@ class LambdaSettings(private val project: Project) : PersistentStateComponent<La
 
     override fun loadState(state: LambdaConfiguration) {
         this.state = state
+    }
+
+    override fun noStateLoaded() {
+        val state = ToolkitSettingsMigrationUtil.migrateState(
+            "toolkitLambda",
+            LambdaConfiguration::class.java
+        ) ?: LambdaConfiguration()
+        loadState(state)
     }
 
     var showAllHandlerGutterIcons: Boolean

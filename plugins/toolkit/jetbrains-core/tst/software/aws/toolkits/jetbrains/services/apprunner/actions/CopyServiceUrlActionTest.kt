@@ -10,7 +10,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.mockito.kotlin.mock
 import software.amazon.awssdk.services.apprunner.model.ServiceSummary
-import software.aws.toolkits.core.utils.test.aString
+import software.aws.toolkit.core.utils.test.aString
 import software.aws.toolkits.jetbrains.services.apprunner.AppRunnerServiceNode
 import java.awt.datatransfer.DataFlavor
 

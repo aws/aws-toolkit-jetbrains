@@ -8,11 +8,11 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.MessageDialogBuilder
 import com.intellij.util.AuthData
 import git4idea.remote.GitHttpAuthDataProvider
-import software.aws.toolkits.jetbrains.core.awsClient
+import software.aws.toolkit.jetbrains.core.awsClient
+import software.aws.toolkit.jetbrains.utils.computeOnEdt
 import software.aws.toolkits.jetbrains.core.credentials.sono.CodeCatalystCredentialManager
 import software.aws.toolkits.jetbrains.services.caws.pat.generateAndStorePat
 import software.aws.toolkits.jetbrains.services.caws.pat.getPat
-import software.aws.toolkits.jetbrains.utils.computeOnEdt
 import software.aws.toolkits.resources.message
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicLong

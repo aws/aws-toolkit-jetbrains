@@ -19,7 +19,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.atLeastOnce
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
-import software.aws.toolkits.jetbrains.core.MockResourceCacheRule
+import software.aws.toolkit.jetbrains.core.MockResourceCacheRule
 import software.aws.toolkits.jetbrains.core.fillResourceCache
 import software.aws.toolkits.jetbrains.utils.rules.EdtDisposableRule
 import java.util.concurrent.CountDownLatch

@@ -7,7 +7,7 @@ import com.intellij.ssh.PromiscuousSshHostKeyVerifier
 import com.intellij.ssh.config.SshConnectionConfig
 import com.intellij.ssh.config.SshConnectionConfigService
 import com.intellij.ssh.config.SshProxyConfig
-import software.aws.toolkits.jetbrains.core.awsClient
+import software.aws.toolkit.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.credentials.sono.CodeCatalystCredentialManager
 import software.aws.toolkits.jetbrains.gateway.connection.AbstractSsmCommandExecutor
 

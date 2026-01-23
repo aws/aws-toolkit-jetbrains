@@ -22,8 +22,8 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Assume.assumeTrue
 import org.junit.Rule
 import org.junit.Test
-import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
-import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
+import software.aws.toolkit.jetbrains.core.credentials.MockCredentialManagerRule
+import software.aws.toolkit.jetbrains.core.region.MockRegionProviderRule
 import software.aws.toolkits.jetbrains.utils.executeRunConfigurationAndWait
 import software.aws.toolkits.jetbrains.utils.rules.ExperimentRule
 import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule

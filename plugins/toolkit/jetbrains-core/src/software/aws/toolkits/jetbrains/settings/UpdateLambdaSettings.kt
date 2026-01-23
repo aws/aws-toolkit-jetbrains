@@ -7,14 +7,23 @@ import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
+import software.aws.toolkit.jetbrains.settings.ToolkitSettingsMigrationUtil
 
-@State(name = "updateLambdaState", storages = [Storage("aws.xml")])
+@State(name = "toolkitUpdateLambdaState", storages = [Storage("awsToolkit.xml")])
 private class UpdateLambdaState : PersistentStateComponent<UpdateLambda> {
     private var settings = UpdateLambda()
 
     override fun getState(): UpdateLambda = settings
     override fun loadState(state: UpdateLambda) {
         this.settings = state
+    }
+
+    override fun noStateLoaded() {
+        val state = ToolkitSettingsMigrationUtil.migrateState(
+            "toolkitUpdateLambdaState",
+            UpdateLambda::class.java
+        ) ?: UpdateLambda()
+        loadState(state)
     }
 
     companion object {

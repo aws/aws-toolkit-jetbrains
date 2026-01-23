@@ -33,14 +33,14 @@ import com.intellij.xdebugger.XDebuggerManager
 import com.intellij.xdebugger.XDebuggerManagerListener
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Assume.assumeTrue
-import software.aws.toolkits.core.lambda.LambdaRuntime
+import software.aws.toolkit.core.lambda.LambdaRuntime
+import software.aws.toolkit.jetbrains.utils.rules.CodeInsightTestFixtureRule
+import software.aws.toolkit.jetbrains.utils.rules.addFileToModule
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
 import software.aws.toolkits.jetbrains.core.executables.getExecutableIfPresent
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.createTemplateRunConfiguration
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon.minImageVersion
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
-import software.aws.toolkits.jetbrains.utils.rules.CodeInsightTestFixtureRule
-import software.aws.toolkits.jetbrains.utils.rules.addFileToModule
 import java.io.File
 import java.nio.file.Paths
 import java.util.concurrent.CompletableFuture

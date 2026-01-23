@@ -19,7 +19,11 @@ import com.intellij.ui.layout.or
 import com.intellij.ui.layout.selected
 import software.amazon.awssdk.services.apprunner.model.ConnectionSummary
 import software.amazon.awssdk.services.apprunner.model.Runtime
-import software.aws.toolkits.jetbrains.core.awsClient
+import software.aws.toolkit.jetbrains.core.awsClient
+import software.aws.toolkit.jetbrains.ui.KeyValueTextField
+import software.aws.toolkit.jetbrains.utils.toHumanReadable
+import software.aws.toolkit.jetbrains.utils.ui.installOnParent
+import software.aws.toolkit.jetbrains.utils.ui.selected
 import software.aws.toolkits.jetbrains.services.apprunner.resources.APPRUNNER_ECR_DEFAULT_ROLE_NAME
 import software.aws.toolkits.jetbrains.services.apprunner.resources.APPRUNNER_ECR_MANAGED_POLICY
 import software.aws.toolkits.jetbrains.services.apprunner.resources.APPRUNNER_SERVICE_ROLE_URI
@@ -27,11 +31,7 @@ import software.aws.toolkits.jetbrains.services.apprunner.resources.AppRunnerRes
 import software.aws.toolkits.jetbrains.services.iam.CreateIamServiceRoleDialog
 import software.aws.toolkits.jetbrains.services.iam.IamResources
 import software.aws.toolkits.jetbrains.services.iam.IamRole
-import software.aws.toolkits.jetbrains.ui.KeyValueTextField
 import software.aws.toolkits.jetbrains.ui.ResourceSelector
-import software.aws.toolkits.jetbrains.utils.toHumanReadable
-import software.aws.toolkits.jetbrains.utils.ui.installOnParent
-import software.aws.toolkits.jetbrains.utils.ui.selected
 import software.aws.toolkits.resources.message
 import javax.swing.DefaultComboBoxModel
 

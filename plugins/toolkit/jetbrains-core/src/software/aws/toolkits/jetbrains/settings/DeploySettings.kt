@@ -12,7 +12,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import software.aws.toolkits.jetbrains.services.lambda.deploy.CreateCapabilities
 import java.nio.file.Paths
 
-@State(name = "deploySettings")
+@State(name = "toolkitDeploySettings")
 class DeploySettings : PersistentStateComponent<DeployConfigs> {
     private var state = DeployConfigs()
 

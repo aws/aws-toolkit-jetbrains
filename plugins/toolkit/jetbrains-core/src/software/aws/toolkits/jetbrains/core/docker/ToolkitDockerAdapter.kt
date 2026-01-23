@@ -19,12 +19,11 @@ import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import org.apache.commons.io.FileUtils
 import org.jetbrains.annotations.TestOnly
-import org.jetbrains.concurrency.await
-import software.aws.toolkits.core.utils.debug
-import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkit.core.utils.debug
+import software.aws.toolkit.core.utils.getLogger
+import software.aws.toolkit.jetbrains.utils.notifyError
+import software.aws.toolkit.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.services.ecr.DockerfileEcrPushRequest
-import software.aws.toolkits.jetbrains.utils.notifyError
-import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
 import java.io.File
 import java.io.ObjectInputStream
@@ -99,7 +98,7 @@ class ToolkitDockerAdapter(protected val project: Project, val runtimeFacade: Do
                 LOG.debug { "Pull from ECR succeeded: $message" }
                 notifyInfo(
                     project = project,
-                    title = software.aws.toolkits.resources.message("ecr.pull.title"),
+                    title = message("ecr.pull.title"),
                     content = message
                 )
             }
@@ -108,7 +107,7 @@ class ToolkitDockerAdapter(protected val project: Project, val runtimeFacade: Do
                 LOG.debug { "Pull from ECR failed: $message" }
                 notifyError(
                     project = project,
-                    title = software.aws.toolkits.resources.message("ecr.pull.title"),
+                    title = message("ecr.pull.title"),
                     content = message
                 )
             }

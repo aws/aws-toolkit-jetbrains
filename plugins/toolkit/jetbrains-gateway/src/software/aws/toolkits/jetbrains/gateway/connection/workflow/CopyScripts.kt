@@ -4,8 +4,8 @@
 package software.aws.toolkits.jetbrains.gateway.connection.workflow
 
 import com.intellij.execution.configurations.GeneralCommandLine
-import software.aws.toolkits.jetbrains.AwsPlugin
-import software.aws.toolkits.jetbrains.AwsToolkit
+import software.aws.toolkit.jetbrains.AwsPlugin
+import software.aws.toolkit.jetbrains.AwsToolkit
 import software.aws.toolkits.jetbrains.gateway.connection.caws.CawsCommandExecutor
 import software.aws.toolkits.jetbrains.utils.execution.steps.Context
 import software.aws.toolkits.resources.message

@@ -8,8 +8,8 @@ import com.intellij.openapi.util.SystemInfo
 import com.intellij.util.EnvironmentUtil
 import com.intellij.util.text.SemVer
 import com.intellij.util.text.nullize
+import software.aws.toolkit.jetbrains.services.telemetry.ClientMetadata
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
-import software.aws.toolkits.jetbrains.services.telemetry.ClientMetadata
 import software.aws.toolkits.jetbrains.utils.FileInfoCache
 import software.aws.toolkits.resources.message
 import java.time.Duration
@@ -19,7 +19,7 @@ object ExecutableCommon {
         path: String,
         executableName: String,
         executableType: ExecutableType<*>? = null,
-        clientMetadata: ClientMetadata = ClientMetadata.getDefault(),
+        clientMetadata: ClientMetadata = ClientMetadata.DEFAULT_METADATA,
     ): GeneralCommandLine {
         val sanitizedPath = path.nullize(true)
             ?: throw RuntimeException(message("executableCommon.cli_not_configured", executableName))
@@ -45,7 +45,7 @@ object ExecutableCommon {
                 // we're not setting PYTHONIOENCODING because we might break SAM on py2.7
             }
             if (executableType is SamExecutable) {
-                this["AWS_TOOLING_USER_AGENT"] = "${clientMetadata.awsProduct}/${clientMetadata.awsVersion}"
+                this["AWS_TOOLING_USER_AGENT"] = "${clientMetadata.productName}/${clientMetadata.productVersion}"
             }
         }
 

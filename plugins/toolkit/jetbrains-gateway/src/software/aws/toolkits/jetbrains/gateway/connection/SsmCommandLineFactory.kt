@@ -7,7 +7,7 @@ import com.intellij.execution.CommandLineUtil
 import com.intellij.execution.Platform
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.openapi.util.SystemInfo
-import software.aws.toolkits.core.region.AwsRegion
+import software.aws.toolkit.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.tools.ToolManager
 import software.aws.toolkits.jetbrains.services.ssm.SsmPlugin
 

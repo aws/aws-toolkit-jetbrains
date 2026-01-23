@@ -15,15 +15,15 @@ import org.apache.http.impl.client.HttpClientBuilder
 import org.apache.http.message.BasicNameValuePair
 import software.amazon.awssdk.auth.credentials.AwsSessionCredentials
 import software.amazon.awssdk.services.sts.StsClient
-import software.aws.toolkits.core.ConnectionSettings
-import software.aws.toolkits.core.region.AwsRegion
-import software.aws.toolkits.core.utils.error
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.jetbrains.core.AwsClientManager
-import software.aws.toolkits.jetbrains.core.credentials.getConnectionSettings
-import software.aws.toolkits.jetbrains.utils.notifyError
+import software.aws.toolkit.core.ConnectionSettings
+import software.aws.toolkit.core.region.AwsRegion
+import software.aws.toolkit.core.utils.error
+import software.aws.toolkit.core.utils.getLogger
+import software.aws.toolkit.jetbrains.core.AwsClientManager
+import software.aws.toolkit.jetbrains.core.credentials.getConnectionSettings
+import software.aws.toolkit.jetbrains.utils.notifyError
+import software.aws.toolkit.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.jetbrains.utils.notifyNoActiveCredentialsError
-import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.DeeplinkTelemetry
 import software.aws.toolkits.telemetry.Result
@@ -155,7 +155,7 @@ object AwsConsoleUrlFactory {
             try {
                 val encodedArn = URLEncoder.encode(arn, Charsets.UTF_8)
                 val encodedUa = URLEncoder.encode(AwsClientManager.getUserAgent(), Charsets.UTF_8)
-                val url = AwsConsoleUrlFactory.getSigninUrl(
+                val url = getSigninUrl(
                     connectionSettings,
                     "/go/view?arn=$encodedArn&source=$encodedUa"
                 )

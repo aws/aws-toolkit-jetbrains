@@ -16,9 +16,9 @@ import org.junit.Test
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
-import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
-import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
-import software.aws.toolkits.jetbrains.settings.AwsSettingsRule
+import software.aws.toolkit.jetbrains.core.credentials.MockCredentialsManager
+import software.aws.toolkit.jetbrains.core.region.MockRegionProviderRule
+import software.aws.toolkit.jetbrains.settings.AwsSettingsRule
 import software.aws.toolkits.jetbrains.utils.rules.ExperimentRule
 
 class JavaAwsConnectionExtensionTest {

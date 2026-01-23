@@ -6,16 +6,16 @@ package software.aws.toolkits.jetbrains.services.redshift
 import com.intellij.database.autoconfig.DataSourceRegistry
 import com.intellij.openapi.project.Project
 import software.amazon.awssdk.services.redshift.model.Cluster
-import software.aws.toolkits.core.region.AwsRegion
-import software.aws.toolkits.core.utils.tryOrNull
-import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
-import software.aws.toolkits.jetbrains.core.getResourceIfPresent
+import software.aws.toolkit.core.region.AwsRegion
+import software.aws.toolkit.core.utils.tryOrNull
+import software.aws.toolkit.jetbrains.core.credentials.AwsConnectionManager
+import software.aws.toolkit.jetbrains.core.getResourceIfPresent
+import software.aws.toolkit.jetbrains.services.sts.StsResources
 import software.aws.toolkits.jetbrains.datagrip.CREDENTIAL_ID_PROPERTY
 import software.aws.toolkits.jetbrains.datagrip.REGION_ID_PROPERTY
 import software.aws.toolkits.jetbrains.datagrip.RequireSsl
 import software.aws.toolkits.jetbrains.services.redshift.auth.CLUSTER_ID_PROPERTY
 import software.aws.toolkits.jetbrains.services.redshift.auth.IamAuth
-import software.aws.toolkits.jetbrains.services.sts.StsResources
 
 object RedshiftUtils {
     private val REDSHIFT_REGION_REGEX =

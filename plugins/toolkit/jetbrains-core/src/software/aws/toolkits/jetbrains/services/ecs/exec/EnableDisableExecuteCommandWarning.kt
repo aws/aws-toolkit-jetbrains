@@ -9,7 +9,7 @@ import com.intellij.openapi.ui.Messages
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.dsl.builder.bindSelected
 import com.intellij.ui.dsl.builder.panel
-import software.aws.toolkits.jetbrains.core.help.HelpIds
+import software.aws.toolkit.jetbrains.core.help.HelpIds
 import software.aws.toolkits.jetbrains.settings.EcsExecCommandSettings
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.EcsTelemetry

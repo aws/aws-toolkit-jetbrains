@@ -10,7 +10,8 @@ import org.jetbrains.concurrency.Promise
 import org.jetbrains.concurrency.isPending
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import software.aws.toolkits.core.utils.info
+import software.aws.toolkit.core.utils.info
+import software.aws.toolkit.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import java.util.concurrent.TimeUnit
 
 abstract class CachingAsyncEvaluator<TEntry, TReturn> {

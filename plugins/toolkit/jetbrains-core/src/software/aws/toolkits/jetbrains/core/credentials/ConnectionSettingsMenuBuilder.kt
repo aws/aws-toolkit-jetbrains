@@ -14,10 +14,18 @@ import com.intellij.openapi.actionSystem.ToggleAction
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
-import software.aws.toolkits.core.credentials.CredentialIdentifier
-import software.aws.toolkits.core.region.AwsRegion
-import software.aws.toolkits.jetbrains.core.credentials.actions.SsoLogoutAction
-import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
+import software.aws.toolkit.core.credentials.CredentialIdentifier
+import software.aws.toolkit.core.region.AwsRegion
+import software.aws.toolkit.jetbrains.core.credentials.AwsBearerTokenConnection
+import software.aws.toolkit.jetbrains.core.credentials.AwsConnectionManager
+import software.aws.toolkit.jetbrains.core.credentials.CredentialManager
+import software.aws.toolkit.jetbrains.core.credentials.ReauthSource
+import software.aws.toolkit.jetbrains.core.credentials.ToolkitAuthManager
+import software.aws.toolkit.jetbrains.core.credentials.ToolkitConnectionManager
+import software.aws.toolkit.jetbrains.core.credentials.actions.SsoLogoutAction
+import software.aws.toolkit.jetbrains.core.credentials.lazyIsUnauthedBearerConnection
+import software.aws.toolkit.jetbrains.core.credentials.reauthConnectionIfNeeded
+import software.aws.toolkit.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.resources.message
 
 class ConnectionSettingsMenuBuilder private constructor() {
@@ -191,7 +199,7 @@ class ConnectionSettingsMenuBuilder private constructor() {
         }
 
         add(Separator.create())
-        add(ActionManager.getInstance().getAction("aws.settings.upsertCredentials"))
+        add(ActionManager.getInstance().getAction("aws.toolkit.settings.upsertCredentials"))
     }
 
     // Helper actions, note: these are public to help make tests easier by leveraging instanceOf checks

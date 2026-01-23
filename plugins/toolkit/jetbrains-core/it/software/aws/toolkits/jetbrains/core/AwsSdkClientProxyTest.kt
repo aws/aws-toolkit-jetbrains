@@ -26,6 +26,7 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
+import software.aws.toolkit.jetbrains.core.AwsSdkClient
 
 class AwsSdkClientProxyTest {
     @Rule

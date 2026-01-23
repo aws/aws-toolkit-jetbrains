@@ -12,10 +12,10 @@ import com.intellij.util.ui.JBFont
 import com.intellij.util.ui.MacUIUtil
 import org.jdesktop.swingx.graphics.ColorUtilities
 import software.amazon.awssdk.services.codecatalyst.model.CodeCatalystException
-import software.aws.toolkits.core.ClientConnectionSettings
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.warn
-import software.aws.toolkits.jetbrains.core.AwsResourceCache
+import software.aws.toolkit.core.ClientConnectionSettings
+import software.aws.toolkit.core.utils.getLogger
+import software.aws.toolkit.core.utils.warn
+import software.aws.toolkit.jetbrains.core.AwsResourceCache
 import java.awt.Color
 import java.awt.Dimension
 import java.awt.Graphics

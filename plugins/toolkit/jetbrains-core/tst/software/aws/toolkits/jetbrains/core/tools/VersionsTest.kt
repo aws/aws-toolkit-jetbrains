@@ -5,8 +5,8 @@ package software.aws.toolkits.jetbrains.core.tools
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
-import software.aws.toolkits.jetbrains.utils.isInstanceOf
-import software.aws.toolkits.jetbrains.utils.isInstanceOfSatisfying
+import software.aws.toolkit.jetbrains.utils.isInstanceOf
+import software.aws.toolkit.jetbrains.utils.isInstanceOfSatisfying
 
 class VersionsTest {
     private val testRange = VersionRange(IntegerVersion(10), IntegerVersion(12))

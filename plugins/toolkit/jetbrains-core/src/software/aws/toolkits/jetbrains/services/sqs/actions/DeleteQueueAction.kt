@@ -5,7 +5,7 @@ package software.aws.toolkits.jetbrains.services.sqs.actions
 
 import com.intellij.openapi.application.ApplicationManager
 import software.amazon.awssdk.services.sqs.SqsClient
-import software.aws.toolkits.jetbrains.core.awsClient
+import software.aws.toolkit.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.explorer.actions.DeleteResourceAction
 import software.aws.toolkits.jetbrains.core.explorer.refreshAwsTree
 import software.aws.toolkits.jetbrains.services.sqs.SqsQueueNode

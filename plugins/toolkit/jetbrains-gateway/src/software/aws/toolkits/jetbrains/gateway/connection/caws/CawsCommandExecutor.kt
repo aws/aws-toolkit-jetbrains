@@ -6,7 +6,7 @@ package software.aws.toolkits.jetbrains.gateway.connection.caws
 import software.amazon.awssdk.services.codecatalyst.CodeCatalystClient
 import software.amazon.awssdk.services.codecatalyst.model.DevEnvironmentSessionType
 import software.amazon.awssdk.services.codecatalyst.model.StartDevEnvironmentSessionRequest
-import software.aws.toolkits.core.region.AwsRegion
+import software.aws.toolkit.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.gateway.connection.AbstractSsmCommandExecutor
 import software.aws.toolkits.jetbrains.gateway.connection.StartSessionResponse
 

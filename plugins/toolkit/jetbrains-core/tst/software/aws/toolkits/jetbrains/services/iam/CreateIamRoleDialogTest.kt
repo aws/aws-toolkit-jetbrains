@@ -24,7 +24,7 @@ import software.amazon.awssdk.services.iam.model.DeleteRoleResponse
 import software.amazon.awssdk.services.iam.model.MalformedPolicyDocumentException
 import software.amazon.awssdk.services.iam.model.PutRolePolicyRequest
 import software.amazon.awssdk.services.iam.model.PutRolePolicyResponse
-import software.aws.toolkits.core.utils.delegateMock
+import software.aws.toolkit.core.utils.delegateMock
 
 class CreateIamRoleDialogTest {
     @Rule

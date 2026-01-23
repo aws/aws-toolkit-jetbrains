@@ -5,7 +5,7 @@ package software.aws.toolkits.jetbrains.services.cloudwatch.logs.resources
 
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.amazon.awssdk.services.cloudwatchlogs.model.QueryDefinition
-import software.aws.toolkits.jetbrains.core.ClientBackedCachedResource
+import software.aws.toolkit.jetbrains.core.ClientBackedCachedResource
 
 object CloudWatchResources {
     val LIST_LOG_GROUPS =
