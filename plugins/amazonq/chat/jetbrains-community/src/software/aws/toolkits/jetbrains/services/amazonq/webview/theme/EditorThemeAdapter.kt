@@ -16,8 +16,8 @@ import com.intellij.ui.JBColor
 import com.intellij.util.ui.UIUtil
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
-import software.aws.toolkits.core.utils.error
-import software.aws.toolkits.core.utils.getLogger
+import software.amazon.q.core.utils.error
+import software.amazon.q.core.utils.getLogger
 import java.awt.Color
 
 /**

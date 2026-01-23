@@ -10,8 +10,8 @@ import org.junit.Rule
 import org.junit.Test
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
-import software.aws.toolkits.jetbrains.AwsPlugin
-import software.aws.toolkits.jetbrains.AwsToolkit
+import software.amazon.q.jetbrains.AwsPlugin
+import software.amazon.q.jetbrains.AwsToolkit
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererExpThresholdGroup
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroup
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroupSettings

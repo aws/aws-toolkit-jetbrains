@@ -8,9 +8,9 @@ import com.intellij.util.io.delete
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Test
+import software.amazon.q.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
+import software.amazon.q.jetbrains.utils.satisfiesKt
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformHilDownloadArtifact
-import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
-import software.aws.toolkits.jetbrains.utils.satisfiesKt
 import kotlin.io.path.createTempDirectory
 
 class CodeTransformHilDownloadArtifactTest : CodeWhispererCodeModernizerTestBase(HeavyJavaCodeInsightTestFixtureRule()) {

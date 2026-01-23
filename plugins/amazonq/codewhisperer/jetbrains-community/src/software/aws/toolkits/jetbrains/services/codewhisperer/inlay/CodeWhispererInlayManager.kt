@@ -10,9 +10,9 @@ import com.intellij.openapi.editor.EditorCustomElementRenderer
 import com.intellij.openapi.editor.Inlay
 import com.intellij.openapi.ui.popup.JBPopup
 import com.intellij.openapi.util.Disposer
+import software.amazon.q.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.RecommendationChunk
-import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 
 @Service
 class CodeWhispererInlayManager {

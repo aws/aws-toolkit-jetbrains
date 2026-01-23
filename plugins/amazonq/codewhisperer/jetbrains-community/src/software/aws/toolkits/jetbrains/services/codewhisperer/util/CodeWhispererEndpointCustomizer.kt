@@ -20,8 +20,8 @@ import software.amazon.awssdk.http.nio.netty.ProxyConfiguration
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.codewhispererruntime.CodeWhispererRuntimeClientBuilder
 import software.amazon.awssdk.services.codewhispererstreaming.CodeWhispererStreamingAsyncClientBuilder
-import software.aws.toolkits.core.ToolkitClientCustomizer
-import software.aws.toolkits.core.utils.tryOrNull
+import software.amazon.q.core.ToolkitClientCustomizer
+import software.amazon.q.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QDefaultServiceConfig
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QEndpoints
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings

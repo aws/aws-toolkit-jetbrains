@@ -4,8 +4,8 @@
 package software.aws.toolkits.jetbrains.services.cwc.editor.context.file.util
 
 import com.fasterxml.jackson.module.kotlin.readValue
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.warn
+import software.amazon.q.core.utils.getLogger
+import software.amazon.q.core.utils.warn
 import software.aws.toolkits.jetbrains.services.amazonq.webview.FqnWebviewAdapter
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.MatchPolicy
 import software.aws.toolkits.jetbrains.services.cwc.controller.ChatController

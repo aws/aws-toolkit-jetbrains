@@ -8,12 +8,13 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
-import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
-import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
-import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
+import software.amazon.q.jetbrains.core.credentials.AwsBearerTokenConnection
+import software.amazon.q.jetbrains.core.credentials.ToolkitConnectionManager
+import software.amazon.q.jetbrains.core.credentials.pinning.QConnection
+import software.amazon.q.jetbrains.core.credentials.sono.isSono
+import software.amazon.q.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
+import software.amazon.q.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
+import software.amazon.q.jetbrains.settings.QSettingsMigrationUtil
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererLoginType
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExploreActionState
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExploreStateType
@@ -22,7 +23,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.telemetry.AwsTelemetry
 
 // TODO: refactor this class, now it's managing action and state
-@State(name = "codewhispererStates", storages = [Storage("aws.xml")])
+@State(name = "codewhispererStates", storages = [Storage("amazonq.xml")])
 class CodeWhispererExplorerActionManager : PersistentStateComponent<CodeWhispererExploreActionState> {
     private val actionState = CodeWhispererExploreActionState()
     private val suspendedConnections = mutableSetOf<String>()
@@ -126,6 +127,14 @@ class CodeWhispererExplorerActionManager : PersistentStateComponent<CodeWhispere
         actionState.value.putAll(state.value)
         actionState.accountlessWarnTimestamp = state.accountlessWarnTimestamp
         actionState.accountlessErrorTimestamp = state.accountlessErrorTimestamp
+    }
+
+    override fun noStateLoaded() {
+        val state = QSettingsMigrationUtil.migrateState(
+            "codewhispererStates",
+            CodeWhispererExploreActionState::class.java
+        ) ?: CodeWhispererExploreActionState()
+        loadState(state)
     }
 
     companion object {

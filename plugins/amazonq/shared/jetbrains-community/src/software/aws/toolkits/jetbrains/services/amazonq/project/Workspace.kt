@@ -8,7 +8,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vcs.changes.ChangeListManager
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
-import software.aws.toolkits.jetbrains.services.telemetry.ALLOWED_CODE_EXTENSIONS
+import software.amazon.q.jetbrains.services.telemetry.ALLOWED_CODE_EXTENSIONS
 
 fun findWorkspaceContentRoots(project: Project): Set<VirtualFile> {
     val contentRoots = mutableSetOf<VirtualFile>()

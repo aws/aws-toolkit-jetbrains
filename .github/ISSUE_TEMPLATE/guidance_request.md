@@ -9,9 +9,7 @@ labels: guidance
 - OS: 
 - JetBrains product:
 - JetBrains product version:
-- AWS Toolkit version:
-- SAM CLI version:
-- JVM/Python version:
+- Amazon Q version:
 
 **Question**
 

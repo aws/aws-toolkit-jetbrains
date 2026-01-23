@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import org.jetbrains.intellij.platform.gradle.models.Coordinates
+import software.aws.toolkits.gradle.findFolders
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.IdeVersions
 
@@ -13,9 +14,10 @@ intellijToolkit {
     ideFlavor.set(IdeFlavor.IC)
 }
 
+val ideProfile = IdeVersions.ideProfile(project)
+
 dependencies {
     intellijPlatform {
-        localPlugin(project(":plugin-core"))
         platformDependency(Coordinates(groupId = "com.jetbrains.intellij.rd", artifactId = "rd-platform"))
         // Required for collaboration auth credentials in 2025.3+
         val version = IdeVersions.ideProfile(project).ultimate.sdkVersion
@@ -25,14 +27,34 @@ dependencies {
         }
     }
 
-    compileOnlyApi(project(":plugin-core:jetbrains-community"))
+    implementation(project(":plugin-core-q"))
+
+    compileOnlyApi(project(":plugin-core-q:jetbrains-community"))
 
     // CodeWhispererTelemetryService uses a CircularFifoQueue
     implementation(libs.commons.collections)
     implementation(libs.nimbus.jose.jwt)
     api(libs.lsp4j)
 
-    testFixturesApi(testFixtures(project(":plugin-core:jetbrains-community")))
+    testFixturesApi(testFixtures(project(":plugin-core-q:jetbrains-community")))
+
+    testImplementation(project(":plugin-core-q:jetbrains-community"))
+}
+
+sourceSets {
+    test {
+        java.srcDirs(
+            findFolders(project(":plugin-core-q:jetbrains-community").project, "tst", ideProfile).map {
+                project(":plugin-core-q:jetbrains-community").project.file(it)
+            }
+        )
+        resources.srcDirs(
+            findFolders(project(":plugin-core-q:jetbrains-community").project, "tst-resources", ideProfile)
+                .map {
+                    project(":plugin-core-q:jetbrains-community").project.file(it)
+                }
+        )
+    }
 }
 
 // hack because our test structure currently doesn't make complete sense

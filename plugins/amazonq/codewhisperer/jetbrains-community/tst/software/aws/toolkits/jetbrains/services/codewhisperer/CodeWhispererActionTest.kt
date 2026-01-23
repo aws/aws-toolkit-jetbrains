@@ -24,7 +24,7 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doNothing
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.whenever
-import software.aws.toolkits.jetbrains.services.amazonq.QConstants
+import software.amazon.q.jetbrains.services.amazonq.QConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererLearnMoreAction
 import software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererShowSettingsAction
 import software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererWhatIsAction

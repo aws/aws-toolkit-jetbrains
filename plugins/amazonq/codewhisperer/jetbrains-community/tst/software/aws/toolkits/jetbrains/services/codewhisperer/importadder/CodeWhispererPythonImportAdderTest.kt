@@ -15,7 +15,7 @@ import com.jetbrains.python.psi.PyImportStatement
 import com.jetbrains.python.psi.PyImportStatementBase
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
-import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
+import software.amazon.q.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
 
 class CodeWhispererPythonImportAdderTest : CodeWhispererImportAdderTestBase(
     CodeWhispererPythonImportAdder(),

@@ -11,8 +11,8 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
 import software.amazon.awssdk.awscore.exception.AwsServiceException
 import software.amazon.awssdk.services.codewhispererstreaming.model.CodeWhispererStreamingException
-import software.aws.toolkits.core.utils.convertMarkdownToHTML
-import software.aws.toolkits.core.utils.extractCodeBlockLanguage
+import software.amazon.q.core.utils.convertMarkdownToHTML
+import software.amazon.q.core.utils.extractCodeBlockLanguage
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.exceptions.ChatApiException
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.ChatRequestData
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.ChatResponseEvent

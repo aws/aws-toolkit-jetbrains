@@ -8,8 +8,8 @@ import com.intellij.ui.jcef.JBCefJSQuery
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.time.withTimeout
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.warn
+import software.amazon.q.core.utils.getLogger
+import software.amazon.q.core.utils.warn
 import java.time.Duration
 
 /**

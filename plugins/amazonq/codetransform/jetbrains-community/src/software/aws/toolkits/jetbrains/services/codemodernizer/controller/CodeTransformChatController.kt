@@ -20,11 +20,11 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.jetbrains.yaml.YAMLFileType
 import software.amazon.awssdk.services.codewhispererstreaming.model.TransformationDownloadArtifactType
-import software.aws.toolkits.core.utils.debug
-import software.aws.toolkits.core.utils.error
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.info
-import software.aws.toolkits.jetbrains.core.coroutines.EDT
+import software.amazon.q.core.utils.debug
+import software.amazon.q.core.utils.error
+import software.amazon.q.core.utils.getLogger
+import software.amazon.q.core.utils.info
+import software.amazon.q.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthFollowUpType

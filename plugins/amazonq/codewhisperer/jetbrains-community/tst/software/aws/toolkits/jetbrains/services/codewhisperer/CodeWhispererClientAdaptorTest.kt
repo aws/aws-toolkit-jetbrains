@@ -42,24 +42,24 @@ import software.amazon.awssdk.services.codewhispererruntime.model.StartCodeAnaly
 import software.amazon.awssdk.services.codewhispererruntime.model.StartCodeAnalysisResponse
 import software.amazon.awssdk.services.codewhispererruntime.paginators.GenerateCompletionsIterable
 import software.amazon.awssdk.services.ssooidc.SsoOidcClient
-import software.aws.toolkits.core.utils.test.aString
-import software.aws.toolkits.jetbrains.core.MockClientManagerRule
-import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
-import software.aws.toolkits.jetbrains.core.credentials.ManagedSsoProfile
-import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
-import software.aws.toolkits.jetbrains.core.credentials.MockToolkitAuthManagerRule
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.logoutFromSsoConnection
-import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
-import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
-import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
+import software.amazon.q.core.utils.test.aString
+import software.amazon.q.jetbrains.core.MockClientManagerRule
+import software.amazon.q.jetbrains.core.credentials.AwsBearerTokenConnection
+import software.amazon.q.jetbrains.core.credentials.ManagedSsoProfile
+import software.amazon.q.jetbrains.core.credentials.MockCredentialManagerRule
+import software.amazon.q.jetbrains.core.credentials.MockToolkitAuthManagerRule
+import software.amazon.q.jetbrains.core.credentials.ToolkitConnectionManager
+import software.amazon.q.jetbrains.core.credentials.logoutFromSsoConnection
+import software.amazon.q.jetbrains.core.credentials.pinning.QConnection
+import software.amazon.q.jetbrains.core.credentials.sono.Q_SCOPES
+import software.amazon.q.jetbrains.core.credentials.sono.SONO_REGION
+import software.amazon.q.jetbrains.settings.AwsSettings
+import software.amazon.q.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.services.amazonq.FEATURE_EVALUATION_PRODUCT_NAME
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.metadata
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.sdkHttpResponse
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptorImpl
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
-import software.aws.toolkits.jetbrains.settings.AwsSettings
-import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 
 class CodeWhispererClientAdaptorTest {
     val projectRule = JavaCodeInsightTestFixtureRule()

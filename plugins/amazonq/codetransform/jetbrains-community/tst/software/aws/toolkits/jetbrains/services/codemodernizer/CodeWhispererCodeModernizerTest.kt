@@ -25,7 +25,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import software.amazon.awssdk.services.codewhispererstreaming.model.TransformationDownloadArtifactType
 import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
-import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
+import software.amazon.q.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerArtifact
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformType
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.DownloadArtifactResult

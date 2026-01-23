@@ -14,13 +14,13 @@ import io.mockk.mockkStatic
 import io.mockk.verify
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
-import software.aws.toolkits.core.utils.test.aString
-import software.aws.toolkits.jetbrains.core.credentials.ManagedBearerSsoConnection
-import software.aws.toolkits.jetbrains.core.credentials.ReauthSource
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.reauthConnectionIfNeeded
-import software.aws.toolkits.jetbrains.core.region.MockRegionProviderExtension
+import software.amazon.q.core.utils.test.aString
+import software.amazon.q.jetbrains.core.credentials.ManagedBearerSsoConnection
+import software.amazon.q.jetbrains.core.credentials.ReauthSource
+import software.amazon.q.jetbrains.core.credentials.ToolkitAuthManager
+import software.amazon.q.jetbrains.core.credentials.ToolkitConnectionManager
+import software.amazon.q.jetbrains.core.credentials.reauthConnectionIfNeeded
+import software.amazon.q.jetbrains.core.region.MockRegionProviderExtension
 
 class CodeWhispererUtilTest {
     companion object {

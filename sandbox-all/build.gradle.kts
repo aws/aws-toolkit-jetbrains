@@ -32,8 +32,6 @@ intellijPlatform {
 
 dependencies {
     intellijPlatform {
-        localPlugin(project(":plugin-core"))
         localPlugin(project(":plugin-amazonq"))
-        localPlugin(project(":plugin-toolkit:intellij-standalone"))
     }
 }

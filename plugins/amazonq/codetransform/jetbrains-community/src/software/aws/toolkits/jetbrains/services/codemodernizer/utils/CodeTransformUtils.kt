@@ -8,15 +8,15 @@ import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFileManager
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationLanguage
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStatus
-import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
-import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
-import software.aws.toolkits.jetbrains.core.gettingstarted.editor.ActiveConnection
-import software.aws.toolkits.jetbrains.core.gettingstarted.editor.ActiveConnectionType
-import software.aws.toolkits.jetbrains.core.gettingstarted.editor.BearerTokenFeatureSet
-import software.aws.toolkits.jetbrains.core.gettingstarted.editor.checkBearerConnectionValidity
-import software.aws.toolkits.jetbrains.utils.actions.OpenBrowserAction
+import software.amazon.q.jetbrains.core.credentials.AwsBearerTokenConnection
+import software.amazon.q.jetbrains.core.credentials.ToolkitConnectionManager
+import software.amazon.q.jetbrains.core.credentials.pinning.QConnection
+import software.amazon.q.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
+import software.amazon.q.jetbrains.core.gettingstarted.editor.ActiveConnection
+import software.amazon.q.jetbrains.core.gettingstarted.editor.ActiveConnectionType
+import software.amazon.q.jetbrains.core.gettingstarted.editor.BearerTokenFeatureSet
+import software.amazon.q.jetbrains.core.gettingstarted.editor.checkBearerConnectionValidity
+import software.amazon.q.jetbrains.utils.actions.OpenBrowserAction
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CredentialSourceId
 

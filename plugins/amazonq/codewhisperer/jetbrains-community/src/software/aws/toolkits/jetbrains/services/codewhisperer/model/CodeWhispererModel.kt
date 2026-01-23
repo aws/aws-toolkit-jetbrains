@@ -15,7 +15,7 @@ import com.intellij.openapi.util.UserDataHolderBase
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import kotlinx.coroutines.channels.Channel
 import software.amazon.awssdk.services.codewhispererruntime.model.IdeDiagnostic
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
+import software.amazon.q.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionItem
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionListWithReferences
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.PayloadContext

@@ -29,14 +29,14 @@ import software.amazon.awssdk.services.codewhispererstreaming.model.ExportResult
 import software.amazon.awssdk.services.codewhispererstreaming.model.ExportResultArchiveResponseHandler
 import software.amazon.awssdk.services.codewhispererstreaming.model.ValidationException
 import software.amazon.awssdk.services.ssooidc.SsoOidcClient
-import software.aws.toolkits.core.TokenConnectionSettings
-import software.aws.toolkits.core.utils.test.aString
-import software.aws.toolkits.jetbrains.core.MockClientManagerRule
-import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
-import software.aws.toolkits.jetbrains.core.credentials.ManagedSsoProfile
-import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
-import software.aws.toolkits.jetbrains.core.credentials.MockToolkitAuthManagerRule
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
+import software.amazon.q.core.TokenConnectionSettings
+import software.amazon.q.core.utils.test.aString
+import software.amazon.q.jetbrains.core.MockClientManagerRule
+import software.amazon.q.jetbrains.core.credentials.AwsBearerTokenConnection
+import software.amazon.q.jetbrains.core.credentials.ManagedSsoProfile
+import software.amazon.q.jetbrains.core.credentials.MockCredentialManagerRule
+import software.amazon.q.jetbrains.core.credentials.MockToolkitAuthManagerRule
+import software.amazon.q.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.services.amazonq.AmazonQTestBase
 import java.util.concurrent.CompletableFuture
 

@@ -7,8 +7,8 @@ import com.intellij.testFramework.ApplicationRule
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
-import software.aws.toolkits.jetbrains.core.help.HelpIdTranslator
-import software.aws.toolkits.jetbrains.core.help.HelpIds
+import software.amazon.q.jetbrains.core.help.HelpIdTranslator
+import software.amazon.q.jetbrains.core.help.HelpIds
 class CodeWhispererConstantsTest {
 
     @Rule

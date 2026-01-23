@@ -4,7 +4,7 @@
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.model
 
 import com.intellij.openapi.project.Project
-import software.aws.toolkits.jetbrains.services.telemetry.ClientMetadata
+import software.amazon.q.jetbrains.services.telemetry.ClientMetadata
 
 data class ExtendedClientMetadata(
     val aws: AwsMetadata,
@@ -54,13 +54,13 @@ data class ContextConfiguration(
 )
 
 fun createExtendedClientMetadata(project: Project): ExtendedClientMetadata {
-    val metadata = ClientMetadata.getDefault()
+    val metadata = ClientMetadata.DEFAULT_METADATA
     return ExtendedClientMetadata(
         aws = AwsMetadata(
             clientInfo = ClientInfoMetadata(
                 extension = ExtensionMetadata(
-                    name = metadata.awsProduct.toString(),
-                    version = metadata.awsVersion
+                    name = metadata.productName.toString(),
+                    version = metadata.productVersion
                 ),
                 clientId = metadata.clientId,
                 version = metadata.parentProductVersion,

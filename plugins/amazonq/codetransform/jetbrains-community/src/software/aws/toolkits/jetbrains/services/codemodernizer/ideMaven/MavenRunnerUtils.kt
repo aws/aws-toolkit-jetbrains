@@ -15,10 +15,10 @@ import org.jetbrains.idea.maven.execution.MavenRunner
 import org.jetbrains.idea.maven.execution.MavenRunnerParameters
 import org.jetbrains.idea.maven.execution.MavenRunnerSettings
 import org.slf4j.Logger
-import software.aws.toolkits.core.utils.error
-import software.aws.toolkits.core.utils.info
-import software.aws.toolkits.jetbrains.AwsPlugin
-import software.aws.toolkits.jetbrains.AwsToolkit
+import software.amazon.q.core.utils.error
+import software.amazon.q.core.utils.info
+import software.amazon.q.jetbrains.AwsPlugin
+import software.amazon.q.jetbrains.AwsToolkit
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeModernizerManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTelemetryManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerSessionContext

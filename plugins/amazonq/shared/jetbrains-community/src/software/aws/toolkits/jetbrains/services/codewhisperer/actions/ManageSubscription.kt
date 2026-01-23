@@ -11,12 +11,12 @@ import com.intellij.openapi.project.DumbAware
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import org.eclipse.lsp4j.ExecuteCommandParams
-import software.aws.toolkits.core.utils.error
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
-import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
+import software.amazon.q.core.utils.error
+import software.amazon.q.core.utils.getLogger
+import software.amazon.q.jetbrains.core.credentials.AwsBearerTokenConnection
+import software.amazon.q.jetbrains.core.credentials.ToolkitConnectionManager
+import software.amazon.q.jetbrains.core.credentials.pinning.QConnection
+import software.amazon.q.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 
 class ManageSubscription : AnAction(), DumbAware {

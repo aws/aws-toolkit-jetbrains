@@ -12,8 +12,8 @@ import org.apache.http.impl.client.HttpClientBuilder
 import org.apache.http.impl.client.SystemDefaultCredentialsProvider
 import org.apache.http.impl.conn.SystemDefaultRoutePlanner
 import org.jetbrains.annotations.TestOnly
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.warn
+import software.amazon.q.core.utils.getLogger
+import software.amazon.q.core.utils.warn
 import java.net.URI
 import java.security.KeyStore
 import java.security.cert.CertPathBuilder

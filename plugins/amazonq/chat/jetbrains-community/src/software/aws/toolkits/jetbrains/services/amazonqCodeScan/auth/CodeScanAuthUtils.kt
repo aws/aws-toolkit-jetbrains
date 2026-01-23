@@ -4,8 +4,8 @@
 package software.aws.toolkits.jetbrains.services.amazonqCodeScan.auth
 
 import com.intellij.openapi.project.Project
-import software.aws.toolkits.jetbrains.core.gettingstarted.editor.ActiveConnection
-import software.aws.toolkits.jetbrains.core.gettingstarted.editor.BearerTokenFeatureSet
-import software.aws.toolkits.jetbrains.core.gettingstarted.editor.checkBearerConnectionValidity
+import software.amazon.q.jetbrains.core.gettingstarted.editor.ActiveConnection
+import software.amazon.q.jetbrains.core.gettingstarted.editor.BearerTokenFeatureSet
+import software.amazon.q.jetbrains.core.gettingstarted.editor.checkBearerConnectionValidity
 
 fun isCodeScanAvailable(project: Project): Boolean = checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q) is ActiveConnection.ValidBearer

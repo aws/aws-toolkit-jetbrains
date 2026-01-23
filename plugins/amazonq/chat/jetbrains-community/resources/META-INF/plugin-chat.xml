@@ -36,7 +36,6 @@
 
         <group id="aws.toolkit.q.sign.in">
             <action id="q.sign.in" class="software.aws.toolkits.jetbrains.services.amazonq.explorerActions.SignInToQAction"/>
-            <reference ref="q.learn.more"/>
         </group>
 
         <group
