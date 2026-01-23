@@ -376,7 +376,7 @@ class BrowserConnector(
             }
 
             CHAT_LINK_CLICK -> {
-                handleChat(AmazonQChatServer.linkClick, node)
+                node.get("params")?.get("link")?.asText()?.let { BrowserUtil.browse(it) }
             }
 
             CHAT_INFO_LINK_CLICK -> {
