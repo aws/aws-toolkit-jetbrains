@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.ui
 
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.progress.EmptyProgressIndicator
 import com.intellij.openapi.progress.ProgressIndicator
@@ -92,7 +93,8 @@ class AsyncComboBox<T> private constructor(
         currentIndicator?.cancel()
         loading.set(true)
         removeAllItems()
-        repaint()
+        // Ensure repaint happens on EDT for thread safety
+        ApplicationManager.getApplication().invokeLater { repaint() }
         val indicator = EmptyProgressIndicator(ModalityState.any()).also {
             currentIndicator = it
         }
@@ -105,7 +107,8 @@ class AsyncComboBox<T> private constructor(
                             newModel.invoke(delegatedComboBoxModel(indicator))
                         }.invokeOnCompletion {
                             loading.set(false)
-                            repaint()
+                            // Ensure repaint happens on EDT for thread safety
+                            ApplicationManager.getApplication().invokeLater { repaint() }
                         }
                     },
                     indicator
