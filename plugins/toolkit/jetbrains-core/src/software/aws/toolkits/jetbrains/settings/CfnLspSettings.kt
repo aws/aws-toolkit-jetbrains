@@ -3,12 +3,22 @@
 
 package software.aws.toolkits.jetbrains.settings
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.RoamingType
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
+import com.intellij.util.messages.Topic
+
+fun interface CfnLspSettingsChangeListener {
+    fun settingsChanged()
+
+    companion object {
+        val TOPIC = Topic.create("CFN LSP Settings Changed", CfnLspSettingsChangeListener::class.java)
+    }
+}
 
 @Service
 @State(name = "cfnLspSettings", storages = [Storage("aws.xml", roamingType = RoamingType.DISABLED)])
@@ -17,6 +27,12 @@ internal class CfnLspSettings : PersistentStateComponent<CfnLspSettings.State> {
 
     override fun getState(): State = state
     override fun loadState(state: State) { this.state = state }
+
+    fun notifySettingsChanged() {
+        ApplicationManager.getApplication().messageBus
+            .syncPublisher(CfnLspSettingsChangeListener.TOPIC)
+            .settingsChanged()
+    }
 
     var isLspEnabled: Boolean
         get() = state.isLspEnabled

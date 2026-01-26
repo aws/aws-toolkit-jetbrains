@@ -140,5 +140,10 @@ internal class CfnLspSettingsConfigurable : BoundConfigurable(message("cloudform
         }
     }
 
+    override fun apply() {
+        super.apply()
+        settings.notifySettingsChanged()
+    }
+
     override fun getId(): String = "aws.cloudformation"
 }
