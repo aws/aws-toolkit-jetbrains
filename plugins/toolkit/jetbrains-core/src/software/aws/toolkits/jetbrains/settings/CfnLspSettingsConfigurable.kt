@@ -12,7 +12,7 @@ import com.intellij.ui.dsl.builder.columns
 import com.intellij.ui.dsl.builder.panel
 import software.aws.toolkits.resources.AwsToolkitBundle.message
 
-class CfnLspSettingsConfigurable : BoundConfigurable(message("cloudformation.settings.title")), SearchableConfigurable {
+internal class CfnLspSettingsConfigurable : BoundConfigurable(message("cloudformation.settings.title")), SearchableConfigurable {
     private val settings = CfnLspSettings.getInstance()
 
     override fun createPanel() = panel {

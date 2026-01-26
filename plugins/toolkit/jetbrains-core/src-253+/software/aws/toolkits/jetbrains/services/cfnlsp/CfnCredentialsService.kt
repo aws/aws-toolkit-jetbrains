@@ -39,7 +39,7 @@ import javax.crypto.spec.SecretKeySpec
  * The encryption key is generated per-session and passed in initialization options.
  */
 @Service(Service.Level.PROJECT)
-class CfnCredentialsService(private val project: Project) : Disposable {
+internal class CfnCredentialsService(private val project: Project) : Disposable {
     private val encryptionKey: SecretKey = generateKey()
 
     init {

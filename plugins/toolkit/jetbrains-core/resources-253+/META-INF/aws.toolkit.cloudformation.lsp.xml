@@ -5,8 +5,5 @@
     <extensions defaultExtensionNs="com.intellij">
         <platform.lsp.serverSupportProvider
             implementation="software.aws.toolkits.jetbrains.services.cfnlsp.server.CfnLspServerSupportProvider"/>
-
-        <projectService
-            serviceImplementation="software.aws.toolkits.jetbrains.services.cfnlsp.CfnCredentialsService"/>
     </extensions>
 </idea-plugin>

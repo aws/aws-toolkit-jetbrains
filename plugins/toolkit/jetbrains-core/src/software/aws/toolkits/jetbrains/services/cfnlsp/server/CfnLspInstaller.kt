@@ -4,8 +4,8 @@
 package software.aws.toolkits.jetbrains.services.cfnlsp.server
 
 import software.aws.toolkit.core.utils.getLogger
+import software.aws.toolkit.core.utils.error
 import software.aws.toolkit.core.utils.info
-import software.aws.toolkit.core.utils.warn
 import software.aws.toolkits.jetbrains.core.lsp.getToolkitsCacheRoot
 import software.aws.toolkits.jetbrains.utils.ZipDecompressor
 import software.aws.toolkits.resources.AwsToolkitBundle.message
@@ -42,7 +42,7 @@ class CfnLspInstaller(private val storageDir: Path = defaultStorageDir()) {
         val release = try {
             manifestAdapter.getLatestRelease()
         } catch (e: Exception) {
-            LOG.warn(e) { "Failed to fetch CloudFormation LSP manifest" }
+            LOG.error(e) { "Failed to fetch CloudFormation LSP manifest" }
             throw CfnLspException(
                 message("cloudformation.lsp.error.manifest_failed"),
                 CfnLspException.ErrorCode.MANIFEST_FETCH_FAILED,
@@ -53,7 +53,7 @@ class CfnLspInstaller(private val storageDir: Path = defaultStorageDir()) {
         val asset = try {
             manifestAdapter.getAssetForPlatform(release)
         } catch (e: Exception) {
-            LOG.warn(e) { "No compatible CloudFormation LSP version found" }
+            LOG.error(e) { "No compatible CloudFormation LSP version found" }
             throw CfnLspException(
                 message("cloudformation.lsp.error.no_compatible_version"),
                 CfnLspException.ErrorCode.NO_COMPATIBLE_VERSION,
@@ -66,7 +66,7 @@ class CfnLspInstaller(private val storageDir: Path = defaultStorageDir()) {
         val zipBytes = try {
             downloadAsset(asset.browserDownloadUrl)
         } catch (e: Exception) {
-            LOG.warn(e) { "Failed to download CloudFormation LSP" }
+            LOG.error(e) { "Failed to download CloudFormation LSP" }
             throw CfnLspException(
                 message("cloudformation.lsp.error.download_failed"),
                 CfnLspException.ErrorCode.DOWNLOAD_FAILED,
@@ -79,7 +79,7 @@ class CfnLspInstaller(private val storageDir: Path = defaultStorageDir()) {
             Files.createDirectories(targetDir)
             ZipDecompressor(zipBytes).use { it.extract(targetDir.toFile()) }
         } catch (e: Exception) {
-            LOG.warn(e) { "Failed to extract CloudFormation LSP" }
+            LOG.error(e) { "Failed to extract CloudFormation LSP" }
             throw CfnLspException(
                 message("cloudformation.lsp.error.extraction_failed"),
                 CfnLspException.ErrorCode.EXTRACTION_FAILED,

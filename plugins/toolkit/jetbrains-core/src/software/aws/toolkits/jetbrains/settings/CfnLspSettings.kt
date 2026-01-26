@@ -12,7 +12,7 @@ import com.intellij.openapi.components.service
 
 @Service
 @State(name = "cfnLspSettings", storages = [Storage("aws.xml", roamingType = RoamingType.DISABLED)])
-class CfnLspSettings : PersistentStateComponent<CfnLspSettings.State> {
+internal class CfnLspSettings : PersistentStateComponent<CfnLspSettings.State> {
     private var state = State()
 
     override fun getState(): State = state

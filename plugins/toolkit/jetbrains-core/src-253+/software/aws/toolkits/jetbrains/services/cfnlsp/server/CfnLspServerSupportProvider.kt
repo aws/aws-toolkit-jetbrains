@@ -27,7 +27,7 @@ private val SUPPORTED_EXTENSIONS = setOf("yaml", "yml", "json", "template", "cfn
 private fun VirtualFile.isCfnTemplate(): Boolean =
     extension?.lowercase() in SUPPORTED_EXTENSIONS
 
-class CfnLspServerSupportProvider : LspServerSupportProvider {
+internal class CfnLspServerSupportProvider : LspServerSupportProvider {
     override fun fileOpened(
         project: Project,
         file: VirtualFile,
@@ -180,11 +180,14 @@ private class CfnLspServerDescriptor(project: Project) :
         "rulesFile" to settings.cfnGuardRulesFile.ifEmpty { null }
     )
 
-    private fun buildEditorConfiguration(): Map<String, Any> = mapOf(
-        "tabSize" to 2,
-        "insertSpaces" to true,
-        "detectIndentation" to true
-    )
+    private fun buildEditorConfiguration(): Map<String, Any> {
+        val indentOptions = com.intellij.psi.codeStyle.CodeStyleSettings.getDefaults().indentOptions
+        return mapOf(
+            "tabSize" to (indentOptions?.TAB_SIZE ?: 2),
+            "insertSpaces" to !(indentOptions?.USE_TAB_CHARACTER ?: false),
+            "detectIndentation" to true
+        )
+    }
 
     private fun String.toStringList(): List<String> =
         split(",").map { it.trim() }.filter { it.isNotEmpty() }
