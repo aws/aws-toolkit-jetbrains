@@ -195,6 +195,7 @@ dependencies {
     // TODO: remove Q dependency when split is fully done
     implementation(libs.bundles.jackson)
     implementation(libs.zjsonpatch)
+    implementation(libs.nimbus.jose.jwt)
 
     testFixturesApi(testFixtures(project(":plugin-core:jetbrains-community")))
     testImplementation(project(":plugin-core:jetbrains-community"))

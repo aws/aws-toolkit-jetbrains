@@ -101,6 +101,7 @@
     <depends optional="true" config-file="ext-java.xml">com.intellij.modules.java</depends>
     <depends optional="true" config-file="ext-python.xml">com.intellij.modules.python</depends>
     <depends optional="true" config-file="ext-gateway.xml">com.jetbrains.gateway</depends>
+    <depends optional="true" config-file="aws.toolkit.cloudformation.lsp.xml">com.intellij.modules.lsp</depends>
 
     <xi:include href="services/caws.xml" xpointer="xpointer(/idea-plugin/*)">
         <xi:fallback/>
@@ -264,6 +265,7 @@
 
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.EcsExecCommandSettings"/>
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.SamDisplayDevModeWarningSettings"/>
+        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.CfnLspSettings"/>
 
         <applicationService serviceInterface="software.aws.toolkits.jetbrains.settings.DynamicResourcesSettings"
                             serviceImplementation="software.aws.toolkits.jetbrains.settings.DefaultDynamicResourcesSettings"/>
@@ -344,6 +346,13 @@
             bundle="software.aws.toolkits.resources.MessagesBundle"
             key="aws.settings.dynamic_resources_configurable.title"
             instance="software.aws.toolkits.jetbrains.settings.DynamicResourcesConfigurable"
+        />
+        <applicationConfigurable
+            parentId="aws.toolkit"
+            id="aws.cloudformation"
+            bundle="software.aws.toolkits.resources.MessagesBundle"
+            key="cloudformation.settings.title"
+            instance="software.aws.toolkits.jetbrains.settings.CfnLspSettingsConfigurable"
         />
 
         <programRunner implementation="software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamInvokeRunner"/>
