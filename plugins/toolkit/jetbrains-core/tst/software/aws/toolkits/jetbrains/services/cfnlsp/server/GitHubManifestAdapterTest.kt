@@ -4,47 +4,9 @@
 package software.aws.toolkits.jetbrains.services.cfnlsp.server
 
 import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Test
 
 class GitHubManifestAdapterTest {
-
-    @Test
-    fun `getAssetForPlatform finds matching asset`() {
-        val adapter = GitHubManifestAdapter(CfnLspEnvironment.PROD)
-        val release = GitHubRelease(
-            tagName = "v1.0.0",
-            prerelease = false,
-            assets = listOf(
-                GitHubAsset("server-darwin-arm64.zip", "https://example.com/darwin-arm64.zip", 1000),
-                GitHubAsset("server-darwin-x64.zip", "https://example.com/darwin-x64.zip", 1000),
-                GitHubAsset("server-linux-x64.zip", "https://example.com/linux-x64.zip", 1000),
-                GitHubAsset("server-windows-x64.zip", "https://example.com/windows-x64.zip", 1000)
-            )
-        )
-
-        val asset = adapter.getAssetForPlatform(release)
-
-        // Should find an asset matching current platform
-        assertThat(asset.name).containsAnyOf("darwin", "linux", "windows")
-        assertThat(asset.name).containsAnyOf("arm64", "x64")
-    }
-
-    @Test
-    fun `getAssetForPlatform throws when no matching asset`() {
-        val adapter = GitHubManifestAdapter(CfnLspEnvironment.PROD)
-        val release = GitHubRelease(
-            tagName = "v1.0.0",
-            prerelease = false,
-            assets = listOf(
-                GitHubAsset("server-unsupported-platform.zip", "https://example.com/unsupported.zip", 1000)
-            )
-        )
-
-        assertThatThrownBy { adapter.getAssetForPlatform(release) }
-            .isInstanceOf(IllegalStateException::class.java)
-            .hasMessageContaining("No asset found")
-    }
 
     @Test
     fun `GitHubRelease data class holds correct values`() {
@@ -70,5 +32,112 @@ class GitHubManifestAdapterTest {
         assertThat(asset.name).isEqualTo("test-asset.zip")
         assertThat(asset.browserDownloadUrl).isEqualTo("https://example.com/download")
         assertThat(asset.size).isEqualTo(12345)
+    }
+
+    @Test
+    fun `ManifestVersion data class holds correct values`() {
+        val version = ManifestVersion(
+            serverVersion = "1.3.0",
+            isDelisted = false,
+            targets = emptyList()
+        )
+
+        assertThat(version.serverVersion).isEqualTo("1.3.0")
+        assertThat(version.isDelisted).isFalse()
+        assertThat(version.targets).isEmpty()
+    }
+
+    @Test
+    fun `ManifestTarget data class holds correct values`() {
+        val target = ManifestTarget(
+            platform = "darwin",
+            arch = "arm64",
+            nodejs = "22",
+            contents = listOf(
+                ManifestContent(
+                    filename = "server.zip",
+                    url = "https://example.com/server.zip",
+                    bytes = 50000000
+                )
+            )
+        )
+
+        assertThat(target.platform).isEqualTo("darwin")
+        assertThat(target.arch).isEqualTo("arm64")
+        assertThat(target.nodejs).isEqualTo("22")
+        assertThat(target.contents).hasSize(1)
+        assertThat(target.contents[0].filename).isEqualTo("server.zip")
+    }
+
+    @Test
+    fun `ServerRelease data class holds correct values`() {
+        val release = ServerRelease(
+            version = "1.3.0",
+            downloadUrl = "https://example.com/download.zip",
+            filename = "server.zip",
+            size = 50000000,
+            hashes = listOf("sha256:abc123")
+        )
+
+        assertThat(release.version).isEqualTo("1.3.0")
+        assertThat(release.downloadUrl).isEqualTo("https://example.com/download.zip")
+        assertThat(release.filename).isEqualTo("server.zip")
+        assertThat(release.size).isEqualTo(50000000)
+        assertThat(release.hashes).containsExactly("sha256:abc123")
+    }
+
+    @Test
+    fun `matchesPlatform handles windows aliasing`() {
+        assertThat(GitHubManifestAdapter.matchesPlatform("win32", "windows")).isTrue()
+        assertThat(GitHubManifestAdapter.matchesPlatform("windows", "windows")).isTrue()
+        assertThat(GitHubManifestAdapter.matchesPlatform("darwin", "windows")).isFalse()
+    }
+
+    @Test
+    fun `matchesPlatform handles darwin`() {
+        assertThat(GitHubManifestAdapter.matchesPlatform("darwin", "darwin")).isTrue()
+        assertThat(GitHubManifestAdapter.matchesPlatform("linux", "darwin")).isFalse()
+    }
+
+    @Test
+    fun `matchesPlatform handles linux`() {
+        assertThat(GitHubManifestAdapter.matchesPlatform("linux", "linux")).isTrue()
+        assertThat(GitHubManifestAdapter.matchesPlatform("linuxglib2.28", "linux")).isFalse()
+    }
+
+    @Test
+    fun `remapLegacyLinux replaces linux with linuxglib2_28`() {
+        val versions = listOf(
+            ManifestVersion(
+                serverVersion = "1.0.0",
+                targets = listOf(
+                    ManifestTarget("linux", "x64", "22", listOf(ManifestContent("a.zip", "url", emptyList(), 100))),
+                    ManifestTarget("linuxglib2.28", "x64", "18", listOf(ManifestContent("b.zip", "url", emptyList(), 100))),
+                    ManifestTarget("darwin", "x64", "22", listOf(ManifestContent("c.zip", "url", emptyList(), 100))),
+                )
+            )
+        )
+
+        val remapped = GitHubManifestAdapter.remapLegacyLinux(versions)
+
+        assertThat(remapped[0].targets.map { it.platform }).containsExactlyInAnyOrder("linux", "darwin")
+        assertThat(remapped[0].targets.first { it.platform == "linux" }.nodejs).isEqualTo("18")
+    }
+
+    @Test
+    fun `remapLegacyLinux preserves version without legacy target`() {
+        val versions = listOf(
+            ManifestVersion(
+                serverVersion = "1.0.0",
+                targets = listOf(
+                    ManifestTarget("linux", "x64", "22", listOf(ManifestContent("a.zip", "url", emptyList(), 100))),
+                    ManifestTarget("darwin", "x64", "22", listOf(ManifestContent("c.zip", "url", emptyList(), 100))),
+                )
+            )
+        )
+
+        val remapped = GitHubManifestAdapter.remapLegacyLinux(versions)
+
+        assertThat(remapped[0].targets.map { it.platform }).containsExactlyInAnyOrder("linux", "darwin")
     }
 }

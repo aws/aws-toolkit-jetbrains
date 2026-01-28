@@ -14,6 +14,7 @@ class CfnLspException(
         NO_COMPATIBLE_VERSION,
         DOWNLOAD_FAILED,
         EXTRACTION_FAILED,
-        NODE_NOT_FOUND
+        NODE_NOT_FOUND,
+        HASH_VERIFICATION_FAILED
     }
 }

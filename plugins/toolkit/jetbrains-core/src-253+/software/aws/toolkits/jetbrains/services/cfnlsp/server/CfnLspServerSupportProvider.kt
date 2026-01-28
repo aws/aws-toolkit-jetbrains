@@ -93,6 +93,7 @@ private class CfnLspServerDescriptor(project: Project) :
             CfnLspException.ErrorCode.DOWNLOAD_FAILED -> message("cloudformation.lsp.error.download_failed")
             CfnLspException.ErrorCode.EXTRACTION_FAILED -> message("cloudformation.lsp.error.extraction_failed")
             CfnLspException.ErrorCode.NODE_NOT_FOUND -> message("cloudformation.lsp.error.node_not_found")
+            CfnLspException.ErrorCode.HASH_VERIFICATION_FAILED -> message("cloudformation.lsp.error.hash_mismatch")
         }
 
         notifyError(

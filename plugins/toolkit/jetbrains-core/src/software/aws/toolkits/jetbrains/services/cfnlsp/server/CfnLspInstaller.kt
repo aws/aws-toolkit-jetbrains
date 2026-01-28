@@ -3,9 +3,12 @@
 
 package software.aws.toolkits.jetbrains.services.cfnlsp.server
 
+import com.intellij.ide.util.PropertiesComponent
 import software.aws.toolkit.core.utils.getLogger
+import software.aws.toolkit.core.utils.debug
 import software.aws.toolkit.core.utils.error
 import software.aws.toolkit.core.utils.info
+import software.aws.toolkit.core.utils.warn
 import software.aws.toolkits.jetbrains.core.lsp.getToolkitsCacheRoot
 import software.aws.toolkits.jetbrains.utils.ZipDecompressor
 import software.aws.toolkits.resources.AwsToolkitBundle.message
@@ -15,56 +18,70 @@ import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.nio.file.Files
 import java.nio.file.Path
+import java.security.MessageDigest
+import kotlin.io.path.isDirectory
 
-class CfnLspInstaller(private val storageDir: Path = defaultStorageDir()) {
+class CfnLspInstaller(
+    private val storageDir: Path = defaultStorageDir(),
+    private val manifestAdapter: GitHubManifestAdapter = GitHubManifestAdapter(CfnLspEnvironment.PROD),
+) {
     private val httpClient = HttpClient.newBuilder()
         .followRedirects(HttpClient.Redirect.NORMAL)
         .connectTimeout(java.time.Duration.ofSeconds(30))
         .build()
-    private val manifestAdapter = GitHubManifestAdapter(CfnLspEnvironment.PROD)
 
-    fun getServerPath(): Path =
-        findExistingServer() ?: downloadAndInstall()
+    fun getServerPath(): Path {
+        val release = try {
+            manifestAdapter.getLatestRelease().also { saveManifestCache() }
+        } catch (e: Exception) {
+            LOG.warn(e) { "Failed to fetch manifest, trying cached manifest" }
+            tryFromCachedManifest() ?: run {
+                LOG.warn { "No cached manifest, trying cached server" }
+                return findCachedServer() ?: throw CfnLspException(
+                    message("cloudformation.lsp.error.manifest_failed"),
+                    CfnLspException.ErrorCode.MANIFEST_FETCH_FAILED,
+                    e
+                )
+            }
+        }
 
-    private fun findExistingServer(): Path? {
+        val versionDir = storageDir.resolve(release.version)
+        val serverPath = versionDir.resolve(CfnLspServerConfig.SERVER_FILE)
+
+        return if (Files.exists(serverPath)) {
+            LOG.info { "Using cached CloudFormation LSP ${release.version}" }
+            serverPath
+        } else {
+            downloadAndInstall(release).also { cleanupOldVersions(release.version) }
+        }
+    }
+
+    private fun tryFromCachedManifest(): ServerRelease? {
+        val cached = loadManifestCache() ?: return null
+        return try {
+            LOG.debug { "Using cached manifest for offline mode" }
+            manifestAdapter.parseManifest(cached)
+        } catch (e: Exception) {
+            LOG.warn(e) { "Failed to parse cached manifest" }
+            null
+        }
+    }
+
+    private fun findCachedServer(): Path? {
         if (!Files.exists(storageDir)) return null
 
         return Files.walk(storageDir, 2)
             .filter { it.fileName.toString() == CfnLspServerConfig.SERVER_FILE }
             .findFirst()
             .orElse(null)
-            ?.also { LOG.info { "Found existing CloudFormation LSP server: $it" } }
+            ?.also { LOG.info { "Using fallback cached server: $it" } }
     }
 
-    private fun downloadAndInstall(): Path {
-        LOG.info { "CloudFormation LSP server not found, downloading..." }
-
-        val release = try {
-            manifestAdapter.getLatestRelease()
-        } catch (e: Exception) {
-            LOG.error(e) { "Failed to fetch CloudFormation LSP manifest" }
-            throw CfnLspException(
-                message("cloudformation.lsp.error.manifest_failed"),
-                CfnLspException.ErrorCode.MANIFEST_FETCH_FAILED,
-                e
-            )
-        }
-
-        val asset = try {
-            manifestAdapter.getAssetForPlatform(release)
-        } catch (e: Exception) {
-            LOG.error(e) { "No compatible CloudFormation LSP version found" }
-            throw CfnLspException(
-                message("cloudformation.lsp.error.no_compatible_version"),
-                CfnLspException.ErrorCode.NO_COMPATIBLE_VERSION,
-                e
-            )
-        }
-
-        LOG.info { "Downloading CloudFormation LSP ${release.tagName}" }
+    private fun downloadAndInstall(release: ServerRelease): Path {
+        LOG.info { "Downloading CloudFormation LSP ${release.version}" }
 
         val zipBytes = try {
-            downloadAsset(asset.browserDownloadUrl)
+            downloadAsset(release.downloadUrl)
         } catch (e: Exception) {
             LOG.error(e) { "Failed to download CloudFormation LSP" }
             throw CfnLspException(
@@ -74,7 +91,12 @@ class CfnLspInstaller(private val storageDir: Path = defaultStorageDir()) {
             )
         }
 
-        val targetDir = storageDir.resolve(release.tagName)
+        // Verify hash if available
+        if (release.hashes.isNotEmpty()) {
+            verifyHash(zipBytes, release.hashes)
+        }
+
+        val targetDir = storageDir.resolve(release.version)
         try {
             Files.createDirectories(targetDir)
             ZipDecompressor(zipBytes).use { it.extract(targetDir.toFile()) }
@@ -90,6 +112,39 @@ class CfnLspInstaller(private val storageDir: Path = defaultStorageDir()) {
         val serverPath = targetDir.resolve(CfnLspServerConfig.SERVER_FILE)
         LOG.info { "CloudFormation LSP installed to: $serverPath" }
         return serverPath
+    }
+
+    private fun verifyHash(data: ByteArray, expectedHashes: List<String>) {
+        for (expected in expectedHashes) {
+            val (algorithm, hash) = parseHashString(expected) ?: continue
+            val computed = computeHash(data, algorithm)
+            if (computed.equals(hash, ignoreCase = true)) {
+                LOG.debug { "Hash verification passed ($algorithm)" }
+                return
+            }
+            LOG.warn { "Hash mismatch for $algorithm: expected $hash, got $computed" }
+        }
+        if (expectedHashes.isNotEmpty()) {
+            throw CfnLspException(
+                message("cloudformation.lsp.error.hash_mismatch"),
+                CfnLspException.ErrorCode.HASH_VERIFICATION_FAILED
+            )
+        }
+    }
+
+    private fun cleanupOldVersions(currentVersion: String) {
+        if (!Files.exists(storageDir)) return
+
+        try {
+            Files.list(storageDir)
+                .filter { it.isDirectory() && it.fileName.toString() != currentVersion }
+                .forEach { oldDir ->
+                    LOG.debug { "Removing old LSP version: ${oldDir.fileName}" }
+                    oldDir.toFile().deleteRecursively()
+                }
+        } catch (e: Exception) {
+            LOG.warn(e) { "Failed to cleanup old LSP versions" }
+        }
     }
 
     private fun downloadAsset(url: String): ByteArray {
@@ -108,9 +163,44 @@ class CfnLspInstaller(private val storageDir: Path = defaultStorageDir()) {
         return response.body()
     }
 
+    private fun saveManifestCache() {
+        val json = manifestAdapter.getCachedManifest() ?: return
+        try {
+            PropertiesComponent.getInstance().setValue(MANIFEST_CACHE_KEY, json)
+        } catch (e: Exception) {
+            LOG.debug { "Failed to save manifest cache: ${e.message}" }
+        }
+    }
+
+    private fun loadManifestCache(): String? = try {
+        PropertiesComponent.getInstance().getValue(MANIFEST_CACHE_KEY)
+    } catch (e: Exception) {
+        LOG.debug { "Failed to load manifest cache: ${e.message}" }
+        null
+    }
+
     companion object {
         private val LOG = getLogger<CfnLspInstaller>()
+        private const val MANIFEST_CACHE_KEY = "aws.cloudformation.lsp.manifest"
 
         fun defaultStorageDir(): Path = getToolkitsCacheRoot().resolve("cloudformation-lsp")
+
+        internal fun parseHashString(hashString: String): Pair<String, String>? {
+            // Format: "sha256:abc123..." or "sha384:abc123..."
+            val parts = hashString.split(":", limit = 2)
+            return if (parts.size == 2) parts[0] to parts[1] else null
+        }
+
+        internal fun computeHash(data: ByteArray, algorithm: String): String {
+            val digestAlgorithm = when (algorithm.lowercase()) {
+                "sha256" -> "SHA-256"
+                "sha384" -> "SHA-384"
+                "sha512" -> "SHA-512"
+                else -> algorithm.uppercase()
+            }
+            return MessageDigest.getInstance(digestAlgorithm)
+                .digest(data)
+                .joinToString("") { "%02x".format(it) }
+        }
     }
 }

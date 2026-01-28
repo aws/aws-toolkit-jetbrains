@@ -43,7 +43,8 @@ class CfnLspExceptionTest {
             CfnLspException.ErrorCode.NO_COMPATIBLE_VERSION,
             CfnLspException.ErrorCode.DOWNLOAD_FAILED,
             CfnLspException.ErrorCode.EXTRACTION_FAILED,
-            CfnLspException.ErrorCode.NODE_NOT_FOUND
+            CfnLspException.ErrorCode.NODE_NOT_FOUND,
+            CfnLspException.ErrorCode.HASH_VERIFICATION_FAILED
         )
     }
 }
