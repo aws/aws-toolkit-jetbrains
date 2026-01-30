@@ -9,8 +9,6 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 import org.eclipse.lsp4j.ProgressParams
 import org.eclipse.lsp4j.jsonrpc.ResponseErrorException
 import software.aws.toolkits.core.utils.getLogger
@@ -39,7 +37,7 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 
 @Service(Service.Level.PROJECT)
-class ChatCommunicationManager(private val project: Project, private val cs: CoroutineScope) {
+class ChatCommunicationManager(private val project: Project) {
     val uiReady = CompletableDeferred<Boolean>()
     private val chatPartialResultMap = ConcurrentHashMap<String, String>()
     private val inflightRequestByTabId = ConcurrentHashMap<String, CompletableFuture<String>>()
@@ -77,7 +75,7 @@ class ChatCommunicationManager(private val project: Project, private val cs: Cor
                 }
             }
         }
-        
+
         // UI is ready, invoke immediately
         chatUpdateCallback?.invoke(uiMessage)
     }
