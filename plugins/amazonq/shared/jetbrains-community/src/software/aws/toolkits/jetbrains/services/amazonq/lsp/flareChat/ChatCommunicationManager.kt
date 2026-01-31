@@ -9,8 +9,6 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 import org.eclipse.lsp4j.ProgressParams
 import org.eclipse.lsp4j.jsonrpc.ResponseErrorException
 import software.amazon.q.core.utils.getLogger
@@ -39,16 +37,21 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 
 @Service(Service.Level.PROJECT)
-class ChatCommunicationManager(private val project: Project, private val cs: CoroutineScope) {
+class ChatCommunicationManager(private val project: Project) {
     val uiReady = CompletableDeferred<Boolean>()
     private val chatPartialResultMap = ConcurrentHashMap<String, String>()
     private val inflightRequestByTabId = ConcurrentHashMap<String, CompletableFuture<String>>()
     private val pendingSerializedChatRequests = ConcurrentHashMap<String, CompletableFuture<GetSerializedChatResult>>()
     private val pendingTabRequests = ConcurrentHashMap<String, CompletableFuture<LSPAny>>()
     private val openTabs = mutableSetOf<String>()
+    private val pendingMessages = ArrayDeque<FlareUiMessage>()
 
     fun setUiReady() {
         uiReady.complete(true)
+        synchronized(pendingMessages) {
+            pendingMessages.forEach { chatUpdateCallback?.invoke(it) }
+            pendingMessages.clear()
+        }
     }
 
     private var chatUpdateCallback: ((FlareUiMessage) -> Unit)? = null
@@ -58,10 +61,23 @@ class ChatCommunicationManager(private val project: Project, private val cs: Cor
     }
 
     fun notifyUi(uiMessage: FlareUiMessage) {
-        cs.launch {
-            uiReady.await()
-            chatUpdateCallback?.invoke(uiMessage)
+        if (!uiReady.isCompleted) {
+            synchronized(pendingMessages) {
+                if (!uiReady.isCompleted) { // Double-check
+                    if (uiMessage.command == "aws/chat/sendContextCommands") {
+                        val removed = pendingMessages.removeAll { it.command == "aws/chat/sendContextCommands" }
+                        if (removed) {
+                            LOG.warn { "Removed old aws/chat/sendContextCommands message(s) before UI ready" }
+                        }
+                    }
+                    pendingMessages.addLast(uiMessage)
+                    return
+                }
+            }
         }
+
+        // UI is ready, invoke immediately
+        chatUpdateCallback?.invoke(uiMessage)
     }
 
     fun setInflightRequestForTab(tabId: String, result: CompletableFuture<String>) {
