@@ -1,4 +1,4 @@
 {
   "type" : "bugfix",
-  "description" : "Fix Fix environment variable injection on IntelliJ IDEA 2025.2+, fixes #6197"
+  "description" : "Fix environment variable injection on IntelliJ IDEA 2025.2+, fixes #6197"
 }
