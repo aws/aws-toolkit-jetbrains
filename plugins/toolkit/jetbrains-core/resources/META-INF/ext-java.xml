@@ -7,6 +7,10 @@
         <runConfigurationExtension implementation="software.aws.toolkits.jetbrains.core.execution.JavaAwsConnectionExtension"/>
     </extensions>
 
+    <extensions defaultExtensionNs="org.jetbrains.plugins.gradle">
+        <executionEnvironmentProvider implementation="software.aws.toolkits.jetbrains.core.execution.GradleAwsConnectionEnvironmentProvider" order="first"/>
+    </extensions>
+
     <extensions defaultExtensionNs="aws.toolkit">
         <experiment implementation="software.aws.toolkits.jetbrains.core.execution.JavaAwsConnectionExperiment"/>
     </extensions>
