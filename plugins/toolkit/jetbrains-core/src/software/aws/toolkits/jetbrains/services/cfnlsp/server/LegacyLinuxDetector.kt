@@ -12,7 +12,6 @@ import java.util.concurrent.TimeUnit
 
 /**
  * Detects legacy Linux environments that require older glibc-compatible builds.
- * Matches VSCode's CLibCheck behavior.
  */
 internal class LegacyLinuxDetector {
     private val glibcxxThreshold = listOf(3, 4, 29) // GLIBCXX_3.4.29
@@ -38,19 +37,36 @@ internal class LegacyLinuxDetector {
     internal fun getMaxGlibcxxVersion(): List<Int>? {
         val libPath = findLibStdCpp() ?: return null
 
-        return try {
-            val process = ProcessBuilder("strings", libPath)
-                .redirectErrorStream(true)
-                .start()
-
-            val output = process.inputStream.bufferedReader().use { it.readText() }
-            process.waitFor(10, TimeUnit.SECONDS)
-
-            parseGlibcxxVersions(output).maxWithOrNull(::compareVersions)
-        } catch (e: Exception) {
-            LOG.warn(e) { "Failed to detect GLIBCXX version" }
-            null
+        val output = extractGlibcxxStringsUsingStringsCommand(libPath)
+            ?: extractGlibcxxStringsFromBinaryFile(libPath)
+        if (output == null) {
+            LOG.warn { "Failed to read GLIBCXX versions from $libPath" }
+            return null
         }
+
+        return parseGlibcxxVersions(output).maxWithOrNull(::compareVersions)
+    }
+
+    private fun extractGlibcxxStringsUsingStringsCommand(libPath: String): String? = try {
+        val process = ProcessBuilder("strings", libPath)
+            .redirectErrorStream(true)
+            .start()
+
+        val output = process.inputStream.bufferedReader().use { it.readText() }
+        if (process.waitFor(10, TimeUnit.SECONDS) && output.contains("GLIBCXX")) output else null
+    } catch (_: Exception) {
+        LOG.info { "strings command failed, trying binary read fallback" }
+        null
+    }
+
+    private fun extractGlibcxxStringsFromBinaryFile(libPath: String): String? = try {
+        val bytes = File(libPath).readBytes()
+        val content = String(bytes, Charsets.ISO_8859_1)
+        val matches = Regex("""GLIBCXX_\d+\.\d+(?:\.\d+)?""").findAll(content)
+        matches.joinToString("\n") { it.value }.ifEmpty { null }
+    } catch (e: Exception) {
+        LOG.warn(e) { "Failed to read binary at $libPath" }
+        null
     }
 
     internal fun parseGlibcxxVersions(output: String): List<List<Int>> =
@@ -60,6 +76,10 @@ internal class LegacyLinuxDetector {
             .toList()
 
     private fun findLibStdCpp(): String? {
+        // Try ldconfig first (most reliable on standard Linux)
+        findLibStdCppUsingLdconfig()?.let { return it }
+
+        // Fallback to common paths
         val commonPaths = listOf(
             "/usr/lib/x86_64-linux-gnu/libstdc++.so.6",
             "/usr/lib64/libstdc++.so.6",
@@ -67,6 +87,25 @@ internal class LegacyLinuxDetector {
             "/lib/x86_64-linux-gnu/libstdc++.so.6",
         )
         return commonPaths.firstOrNull { File(it).exists() }
+    }
+
+    private fun findLibStdCppUsingLdconfig(): String? {
+        return try {
+            val process = ProcessBuilder("/sbin/ldconfig", "-p")
+                .redirectErrorStream(true)
+                .start()
+
+            val output = process.inputStream.bufferedReader().use { it.readText() }
+            if (!process.waitFor(5, TimeUnit.SECONDS)) return null
+
+            // Parse: "libstdc++.so.6 (libc6,x86-64) => /lib/x86_64-linux-gnu/libstdc++.so.6"
+            output.lineSequence()
+                .filter { it.contains("libstdc++.so.6") }.firstNotNullOfOrNull { line ->
+                    Regex("""=>\s+(.+)$""").find(line)?.groupValues?.get(1)?.trim()
+                }
+        } catch (_: Exception) {
+            null
+        }
     }
 
     companion object {
