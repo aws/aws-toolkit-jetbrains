@@ -101,7 +101,7 @@ class GitHubManifestAdapter(
             versions = remapLegacyLinux(versions)
         }
 
-        LOG.info { "Candidate versions for $environment: ${versions.map { v -> "${v.serverVersion}[${v.targets.map { "${it.platform}-${it.arch}" }.joinToString(",")}]" }}" }
+        LOG.info { "Candidate versions for $environment: ${versions.map { v -> "${v.serverVersion}[${v.targets.joinToString(",") { "${it.platform}-${it.arch}" }}]" }}" }
 
         val version = versions.firstOrNull { !it.isDelisted }
             ?: error("No versions found for $environment")
@@ -109,7 +109,7 @@ class GitHubManifestAdapter(
         val platform = getEffectivePlatform()
         val arch = getCurrentArchitecture()
 
-        val target = version.targets.firstOrNull { matchesPlatform(it.platform, platform) && it.arch == arch }
+        val target = version.targets.firstOrNull { it.platform == platform && it.arch == arch }
             ?: error("No target found for $platform-$arch")
 
         val content = target.contents.firstOrNull()
@@ -141,10 +141,6 @@ class GitHubManifestAdapter(
     }
 
     fun getCachedManifest(): String? = cachedManifestJson
-
-    fun setCachedManifest(json: String?) {
-        cachedManifestJson = json
-    }
 
     private fun getFromGitHubReleases(): ServerRelease {
         val releases = fetchGitHubReleases()
@@ -191,9 +187,11 @@ class GitHubManifestAdapter(
     private fun getAssetForPlatform(release: GitHubRelease): GitHubAsset {
         val platform = getEffectivePlatform()
         val arch = getCurrentArchitecture()
+        // Asset filenames use "win32" not "windows"
+        val filenamePlatform = if (platform == "windows") "win32" else platform
 
         return release.assets.firstOrNull { asset ->
-            PLATFORM_ALIASES.getOrDefault(platform, listOf(platform)).any { p -> asset.name.contains("$p-$arch") }
+            asset.name.contains("$filenamePlatform-$arch")
         } ?: error("No asset found for $platform-$arch")
     }
 
@@ -207,19 +205,6 @@ class GitHubManifestAdapter(
     companion object {
         private val LOG = getLogger<GitHubManifestAdapter>()
         private const val LEGACY_LINUX_PLATFORM = "linuxglib2.28"
-
-        // Platform aliases: JetBrains name -> manifest names
-        private val PLATFORM_ALIASES = mapOf(
-            "windows" to listOf("win32", "windows"),
-            "darwin" to listOf("darwin"),
-            "linux" to listOf("linux"),
-            LEGACY_LINUX_PLATFORM to listOf(LEGACY_LINUX_PLATFORM),
-        )
-
-        internal fun matchesPlatform(manifestPlatform: String, requestedPlatform: String): Boolean {
-            val aliases = PLATFORM_ALIASES[requestedPlatform] ?: listOf(requestedPlatform)
-            return manifestPlatform in aliases
-        }
 
         internal fun remapLegacyLinux(versions: List<ManifestVersion>): List<ManifestVersion> =
             versions.map { version ->

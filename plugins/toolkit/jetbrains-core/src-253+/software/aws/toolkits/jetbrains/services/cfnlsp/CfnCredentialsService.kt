@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.cfnlsp
 
+import com.google.gson.Gson
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
@@ -60,7 +61,7 @@ internal class CfnCredentialsService(private val project: Project) : Disposable 
         if (credentials != null) {
             val encrypted = encrypt(credentials)
             server.sendNotification { lsp ->
-                (lsp as? CfnLspServer)?.updateIamCredentials(
+                (lsp as? CfnLspServerProtocol)?.updateIamCredentials(
                     UpdateCredentialsParams(encrypted, true)
                 )?.whenComplete { result, error ->
                     if (error != null) {
@@ -70,11 +71,6 @@ internal class CfnCredentialsService(private val project: Project) : Disposable 
                     }
                 }
             }
-        } else {
-            server.sendNotification { lsp ->
-                (lsp as? CfnLspServer)?.deleteIamCredentials()
-            }
-            LOG.debug { "Credentials deleted from LSP server" }
         }
     }
 
@@ -135,23 +131,13 @@ internal class CfnCredentialsService(private val project: Project) : Disposable 
     }
 
     private fun encrypt(credentials: IamCredentials): String {
-        val payload = """{"data":${toJson(credentials)}}"""
+        val payload = """{"data":${Gson().toJson(credentials)}}"""
         val jwe = JWEObject(
             JWEHeader(JWEAlgorithm.DIR, EncryptionMethod.A256GCM),
             Payload(payload)
         )
         jwe.encrypt(DirectEncrypter(encryptionKey))
         return jwe.serialize()
-    }
-
-    private fun toJson(credentials: IamCredentials): String = buildString {
-        append("{")
-        append(""""profile":"${credentials.profile}",""")
-        append(""""region":"${credentials.region}",""")
-        append(""""accessKeyId":"${credentials.accessKeyId}",""")
-        append(""""secretAccessKey":"${credentials.secretAccessKey}"""")
-        credentials.sessionToken?.let { append(""","sessionToken":"$it"""") }
-        append("}")
     }
 
     @Suppress("UnstableApiUsage")

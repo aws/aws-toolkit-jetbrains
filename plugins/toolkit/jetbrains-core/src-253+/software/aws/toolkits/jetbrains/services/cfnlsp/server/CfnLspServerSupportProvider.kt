@@ -16,13 +16,13 @@ import software.aws.toolkit.core.utils.info
 import software.aws.toolkit.core.utils.warn
 import software.aws.toolkits.jetbrains.core.lsp.NodeRuntimeResolver
 import software.aws.toolkits.jetbrains.services.cfnlsp.CfnCredentialsService
-import software.aws.toolkits.jetbrains.services.cfnlsp.CfnLspServer
+import software.aws.toolkits.jetbrains.services.cfnlsp.CfnLspServerProtocol
 import software.aws.toolkits.jetbrains.settings.CfnLspSettings
 import software.aws.toolkit.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.AwsToolkitBundle.message
 import java.nio.file.Path
 
-private val SUPPORTED_EXTENSIONS = setOf("yaml", "yml", "json", "template", "cfn")
+private val SUPPORTED_EXTENSIONS = setOf("yaml", "yml", "json", "template", "cfn", "txt")
 
 private fun VirtualFile.isCfnTemplate(): Boolean =
     extension?.lowercase() in SUPPORTED_EXTENSIONS
@@ -33,7 +33,6 @@ internal class CfnLspServerSupportProvider : LspServerSupportProvider {
         file: VirtualFile,
         serverStarter: LspServerSupportProvider.LspServerStarter,
     ) {
-        if (!CfnLspSettings.getInstance().isLspEnabled) return
         if (file.isCfnTemplate()) {
             serverStarter.ensureServerStarted(CfnLspServerDescriptor(project))
         }
@@ -45,7 +44,7 @@ private class CfnLspServerDescriptor(project: Project) :
 
     private val installer = CfnLspInstaller()
 
-    override val lsp4jServerClass: Class<out LanguageServer> = CfnLspServer::class.java
+    override val lsp4jServerClass: Class<out LanguageServer> = CfnLspServerProtocol::class.java
 
     override fun isSupportedFile(file: VirtualFile) = file.isCfnTemplate()
 

@@ -18,7 +18,6 @@ class CfnLspSettingsTest {
     fun `default settings have expected values`() {
         val settings = CfnLspSettings.getInstance()
 
-        assertThat(settings.isLspEnabled).isTrue()
         assertThat(settings.nodeRuntimePath).isEmpty()
         assertThat(settings.isTelemetryEnabled).isFalse()
         assertThat(settings.isHoverEnabled).isTrue()
@@ -51,9 +50,6 @@ class CfnLspSettingsTest {
     fun `settings can be modified`() {
         val settings = CfnLspSettings.getInstance()
 
-        settings.isLspEnabled = false
-        assertThat(settings.isLspEnabled).isFalse()
-
         settings.nodeRuntimePath = "/usr/bin/node"
         assertThat(settings.nodeRuntimePath).isEqualTo("/usr/bin/node")
 
@@ -61,7 +57,6 @@ class CfnLspSettingsTest {
         assertThat(settings.maxCompletions).isEqualTo(50)
 
         // Reset to defaults
-        settings.isLspEnabled = true
         settings.nodeRuntimePath = ""
         settings.maxCompletions = 100
     }

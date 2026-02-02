@@ -14,13 +14,7 @@ import java.util.concurrent.CompletableFuture
  * Extended LSP server interface for CloudFormation Language Server.
  * Defines custom protocol methods beyond standard LSP.
  */
-interface CfnLspServer : LanguageServer {
-
-    // Auth: aws/credentials/iam/*
-
+interface CfnLspServerProtocol : LanguageServer {
     @JsonRequest("aws/credentials/iam/update")
     fun updateIamCredentials(params: UpdateCredentialsParams): CompletableFuture<UpdateCredentialsResult>
-
-    @JsonNotification("aws/credentials/iam/delete")
-    fun deleteIamCredentials()
 }

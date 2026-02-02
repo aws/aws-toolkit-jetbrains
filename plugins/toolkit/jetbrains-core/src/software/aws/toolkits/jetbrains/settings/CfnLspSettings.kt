@@ -34,10 +34,6 @@ internal class CfnLspSettings : PersistentStateComponent<CfnLspSettings.State> {
             .settingsChanged()
     }
 
-    var isLspEnabled: Boolean
-        get() = state.isLspEnabled
-        set(value) { state.isLspEnabled = value }
-
     var nodeRuntimePath: String
         get() = state.nodeRuntimePath
         set(value) { state.nodeRuntimePath = value }
@@ -121,7 +117,6 @@ internal class CfnLspSettings : PersistentStateComponent<CfnLspSettings.State> {
         set(value) { state.cfnGuardRulesFile = value }
 
     data class State(
-        var isLspEnabled: Boolean = true,
         var nodeRuntimePath: String = "",
         var isTelemetryEnabled: Boolean = false,
         var isHoverEnabled: Boolean = true,

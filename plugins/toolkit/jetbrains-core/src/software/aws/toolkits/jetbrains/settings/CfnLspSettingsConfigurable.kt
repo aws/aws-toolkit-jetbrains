@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.settings
 
+import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.options.BoundConfigurable
 import com.intellij.openapi.options.SearchableConfigurable
 import com.intellij.ui.dsl.builder.bindIntText
@@ -17,13 +18,11 @@ internal class CfnLspSettingsConfigurable : BoundConfigurable(message("cloudform
 
     override fun createPanel() = panel {
         group(message("cloudformation.settings.general.group")) {
-            row {
-                checkBox(message("cloudformation.settings.lsp.enable"))
-                    .bindSelected(settings::isLspEnabled)
-                    .comment(message("cloudformation.settings.lsp.enable.comment"))
-            }
             row(message("cloudformation.settings.node.path")) {
-                textField()
+                textFieldWithBrowseButton(
+                    FileChooserDescriptorFactory.createSingleFileNoJarsDescriptor()
+                        .withTitle(message("cloudformation.settings.node.path.browse"))
+                )
                     .bindText(settings::nodeRuntimePath)
                     .columns(30)
                     .comment(message("cloudformation.settings.node.path.comment"))

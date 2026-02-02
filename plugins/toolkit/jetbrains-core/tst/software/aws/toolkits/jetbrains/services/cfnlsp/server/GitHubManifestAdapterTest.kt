@@ -87,25 +87,6 @@ class GitHubManifestAdapterTest {
     }
 
     @Test
-    fun `matchesPlatform handles windows aliasing`() {
-        assertThat(GitHubManifestAdapter.matchesPlatform("win32", "windows")).isTrue()
-        assertThat(GitHubManifestAdapter.matchesPlatform("windows", "windows")).isTrue()
-        assertThat(GitHubManifestAdapter.matchesPlatform("darwin", "windows")).isFalse()
-    }
-
-    @Test
-    fun `matchesPlatform handles darwin`() {
-        assertThat(GitHubManifestAdapter.matchesPlatform("darwin", "darwin")).isTrue()
-        assertThat(GitHubManifestAdapter.matchesPlatform("linux", "darwin")).isFalse()
-    }
-
-    @Test
-    fun `matchesPlatform handles linux`() {
-        assertThat(GitHubManifestAdapter.matchesPlatform("linux", "linux")).isTrue()
-        assertThat(GitHubManifestAdapter.matchesPlatform("linuxglib2.28", "linux")).isFalse()
-    }
-
-    @Test
     fun `remapLegacyLinux replaces linux with linuxglib2_28`() {
         val versions = listOf(
             ManifestVersion(
