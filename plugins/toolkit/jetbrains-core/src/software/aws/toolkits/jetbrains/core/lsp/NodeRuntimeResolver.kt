@@ -11,7 +11,7 @@ import software.aws.toolkit.core.utils.getLogger
 import java.nio.file.Files
 import java.nio.file.Path
 
-object NodeRuntimeResolver {
+internal object NodeRuntimeResolver {
     private val LOG = getLogger<NodeRuntimeResolver>()
 
     /**

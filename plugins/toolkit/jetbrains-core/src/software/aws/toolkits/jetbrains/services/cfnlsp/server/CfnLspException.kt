@@ -3,7 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.cfnlsp.server
 
-class CfnLspException(
+internal class CfnLspException(
     message: String,
     val errorCode: ErrorCode,
     cause: Throwable? = null

@@ -19,20 +19,20 @@ import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 
 // Release manifest types (primary source)
-data class ManifestVersion(
+internal data class ManifestVersion(
     val serverVersion: String,
     val isDelisted: Boolean = false,
     val targets: List<ManifestTarget>,
 )
 
-data class ManifestTarget(
+internal data class ManifestTarget(
     val platform: String,
     val arch: String,
     val nodejs: String? = null,
     val contents: List<ManifestContent>,
 )
 
-data class ManifestContent(
+internal data class ManifestContent(
     val filename: String,
     val url: String,
     val hashes: List<String> = emptyList(),
@@ -40,20 +40,20 @@ data class ManifestContent(
 )
 
 // GitHub releases types (fallback)
-data class GitHubRelease(
+internal data class GitHubRelease(
     val tagName: String,
     val prerelease: Boolean,
     val assets: List<GitHubAsset>,
 )
 
-data class GitHubAsset(
+internal data class GitHubAsset(
     val name: String,
     val browserDownloadUrl: String,
     val size: Long,
 )
 
 // Unified result type
-data class ServerRelease(
+internal data class ServerRelease(
     val version: String,
     val downloadUrl: String,
     val filename: String,
@@ -61,7 +61,7 @@ data class ServerRelease(
     val hashes: List<String> = emptyList(),
 )
 
-class GitHubManifestAdapter(
+internal class GitHubManifestAdapter(
     private val environment: CfnLspEnvironment,
     private val legacyLinuxDetector: LegacyLinuxDetector = LegacyLinuxDetector(),
 ) {

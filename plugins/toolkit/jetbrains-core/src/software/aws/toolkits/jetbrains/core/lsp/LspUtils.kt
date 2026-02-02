@@ -8,19 +8,19 @@ import com.intellij.util.system.CpuArch
 import java.nio.file.Path
 import java.nio.file.Paths
 
-fun getToolkitsCacheRoot(): Path = when {
+internal fun getToolkitsCacheRoot(): Path = when {
     SystemInfo.isWindows -> Paths.get(System.getenv("LOCALAPPDATA"))
     SystemInfo.isMac -> Paths.get(System.getProperty("user.home"), "Library", "Caches")
     else -> Paths.get(System.getProperty("user.home"), ".cache")
 }.resolve("aws").resolve("toolkits")
 
-fun getCurrentOS(): String = when {
+internal fun getCurrentOS(): String = when {
     SystemInfo.isWindows -> "windows"
     SystemInfo.isMac -> "darwin"
     else -> "linux"
 }
 
-fun getCurrentArchitecture(): String = when (CpuArch.CURRENT) {
+internal fun getCurrentArchitecture(): String = when (CpuArch.CURRENT) {
     CpuArch.X86_64 -> "x64"
     CpuArch.ARM64 -> "arm64"
     else -> "unknown"

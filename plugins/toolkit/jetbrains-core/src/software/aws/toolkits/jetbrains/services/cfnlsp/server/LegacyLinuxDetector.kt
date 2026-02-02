@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit
  * Detects legacy Linux environments that require older glibc-compatible builds.
  * Matches VSCode's CLibCheck behavior.
  */
-class LegacyLinuxDetector {
+internal class LegacyLinuxDetector {
     private val glibcxxThreshold = listOf(3, 4, 29) // GLIBCXX_3.4.29
 
     fun useLegacyLinux(): Boolean {

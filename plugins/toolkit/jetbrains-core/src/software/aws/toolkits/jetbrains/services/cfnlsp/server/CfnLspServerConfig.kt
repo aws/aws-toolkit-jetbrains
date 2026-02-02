@@ -3,13 +3,13 @@
 
 package software.aws.toolkits.jetbrains.services.cfnlsp.server
 
-object CfnLspServerConfig {
+internal object CfnLspServerConfig {
     const val LSP_NAME = "cloudformation-languageserver"
     const val SERVER_FILE = "cfn-lsp-server-standalone.js"
     const val GITHUB_OWNER = "aws-cloudformation"
     const val GITHUB_REPO = "cloudformation-languageserver"
 }
 
-enum class CfnLspEnvironment {
+internal enum class CfnLspEnvironment {
     ALPHA, BETA, PROD
 }

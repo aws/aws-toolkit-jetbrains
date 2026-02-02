@@ -21,7 +21,7 @@ import java.nio.file.Path
 import java.security.MessageDigest
 import kotlin.io.path.isDirectory
 
-class CfnLspInstaller(
+internal class CfnLspInstaller(
     private val storageDir: Path = defaultStorageDir(),
     private val manifestAdapter: GitHubManifestAdapter = GitHubManifestAdapter(CfnLspEnvironment.PROD),
 ) {
