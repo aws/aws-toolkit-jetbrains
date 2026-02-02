@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.cfnlsp
 
-import org.eclipse.lsp4j.jsonrpc.services.JsonNotification
 import org.eclipse.lsp4j.jsonrpc.services.JsonRequest
 import org.eclipse.lsp4j.services.LanguageServer
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.UpdateCredentialsParams

@@ -18,7 +18,6 @@ import com.nimbusds.jose.Payload
 import com.nimbusds.jose.crypto.DirectEncrypter
 import org.eclipse.lsp4j.DidChangeConfigurationParams
 import software.aws.toolkit.core.utils.getLogger
-import software.aws.toolkit.core.utils.debug
 import software.aws.toolkit.core.utils.info
 import software.aws.toolkit.core.utils.warn
 import software.aws.toolkit.jetbrains.core.credentials.AwsConnectionManager
