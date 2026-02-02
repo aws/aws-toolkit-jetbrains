@@ -14,11 +14,11 @@ import org.eclipse.lsp4j.services.LanguageServer
 import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkit.core.utils.info
 import software.aws.toolkit.core.utils.warn
+import software.aws.toolkit.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.core.lsp.NodeRuntimeResolver
 import software.aws.toolkits.jetbrains.services.cfnlsp.CfnCredentialsService
 import software.aws.toolkits.jetbrains.services.cfnlsp.CfnLspServerProtocol
 import software.aws.toolkits.jetbrains.settings.CfnLspSettings
-import software.aws.toolkit.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.AwsToolkitBundle.message
 import java.nio.file.Path
 

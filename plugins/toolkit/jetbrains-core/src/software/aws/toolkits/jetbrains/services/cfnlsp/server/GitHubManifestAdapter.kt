@@ -74,13 +74,11 @@ internal class GitHubManifestAdapter(
     @Volatile
     private var cachedManifestJson: String? = null
 
-    fun getLatestRelease(): ServerRelease {
-        return try {
-            getFromManifest()
-        } catch (e: Exception) {
-            LOG.warn(e) { "Failed to fetch release manifest, falling back to GitHub Releases API" }
-            getFromGitHubReleases()
-        }
+    fun getLatestRelease(): ServerRelease = try {
+        getFromManifest()
+    } catch (e: Exception) {
+        LOG.warn(e) { "Failed to fetch release manifest, falling back to GitHub Releases API" }
+        getFromGitHubReleases()
     }
 
     private fun getFromManifest(): ServerRelease {
@@ -101,7 +99,13 @@ internal class GitHubManifestAdapter(
             versions = remapLegacyLinux(versions)
         }
 
-        LOG.info { "Candidate versions for $environment: ${versions.map { v -> "${v.serverVersion}[${v.targets.joinToString(",") { "${it.platform}-${it.arch}" }}]" }}" }
+        LOG.info {
+            "Candidate versions for $environment: ${versions.map { v ->
+                "${v.serverVersion}[${v.targets.joinToString(
+                    ","
+                ) { "${it.platform}-${it.arch}" }}]"
+            }}"
+        }
 
         val version = versions.firstOrNull { !it.isDelisted }
             ?: error("No versions found for $environment")

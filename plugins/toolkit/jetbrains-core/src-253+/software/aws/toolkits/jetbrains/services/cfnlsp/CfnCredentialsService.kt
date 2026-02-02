@@ -3,7 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.cfnlsp
 
-import com.google.gson.Gson
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
@@ -17,6 +17,7 @@ import com.nimbusds.jose.JWEObject
 import com.nimbusds.jose.Payload
 import com.nimbusds.jose.crypto.DirectEncrypter
 import org.eclipse.lsp4j.DidChangeConfigurationParams
+import software.amazon.awssdk.auth.credentials.AwsSessionCredentials
 import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkit.core.utils.info
 import software.aws.toolkit.core.utils.warn
@@ -28,7 +29,6 @@ import software.aws.toolkit.jetbrains.core.credentials.ToolkitConnectionManagerL
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.UpdateCredentialsParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.server.CfnLspServerSupportProvider
 import software.aws.toolkits.jetbrains.settings.CfnLspSettingsChangeListener
-import software.amazon.awssdk.auth.credentials.AwsSessionCredentials
 import java.security.SecureRandom
 import java.util.Base64
 import javax.crypto.SecretKey
@@ -102,9 +102,12 @@ internal class CfnCredentialsService(private val project: Project) : Disposable 
     }
 
     private fun subscribeToSettingsChanges(appBus: com.intellij.util.messages.MessageBusConnection) {
-        appBus.subscribe(CfnLspSettingsChangeListener.TOPIC, CfnLspSettingsChangeListener {
-            notifyConfigurationChanged()
-        })
+        appBus.subscribe(
+            CfnLspSettingsChangeListener.TOPIC,
+            CfnLspSettingsChangeListener {
+                notifyConfigurationChanged()
+            }
+        )
     }
 
     private fun resolveCredentials(): IamCredentials? {
@@ -130,7 +133,7 @@ internal class CfnCredentialsService(private val project: Project) : Disposable 
     }
 
     private fun encrypt(credentials: IamCredentials): String {
-        val payload = """{"data":${Gson().toJson(credentials)}}"""
+        val payload = """{"data":${jacksonObjectMapper().writeValueAsString(credentials)}}"""
         val jwe = JWEObject(
             JWEHeader(JWEAlgorithm.DIR, EncryptionMethod.A256GCM),
             Payload(payload)
@@ -139,7 +142,6 @@ internal class CfnCredentialsService(private val project: Project) : Disposable 
         return jwe.serialize()
     }
 
-    @Suppress("UnstableApiUsage")
     private fun findLspServer(): LspServer? =
         LspServerManager.getInstance(project)
             .getServersForProvider(CfnLspServerSupportProvider::class.java)
@@ -165,5 +167,5 @@ private data class IamCredentials(
     val region: String,
     val accessKeyId: String,
     val secretAccessKey: String,
-    val sessionToken: String? = null
+    val sessionToken: String? = null,
 )

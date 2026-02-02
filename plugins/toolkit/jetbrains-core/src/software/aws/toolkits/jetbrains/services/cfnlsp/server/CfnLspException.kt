@@ -6,7 +6,7 @@ package software.aws.toolkits.jetbrains.services.cfnlsp.server
 internal class CfnLspException(
     message: String,
     val errorCode: ErrorCode,
-    cause: Throwable? = null
+    cause: Throwable? = null,
 ) : Exception(message, cause) {
 
     enum class ErrorCode {
@@ -15,6 +15,6 @@ internal class CfnLspException(
         DOWNLOAD_FAILED,
         EXTRACTION_FAILED,
         NODE_NOT_FOUND,
-        HASH_VERIFICATION_FAILED
+        HASH_VERIFICATION_FAILED,
     }
 }

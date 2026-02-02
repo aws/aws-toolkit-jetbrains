@@ -89,23 +89,24 @@ internal class LegacyLinuxDetector {
         return commonPaths.firstOrNull { File(it).exists() }
     }
 
-    private fun findLibStdCppUsingLdconfig(): String? {
-        return try {
-            val process = ProcessBuilder("/sbin/ldconfig", "-p")
-                .redirectErrorStream(true)
-                .start()
+    private fun findLibStdCppUsingLdconfig(): String? = try {
+        val process = ProcessBuilder("/sbin/ldconfig", "-p")
+            .redirectErrorStream(true)
+            .start()
 
-            val output = process.inputStream.bufferedReader().use { it.readText() }
-            if (!process.waitFor(5, TimeUnit.SECONDS)) return null
-
+        val output = process.inputStream.bufferedReader().use { it.readText() }
+        if (!process.waitFor(5, TimeUnit.SECONDS)) {
+            null
+        } else {
             // Parse: "libstdc++.so.6 (libc6,x86-64) => /lib/x86_64-linux-gnu/libstdc++.so.6"
             output.lineSequence()
-                .filter { it.contains("libstdc++.so.6") }.firstNotNullOfOrNull { line ->
+                .filter { it.contains("libstdc++.so.6") }
+                .firstNotNullOfOrNull { line ->
                     Regex("""=>\s+(.+)$""").find(line)?.groupValues?.get(1)?.trim()
                 }
-        } catch (_: Exception) {
-            null
         }
+    } catch (_: Exception) {
+        null
     }
 
     companion object {
