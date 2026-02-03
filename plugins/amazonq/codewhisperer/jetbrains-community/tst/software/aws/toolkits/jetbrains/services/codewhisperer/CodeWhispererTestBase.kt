@@ -39,7 +39,6 @@ import org.mockito.kotlin.stub
 import org.mockito.kotlin.timeout
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import org.mockito.kotlin.wheneverBlocking
 import software.amazon.awssdk.services.ssooidc.SsoOidcClient
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.ManagedSsoProfile
@@ -173,10 +172,12 @@ open class CodeWhispererTestBase {
         stateManager = spy(CodeWhispererExplorerActionManager.getInstance())
         recommendationManager = CodeWhispererRecommendationManager.getInstance()
         codewhispererService = spy(CodeWhispererService.getInstance())
-        doAnswer {
-            CompletableFuture.completedFuture(LspServerConfigurations(listOf(WorkspaceInfo("file:///", "workspaceId"))))
-        }.wheneverBlocking(codewhispererService) {
-            getWorkspaceIds(any())
+        codewhispererService.stub {
+            onBlocking {
+                getWorkspaceIds(any())
+            } doAnswer {
+                CompletableFuture.completedFuture(LspServerConfigurations(listOf(WorkspaceInfo("file:///", "workspaceId"))))
+            }
         }
         ApplicationManager.getApplication().replaceService(CodeWhispererService::class.java, codewhispererService, disposableRule.disposable)
         editorManager = CodeWhispererEditorManager.getInstance()
@@ -316,18 +317,8 @@ open class CodeWhispererTestBase {
         val psiFileCaptor = argumentCaptor<PsiFile>()
         val latencyContextCaptor = argumentCaptor<LatencyContext>()
 
-        doSuspendableAnswer {
-            val requestContext = codewhispererService.getRequestContext(
-                triggerTypeCaptor.firstValue,
-                editorCaptor.firstValue,
-                projectRule.project,
-                psiFileCaptor.firstValue,
-                latencyContextCaptor.firstValue
-            )
-            projectRule.fixture.type(userInput)
-            requestContext
-        }.doCallRealMethod()
-            .wheneverBlocking(codewhispererService) {
+        codewhispererService.stub {
+            onBlocking {
                 getRequestContext(
                     triggerTypeCaptor.capture(),
                     editorCaptor.capture(),
@@ -335,7 +326,18 @@ open class CodeWhispererTestBase {
                     psiFileCaptor.capture(),
                     latencyContextCaptor.capture()
                 )
+            } doSuspendableAnswer {
+                val requestContext = codewhispererService.getRequestContext(
+                    triggerTypeCaptor.firstValue,
+                    editorCaptor.firstValue,
+                    projectRule.project,
+                    psiFileCaptor.firstValue,
+                    latencyContextCaptor.firstValue
+                )
+                projectRule.fixture.type(userInput)
+                requestContext
             }
+        }
     }
 
     fun mockLspInlineCompletionResponse(response: InlineCompletionListWithReferences) {
