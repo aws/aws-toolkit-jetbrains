@@ -10,14 +10,17 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.platform.lsp.api.LspServerSupportProvider
 import com.intellij.platform.lsp.api.ProjectWideLspServerDescriptor
+import org.eclipse.lsp4j.ConfigurationItem
 import org.eclipse.lsp4j.services.LanguageServer
 import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkit.core.utils.info
 import software.aws.toolkit.core.utils.warn
+import software.aws.toolkit.jetbrains.settings.AwsSettings
 import software.aws.toolkit.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.core.lsp.NodeRuntimeResolver
 import software.aws.toolkits.jetbrains.services.cfnlsp.CfnCredentialsService
 import software.aws.toolkits.jetbrains.services.cfnlsp.CfnLspServerProtocol
+import software.aws.toolkits.jetbrains.services.cfnlsp.CfnLspExtensionConfig
 import software.aws.toolkits.jetbrains.settings.CfnLspSettings
 import software.aws.toolkits.resources.AwsToolkitBundle.message
 import java.nio.file.Path
@@ -124,20 +127,21 @@ private class CfnLspServerDescriptor(project: Project) :
             "aws" to mapOf(
                 "clientInfo" to mapOf(
                     "extension" to mapOf(
-                        "name" to "aws-toolkit-jetbrains",
-                        "version" to "1.0.0"
-                    )
+                        "name" to CfnLspExtensionConfig.EXTENSION_NAME,
+                        "version" to CfnLspExtensionConfig.EXTENSION_VERSION
+                    ),
+                    "clientId" to AwsSettings.getInstance().clientId.toString()
                 ),
                 "telemetryEnabled" to settings.isTelemetryEnabled,
                 "encryption" to mapOf(
                     "key" to credentialsService.encryptionKeyBase64,
-                    "algorithm" to "A256GCM"
+                    "mode" to CfnLspExtensionConfig.ENCRYPTION_MODE
                 )
             )
         )
     }
 
-    override fun getWorkspaceConfiguration(item: org.eclipse.lsp4j.ConfigurationItem): Any? {
+    override fun getWorkspaceConfiguration(item: ConfigurationItem): Any? {
         val section = item.section ?: return null
         val settings = CfnLspSettings.getInstance()
 
@@ -183,8 +187,8 @@ private class CfnLspServerDescriptor(project: Project) :
     private fun buildEditorConfiguration(): Map<String, Any> {
         val indentOptions = com.intellij.psi.codeStyle.CodeStyleSettings.getDefaults().indentOptions
         return mapOf(
-            "tabSize" to (indentOptions?.TAB_SIZE ?: 2),
-            "insertSpaces" to !(indentOptions?.USE_TAB_CHARACTER ?: false),
+            "tabSize" to indentOptions.TAB_SIZE,
+            "insertSpaces" to !indentOptions.USE_TAB_CHARACTER,
             "detectIndentation" to true
         )
     }
