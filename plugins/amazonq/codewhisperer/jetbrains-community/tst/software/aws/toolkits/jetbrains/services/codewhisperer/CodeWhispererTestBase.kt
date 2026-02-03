@@ -29,11 +29,13 @@ import org.eclipse.lsp4j.jsonrpc.RemoteEndpoint
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
+import org.mockito.Answers
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doNothing
 import org.mockito.kotlin.doSuspendableAnswer
+import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.timeout
@@ -171,11 +173,11 @@ open class CodeWhispererTestBase {
 
         stateManager = spy(CodeWhispererExplorerActionManager.getInstance())
         recommendationManager = CodeWhispererRecommendationManager.getInstance()
-        codewhispererService = spy(CodeWhispererService.getInstance())
-        codewhispererService.stub {
+        // Use mock with CALLS_REAL_METHODS instead of spy to avoid invoking real suspend method during stub setup
+        codewhispererService = mock<CodeWhispererService>(defaultAnswer = Answers.CALLS_REAL_METHODS) {
             onBlocking {
                 getWorkspaceIds(any())
-            } doAnswer {
+            } doSuspendableAnswer {
                 CompletableFuture.completedFuture(LspServerConfigurations(listOf(WorkspaceInfo("file:///", "workspaceId"))))
             }
         }

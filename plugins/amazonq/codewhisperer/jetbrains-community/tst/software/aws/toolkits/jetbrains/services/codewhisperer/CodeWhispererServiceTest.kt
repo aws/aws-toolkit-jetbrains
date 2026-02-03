@@ -16,7 +16,6 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
-import org.mockito.kotlin.stub
 import org.mockito.kotlin.whenever
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionTriggerKind
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.LspEditorUtil.toUriString
@@ -55,11 +54,7 @@ class CodeWhispererServiceTest : CodeWhispererTestBase() {
         val fileContextProviderSpy = spy(fileContextProvider)
         projectRule.project.replaceService(FileContextProvider::class.java, fileContextProviderSpy, disposableRule.disposable)
 
-        codewhispererService.stub {
-            onBlocking {
-                getRequestContext(any(), any(), any(), any(), any())
-            }.thenCallRealMethod()
-        }
+        // codewhispererService uses CALLS_REAL_METHODS, so getRequestContext already calls real method
 
         val requestContext = codewhispererService.getRequestContext(
             TriggerTypeInfo(CodewhispererTriggerType.AutoTrigger, CodeWhispererAutomatedTriggerType.Enter()),
@@ -95,11 +90,7 @@ class CodeWhispererServiceTest : CodeWhispererTestBase() {
         }
 
         projectRule.project.replaceService(FileContextProvider::class.java, mockFileContextProvider, disposableRule.disposable)
-        codewhispererService.stub {
-            onBlocking {
-                getRequestContext(any(), any(), any(), any(), any())
-            }.thenCallRealMethod()
-        }
+        // codewhispererService uses CALLS_REAL_METHODS, so getRequestContext already calls real method
 
         val actual = codewhispererService.getRequestContext(
             TriggerTypeInfo(CodewhispererTriggerType.OnDemand, CodeWhispererAutomatedTriggerType.Unknown()),
