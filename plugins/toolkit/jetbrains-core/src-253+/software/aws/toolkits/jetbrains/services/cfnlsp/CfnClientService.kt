@@ -11,8 +11,16 @@ import com.intellij.platform.lsp.api.LspServerManager
 import org.eclipse.lsp4j.DidChangeConfigurationParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ListChangeSetsParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ListChangeSetsResult
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ListResourcesParams
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ListResourcesResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ListStacksParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ListStacksResult
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ResourceStackManagementResult
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ResourceStateParams
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ResourceStateResult
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ResourceTypesResult
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.SearchResourceParams
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.SearchResourceResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.UpdateCredentialsParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.UpdateCredentialsResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.server.CfnLspServerSupportProvider
@@ -34,6 +42,24 @@ internal class CfnClientService(project: Project) {
 
     fun updateIamCredentials(params: UpdateCredentialsParams): CompletableFuture<UpdateCredentialsResult?> =
         sendRequest { it.updateIamCredentials(params) }
+
+    fun listResourceTypes(): CompletableFuture<ResourceTypesResult?> =
+        sendRequest { it.listResourceTypes() }
+
+    fun removeResourceType(resourceType: String): CompletableFuture<Void?> =
+        sendRequest { it.removeResourceType(resourceType) }
+
+    fun searchResource(params: SearchResourceParams): CompletableFuture<SearchResourceResult?> =
+        sendRequest { it.searchResource(params) }
+
+    fun listResources(params: ListResourcesParams): CompletableFuture<ListResourcesResult?> =
+        sendRequest { it.listResources(params) }
+
+    fun getStackManagementInfo(resourceIdentifier: String): CompletableFuture<ResourceStackManagementResult?> =
+        sendRequest { it.getStackManagementInfo(resourceIdentifier) }
+
+    fun getResourceState(params: ResourceStateParams): CompletableFuture<ResourceStateResult?> =
+        sendRequest { it.getResourceState(params) }
 
     fun notifyConfigurationChanged() {
         lspServerProvider()?.sendNotification { lsp ->

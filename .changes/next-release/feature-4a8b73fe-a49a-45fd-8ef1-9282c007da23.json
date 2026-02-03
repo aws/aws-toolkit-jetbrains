@@ -1,0 +1,4 @@
+{
+  "type" : "feature",
+  "description" : "Add the resource node in the CloudFormation explorer tab. This node contains the functionality to add/remove resource types from the list, lazy load and refresh resources, paginate resources, import/clone the resource template state, and copy the stack information of a resource to the clipboard."
+}

@@ -28,6 +28,7 @@ import software.aws.toolkit.jetbrains.core.credentials.ConnectionState
 import software.aws.toolkit.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkit.jetbrains.core.credentials.ToolkitConnectionManagerListener
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.UpdateCredentialsParams
+import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourcesManager
 import software.aws.toolkits.jetbrains.services.cfnlsp.stacks.StacksManager
 import software.aws.toolkits.jetbrains.settings.CfnLspSettingsChangeListener
 import java.security.SecureRandom
@@ -65,6 +66,10 @@ internal class CfnCredentialsService(private val project: Project) : Disposable 
                 if (onRegionChange && result?.success == true) {
                     val stacksManager = StacksManager.getInstance(project)
                     stacksManager.clear()
+
+                    val resourcesManager = ResourcesManager.getInstance(project)
+                    resourcesManager.clear()
+
                     stacksManager.reload()
                 }
             }
