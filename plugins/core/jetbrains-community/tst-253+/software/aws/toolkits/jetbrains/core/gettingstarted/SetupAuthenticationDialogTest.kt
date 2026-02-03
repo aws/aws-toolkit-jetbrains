@@ -15,8 +15,9 @@ import io.mockk.verify
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.any
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.stub
-import org.mockito.kotlin.whenever
 import software.amazon.awssdk.profiles.Profile
 import software.amazon.awssdk.services.sts.StsClient
 import software.amazon.awssdk.services.sts.model.GetCallerIdentityRequest
@@ -264,7 +265,6 @@ class SetupAuthenticationDialogTest : HeavyPlatformTestCase() {
         }
     }
 
-    // TODO: Fix StsClient mock exception throwing in 2025.3 migration - this test expects an exception but mock doesn't throw
     fun `test validate IAM tab fails if credentials are invalid`() {
         val state = SetupAuthenticationDialogState().apply {
             selectedTab.set(SetupAuthenticationTabs.IAM_LONG_LIVED)
@@ -279,7 +279,7 @@ class SetupAuthenticationDialogTest : HeavyPlatformTestCase() {
         @Suppress("DEPRECATION")
         mockClientManager.register(StsClient::class, stsClient)
         stsClient.stub {
-            whenever(it.getCallerIdentity(any<GetCallerIdentityRequest>())).thenThrow(StsException.builder().message("Some service exception message").build())
+            on { getCallerIdentity(any<GetCallerIdentityRequest>()) } doThrow StsException.builder().message("Some service exception message").build()
         }
 
         runInEdtAndWait {
@@ -308,7 +308,7 @@ class SetupAuthenticationDialogTest : HeavyPlatformTestCase() {
         @Suppress("DEPRECATION")
         mockClientManager.register(StsClient::class, stsClient)
         stsClient.stub {
-            whenever(it.getCallerIdentity(any<GetCallerIdentityRequest>())).thenReturn(GetCallerIdentityResponse.builder().build())
+            on { getCallerIdentity(any<GetCallerIdentityRequest>()) } doReturn GetCallerIdentityResponse.builder().build()
         }
 
         val configFacade = mockk<ConfigFilesFacade>(relaxed = true)
