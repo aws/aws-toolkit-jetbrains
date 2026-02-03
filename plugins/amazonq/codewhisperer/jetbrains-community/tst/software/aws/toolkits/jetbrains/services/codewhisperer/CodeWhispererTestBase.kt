@@ -316,18 +316,8 @@ open class CodeWhispererTestBase {
         val psiFileCaptor = argumentCaptor<PsiFile>()
         val latencyContextCaptor = argumentCaptor<LatencyContext>()
 
-        doSuspendableAnswer {
-            val requestContext = codewhispererService.getRequestContext(
-                triggerTypeCaptor.firstValue,
-                editorCaptor.firstValue,
-                projectRule.project,
-                psiFileCaptor.firstValue,
-                latencyContextCaptor.firstValue
-            )
-            projectRule.fixture.type(userInput)
-            requestContext
-        }.doCallRealMethod()
-            .wheneverBlocking(codewhispererService) {
+        codewhispererService.stub {
+            onBlocking {
                 getRequestContext(
                     triggerTypeCaptor.capture(),
                     editorCaptor.capture(),
@@ -335,7 +325,18 @@ open class CodeWhispererTestBase {
                     psiFileCaptor.capture(),
                     latencyContextCaptor.capture()
                 )
+            } doSuspendableAnswer {
+                val requestContext = codewhispererService.getRequestContext(
+                    triggerTypeCaptor.firstValue,
+                    editorCaptor.firstValue,
+                    projectRule.project,
+                    psiFileCaptor.firstValue,
+                    latencyContextCaptor.firstValue
+                )
+                projectRule.fixture.type(userInput)
+                requestContext
             }
+        }
     }
 
     fun mockLspInlineCompletionResponse(response: InlineCompletionListWithReferences) {
