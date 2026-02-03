@@ -1,0 +1,4 @@
+{
+  "type" : "feature",
+  "description" : "Adds CloudFormation Language Server (LSP) integration to the AWS Toolkit, providing intelligent editing features for CloudFormation templates."
+}
