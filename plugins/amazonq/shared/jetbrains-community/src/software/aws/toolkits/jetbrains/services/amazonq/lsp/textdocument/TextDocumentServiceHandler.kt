@@ -16,7 +16,6 @@ import com.intellij.openapi.fileEditor.FileEditorManagerEvent
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.Key
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
@@ -86,20 +85,11 @@ class TextDocumentServiceHandler(
                     realTimeEdit(event)
                 }
             }
-            ApplicationManager.getApplication().runReadAction {
-                FileDocumentManager.getInstance().getDocument(file)?.addDocumentListener(listener)
+            val document = ApplicationManager.getApplication().runReadAction<Document?> {
+                FileDocumentManager.getInstance().getDocument(file)
             }
+            document?.addDocumentListener(listener, this)
             file.putUserData(KEY_REAL_TIME_EDIT_LISTENER, listener)
-
-            Disposer.register(this) {
-                ApplicationManager.getApplication().runReadAction {
-                    val existingListener = file.getUserData(KEY_REAL_TIME_EDIT_LISTENER)
-                    if (existingListener != null) {
-                        tryOrNull { FileDocumentManager.getInstance().getDocument(file)?.removeDocumentListener(existingListener) }
-                        file.putUserData(KEY_REAL_TIME_EDIT_LISTENER, null)
-                    }
-                }
-            }
 
             trySendIfValid { languageServer ->
                 toUriString(file)?.let { uri ->
