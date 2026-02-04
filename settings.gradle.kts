@@ -50,12 +50,6 @@ dependencyResolutionManagement {
     repositories {
         codeArtifactMavenRepo()
         mavenCentral()
-        maven {
-            url = uri("https://s01.oss.sonatype.org/content/repositories/snapshots/")
-            content {
-                includeGroupByRegex("org\\.mockito\\.kotlin")
-            }
-        }
 
         intellijPlatform {
             defaultRepositories()
