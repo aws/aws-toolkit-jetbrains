@@ -173,14 +173,9 @@ open class CodeWhispererTestBase {
 
         stateManager = spy(CodeWhispererExplorerActionManager.getInstance())
         recommendationManager = CodeWhispererRecommendationManager.getInstance()
-        // Use mock with CALLS_REAL_METHODS instead of spy to avoid invoking real suspend method during stub setup
-        codewhispererService = mock<CodeWhispererService>(defaultAnswer = Answers.CALLS_REAL_METHODS) {
-            onBlocking {
-                getWorkspaceIds(any())
-            } doSuspendableAnswer {
-                CompletableFuture.completedFuture(LspServerConfigurations(listOf(WorkspaceInfo("file:///", "workspaceId"))))
-            }
-        }
+        // Use spy on the real service instance - getWorkspaceIds will fail gracefully
+        // in getRequestContext's try-catch block with workspaceId = null
+        codewhispererService = spy(CodeWhispererService.getInstance())
         ApplicationManager.getApplication().replaceService(CodeWhispererService::class.java, codewhispererService, disposableRule.disposable)
         editorManager = CodeWhispererEditorManager.getInstance()
         settingsManager = CodeWhispererSettings.getInstance()
