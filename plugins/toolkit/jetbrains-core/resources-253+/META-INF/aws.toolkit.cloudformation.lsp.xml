@@ -6,4 +6,27 @@
         <platform.lsp.serverSupportProvider
             implementation="software.aws.toolkits.jetbrains.services.cfnlsp.server.CfnLspServerSupportProvider"/>
     </extensions>
+
+    <extensions defaultExtensionNs="aws.toolkit">
+        <toolWindowTab implementation="software.aws.toolkits.jetbrains.services.cfnlsp.explorer.CloudFormationToolWindowTab"/>
+    </extensions>
+
+    <actions>
+        <action id="aws.toolkit.cloudformation.stacks.refresh"
+                class="software.aws.toolkits.jetbrains.services.cfnlsp.explorer.actions.RefreshStacksAction"/>
+
+        <action id="aws.toolkit.cloudformation.stacks.load_more"
+                class="software.aws.toolkits.jetbrains.services.cfnlsp.explorer.actions.LoadMoreStacksAction"/>
+
+        <!-- Base action group for Stacks node -->
+        <group id="aws.toolkit.cloudformation.stacks.actions">
+            <reference ref="aws.toolkit.cloudformation.stacks.refresh"/>
+        </group>
+
+        <!-- Action group when there are more stacks to load -->
+        <group id="aws.toolkit.cloudformation.stacks.actions.with_more">
+            <reference ref="aws.toolkit.cloudformation.stacks.load_more"/>
+            <reference ref="aws.toolkit.cloudformation.stacks.refresh"/>
+        </group>
+    </actions>
 </idea-plugin>
