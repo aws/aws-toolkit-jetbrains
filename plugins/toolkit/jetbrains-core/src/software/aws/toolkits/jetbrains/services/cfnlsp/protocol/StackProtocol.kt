@@ -3,46 +3,39 @@
 
 package software.aws.toolkits.jetbrains.services.cfnlsp.protocol
 
-import com.google.gson.annotations.SerializedName
-
-data class ListStacksParams(
+internal data class ListStacksParams(
     val statusToExclude: List<String>? = null,
     val loadMore: Boolean = false,
 )
 
-data class StackSummary(
-    @SerializedName("StackName")
-    val stackName: String? = null,
-    @SerializedName("StackId")
-    val stackId: String? = null,
-    @SerializedName("StackStatus")
-    val stackStatus: String? = null,
-    @SerializedName("CreationTime")
-    val creationTime: String? = null,
-    @SerializedName("LastUpdatedTime")
-    val lastUpdatedTime: String? = null,
-    @SerializedName("TemplateDescription")
-    val templateDescription: String? = null,
+// PascalCasing used to avoid serialization/gson import
+internal data class StackSummary(
+    val StackName: String? = null,
+    val StackId: String? = null,
+    val StackStatus: String? = null,
+    val CreationTime: String? = null,
+    val LastUpdatedTime: String? = null,
+    val TemplateDescription: String? = null,
 )
 
-data class ListStacksResult(
+internal data class ListStacksResult(
     val stacks: List<StackSummary>,
     val nextToken: String? = null,
 )
 
-data class ListChangeSetsParams(
+internal data class ListChangeSetsParams(
     val stackName: String,
     val nextToken: String? = null,
 )
 
-data class ChangeSetInfo(
+internal data class ChangeSetInfo(
     val changeSetName: String,
     val status: String,
     val creationTime: String? = null,
     val description: String? = null,
 )
 
-data class ListChangeSetsResult(
+internal data class ListChangeSetsResult(
     val changeSets: List<ChangeSetInfo>,
     val nextToken: String? = null,
 )

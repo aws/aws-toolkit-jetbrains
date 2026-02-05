@@ -53,9 +53,7 @@ abstract class AbstractExplorerTreeToolWindow(
     initialTreeExpandDepth: Int = 2,
 ) : SimpleToolWindowPanel(true, true), DataProvider, Disposable {
     private val treeModel = StructureTreeModel(treeStructure, null, Invoker.forBackgroundPoolWithoutReadAction(this), this)
-    private val tree = Tree(AsyncTreeModel(treeModel, true, this))
-
-    protected fun getTree(): Tree = tree
+    protected val tree = Tree(AsyncTreeModel(treeModel, true, this))
 
     init {
         background = UIUtil.getTreeBackground()

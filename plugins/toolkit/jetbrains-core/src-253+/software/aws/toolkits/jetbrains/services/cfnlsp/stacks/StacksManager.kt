@@ -16,19 +16,19 @@ import software.aws.toolkits.jetbrains.services.cfnlsp.CfnClientService
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ListStacksParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.StackSummary
 
-typealias StacksChangeListener = (List<StackSummary>) -> Unit
+internal typealias StacksChangeListener = (List<StackSummary>) -> Unit
 
 @Service(Service.Level.PROJECT)
 internal class StacksManager(private val project: Project) : Disposable {
     internal var clientServiceProvider: () -> CfnClientService = { CfnClientService.getInstance(project) }
 
-    @Volatile private var stacks: List<StackSummary> = emptyList()
+    private var stacks: List<StackSummary> = emptyList()
 
-    @Volatile private var nextToken: String? = null
+    private var nextToken: String? = null
 
-    @Volatile private var loaded = false
+    private var loaded = false
 
-    @Volatile private var loading = false
+    private var loading = false
     private val listeners = mutableListOf<StacksChangeListener>()
 
     fun addListener(listener: StacksChangeListener) {

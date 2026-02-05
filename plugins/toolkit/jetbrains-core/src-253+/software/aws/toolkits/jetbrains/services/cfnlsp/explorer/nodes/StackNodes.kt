@@ -35,7 +35,7 @@ internal class StacksNode(
         } else {
             ""
         }
-        presentation.addText(message("cloudformation.explorer.stacks"), SimpleTextAttributes.REGULAR_ATTRIBUTES)
+        presentation.addText(message("cloudformation.explorer.stacks.node_name"), SimpleTextAttributes.REGULAR_ATTRIBUTES)
         presentation.addText(" $count", SimpleTextAttributes.GRAY_ATTRIBUTES)
     }
 
@@ -79,7 +79,7 @@ internal class LoadMoreStacksNode(
 ) : AbstractActionTreeNode(nodeProject, "load-more-stacks", AllIcons.General.Add) {
 
     override fun update(presentation: PresentationData) {
-        presentation.addText(message("cloudformation.explorer.load_more"), SimpleTextAttributes.LINK_ATTRIBUTES)
+        presentation.addText(message("cloudformation.explorer.stacks.load_more"), SimpleTextAttributes.LINK_ATTRIBUTES)
         presentation.setIcon(AllIcons.General.Add)
     }
 
@@ -98,23 +98,23 @@ internal class StackNode(
 ) : AbstractTreeNode<StackSummary>(nodeProject, stack) {
 
     override fun update(presentation: PresentationData) {
-        presentation.addText(stack.stackName ?: "Unknown Stack", SimpleTextAttributes.REGULAR_ATTRIBUTES)
+        presentation.addText(stack.StackName ?: "Unknown Stack", SimpleTextAttributes.REGULAR_ATTRIBUTES)
         presentation.setIcon(getStackIcon())
-        presentation.tooltip = "${stack.stackName ?: "Unknown"} [${stack.stackStatus ?: "Unknown"}]"
+        presentation.tooltip = "${stack.StackName ?: "Unknown"} [${stack.StackStatus ?: "Unknown"}]"
     }
 
     private fun getStackIcon() = when {
-        stack.stackStatus == null -> AllIcons.Nodes.Folder
-        stack.stackStatus.contains("COMPLETE") && !stack.stackStatus.contains("ROLLBACK") -> AllIcons.General.InspectionsOK
-        stack.stackStatus.contains("FAILED") || stack.stackStatus.contains("ROLLBACK") -> AllIcons.General.Error
-        stack.stackStatus.contains("PROGRESS") -> AllIcons.Process.Step_1
+        stack.StackStatus == null -> AllIcons.Nodes.Folder
+        stack.StackStatus.contains("COMPLETE") && !stack.StackStatus.contains("ROLLBACK") -> AllIcons.General.InspectionsOK
+        stack.StackStatus.contains("FAILED") || stack.StackStatus.contains("ROLLBACK") -> AllIcons.General.Error
+        stack.StackStatus.contains("PROGRESS") -> AllIcons.Process.Step_1
         else -> AllIcons.Nodes.Folder
     }
 
     override fun isAlwaysShowPlus(): Boolean = true
 
     override fun getChildren(): Collection<AbstractTreeNode<*>> {
-        val stackName = stack.stackName ?: return emptyList()
+        val stackName = stack.StackName ?: return emptyList()
         return listOf(StackChangeSetsNode(project, stackName, changeSetsManager))
     }
 }

@@ -62,7 +62,7 @@ internal class CloudFormationToolWindow(private val project: Project) : Abstract
                 }
             )
         } else {
-            setContent(getTree())
+            setContent(this.tree)
         }
     }
 

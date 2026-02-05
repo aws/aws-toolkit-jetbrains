@@ -22,7 +22,7 @@ internal class StackChangeSetsNode(
         val changeSets = changeSetsManager.get(stackName)
         val hasMore = changeSetsManager.hasMore(stackName)
         val countText = if (hasMore) "(${changeSets.size}+)" else "(${changeSets.size})"
-        presentation.addText(message("cloudformation.explorer.change_sets"), SimpleTextAttributes.REGULAR_ATTRIBUTES)
+        presentation.addText(message("cloudformation.explorer.stacks.change_sets"), SimpleTextAttributes.REGULAR_ATTRIBUTES)
         presentation.addText(" $countText", SimpleTextAttributes.GRAY_ATTRIBUTES)
     }
 
@@ -66,7 +66,7 @@ internal class LoadMoreChangeSetsNode(
 ) : AbstractActionTreeNode(nodeProject, "load-more-changesets-$stackName", AllIcons.General.Add) {
 
     override fun update(presentation: PresentationData) {
-        presentation.addText(message("cloudformation.explorer.load_more"), SimpleTextAttributes.LINK_ATTRIBUTES)
+        presentation.addText(message("cloudformation.explorer.stacks.load_more"), SimpleTextAttributes.LINK_ATTRIBUTES)
         presentation.setIcon(AllIcons.General.Add)
     }
 

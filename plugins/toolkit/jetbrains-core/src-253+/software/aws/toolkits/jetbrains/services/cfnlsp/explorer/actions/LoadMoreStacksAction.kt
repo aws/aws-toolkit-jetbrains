@@ -8,7 +8,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import software.aws.toolkits.jetbrains.services.cfnlsp.stacks.StacksManager
 import software.aws.toolkits.resources.AwsToolkitBundle.message
 
-class LoadMoreStacksAction : AnAction(message("cloudformation.explorer.load_more_stacks")) {
+class LoadMoreStacksAction : AnAction(message("cloudformation.explorer.stacks.load_more_stacks")) {
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         StacksManager.getInstance(project).loadMoreStacks()
