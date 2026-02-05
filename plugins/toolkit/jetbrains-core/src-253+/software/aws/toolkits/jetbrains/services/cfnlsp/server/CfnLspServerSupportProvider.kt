@@ -19,8 +19,8 @@ import software.aws.toolkit.jetbrains.settings.AwsSettings
 import software.aws.toolkit.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.core.lsp.NodeRuntimeResolver
 import software.aws.toolkits.jetbrains.services.cfnlsp.CfnCredentialsService
-import software.aws.toolkits.jetbrains.services.cfnlsp.CfnLspServerProtocol
 import software.aws.toolkits.jetbrains.services.cfnlsp.CfnLspExtensionConfig
+import software.aws.toolkits.jetbrains.services.cfnlsp.CfnLspServerProtocol
 import software.aws.toolkits.jetbrains.settings.CfnLspSettings
 import software.aws.toolkits.resources.AwsToolkitBundle.message
 import java.nio.file.Path
@@ -37,12 +37,12 @@ internal class CfnLspServerSupportProvider : LspServerSupportProvider {
         serverStarter: LspServerSupportProvider.LspServerStarter,
     ) {
         if (file.isCfnTemplate()) {
-            serverStarter.ensureServerStarted(CfnLspServerDescriptor(project))
+            serverStarter.ensureServerStarted(CfnLspServerDescriptor.getInstance(project))
         }
     }
 }
 
-private class CfnLspServerDescriptor(project: Project) :
+class CfnLspServerDescriptor private constructor(project: Project) :
     ProjectWideLspServerDescriptor(project, "AWS CloudFormation") {
 
     private val installer = CfnLspInstaller()
@@ -198,5 +198,9 @@ private class CfnLspServerDescriptor(project: Project) :
 
     companion object {
         private val LOG = getLogger<CfnLspServerDescriptor>()
+        private val instances = mutableMapOf<Project, CfnLspServerDescriptor>()
+
+        fun getInstance(project: Project): CfnLspServerDescriptor =
+            instances.getOrPut(project) { CfnLspServerDescriptor(project) }
     }
 }
