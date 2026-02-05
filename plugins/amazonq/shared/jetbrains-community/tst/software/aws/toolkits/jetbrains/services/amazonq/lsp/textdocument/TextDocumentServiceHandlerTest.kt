@@ -9,9 +9,11 @@ import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.ex.FileEditorManagerEx
 import com.intellij.openapi.fileTypes.FileType
 import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.util.SystemInfo
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.newvfs.events.VFileContentChangeEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
+import com.intellij.openapi.vfs.newvfs.impl.VfsRootAccess
 import com.intellij.openapi.vfs.writeText
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.LightVirtualFile
@@ -79,6 +81,13 @@ class TextDocumentServiceHandlerTest {
 
     @Before
     fun setup() {
+        // Allow Python paths for test environment (Python plugin scans for interpreters)
+        if (SystemInfo.isWindows) {
+            VfsRootAccess.allowRootAccess(disposableRule.disposable, "C:/Program Files")
+        } else {
+            VfsRootAccess.allowRootAccess(disposableRule.disposable, "/usr/bin", "/usr/local/bin")
+        }
+
         mockTextDocumentService = mockk<TextDocumentService>()
         mockLanguageServer = mockk<AmazonQLanguageServer>()
 
