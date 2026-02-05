@@ -27,8 +27,8 @@ import software.aws.toolkit.jetbrains.core.credentials.ConnectionSettingsStateCh
 import software.aws.toolkit.jetbrains.core.credentials.ConnectionState
 import software.aws.toolkit.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkit.jetbrains.core.credentials.ToolkitConnectionManagerListener
-import software.aws.toolkits.jetbrains.services.cfnlsp.explorer.CloudFormationRegionManager
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.UpdateCredentialsParams
+import software.aws.toolkits.jetbrains.services.cfnlsp.stacks.StacksManager
 import software.aws.toolkits.jetbrains.settings.CfnLspSettingsChangeListener
 import java.security.SecureRandom
 import java.util.Base64
@@ -44,6 +44,7 @@ import javax.crypto.spec.SecretKeySpec
 @Service(Service.Level.PROJECT)
 internal class CfnCredentialsService(private val project: Project) : Disposable {
     private val encryptionKey: SecretKey = generateKey()
+    private var lastRegionId: String? = AwsConnectionManager.getInstance(project).selectedRegion?.id
 
     init {
         val appBus = com.intellij.openapi.application.ApplicationManager.getApplication().messageBus.connect(this)
@@ -55,23 +56,22 @@ internal class CfnCredentialsService(private val project: Project) : Disposable 
     val encryptionKeyBase64: String
         get() = Base64.getEncoder().encodeToString(encryptionKey.encoded)
 
-    /**
-     * Sends current credentials to the LSP server.
-     * Uses the region from CloudFormationRegionManager (not the connection's region).
-     */
-    fun sendCredentials() {
-        val credentials = resolveCredentials()
-        if (credentials != null) {
-            val encrypted = encrypt(credentials)
-            CfnClientService.getInstance(project).updateIamCredentials(UpdateCredentialsParams(encrypted, true))
-                .thenAccept { result ->
-                    LOG.info { "Credentials updated on LSP server: success=${result?.success}" }
+    fun sendCredentials(onRegionChange: Boolean = false) {
+        val credentials = resolveCredentials() ?: return
+        val encrypted = encrypt(credentials)
+        CfnClientService.getInstance(project).updateIamCredentials(UpdateCredentialsParams(encrypted, true))
+            .thenAccept { result ->
+                LOG.info { "Credentials updated on LSP server: success=${result?.success}" }
+                if (onRegionChange && result?.success == true) {
+                    val stacksManager = StacksManager.getInstance(project)
+                    stacksManager.clear()
+                    stacksManager.reload()
                 }
-                .exceptionally { error ->
-                    LOG.warn(error) { "Failed to update credentials on LSP server" }
-                    null
-                }
-        }
+            }
+            .exceptionally { error ->
+                LOG.warn(error) { "Failed to update credentials on LSP server" }
+                null
+            }
     }
 
     fun notifyConfigurationChanged() {
@@ -93,7 +93,14 @@ internal class CfnCredentialsService(private val project: Project) : Disposable 
             AwsConnectionManager.CONNECTION_SETTINGS_STATE_CHANGED,
             object : ConnectionSettingsStateChangeNotifier {
                 override fun settingsStateChanged(newState: ConnectionState) {
-                    sendCredentials()
+                    if (newState is ConnectionState.ValidConnection) {
+                        val newRegionId = newState.region.id
+                        val regionChanged = lastRegionId != null && lastRegionId != newRegionId
+                        lastRegionId = newRegionId
+                        sendCredentials(onRegionChange = regionChanged)
+                    } else {
+                        sendCredentials()
+                    }
                 }
             }
         )
@@ -127,7 +134,7 @@ internal class CfnCredentialsService(private val project: Project) : Disposable 
     private fun resolveCredentials(): IamCredentials? {
         val connectionManager = AwsConnectionManager.getInstance(project)
         val credentialProvider = connectionManager.activeCredentialProvider ?: return null
-        val region = CloudFormationRegionManager.getInstance().getSelectedRegion(project)
+        val region = connectionManager.selectedRegion ?: return null
 
         return try {
             val awsCredentials = credentialProvider.resolveCredentials()
