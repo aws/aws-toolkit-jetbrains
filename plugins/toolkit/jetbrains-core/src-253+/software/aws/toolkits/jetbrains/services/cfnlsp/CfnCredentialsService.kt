@@ -10,13 +10,14 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.platform.lsp.api.LspServer
 import com.intellij.platform.lsp.api.LspServerManager
+import com.intellij.platform.lsp.api.LspServerManagerListener
+import com.intellij.platform.lsp.api.LspServerState
 import com.nimbusds.jose.EncryptionMethod
 import com.nimbusds.jose.JWEAlgorithm
 import com.nimbusds.jose.JWEHeader
 import com.nimbusds.jose.JWEObject
 import com.nimbusds.jose.Payload
 import com.nimbusds.jose.crypto.DirectEncrypter
-import org.eclipse.lsp4j.DidChangeConfigurationParams
 import software.amazon.awssdk.auth.credentials.AwsSessionCredentials
 import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkit.core.utils.info
@@ -27,7 +28,7 @@ import software.aws.toolkit.jetbrains.core.credentials.ConnectionState
 import software.aws.toolkit.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkit.jetbrains.core.credentials.ToolkitConnectionManagerListener
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.UpdateCredentialsParams
-import software.aws.toolkits.jetbrains.services.cfnlsp.server.CfnLspServerSupportProvider
+import software.aws.toolkits.jetbrains.services.cfnlsp.stacks.StacksManager
 import software.aws.toolkits.jetbrains.settings.CfnLspSettingsChangeListener
 import java.security.SecureRandom
 import java.util.Base64
@@ -43,41 +44,38 @@ import javax.crypto.spec.SecretKeySpec
 @Service(Service.Level.PROJECT)
 internal class CfnCredentialsService(private val project: Project) : Disposable {
     private val encryptionKey: SecretKey = generateKey()
+    private var lastRegionId: String? = AwsConnectionManager.getInstance(project).selectedRegion?.id
 
     init {
         val appBus = com.intellij.openapi.application.ApplicationManager.getApplication().messageBus.connect(this)
         subscribeToCredentialChanges(appBus)
         subscribeToSettingsChanges(appBus)
+        subscribeToServerStateChanges()
     }
 
     val encryptionKeyBase64: String
         get() = Base64.getEncoder().encodeToString(encryptionKey.encoded)
 
-    fun sendCredentialsToServer() {
-        val server = findLspServer() ?: return
-
-        val credentials = resolveCredentials()
-        if (credentials != null) {
-            val encrypted = encrypt(credentials)
-            server.sendNotification { lsp ->
-                (lsp as? CfnLspServerProtocol)?.updateIamCredentials(
-                    UpdateCredentialsParams(encrypted, true)
-                )?.whenComplete { result, error ->
-                    if (error != null) {
-                        LOG.warn(error) { "Failed to update credentials on LSP server" }
-                    } else {
-                        LOG.info { "Credentials updated on LSP server: success=${result?.success}" }
-                    }
+    fun sendCredentials(onRegionChange: Boolean = false) {
+        val credentials = resolveCredentials() ?: return
+        val encrypted = encrypt(credentials)
+        CfnClientService.getInstance(project).updateIamCredentials(UpdateCredentialsParams(encrypted, true))
+            .thenAccept { result ->
+                LOG.info { "Credentials updated on LSP server: success=${result?.success}" }
+                if (onRegionChange && result?.success == true) {
+                    val stacksManager = StacksManager.getInstance(project)
+                    stacksManager.clear()
+                    stacksManager.reload()
                 }
             }
-        }
+            .exceptionally { error ->
+                LOG.warn(error) { "Failed to update credentials on LSP server" }
+                null
+            }
     }
 
     fun notifyConfigurationChanged() {
-        val server = findLspServer() ?: return
-        server.sendNotification { lsp ->
-            lsp.workspaceService.didChangeConfiguration(DidChangeConfigurationParams(emptyMap<String, Any>()))
-        }
+        CfnClientService.getInstance(project).notifyConfigurationChanged()
         LOG.info { "Sent didChangeConfiguration to LSP server" }
     }
 
@@ -86,7 +84,7 @@ internal class CfnCredentialsService(private val project: Project) : Disposable 
             ToolkitConnectionManagerListener.TOPIC,
             object : ToolkitConnectionManagerListener {
                 override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
-                    sendCredentialsToServer()
+                    sendCredentials()
                 }
             }
         )
@@ -95,7 +93,14 @@ internal class CfnCredentialsService(private val project: Project) : Disposable 
             AwsConnectionManager.CONNECTION_SETTINGS_STATE_CHANGED,
             object : ConnectionSettingsStateChangeNotifier {
                 override fun settingsStateChanged(newState: ConnectionState) {
-                    sendCredentialsToServer()
+                    if (newState is ConnectionState.ValidConnection) {
+                        val newRegionId = newState.region.id
+                        val regionChanged = lastRegionId != null && lastRegionId != newRegionId
+                        lastRegionId = newRegionId
+                        sendCredentials(onRegionChange = regionChanged)
+                    } else {
+                        sendCredentials()
+                    }
                 }
             }
         )
@@ -110,10 +115,26 @@ internal class CfnCredentialsService(private val project: Project) : Disposable 
         )
     }
 
+    @Suppress("UnstableApiUsage")
+    private fun subscribeToServerStateChanges() {
+        LspServerManager.getInstance(project).addLspServerManagerListener(
+            object : LspServerManagerListener {
+                override fun serverStateChanged(lspServer: LspServer) {
+                    if (lspServer.state == LspServerState.Running) {
+                        LOG.info { "LSP server running, sending credentials" }
+                        sendCredentials()
+                    }
+                }
+            },
+            this,
+            true
+        )
+    }
+
     private fun resolveCredentials(): IamCredentials? {
         val connectionManager = AwsConnectionManager.getInstance(project)
         val credentialProvider = connectionManager.activeCredentialProvider ?: return null
-        val region = connectionManager.activeRegion ?: return null
+        val region = connectionManager.selectedRegion ?: return null
 
         return try {
             val awsCredentials = credentialProvider.resolveCredentials()
@@ -142,11 +163,6 @@ internal class CfnCredentialsService(private val project: Project) : Disposable 
         return jwe.serialize()
     }
 
-    private fun findLspServer(): LspServer? =
-        LspServerManager.getInstance(project)
-            .getServersForProvider(CfnLspServerSupportProvider::class.java)
-            .firstOrNull()
-
     override fun dispose() {}
 
     companion object {
@@ -162,7 +178,7 @@ internal class CfnCredentialsService(private val project: Project) : Disposable 
     }
 }
 
-private data class IamCredentials(
+internal data class IamCredentials(
     val profile: String,
     val region: String,
     val accessKeyId: String,
