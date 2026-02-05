@@ -21,7 +21,7 @@ fun interface CfnLspSettingsChangeListener {
 }
 
 @Service
-@State(name = "cfnLspSettings", storages = [Storage("aws.xml", roamingType = RoamingType.DISABLED)])
+@State(name = "cfnLspSettings", storages = [Storage("awsToolkit.xml", roamingType = RoamingType.DISABLED)])
 internal class CfnLspSettings : PersistentStateComponent<CfnLspSettings.State> {
     private var state = State()
 

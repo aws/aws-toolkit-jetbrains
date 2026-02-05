@@ -173,6 +173,7 @@
         <extensionPoint name="tool" interface="software.aws.toolkits.jetbrains.core.tools.ToolType" dynamic="true"/>
         <extensionPoint name="devTools.serviceNode" interface="software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.DevToolsServiceNode" dynamic="true"/>
         <extensionPoint name="devTools.treeStructure" interface="software.aws.toolkits.jetbrains.core.explorer.devToolsTab.DevToolsTreeStructureProvider" dynamic="true"/>
+        <extensionPoint name="toolWindowTab" interface="software.aws.toolkits.jetbrains.core.explorer.ToolkitToolWindowTab" dynamic="true"/>
     </extensionPoints>
 
     <extensions defaultExtensionNs="com.intellij">

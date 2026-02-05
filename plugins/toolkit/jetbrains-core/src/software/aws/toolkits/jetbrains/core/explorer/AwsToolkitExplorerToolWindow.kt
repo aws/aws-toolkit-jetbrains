@@ -55,6 +55,11 @@ class AwsToolkitExplorerToolWindow(
         if (!isQInstalled()) {
             put(Q_TAB_ID, { CodewhispererQToolWindow.getInstance(project) })
         }
+        ToolkitToolWindowTab.EP_NAME.extensionList
+            .filter { it.enabled() }
+            .forEach { tab ->
+                put(tab.tabId, { tab.createContent(project) })
+            }
     }
 
     init {
