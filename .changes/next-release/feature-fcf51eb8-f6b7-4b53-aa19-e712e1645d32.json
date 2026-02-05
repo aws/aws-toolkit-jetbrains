@@ -1,0 +1,4 @@
+{
+  "type" : "feature",
+  "description" : "CloudFormation LSP: View and browse CloudFormation stacks and change sets in the AWS Toolkit tool window"
+}

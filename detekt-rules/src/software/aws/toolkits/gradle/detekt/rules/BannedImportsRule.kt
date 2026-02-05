@@ -93,7 +93,7 @@ class BannedImportsRule : Rule() {
                     CodeSmell(
                         issue,
                         Entity.from(element),
-                        message = "Use jacksonObjectMapper() insted of Gson"
+                        message = "Use jacksonObjectMapper() instead of Gson"
                     )
                 )
             }
