@@ -14,6 +14,7 @@ import com.intellij.util.system.CpuArch
 import io.mockk.every
 import io.mockk.junit4.MockKRule
 import io.mockk.mockk
+import io.mockk.mockkObject
 import io.mockk.mockkStatic
 import io.mockk.slot
 import org.assertj.core.api.Assertions.assertThat
@@ -126,7 +127,7 @@ class NodeExePatcherTest {
     }
 
     @Test
-    fun `getNodeRuntimePath resolves node executable from user-provided directory path`() {
+    fun `getNodeRuntimePath res olves node executable from user-provided directory path`() {
         // Create a directory with node executable inside
         val nodeDir = tempDir.newDirectory("nodejs").toPath().toAbsolutePath()
         val exeName = if (SystemInfo.isWindows) "node.exe" else "node"
@@ -137,7 +138,7 @@ class NodeExePatcherTest {
         val mockLspSettings = mockk<LspSettings>()
         every { mockLspSettings.getNodeRuntimePath() } returns nodeDir.toString()
 
-        mockkStatic(LspSettings::class)
+        mockkObject(LspSettings.Companion)
         every { LspSettings.getInstance() } returns mockLspSettings
 
         mockkStatic(ExecUtil::class)
@@ -163,7 +164,7 @@ class NodeExePatcherTest {
         val mockLspSettings = mockk<LspSettings>()
         every { mockLspSettings.getNodeRuntimePath() } returns emptyDir.toString()
 
-        mockkStatic(LspSettings::class)
+        mockkObject(LspSettings.Companion)
         every { LspSettings.getInstance() } returns mockLspSettings
 
         mockkStatic(ExecUtil::class)
@@ -188,7 +189,7 @@ class NodeExePatcherTest {
         val mockLspSettings = mockk<LspSettings>()
         every { mockLspSettings.getNodeRuntimePath() } returns nodeExe.toString()
 
-        mockkStatic(LspSettings::class)
+        mockkObject(LspSettings.Companion)
         every { LspSettings.getInstance() } returns mockLspSettings
 
         mockkStatic(ExecUtil::class)
