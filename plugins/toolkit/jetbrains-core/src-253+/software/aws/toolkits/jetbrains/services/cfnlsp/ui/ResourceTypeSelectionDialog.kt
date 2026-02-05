@@ -79,12 +79,7 @@ internal class ResourceTypeSelectionDialog(
             allAvailableTypes
         } else {
             val matcher = NameUtil.buildMatcher("*$searchText*", NameUtil.MatchingCaseSensitivity.NONE)
-            allAvailableTypes.filter { resourceType ->
-                // Try matching the full type
-                matcher.matches(resourceType) ||
-                // Try matching without AWS:: prefix for easier searching
-                matcher.matches(resourceType.removePrefix("AWS::"))
-            }
+            allAvailableTypes.filter { resourceType -> matcher.matches(resourceType) }
         }
         
         filteredTypes.forEach { type ->

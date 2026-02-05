@@ -8,8 +8,6 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.platform.lsp.api.LspServerManager
-import software.aws.toolkit.core.utils.getLogger
-import software.aws.toolkit.core.utils.info
 import software.aws.toolkit.jetbrains.ToolkitPlaces
 import software.aws.toolkit.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkit.jetbrains.core.credentials.ToolkitConnection

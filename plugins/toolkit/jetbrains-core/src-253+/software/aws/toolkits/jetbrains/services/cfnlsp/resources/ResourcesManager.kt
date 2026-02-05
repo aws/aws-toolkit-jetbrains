@@ -28,6 +28,7 @@ import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ResourceStatePur
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.SearchResourceParams
 import software.aws.toolkit.jetbrains.utils.notifyError
 import software.aws.toolkit.jetbrains.utils.notifyInfo
+import software.aws.toolkit.jetbrains.utils.notifyWarn
 import software.aws.toolkits.resources.message
 import java.awt.datatransfer.StringSelection
 import java.util.concurrent.CompletableFuture
@@ -264,6 +265,11 @@ internal class ResourcesManager(
         val activeEditor = fileEditorManager.selectedTextEditor
         if (activeEditor == null) {
             LOG.warn { "No active editor found for resource state operation" }
+            notifyError(
+                message("cloudformation.explorer.resources.${purpose.name.lowercase()}").removeSuffix(" Resource State"),
+                "Open a CloudFormation template to author resource state",
+                project
+            )
             return
         }
 
@@ -271,6 +277,11 @@ internal class ResourcesManager(
         val virtualFile = fileEditorManager.selectedFiles.firstOrNull()
         if (virtualFile == null) {
             LOG.warn { "No active file found for resource state operation" }
+            notifyError(
+                message("cloudformation.explorer.resources.${purpose.name.lowercase()}").removeSuffix(" Resource State"),
+                "No active file found",
+                project
+            )
             return
         }
 
@@ -290,6 +301,18 @@ internal class ResourcesManager(
         clientServiceProvider().getResourceState(params)
             .thenAccept { result ->
                 if (result != null) {
+                    // Handle warnings first
+                    result.warning?.let { warning ->
+                        LOG.warn { "Warning: $warning" }
+                        ApplicationManager.getApplication().invokeLater {
+                            notifyWarn(
+                                message("cloudformation.explorer.resources.${purpose.name.lowercase()}").removeSuffix(" Resource State"),
+                                warning,
+                                project
+                            )
+                        }
+                    }
+
                     // Insert the completion item if provided
                     result.completionItem?.let { completionItem ->
                         ApplicationManager.getApplication().invokeLater {
@@ -301,22 +324,75 @@ internal class ResourcesManager(
                         }
                     }
 
-                    // Log results
+                    // Calculate success and failure counts
+                    val successCount = result.successfulImports.values.sumOf { it.size }
+                    val failureCount = result.failedImports.values.sumOf { it.size }
+
+                    // Show result notifications
+                    ApplicationManager.getApplication().invokeLater {
+                        showResultNotification(successCount, failureCount, purpose)
+                    }
+
+                    // Log detailed results
                     if (result.successfulImports.isNotEmpty()) {
                         LOG.info { "Successfully processed: ${result.successfulImports}" }
                     }
                     if (result.failedImports.isNotEmpty()) {
                         LOG.warn { "Failed to process: ${result.failedImports}" }
                     }
-                    result.warning?.let { warning ->
-                        LOG.warn { "Warning: $warning" }
-                    }
                 }
             }
             .exceptionally { error ->
                 LOG.warn(error) { "Failed to execute ${purpose.name.lowercase()} operation" }
+                ApplicationManager.getApplication().invokeLater {
+                    notifyError(
+                        message("cloudformation.explorer.resources.${purpose.name.lowercase()}").removeSuffix(" Resource State"),
+                        "Failed to ${purpose.name.lowercase()} resources: ${error.message ?: "Unknown error"}",
+                        project
+                    )
+                }
                 null
             }
+    }
+
+    private fun showResultNotification(successCount: Int, failureCount: Int, purpose: ResourceStatePurpose) {
+        val actionKey = purpose.name.lowercase()
+        val titleKey = "cloudformation.explorer.resources.$actionKey"
+        val title = message(titleKey).removeSuffix(" Resource State")
+        val resourcePlural = if (successCount == 1 || failureCount == 1) "" else "s"
+
+        when {
+            successCount > 0 && failureCount == 0 -> {
+                notifyInfo(
+                    title,
+                    message("cloudformation.explorer.resources.$actionKey.success", successCount, resourcePlural),
+                    project
+                )
+            }
+            successCount > 0 && failureCount > 0 -> {
+                val successPlural = if (successCount == 1) "" else "s"
+                val failurePlural = if (failureCount == 1) "" else "s"
+                notifyWarn(
+                    title,
+                    message("cloudformation.explorer.resources.$actionKey.partial", successCount, successPlural, failureCount),
+                    project
+                )
+            }
+            failureCount > 0 -> {
+                notifyError(
+                    title,
+                    message("cloudformation.explorer.resources.$actionKey.failed", failureCount, resourcePlural),
+                    project
+                )
+            }
+            else -> {
+                notifyInfo(
+                    title,
+                    message("cloudformation.explorer.resources.$actionKey.none"),
+                    project
+                )
+            }
+        }
     }
 
     override fun dispose() {

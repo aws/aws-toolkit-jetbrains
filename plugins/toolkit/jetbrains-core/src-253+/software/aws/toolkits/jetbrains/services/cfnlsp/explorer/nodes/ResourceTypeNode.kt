@@ -41,7 +41,9 @@ internal class ResourceTypeNode(
         if (resourcesManager.isLoaded(resourceType)) {
             val resources = resourcesManager.getCachedResources(resourceType)
             if (resources != null) {
-                presentation.addText(" (${resources.size})", SimpleTextAttributes.GRAYED_ATTRIBUTES)
+                val hasMore = resourcesManager.hasMore(resourceType)
+                val countText = if (hasMore) " (${resources.size}+)" else " (${resources.size})"
+                presentation.addText(countText, SimpleTextAttributes.GRAYED_ATTRIBUTES)
             }
         }
     }

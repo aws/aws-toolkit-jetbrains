@@ -7,73 +7,73 @@ import org.eclipse.lsp4j.CompletionItem
 import org.eclipse.lsp4j.TextDocumentIdentifier
 
 // Resource Types
-data class ResourceTypesResult(
+internal data class ResourceTypesResult(
     val resourceTypes: List<String>,
 )
 
 // Resource Listing
-data class ResourceRequest(
+internal data class ResourceRequest(
     val resourceType: String,
     val nextToken: String? = null,
 )
 
-data class ListResourcesParams(
+internal data class ListResourcesParams(
     val resources: List<ResourceRequest>? = null,
 )
 
-data class ResourceSummary(
+internal data class ResourceSummary(
     val typeName: String,
     val resourceIdentifiers: List<String>,
     val nextToken: String? = null,
 )
 
-data class ListResourcesResult(
+internal data class ListResourcesResult(
     val resources: List<ResourceSummary>,
 )
 
-enum class ResourceStatePurpose(val value: String) {
+internal enum class ResourceStatePurpose(val value: String) {
     IMPORT("Import"),
     CLONE("Clone"),
 }
 
-data class ResourceSelection(
+internal data class ResourceSelection(
     val resourceType: String,
     val resourceIdentifiers: List<String>,
 )
 
-data class ResourceStateParams(
+internal data class ResourceStateParams(
     val textDocument: TextDocumentIdentifier,
     val resourceSelections: List<ResourceSelection>? = null,
     val purpose: String,
     val parentResourceType: String? = null,
 )
 
-data class ResourceStateResult(
+internal data class ResourceStateResult(
     val completionItem: CompletionItem? = null,
     val successfulImports: Map<String, List<String>>,
     val failedImports: Map<String, List<String>>,
     val warning: String? = null,
 )
 
-data class SearchResourceParams(
+internal data class SearchResourceParams(
     val resourceType: String,
     val identifier: String,
 )
 
-data class SearchResourceResult(
+internal data class SearchResourceResult(
     val found: Boolean,
     val resource: ResourceSummary? = null,
 )
 
-data class RefreshResourcesParams(
+internal data class RefreshResourcesParams(
     val resources: List<ResourceRequest>,
 )
 
-data class RefreshResourcesResult(
+internal data class RefreshResourcesResult(
     val resources: List<ResourceSummary>,
 )
 
-data class ResourceStackManagementResult(
+internal data class ResourceStackManagementResult(
     val physicalResourceId: String,
     val managedByStack: Boolean? = null,
     val stackName: String? = null,

@@ -21,10 +21,7 @@ internal class ResourcesNode(
     override fun actionGroupName(): String = "aws.toolkit.cloudformation.resources.actions"
 
     override fun update(presentation: PresentationData) {
-        val selectedCount = resourceTypesManager.getSelectedResourceTypes().size
-        val countText = if (selectedCount > 0) " ($selectedCount)" else ""
         presentation.addText(message("cloudformation.explorer.resources.node"), SimpleTextAttributes.REGULAR_ATTRIBUTES)
-        presentation.addText(countText, SimpleTextAttributes.GRAY_ATTRIBUTES)
     }
 
     override fun isAlwaysShowPlus(): Boolean = true
