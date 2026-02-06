@@ -289,26 +289,12 @@ class BrowserConnector(
 
             CHAT_LIST_CONVERSATIONS -> {
                 handleChat(AmazonQChatServer.listConversations, node)
-                    .whenComplete { response, _ ->
-                        browser.postChat(
-                            FlareUiMessage(
-                                command = CHAT_LIST_CONVERSATIONS,
-                                params = response
-                            )
-                        )
-                    }
+                    .handleChatResponse(CHAT_LIST_CONVERSATIONS, browser)
             }
 
             CHAT_CONVERSATION_CLICK -> {
                 handleChat(AmazonQChatServer.conversationClick, node)
-                    .whenComplete { response, _ ->
-                        browser.postChat(
-                            FlareUiMessage(
-                                command = CHAT_CONVERSATION_CLICK,
-                                params = response
-                            )
-                        )
-                    }
+                    .handleChatResponse(CHAT_CONVERSATION_CLICK, browser)
             }
 
             CHAT_FEEDBACK -> {
@@ -511,60 +497,25 @@ class BrowserConnector(
             }
             LIST_MCP_SERVERS_REQUEST_METHOD -> {
                 handleChat(AmazonQChatServer.listMcpServers, node)
-                    .whenComplete { response, _ ->
-                        browser.postChat(
-                            FlareUiMessage(
-                                command = LIST_MCP_SERVERS_REQUEST_METHOD,
-                                params = response
-                            )
-                        )
-                    }
+                    .handleChatResponse(LIST_MCP_SERVERS_REQUEST_METHOD, browser)
             }
             MCP_SERVER_CLICK_REQUEST_METHOD -> {
                 handleChat(AmazonQChatServer.mcpServerClick, node)
-                    .whenComplete { response, _ ->
-                        browser.postChat(
-                            FlareUiMessage(
-                                command = MCP_SERVER_CLICK_REQUEST_METHOD,
-                                params = response
-                            )
-                        )
-                    }
+                    .handleChatResponse(MCP_SERVER_CLICK_REQUEST_METHOD, browser)
             }
 
             OPEN_FILE_DIALOG -> {
                 handleChat(AmazonQChatServer.showOpenFileDialog, node)
-                    .whenComplete { response, _ ->
-                        browser.postChat(
-                            FlareUiMessage(
-                                command = OPEN_FILE_DIALOG_REQUEST_METHOD,
-                                params = response
-                            )
-                        )
-                    }
+                    .handleChatResponse(OPEN_FILE_DIALOG_REQUEST_METHOD, browser)
             }
 
             LIST_RULES_REQUEST_METHOD -> {
                 handleChat(AmazonQChatServer.listRules, node)
-                    .whenComplete { response, _ ->
-                        browser.postChat(
-                            FlareUiMessage(
-                                command = LIST_RULES_REQUEST_METHOD,
-                                params = response
-                            )
-                        )
-                    }
+                    .handleChatResponse(LIST_RULES_REQUEST_METHOD, browser)
             }
             RULE_CLICK_REQUEST_METHOD -> {
                 handleChat(AmazonQChatServer.ruleClick, node)
-                    .whenComplete { response, _ ->
-                        browser.postChat(
-                            FlareUiMessage(
-                                command = RULE_CLICK_REQUEST_METHOD,
-                                params = response
-                            )
-                        )
-                    }
+                    .handleChatResponse(RULE_CLICK_REQUEST_METHOD, browser)
             }
             CHAT_PINNED_CONTEXT_ADD -> {
                 handleChat(AmazonQChatServer.pinnedContextAdd, node)
@@ -574,14 +525,7 @@ class BrowserConnector(
             }
             LIST_AVAILABLE_MODELS -> {
                 handleChat(AmazonQChatServer.listAvailableModels, node)
-                    .whenComplete { response, _ ->
-                        browser.postChat(
-                            FlareUiMessage(
-                                command = LIST_AVAILABLE_MODELS,
-                                params = response
-                            )
-                        )
-                    }
+                    .handleChatResponse(LIST_AVAILABLE_MODELS, browser)
             }
         }
     }
@@ -793,6 +737,32 @@ class BrowserConnector(
 
     private val JsonNode.params
         get() = get("params")
+
+    /**
+     * Helper function to handle chat response with proper error handling.
+     * Logs errors and sends response to browser only if successful.
+     */
+    private fun <T> CompletableFuture<T>.handleChatResponse(
+        command: String,
+        browser: Browser,
+    ) {
+        whenComplete { response, error ->
+            if (error != null) {
+                LOG.warn(error) { "Error handling chat command: $command" }
+            } else if (response != null) {
+                try {
+                    browser.postChat(
+                        FlareUiMessage(
+                            command = command,
+                            params = response as Any
+                        )
+                    )
+                } catch (e: Exception) {
+                    LOG.warn(e) { "Error sending response for command: $command" }
+                }
+            }
+        }
+    }
 
     companion object {
         private val LOG = getLogger<BrowserConnector>()
