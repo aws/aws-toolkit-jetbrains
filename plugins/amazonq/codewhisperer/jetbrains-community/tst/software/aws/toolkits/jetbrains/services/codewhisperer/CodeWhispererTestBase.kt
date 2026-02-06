@@ -21,6 +21,7 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.yield
 import org.assertj.core.api.Assertions.assertThat
@@ -33,9 +34,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doNothing
-import org.mockito.kotlin.doSuspendableAnswer
 import org.mockito.kotlin.spy
-import org.mockito.kotlin.stub
 import org.mockito.kotlin.timeout
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -316,16 +315,8 @@ open class CodeWhispererTestBase {
         val psiFileCaptor = argumentCaptor<PsiFile>()
         val latencyContextCaptor = argumentCaptor<LatencyContext>()
 
-        codewhispererService.stub {
-            onBlocking {
-                getRequestContext(
-                    triggerTypeCaptor.capture(),
-                    editorCaptor.capture(),
-                    projectCaptor.capture(),
-                    psiFileCaptor.capture(),
-                    latencyContextCaptor.capture()
-                )
-            } doSuspendableAnswer {
+        doAnswer {
+            runBlocking {
                 val requestContext = codewhispererService.getRequestContext(
                     triggerTypeCaptor.firstValue,
                     editorCaptor.firstValue,
@@ -336,7 +327,13 @@ open class CodeWhispererTestBase {
                 projectRule.fixture.type(userInput)
                 requestContext
             }
-        }
+        }.whenever(codewhispererService).getRequestContext(
+            triggerTypeCaptor.capture(),
+            editorCaptor.capture(),
+            projectCaptor.capture(),
+            psiFileCaptor.capture(),
+            latencyContextCaptor.capture()
+        )
     }
 
     fun mockLspInlineCompletionResponse(response: InlineCompletionListWithReferences) {
