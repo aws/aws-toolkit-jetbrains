@@ -18,8 +18,9 @@ import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.extension.RegisterExtension
 import org.mockito.kotlin.any
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.stub
-import org.mockito.kotlin.whenever
 import software.amazon.awssdk.profiles.Profile
 import software.amazon.awssdk.services.sts.StsClient
 import software.amazon.awssdk.services.sts.model.GetCallerIdentityRequest
@@ -290,7 +291,7 @@ class SetupAuthenticationDialogTest {
         }
 
         mockClientManager.create<StsClient>().stub {
-            whenever(it.getCallerIdentity(any<GetCallerIdentityRequest>())).thenThrow(StsException.builder().message("Some service exception message").build())
+            on { getCallerIdentity(any<GetCallerIdentityRequest>()) } doThrow StsException.builder().message("Some service exception message").build()
         }
 
         runInEdtAndWait {
@@ -317,7 +318,7 @@ class SetupAuthenticationDialogTest {
         }
 
         mockClientManager.create<StsClient>().stub {
-            whenever(it.getCallerIdentity(any<GetCallerIdentityRequest>())).thenReturn(GetCallerIdentityResponse.builder().build())
+            on { getCallerIdentity(any<GetCallerIdentityRequest>()) } doReturn GetCallerIdentityResponse.builder().build()
         }
 
         val configFacade = mockk<ConfigFilesFacade>(relaxed = true)

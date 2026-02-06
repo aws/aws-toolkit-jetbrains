@@ -29,17 +29,18 @@ import org.eclipse.lsp4j.jsonrpc.RemoteEndpoint
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
+import org.mockito.Answers
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doNothing
 import org.mockito.kotlin.doSuspendableAnswer
+import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.timeout
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import org.mockito.kotlin.wheneverBlocking
 import software.amazon.awssdk.services.ssooidc.SsoOidcClient
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.ManagedSsoProfile
@@ -172,12 +173,9 @@ open class CodeWhispererTestBase {
 
         stateManager = spy(CodeWhispererExplorerActionManager.getInstance())
         recommendationManager = CodeWhispererRecommendationManager.getInstance()
+        // Use spy on the real service instance - getWorkspaceIds will fail gracefully
+        // in getRequestContext's try-catch block with workspaceId = null
         codewhispererService = spy(CodeWhispererService.getInstance())
-        doAnswer {
-            CompletableFuture.completedFuture(LspServerConfigurations(listOf(WorkspaceInfo("file:///", "workspaceId"))))
-        }.wheneverBlocking(codewhispererService) {
-            getWorkspaceIds(any())
-        }
         ApplicationManager.getApplication().replaceService(CodeWhispererService::class.java, codewhispererService, disposableRule.disposable)
         editorManager = CodeWhispererEditorManager.getInstance()
         settingsManager = CodeWhispererSettings.getInstance()
