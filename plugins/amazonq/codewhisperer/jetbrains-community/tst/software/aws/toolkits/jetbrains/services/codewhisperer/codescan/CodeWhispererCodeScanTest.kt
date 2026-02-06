@@ -114,7 +114,7 @@ class CodeWhispererCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsigh
             eq(fakeCreateUploadUrlResponse.uploadId()),
             eq(file),
             eq(fileMd5),
-            isNull(),
+            eq(null),
             any(),
             any()
         )
@@ -217,7 +217,7 @@ class CodeWhispererCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsigh
         val inOrder = inOrder(codeScanSessionSpy)
         inOrder.verify(codeScanSessionSpy, Times(1)).createCodeScan(eq(CodewhispererLanguage.Python.toString()), anyString())
         inOrder.verify(codeScanSessionSpy, Times(1)).getCodeScan(any())
-        inOrder.verify(codeScanSessionSpy, Times(1)).listCodeScanFindings(eq("jobId"), isNull())
+        inOrder.verify(codeScanSessionSpy, Times(1)).listCodeScanFindings(eq("jobId"), eq(null))
     }
 
     @Test

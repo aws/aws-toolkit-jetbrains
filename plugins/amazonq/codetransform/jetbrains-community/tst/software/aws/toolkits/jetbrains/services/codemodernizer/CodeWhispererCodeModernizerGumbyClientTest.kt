@@ -262,7 +262,7 @@ class CodeWhispererCodeModernizerGumbyClientTest : CodeWhispererCodeModernizerTe
             amazonQStreamingClient.exportResultArchive(
                 any<String>(),
                 any<ExportIntent>(),
-                isNull(),
+                eq(null),
                 any(),
                 any()
             )
@@ -270,7 +270,7 @@ class CodeWhispererCodeModernizerGumbyClientTest : CodeWhispererCodeModernizerTe
 
         val actual = gumbyClient.downloadExportResultArchive(jobId)
 
-        verify(amazonQStreamingClient).exportResultArchive(eq(jobId.id), eq(ExportIntent.TRANSFORMATION), isNull(), any(), any())
+        verify(amazonQStreamingClient).exportResultArchive(eq(jobId.id), eq(ExportIntent.TRANSFORMATION), eq(null), any(), any())
         verifyNoInteractions(bearerClient)
         verifyNoInteractions(streamingBearerClient)
         verifyNoMoreInteractions(amazonQStreamingClient)
