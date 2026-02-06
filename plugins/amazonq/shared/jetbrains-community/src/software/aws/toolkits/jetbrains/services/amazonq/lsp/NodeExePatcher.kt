@@ -84,10 +84,14 @@ object NodeExePatcher {
         // attempt to use user provided node runtime path
         val nodeRuntime = LspSettings.getInstance().getNodeRuntimePath()
         if (!nodeRuntime.isNullOrEmpty()) {
-            LOG.info { "Using node from $nodeRuntime " }
-
-            resolveNodeMetric(false, true)
-            return Path.of(nodeRuntime)
+            val userNodePath = resolveNodeExecutable(Path.of(nodeRuntime))
+            if (userNodePath != null && validateNode(userNodePath) != null) {
+                LOG.info { "Using node from $userNodePath" }
+                resolveNodeMetric(false, true)
+                return userNodePath
+            } else {
+                LOG.warn { "User-specified node runtime path is invalid: $nodeRuntime" }
+            }
         }
 
         // attempt to use bundled node
@@ -123,6 +127,35 @@ object NodeExePatcher {
 
             resolveNodeMetric(false, false)
             return nodePath
+        }
+    }
+
+    /**
+     * Resolves a path to a Node.js executable.
+     * If the path is a directory, looks for node.exe (Windows) or node (Unix) inside it.
+     * If the path is a file, returns it if it exists and is executable.
+     *
+     * @param path The path to resolve (can be a directory or file path)
+     * @return Path? The resolved path to the node executable, or null if not found
+     */
+    private fun resolveNodeExecutable(path: Path): Path? {
+        val exeName = if (SystemInfo.isWindows) "node.exe" else "node"
+
+        return when {
+            Files.isDirectory(path) -> {
+                val nodePath = path.resolve(exeName)
+                if (Files.isRegularFile(nodePath) && Files.isExecutable(nodePath)) {
+                    nodePath.toAbsolutePath()
+                } else {
+                    LOG.debug { "Node executable not found in directory: $path" }
+                    null
+                }
+            }
+            Files.isRegularFile(path) && Files.isExecutable(path) -> path.toAbsolutePath()
+            else -> {
+                LOG.debug { "Invalid node path: $path (not a file or directory)" }
+                null
+            }
         }
     }
 
