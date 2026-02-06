@@ -3,10 +3,12 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.java
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.roots.ModuleRootManagerEx
 import com.intellij.openapi.roots.ModuleRootModificationUtil
 import com.intellij.testFramework.IdeaTestUtil
+import com.intellij.testFramework.common.ThreadLeakTracker
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -40,6 +42,9 @@ class JavaLambdaBuilderTest {
         setSamExecutableFromEnvironment()
 
         projectRule.fixture.addModule("main")
+
+        // Maven server threads may leak during test execution
+        ThreadLeakTracker.longRunningThreadCreated(ApplicationManager.getApplication(), "BaseDataReader", "RemoteMavenServer", "Reader thread")
     }
 
     @Test

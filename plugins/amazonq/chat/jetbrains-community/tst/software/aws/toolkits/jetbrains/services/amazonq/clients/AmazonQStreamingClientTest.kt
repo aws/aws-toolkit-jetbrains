@@ -59,9 +59,11 @@ class AmazonQStreamingClientTest : AmazonQTestBase() {
     override fun setup() {
         super.setup()
 
-        // Allow Python paths on Windows for test environment (Python plugin scans for interpreters)
+        // Allow Python paths for test environment (Python plugin scans for interpreters)
         if (SystemInfo.isWindows) {
             VfsRootAccess.allowRootAccess(disposableRule.disposable, "C:/Program Files")
+        } else {
+            VfsRootAccess.allowRootAccess(disposableRule.disposable, "/usr/bin", "/usr/local/bin")
         }
 
         amazonQStreamingClient = AmazonQStreamingClient.getInstance(projectRule.project)
@@ -245,9 +247,12 @@ class AmazonQStreamingClientTest : AmazonQTestBase() {
     companion object {
         @JvmStatic
         @BeforeClass
-        fun allowWindowsPythonPaths() {
+        fun allowPythonPaths() {
+            // Allow Python paths for test environment (Python plugin scans for interpreters)
             if (SystemInfo.isWindows) {
                 VfsRootAccess.allowRootAccess(Disposer.newDisposable(), "C:/Program Files")
+            } else {
+                VfsRootAccess.allowRootAccess(Disposer.newDisposable(), "/usr/bin", "/usr/local/bin")
             }
         }
 
