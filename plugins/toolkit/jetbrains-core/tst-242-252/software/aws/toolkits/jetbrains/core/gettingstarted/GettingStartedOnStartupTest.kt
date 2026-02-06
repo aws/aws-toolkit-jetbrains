@@ -76,19 +76,23 @@ class GettingStartedOnStartupTest {
     fun `shows screen if aws settings exist and no credentials`() {
         mockkObject(GettingStartedPanel.Companion)
         every { GettingStartedPanel.openPanel(any()) } returns Unit
-        credManagerExtension.clear()
-        val fp = getPersistentStateComponentStorageLocation(GettingStartedSettings::class.java) ?: error(
-            "could not determine persistent storage for GettingStartedSettings"
-        )
         try {
-            fp.touch()
-            sut.runActivity(projectExtension.project)
-        } finally {
-            fp.deleteIfExists()
-        }
+            credManagerExtension.clear()
+            val fp = getPersistentStateComponentStorageLocation(GettingStartedSettings::class.java) ?: error(
+                "could not determine persistent storage for GettingStartedSettings"
+            )
+            try {
+                fp.touch()
+                sut.runActivity(projectExtension.project)
+            } finally {
+                fp.deleteIfExists()
+            }
 
-        verify {
-            GettingStartedPanel.openPanel(projectExtension.project, any(), any())
+            verify {
+                GettingStartedPanel.openPanel(projectExtension.project, any(), any())
+            }
+        } finally {
+            io.mockk.unmockkObject(GettingStartedPanel.Companion)
         }
     }
 

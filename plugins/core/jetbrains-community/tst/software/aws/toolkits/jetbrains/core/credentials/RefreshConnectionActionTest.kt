@@ -50,6 +50,9 @@ class RefreshConnectionActionTest {
 
         assertThat(latch.await(5, TimeUnit.SECONDS)).isTrue
 
+        // Wait for async cache clear to complete
+        Thread.sleep(100)
+
         assertThat(resourceCache.size()).isZero()
         assertThat(states).hasAtLeastOneElementOfType(ConnectionState.ValidatingConnection::class.java)
     }

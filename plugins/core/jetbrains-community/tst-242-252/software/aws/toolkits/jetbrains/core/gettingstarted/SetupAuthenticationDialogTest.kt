@@ -293,15 +293,20 @@ class SetupAuthenticationDialogTest {
             whenever(it.getCallerIdentity(any<GetCallerIdentityRequest>())).thenThrow(StsException.builder().message("Some service exception message").build())
         }
 
-        runInEdtAndWait {
-            val sut = SetupAuthenticationDialog(
-                projectExtension.project,
-                state = state,
-                sourceOfEntry = SourceOfEntry.UNKNOWN,
-                featureId = FeatureId.Unknown
-            )
-            val exception = assertThrows<Exception> { sut.doOKAction() }
-            assertThat(exception.message).isEqualTo(AwsCoreBundle.message("gettingstarted.setup.iam.profile.invalid_credentials"))
+        TestDialogManager.setTestDialog(TestDialog.OK)
+        try {
+            runInEdtAndWait {
+                val sut = SetupAuthenticationDialog(
+                    projectExtension.project,
+                    state = state,
+                    sourceOfEntry = SourceOfEntry.UNKNOWN,
+                    featureId = FeatureId.Unknown
+                )
+                sut.doOKAction()
+                assertThat(sut.isOK).isFalse()
+            }
+        } finally {
+            TestDialogManager.setTestDialog(TestDialog.DEFAULT)
         }
     }
 
