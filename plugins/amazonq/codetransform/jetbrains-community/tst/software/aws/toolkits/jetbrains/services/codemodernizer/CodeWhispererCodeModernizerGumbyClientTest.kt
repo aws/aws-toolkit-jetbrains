@@ -16,6 +16,7 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
+import org.mockito.kotlin.isNull
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.times
@@ -262,7 +263,7 @@ class CodeWhispererCodeModernizerGumbyClientTest : CodeWhispererCodeModernizerTe
             amazonQStreamingClient.exportResultArchive(
                 any<String>(),
                 any<ExportIntent>(),
-                eq(null),
+                isNull(),
                 any(),
                 any()
             )
@@ -270,7 +271,7 @@ class CodeWhispererCodeModernizerGumbyClientTest : CodeWhispererCodeModernizerTe
 
         val actual = gumbyClient.downloadExportResultArchive(jobId)
 
-        verify(amazonQStreamingClient).exportResultArchive(eq(jobId.id), eq(ExportIntent.TRANSFORMATION), eq(null), any(), any())
+        verify(amazonQStreamingClient).exportResultArchive(eq(jobId.id), eq(ExportIntent.TRANSFORMATION), isNull(), any(), any())
         verifyNoInteractions(bearerClient)
         verifyNoInteractions(streamingBearerClient)
         verifyNoMoreInteractions(amazonQStreamingClient)
