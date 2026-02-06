@@ -1,6 +1,7 @@
 // Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// CI baseline test
 package software.aws.toolkits.jetbrains.core.credentials
 
 import com.intellij.icons.AllIcons
