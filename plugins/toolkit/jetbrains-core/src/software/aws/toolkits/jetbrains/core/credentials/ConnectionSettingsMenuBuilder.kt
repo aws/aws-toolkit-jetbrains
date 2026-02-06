@@ -10,8 +10,6 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.actionSystem.Separator
-import com.intellij.openapi.actionSystem.ToggleAction
-import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
 import software.aws.toolkit.core.credentials.CredentialIdentifier
@@ -80,7 +78,7 @@ class ConnectionSettingsMenuBuilder private constructor() {
             val actions = when (settings) {
                 is SelectableIdentitySelectionSettings -> {
                     connections.map {
-                        object : DumbAwareToggleAction<AwsBearerTokenConnection>(
+                        object : DumbAwareSelectAction<AwsBearerTokenConnection>(
                             title = it.label,
                             value = it,
                             selected = it == settings.currentSelection,
@@ -204,18 +202,20 @@ class ConnectionSettingsMenuBuilder private constructor() {
 
     // Helper actions, note: these are public to help make tests easier by leveraging instanceOf checks
 
-    abstract inner class DumbAwareToggleAction<T>(
+    abstract inner class DumbAwareSelectAction<T>(
         title: String,
         val value: T,
         private val selected: Boolean,
         private val onSelect: (T) -> Unit,
-    ) : ToggleAction(title), DumbAware {
+    ) : DumbAwareAction(title) {
         override fun getActionUpdateThread() = ActionUpdateThread.BGT
 
-        override fun isSelected(e: AnActionEvent): Boolean = selected
+        override fun update(e: AnActionEvent) {
+            e.presentation.icon = if (selected) AllIcons.Actions.Checked else null
+        }
 
-        override fun setSelected(e: AnActionEvent, state: Boolean) {
-            if (!isSelected(e)) {
+        override fun actionPerformed(e: AnActionEvent) {
+            if (!selected) {
                 onSelect.invoke(value)
             }
         }
@@ -225,13 +225,13 @@ class ConnectionSettingsMenuBuilder private constructor() {
         value: AwsRegion,
         selected: Boolean,
         onSelect: (AwsRegion) -> Unit,
-    ) : DumbAwareToggleAction<AwsRegion>(value.displayName, value, selected, onSelect)
+    ) : DumbAwareSelectAction<AwsRegion>(value.displayName, value, selected, onSelect)
 
     inner class SwitchCredentialsAction(
         value: CredentialIdentifier,
         selected: Boolean,
         onSelect: (CredentialIdentifier) -> Unit,
-    ) : DumbAwareToggleAction<CredentialIdentifier>(value.displayName, value, selected, onSelect)
+    ) : DumbAwareSelectAction<CredentialIdentifier>(value.displayName, value, selected, onSelect)
 
     inner class IndividualIdentityActionGroup(private val value: AwsBearerTokenConnection) :
         DefaultActionGroup(
