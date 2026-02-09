@@ -54,7 +54,7 @@ internal class ResourceTypeNode(
         val resources = resourcesManager.getResourceIdentifiers(resourceType)
 
         if (resources.isEmpty()) {
-            return listOf(NoResourcesNode(project, resourceType))
+            return listOf(NoResourcesNode(project))
         }
 
         val nodes = resources.map { identifier ->
@@ -89,7 +89,6 @@ internal class LoadingResourcesNode(
 
 internal class NoResourcesNode(
     nodeProject: Project,
-    private val resourceType: String,
 ) : AbstractTreeNode<String>(nodeProject, "no-resources") {
 
     override fun update(presentation: PresentationData) {

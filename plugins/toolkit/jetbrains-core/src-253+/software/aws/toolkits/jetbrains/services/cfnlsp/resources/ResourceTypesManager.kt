@@ -17,7 +17,7 @@ import software.aws.toolkits.jetbrains.services.cfnlsp.CfnClientService
 import java.util.concurrent.CompletableFuture
 
 @Service(Service.Level.PROJECT)
-@State(name = "cfnResourceTypes", storages = [Storage("aws.xml", roamingType = RoamingType.DISABLED)])
+@State(name = "cfnResourceTypes", storages = [Storage("awsToolkit.xml", roamingType = RoamingType.DISABLED)])
 internal class ResourceTypesManager(
     private val project: Project,
 ) : PersistentStateComponent<ResourceTypesManager.State> {
