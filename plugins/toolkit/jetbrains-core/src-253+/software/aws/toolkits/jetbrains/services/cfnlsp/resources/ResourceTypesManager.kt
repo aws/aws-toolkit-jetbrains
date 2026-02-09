@@ -19,7 +19,7 @@ import java.util.concurrent.CompletableFuture
 @Service(Service.Level.PROJECT)
 @State(name = "cfnResourceTypes", storages = [Storage("aws.xml", roamingType = RoamingType.DISABLED)])
 internal class ResourceTypesManager(
-    private val project: Project
+    private val project: Project,
 ) : PersistentStateComponent<ResourceTypesManager.State> {
     internal var clientServiceProvider: () -> CfnClientService = { CfnClientService.getInstance(project) }
 
@@ -66,7 +66,7 @@ internal class ResourceTypesManager(
 
     fun loadAvailableTypes(): CompletableFuture<Unit> {
         LOG.info { "Loading available resource types" }
-        
+
         return clientServiceProvider().listResourceTypes()
             .thenApply { result ->
                 if (result != null) {

@@ -7,7 +7,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.psi.codeStyle.NameUtil
 import com.intellij.ui.CheckBoxList
-import com.intellij.ui.ListSpeedSearch
 import com.intellij.ui.SearchTextField
 import com.intellij.ui.components.JBScrollPane
 import software.aws.toolkit.core.utils.getLogger
@@ -53,7 +52,7 @@ internal class ResourceTypeSelectionDialog(
                 }
             }
         }
-        
+
         // Initial population - this will show pre-selected items as checked
         filterList()
 
@@ -74,14 +73,14 @@ internal class ResourceTypeSelectionDialog(
     private fun filterList() {
         val searchText = searchField.text
         typesList.clear()
-        
+
         val filteredTypes = if (searchText.isEmpty()) {
             allAvailableTypes
         } else {
             val matcher = NameUtil.buildMatcher("*$searchText*", NameUtil.MatchingCaseSensitivity.NONE)
             allAvailableTypes.filter { resourceType -> matcher.matches(resourceType) }
         }
-        
+
         filteredTypes.forEach { type ->
             val isSelected = type in currentSelections // Use tracked selections
             typesList.addItem(type, type, isSelected)

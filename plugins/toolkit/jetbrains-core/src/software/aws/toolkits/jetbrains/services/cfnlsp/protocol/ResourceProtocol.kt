@@ -78,5 +78,5 @@ internal data class ResourceStackManagementResult(
     val managedByStack: Boolean? = null,
     val stackName: String? = null,
     val stackId: String? = null,
-    val error: String? = null
+    val error: String? = null,
 )

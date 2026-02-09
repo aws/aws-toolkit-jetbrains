@@ -49,10 +49,10 @@ class ResourceTypesManagerTest {
     fun `loads available types from LSP server`() = runTest {
         val mockClientService = mock<CfnClientService>()
         val manager = ResourceTypesManager(projectRule.project)
-        
+
         val mockResult = ResourceTypesResult(listOf("AWS::EC2::Instance", "AWS::S3::Bucket"))
         whenever(mockClientService.listResourceTypes()).thenReturn(CompletableFuture.completedFuture(mockResult))
-        
+
         manager.clientServiceProvider = { mockClientService }
 
         manager.loadAvailableTypes()
@@ -67,11 +67,11 @@ class ResourceTypesManagerTest {
     fun `removeResourceType sends request to LSP server`() = runTest {
         val mockClientService = mock<CfnClientService>()
         val manager = ResourceTypesManager(projectRule.project)
-        
+
         whenever(mockClientService.removeResourceType(any())).thenReturn(CompletableFuture.completedFuture(null))
-        
+
         manager.clientServiceProvider = { mockClientService }
-        
+
         manager.addResourceType("AWS::EC2::Instance")
         assertThat(manager.getSelectedResourceTypes()).containsExactly("AWS::EC2::Instance")
 
@@ -96,11 +96,11 @@ class ResourceTypesManagerTest {
     fun `removeResourceType handles LSP server exception gracefully`() = runTest {
         val mockClientService = mock<CfnClientService>()
         val manager = ResourceTypesManager(projectRule.project)
-        
+
         whenever(mockClientService.removeResourceType(any())).thenReturn(CompletableFuture.failedFuture(RuntimeException("Test exception")))
-        
+
         manager.clientServiceProvider = { mockClientService }
-        
+
         manager.addResourceType("AWS::EC2::Instance")
         assertThat(manager.getSelectedResourceTypes()).containsExactly("AWS::EC2::Instance")
 
@@ -129,9 +129,9 @@ class ResourceTypesManagerTest {
     fun `loadAvailableTypes handles null result gracefully`() = runTest {
         val mockClientService = mock<CfnClientService>()
         val manager = ResourceTypesManager(projectRule.project)
-        
+
         whenever(mockClientService.listResourceTypes()).thenReturn(CompletableFuture.completedFuture(null))
-        
+
         manager.clientServiceProvider = { mockClientService }
 
         manager.loadAvailableTypes()
@@ -165,11 +165,11 @@ class ResourceTypesManagerTest {
     fun `listeners are notified when resource types are removed successfully`() = runTest {
         val mockClientService = mock<CfnClientService>()
         val manager = ResourceTypesManager(projectRule.project)
-        
+
         whenever(mockClientService.removeResourceType(any())).thenReturn(CompletableFuture.completedFuture(null))
-        
+
         manager.clientServiceProvider = { mockClientService }
-        
+
         var notificationCount = 0
         val listener: ResourceTypesChangeListener = { notificationCount++ }
         manager.addListener(listener)
@@ -187,11 +187,11 @@ class ResourceTypesManagerTest {
     fun `listeners are not notified when resource type removal fails`() = runTest {
         val mockClientService = mock<CfnClientService>()
         val manager = ResourceTypesManager(projectRule.project)
-        
+
         whenever(mockClientService.removeResourceType(any())).thenReturn(CompletableFuture.failedFuture(RuntimeException("Test exception")))
-        
+
         manager.clientServiceProvider = { mockClientService }
-        
+
         var notificationCount = 0
         val listener: ResourceTypesChangeListener = { notificationCount++ }
         manager.addListener(listener)
@@ -209,17 +209,17 @@ class ResourceTypesManagerTest {
     @Test
     fun `state persistence works correctly`() {
         val manager = ResourceTypesManager(projectRule.project)
-        
+
         manager.addResourceType("AWS::EC2::Instance")
         manager.addResourceType("AWS::S3::Bucket")
-        
+
         val state = manager.state
         assertThat(state.selectedTypes).containsExactlyInAnyOrder("AWS::EC2::Instance", "AWS::S3::Bucket")
-        
+
         // Simulate loading state
         val newManager = ResourceTypesManager(projectRule.project)
         newManager.loadState(state)
-        
+
         assertThat(newManager.getSelectedResourceTypes()).containsExactlyInAnyOrder("AWS::EC2::Instance", "AWS::S3::Bucket")
     }
 }

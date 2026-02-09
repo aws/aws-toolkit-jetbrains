@@ -19,9 +19,9 @@ import software.aws.toolkits.jetbrains.services.cfnlsp.explorer.nodes.ResourceNo
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ListResourcesParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ListResourcesResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ResourceStackManagementResult
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ResourceSummary
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.SearchResourceParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.SearchResourceResult
-import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ResourceSummary
 import java.util.concurrent.CompletableFuture
 
 class ResourcesManagerTest {
@@ -41,7 +41,7 @@ class ResourcesManagerTest {
     fun `reload sends request to LSP server`() = runTest {
         val mockClientService = mock<CfnClientService>()
         val manager = ResourcesManager(projectRule.project)
-        
+
         val mockResult = mock<ListResourcesResult>()
         whenever(mockClientService.listResources(any())).thenReturn(CompletableFuture.completedFuture(mockResult))
 
@@ -53,7 +53,7 @@ class ResourcesManagerTest {
 
         val paramsCaptor = argumentCaptor<ListResourcesParams>()
         verify(mockClientService).listResources(paramsCaptor.capture())
-        
+
         assertThat(paramsCaptor.firstValue.resources).hasSize(1)
         assertThat(paramsCaptor.firstValue.resources?.first()?.resourceType).isEqualTo("AWS::EC2::Instance")
         assertThat(paramsCaptor.firstValue.resources?.first()?.nextToken).isNull()
@@ -73,7 +73,7 @@ class ResourcesManagerTest {
     fun `searchResource adds found resource to cache`() = runTest {
         val mockClientService = mock<CfnClientService>()
         val manager = ResourcesManager(projectRule.project)
-        
+
         val mockResourceSummary = ResourceSummary("AWS::EC2::Instance", listOf("testResource"))
         val mockResult = SearchResourceResult(found = true, resource = mockResourceSummary)
         whenever(mockClientService.searchResource(any())).thenReturn(CompletableFuture.completedFuture(mockResult))
@@ -88,7 +88,7 @@ class ResourcesManagerTest {
 
         val paramsCaptor = argumentCaptor<SearchResourceParams>()
         verify(mockClientService).searchResource(paramsCaptor.capture())
-        
+
         assertThat(paramsCaptor.firstValue.resourceType).isEqualTo("AWS::EC2::Instance")
         assertThat(paramsCaptor.firstValue.identifier).isEqualTo("testResource")
 
@@ -164,7 +164,6 @@ class ResourcesManagerTest {
         verify(mockClientService, never()).listResources(any())
     }
 
-
     @Test
     fun `clear with null clears all resource types`() {
         val manager = ResourcesManager(projectRule.project)
@@ -180,7 +179,7 @@ class ResourcesManagerTest {
 
         manager.clear("AWS::EC2::Instance") // Add some state
         manager.clear("AWS::S3::Bucket") // Add some state
-        
+
         manager.clear(null)
 
         assertThat(ec2Cleared).isTrue()
@@ -191,7 +190,7 @@ class ResourcesManagerTest {
     fun `searchResource handles exception gracefully`() = runTest {
         val mockClientService = mock<CfnClientService>()
         val manager = ResourcesManager(projectRule.project)
-        
+
         whenever(mockClientService.searchResource(any())).thenReturn(CompletableFuture.failedFuture(RuntimeException("Test exception")))
         manager.clientServiceProvider = { mockClientService }
 
@@ -205,7 +204,7 @@ class ResourcesManagerTest {
     fun `searchResource returns false when resource not found`() = runTest {
         val mockClientService = mock<CfnClientService>()
         val manager = ResourcesManager(projectRule.project)
-        
+
         val mockResult = mock<SearchResourceResult>()
         whenever(mockResult.found).thenReturn(false)
         whenever(mockClientService.searchResource(any())).thenReturn(CompletableFuture.completedFuture(mockResult))
@@ -215,10 +214,10 @@ class ResourcesManagerTest {
         testScheduler.advanceUntilIdle()
 
         assertThat(result.get()).isFalse()
-        
+
         val paramsCaptor = argumentCaptor<SearchResourceParams>()
         verify(mockClientService).searchResource(paramsCaptor.capture())
-        
+
         assertThat(paramsCaptor.firstValue.resourceType).isEqualTo("AWS::EC2::Instance")
         assertThat(paramsCaptor.firstValue.identifier).isEqualTo("testResource")
     }
@@ -227,17 +226,17 @@ class ResourcesManagerTest {
     fun `searchResource reloads type when not loaded and resource found without data`() = runTest {
         val mockClientService = mock<CfnClientService>()
         val manager = ResourcesManager(projectRule.project)
-        
+
         val mockSearchResult = mock<SearchResourceResult>()
         whenever(mockSearchResult.found).thenReturn(true)
         whenever(mockSearchResult.resource).thenReturn(null)
-        
+
         val mockListResult = mock<ListResourcesResult>()
         whenever(mockListResult.resources).thenReturn(emptyList())
-        
+
         whenever(mockClientService.searchResource(any())).thenReturn(CompletableFuture.completedFuture(mockSearchResult))
         whenever(mockClientService.listResources(any())).thenReturn(CompletableFuture.completedFuture(mockListResult))
-        
+
         manager.clientServiceProvider = { mockClientService }
 
         manager.searchResource("AWS::EC2::Instance", "testResource")
@@ -252,7 +251,7 @@ class ResourcesManagerTest {
     fun `getStackManagementInfo handles successful response`() = runTest {
         val mockClientService = mock<CfnClientService>()
         val manager = ResourcesManager(projectRule.project)
-        
+
         val mockResult = ResourceStackManagementResult(
             physicalResourceId = "testPhysicalResourceId",
             managedByStack = true,
@@ -261,7 +260,7 @@ class ResourcesManagerTest {
         )
         whenever(mockClientService.getStackManagementInfo(any())).thenReturn(CompletableFuture.completedFuture(mockResult))
         manager.clientServiceProvider = { mockClientService }
-        
+
         val resourceNode = mock<ResourceNode>()
         whenever(resourceNode.resourceIdentifier).thenReturn("testPhysicalResourceId")
 
@@ -275,10 +274,10 @@ class ResourcesManagerTest {
     fun `getStackManagementInfo handles exception`() = runTest {
         val mockClientService = mock<CfnClientService>()
         val manager = ResourcesManager(projectRule.project)
-        
+
         whenever(mockClientService.getStackManagementInfo(any())).thenReturn(CompletableFuture.failedFuture(RuntimeException("Test exception")))
         manager.clientServiceProvider = { mockClientService }
-        
+
         val resourceNode = mock<ResourceNode>()
         whenever(resourceNode.resourceIdentifier).thenReturn("testPhysicalResourceId")
 

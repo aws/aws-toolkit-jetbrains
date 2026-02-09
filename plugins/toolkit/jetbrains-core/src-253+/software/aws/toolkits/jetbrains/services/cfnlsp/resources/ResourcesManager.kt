@@ -17,6 +17,9 @@ import org.eclipse.lsp4j.TextDocumentIdentifier
 import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkit.core.utils.info
 import software.aws.toolkit.core.utils.warn
+import software.aws.toolkit.jetbrains.utils.notifyError
+import software.aws.toolkit.jetbrains.utils.notifyInfo
+import software.aws.toolkit.jetbrains.utils.notifyWarn
 import software.aws.toolkits.jetbrains.services.cfnlsp.CfnClientService
 import software.aws.toolkits.jetbrains.services.cfnlsp.explorer.nodes.ResourceNode
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ListResourcesParams
@@ -26,9 +29,6 @@ import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ResourceStackMan
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ResourceStateParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ResourceStatePurpose
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.SearchResourceParams
-import software.aws.toolkit.jetbrains.utils.notifyError
-import software.aws.toolkit.jetbrains.utils.notifyInfo
-import software.aws.toolkit.jetbrains.utils.notifyWarn
 import software.aws.toolkits.resources.message
 import java.awt.datatransfer.StringSelection
 import java.util.concurrent.CompletableFuture
@@ -37,7 +37,7 @@ typealias ResourcesChangeListener = (String, List<String>) -> Unit
 
 @Service(Service.Level.PROJECT)
 internal class ResourcesManager(
-    private val project: Project
+    private val project: Project,
 ) : Disposable {
     internal var clientServiceProvider: () -> CfnClientService = { CfnClientService.getInstance(project) }
 
@@ -87,11 +87,11 @@ internal class ResourcesManager(
             .thenApply { result ->
                 if (result?.found == true) {
                     LOG.info { "Resource $identifier found in $resourceType" }
-                    
+
                     if (result.resource != null) {
                         val currentData = resourcesByType[resourceType]
                         val existingResources = currentData?.resourceIdentifiers ?: emptyList()
-                        
+
                         if (!existingResources.contains(identifier)) {
                             val updatedResources = existingResources + identifier
                             resourcesByType[resourceType] = ResourceTypeData(
@@ -148,7 +148,7 @@ internal class ResourcesManager(
         clientServiceProvider().listResources(params)
             .thenAccept { result ->
                 loadingTypes.remove(resourceType)
-                
+
                 if (result != null) {
                     val resourceSummary = result.resources.firstOrNull { it.typeName == resourceType }
                     if (resourceSummary != null) {
@@ -205,7 +205,7 @@ internal class ResourcesManager(
         clientServiceProvider().getStackManagementInfo(resourceNode.resourceIdentifier)
             .thenAccept { result ->
                 LOG.info { "Stack management info result for ${resourceNode.resourceIdentifier}: $result" }
-                
+
                 ApplicationManager.getApplication().invokeLater {
                     if (result != null) {
                         showStackManagementInfo(result)
@@ -232,16 +232,16 @@ internal class ResourcesManager(
         } else {
             message("cloudformation.explorer.resources.stack_info.not_managed")
         }
-        
+
         val actions = mutableListOf<AnAction>()
-        
+
         if (result.managedByStack == true && result.stackName != null) {
             actions.add(object : AnAction(message("cloudformation.explorer.resources.stack_info.copy_name")) {
                 override fun actionPerformed(e: AnActionEvent) {
                     CopyPasteManager.getInstance().setContents(StringSelection(result.stackName))
                 }
             })
-            
+
             if (result.stackId != null) {
                 actions.add(object : AnAction(message("cloudformation.explorer.resources.stack_info.copy_arn")) {
                     override fun actionPerformed(e: AnActionEvent) {
@@ -250,7 +250,7 @@ internal class ResourcesManager(
                 })
             }
         }
-        
+
         notifyInfo(
             message("cloudformation.explorer.resources.stack_info.title"),
             messageText,
@@ -371,7 +371,6 @@ internal class ResourcesManager(
             }
             successCount > 0 && failureCount > 0 -> {
                 val successPlural = if (successCount == 1) "" else "s"
-                val failurePlural = if (failureCount == 1) "" else "s"
                 notifyWarn(
                     title,
                     message("cloudformation.explorer.resources.$actionKey.partial", successCount, successPlural, failureCount),

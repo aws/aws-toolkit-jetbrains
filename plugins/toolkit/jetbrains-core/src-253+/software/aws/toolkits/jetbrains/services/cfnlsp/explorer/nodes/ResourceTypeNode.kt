@@ -7,19 +7,14 @@ import com.intellij.icons.AllIcons
 import com.intellij.ide.projectView.PresentationData
 import com.intellij.ide.util.treeView.AbstractTreeNode
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.ui.SimpleTextAttributes
-import icons.AwsIcons
-import software.aws.toolkit.core.utils.error
 import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkit.core.utils.info
-import software.aws.toolkit.core.utils.warn
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.AbstractActionTreeNode
-import software.aws.toolkits.jetbrains.services.cfnlsp.ui.ResourceTypeSelectionDialog
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.ActionGroupOnRightClick
 import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourcesManager
-import software.aws.toolkits.jetbrains.services.cfnlsp.stacks.StacksManager
+import software.aws.toolkits.jetbrains.services.cfnlsp.ui.ResourceTypeDialogUtils
 import software.aws.toolkits.resources.AwsToolkitBundle.message
 import java.awt.event.MouseEvent
 
@@ -150,41 +145,7 @@ internal class AddResourceTypeNode(
     }
 
     private fun showDialog() {
-        val availableTypes = resourceTypesManager.getAvailableResourceTypes()
-        val selectedTypes = resourceTypesManager.getSelectedResourceTypes()
-        // Show ALL available types, not just unselected ones
-        
-        if (availableTypes.isEmpty()) {
-            return
-        }
-
-        LOG.info { "starting dialog" }
-        try {
-            val dialog = ResourceTypeSelectionDialog(project, availableTypes, selectedTypes)
-            if (dialog.showAndGet()) {
-                // Handle both additions and removals
-                val newSelections = dialog.selectedResourceTypes.toSet()
-                val currentSelections = selectedTypes
-                
-                // Add new selections
-                newSelections.forEach { type ->
-                    if (type !in currentSelections) {
-                        resourceTypesManager.addResourceType(type)
-                    }
-                }
-                
-                // Remove deselected types
-                currentSelections.forEach { type ->
-                    if (type !in newSelections) {
-                        resourceTypesManager.removeResourceType(type)
-                    }
-                }
-                
-                LOG.info { "finished updating resource types" }
-            }
-        } catch (e: Exception) {
-            LOG.error(e) { "Failed to show dialog" }
-        }
+        ResourceTypeDialogUtils.showResourceTypeSelectionDialog(project, resourceTypesManager)
     }
 
     override fun getChildren(): Collection<AbstractTreeNode<*>> = emptyList()

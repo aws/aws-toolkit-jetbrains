@@ -20,7 +20,7 @@ import software.aws.toolkits.jetbrains.services.cfnlsp.explorer.nodes.ResourceTy
 import software.aws.toolkits.jetbrains.services.cfnlsp.explorer.nodes.ResourcesNode
 import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourceTypesManager
 import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourcesManager
-import software.aws.toolkits.jetbrains.services.cfnlsp.ui.ResourceTypeSelectionDialog
+import software.aws.toolkits.jetbrains.services.cfnlsp.ui.ResourceTypeDialogUtils
 import software.aws.toolkits.resources.AwsToolkitBundle.message
 import java.awt.datatransfer.StringSelection
 
@@ -41,7 +41,7 @@ class AddResourceTypeAction : AnAction(
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         val resourceTypesManager = ResourceTypesManager.getInstance(project)
-        
+
         // Always load types (in case region changed)
         resourceTypesManager.loadAvailableTypes().thenRun {
             LOG.info { "loading completed, showing dialog" }
@@ -52,40 +52,7 @@ class AddResourceTypeAction : AnAction(
     }
 
     private fun showDialog(project: Project, resourceTypesManager: ResourceTypesManager) {
-        val availableTypes = resourceTypesManager.getAvailableResourceTypes()
-        val selectedTypes = resourceTypesManager.getSelectedResourceTypes()
-        
-        if (availableTypes.isEmpty()) {
-            return
-        }
-
-        LOG.info { "starting dialog" }
-        try {
-            val dialog = ResourceTypeSelectionDialog(project, availableTypes, selectedTypes)
-            if (dialog.showAndGet()) {
-                // Handle both additions and removals
-                val newSelections = dialog.selectedResourceTypes.toSet()
-                val currentSelections = selectedTypes
-                
-                // Add new selections
-                newSelections.forEach { type ->
-                    if (type !in currentSelections) {
-                        resourceTypesManager.addResourceType(type)
-                    }
-                }
-                
-                // Remove deselected types
-                currentSelections.forEach { type ->
-                    if (type !in newSelections) {
-                        resourceTypesManager.removeResourceType(type)
-                    }
-                }
-                
-                LOG.info { "finished updating resource types" }
-            }
-        } catch (e: Exception) {
-            LOG.warn(e) { "Failed to show dialog" }
-        }
+        ResourceTypeDialogUtils.showResourceTypeSelectionDialog(project, resourceTypesManager)
     }
 
     companion object {
@@ -111,11 +78,11 @@ class RemoveResourceTypeAction : AnAction(
         val project = e.project ?: return
         val resourceTypesManager = ResourceTypesManager.getInstance(project)
         val resourcesManager = ResourcesManager.getInstance(project)
-        
+
         // Get the selected ResourceTypeNode
         val selectedNodes = e.getData(ExplorerTreeToolWindowDataKeys.SELECTED_NODES)
         val resourceTypeNode = selectedNodes?.filterIsInstance<ResourceTypeNode>()?.firstOrNull() ?: return
-        
+
         // Remove the resource type
         resourceTypesManager.removeResourceType(resourceTypeNode.resourceType)
         resourcesManager.clear(resourceTypeNode.resourceType)
@@ -134,7 +101,7 @@ class RefreshResourceTypeAction : AnAction() {
         LOG.info { "RefreshResourceTypeAction triggered" }
         val project = e.project ?: return
         val resourcesManager = ResourcesManager.getInstance(project)
-        
+
         // Get the selected nodes using the correct data key
         val selectedNodes = e.getData(ExplorerTreeToolWindowDataKeys.SELECTED_NODES)
 
@@ -164,7 +131,7 @@ class RefreshAllLoadedResourcesAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         val resourcesManager = ResourcesManager.getInstance(project)
-        
+
         // Get all currently loaded resource types and reload them
         val loadedTypes = resourcesManager.getLoadedResourceTypes()
         loadedTypes.forEach { resourceType ->
@@ -190,11 +157,11 @@ class SearchResourceAction : AnAction(
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         val resourcesManager = ResourcesManager.getInstance(project)
-        
+
         // Get the selected ResourceTypeNode
         val selectedNodes = e.getData(ExplorerTreeToolWindowDataKeys.SELECTED_NODES)
         val resourceTypeNode = selectedNodes?.filterIsInstance<ResourceTypeNode>()?.firstOrNull() ?: return
-        
+
         // Prompt user for resource identifier
         val identifier = Messages.showInputDialog(
             project,
@@ -202,9 +169,9 @@ class SearchResourceAction : AnAction(
             message("cloudformation.explorer.resources.search.title"),
             AllIcons.Actions.Search
         ) ?: return
-        
+
         if (identifier.isBlank()) return
-        
+
         // Search for the resource
         resourcesManager.searchResource(resourceTypeNode.resourceType, identifier.trim())
     }
@@ -226,10 +193,10 @@ class ImportResourceStateAction : AnAction(
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         val resourcesManager = ResourcesManager.getInstance(project)
-        
+
         val selectedNodes = e.getData(ExplorerTreeToolWindowDataKeys.SELECTED_NODES)
         val resourceNodes = selectedNodes?.filterIsInstance<ResourceNode>() ?: return
-        
+
         resourcesManager.importResourceState(resourceNodes)
     }
 }
@@ -250,10 +217,10 @@ class CloneResourceStateAction : AnAction(
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         val resourcesManager = ResourcesManager.getInstance(project)
-        
+
         val selectedNodes = e.getData(ExplorerTreeToolWindowDataKeys.SELECTED_NODES)
         val resourceNodes = selectedNodes?.filterIsInstance<ResourceNode>() ?: return
-        
+
         resourcesManager.cloneResourceState(resourceNodes)
     }
 }
@@ -274,11 +241,11 @@ class CopyResourceIdentifierAction : AnAction(
     override fun actionPerformed(e: AnActionEvent) {
         val selectedNodes = e.getData(ExplorerTreeToolWindowDataKeys.SELECTED_NODES)
         val resourceNode = selectedNodes?.filterIsInstance<ResourceNode>()?.firstOrNull() ?: return
-        
+
         // Copy to clipboard
         val selection = StringSelection(resourceNode.resourceIdentifier)
         CopyPasteManager.getInstance().setContents(selection)
-        
+
         // Show status message (similar to VS Code)
         // Note: JetBrains doesn't have a direct equivalent to VS Code's status bar message
         // but the copy operation will be visible in the clipboard
@@ -301,10 +268,10 @@ class GetStackManagementInfoAction : AnAction(
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         val resourcesManager = ResourcesManager.getInstance(project)
-        
+
         val selectedNodes = e.getData(ExplorerTreeToolWindowDataKeys.SELECTED_NODES)
         val resourceNode = selectedNodes?.filterIsInstance<ResourceNode>()?.firstOrNull() ?: return
-        
+
         resourcesManager.getStackManagementInfo(resourceNode)
     }
 }
