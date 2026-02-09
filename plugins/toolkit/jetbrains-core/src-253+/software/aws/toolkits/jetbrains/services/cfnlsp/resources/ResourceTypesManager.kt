@@ -76,11 +76,9 @@ internal class ResourceTypesManager(
                 } else {
                     LOG.warn { "Failed to load resource types - null result" }
                 }
-                Unit
             }
             .exceptionally { error ->
                 LOG.warn(error) { "Failed to load resource types" }
-                Unit
             }
     }
 

@@ -15,6 +15,8 @@ import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ListResourcesPar
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ListResourcesResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ListStacksParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ListStacksResult
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.RefreshResourcesParams
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.RefreshResourcesResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ResourceStackManagementResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ResourceStateParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ResourceStateResult
@@ -54,6 +56,9 @@ internal class CfnClientService(project: Project) {
 
     fun listResources(params: ListResourcesParams): CompletableFuture<ListResourcesResult?> =
         sendRequest { it.listResources(params) }
+
+    fun refreshResources(params: RefreshResourcesParams): CompletableFuture<RefreshResourcesResult?> =
+        sendRequest { it.refreshResources(params) }
 
     fun getStackManagementInfo(resourceIdentifier: String): CompletableFuture<ResourceStackManagementResult?> =
         sendRequest { it.getStackManagementInfo(resourceIdentifier) }

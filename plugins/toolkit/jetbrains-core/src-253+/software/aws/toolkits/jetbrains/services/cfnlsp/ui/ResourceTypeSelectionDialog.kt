@@ -22,7 +22,7 @@ import javax.swing.event.DocumentListener
 internal class ResourceTypeSelectionDialog(
     project: Project,
     private val availableTypes: List<String>,
-    private val selectedTypes: Set<String> = emptySet(),
+    selectedTypes: Set<String> = emptySet(),
 ) : DialogWrapper(project) {
 
     var selectedResourceTypes: List<String> = emptyList()
@@ -30,7 +30,6 @@ internal class ResourceTypeSelectionDialog(
 
     private val typesList = CheckBoxList<String>()
     private val searchField = SearchTextField(false)
-    private val allAvailableTypes = availableTypes
     private val currentSelections = selectedTypes.toMutableSet() // Track selections separately
 
     init {
@@ -75,10 +74,10 @@ internal class ResourceTypeSelectionDialog(
         typesList.clear()
 
         val filteredTypes = if (searchText.isEmpty()) {
-            allAvailableTypes
+            availableTypes
         } else {
             val matcher = NameUtil.buildMatcher("*$searchText*", NameUtil.MatchingCaseSensitivity.NONE)
-            allAvailableTypes.filter { resourceType -> matcher.matches(resourceType) }
+            availableTypes.filter { resourceType -> matcher.matches(resourceType) }
         }
 
         filteredTypes.forEach { type ->

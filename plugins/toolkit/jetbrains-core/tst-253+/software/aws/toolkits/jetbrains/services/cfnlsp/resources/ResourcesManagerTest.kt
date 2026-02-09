@@ -16,8 +16,8 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import software.aws.toolkits.jetbrains.services.cfnlsp.CfnClientService
 import software.aws.toolkits.jetbrains.services.cfnlsp.explorer.nodes.ResourceNode
-import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ListResourcesParams
-import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ListResourcesResult
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.RefreshResourcesParams
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.RefreshResourcesResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ResourceStackManagementResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ResourceSummary
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.SearchResourceParams
@@ -42,8 +42,8 @@ class ResourcesManagerTest {
         val mockClientService = mock<CfnClientService>()
         val manager = ResourcesManager(projectRule.project)
 
-        val mockResult = mock<ListResourcesResult>()
-        whenever(mockClientService.listResources(any())).thenReturn(CompletableFuture.completedFuture(mockResult))
+        val mockResult = mock<RefreshResourcesResult>()
+        whenever(mockClientService.refreshResources(any())).thenReturn(CompletableFuture.completedFuture(mockResult))
 
         manager.clientServiceProvider = { mockClientService }
         manager.clear("AWS::EC2::Instance")
@@ -51,12 +51,12 @@ class ResourcesManagerTest {
         manager.reload("AWS::EC2::Instance")
         testScheduler.advanceUntilIdle()
 
-        val paramsCaptor = argumentCaptor<ListResourcesParams>()
-        verify(mockClientService).listResources(paramsCaptor.capture())
+        val paramsCaptor = argumentCaptor<RefreshResourcesParams>()
+        verify(mockClientService).refreshResources(paramsCaptor.capture())
 
         assertThat(paramsCaptor.firstValue.resources).hasSize(1)
-        assertThat(paramsCaptor.firstValue.resources?.first()?.resourceType).isEqualTo("AWS::EC2::Instance")
-        assertThat(paramsCaptor.firstValue.resources?.first()?.nextToken).isNull()
+        assertThat(paramsCaptor.firstValue.resources.first().resourceType).isEqualTo("AWS::EC2::Instance")
+        assertThat(paramsCaptor.firstValue.resources.first().nextToken).isNull()
     }
 
     @Test
@@ -143,13 +143,13 @@ class ResourcesManagerTest {
         val manager = ResourcesManager(projectRule.project)
         manager.clientServiceProvider = { mockClientService }
 
-        val mockResult = mock<ListResourcesResult>()
+        val mockRefreshResult = mock<RefreshResourcesResult>()
         val mockResourceSummary = mock<ResourceSummary>()
         whenever(mockResourceSummary.typeName).thenReturn("AWS::EC2::Instance")
         whenever(mockResourceSummary.resourceIdentifiers).thenReturn(listOf("instance-1"))
         whenever(mockResourceSummary.nextToken).thenReturn(null)
-        whenever(mockResult.resources).thenReturn(listOf(mockResourceSummary))
-        whenever(mockClientService.listResources(any())).thenReturn(CompletableFuture.completedFuture(mockResult))
+        whenever(mockRefreshResult.resources).thenReturn(listOf(mockResourceSummary))
+        whenever(mockClientService.refreshResources(any())).thenReturn(CompletableFuture.completedFuture(mockRefreshResult))
 
         manager.reload("AWS::EC2::Instance")
         testScheduler.advanceUntilIdle()
@@ -162,6 +162,7 @@ class ResourcesManagerTest {
 
         // Should not make any LSP calls since no nextToken
         verify(mockClientService, never()).listResources(any())
+        verify(mockClientService, never()).refreshResources(any())
     }
 
     @Test
@@ -231,11 +232,11 @@ class ResourcesManagerTest {
         whenever(mockSearchResult.found).thenReturn(true)
         whenever(mockSearchResult.resource).thenReturn(null)
 
-        val mockListResult = mock<ListResourcesResult>()
+        val mockListResult = mock<RefreshResourcesResult>()
         whenever(mockListResult.resources).thenReturn(emptyList())
 
         whenever(mockClientService.searchResource(any())).thenReturn(CompletableFuture.completedFuture(mockSearchResult))
-        whenever(mockClientService.listResources(any())).thenReturn(CompletableFuture.completedFuture(mockListResult))
+        whenever(mockClientService.refreshResources(any())).thenReturn(CompletableFuture.completedFuture(mockListResult))
 
         manager.clientServiceProvider = { mockClientService }
 
@@ -244,7 +245,7 @@ class ResourcesManagerTest {
 
         // Search and reload calls
         verify(mockClientService).searchResource(any())
-        verify(mockClientService).listResources(any())
+        verify(mockClientService).refreshResources(any())
     }
 
     @Test

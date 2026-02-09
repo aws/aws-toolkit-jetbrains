@@ -14,14 +14,14 @@ import software.aws.toolkits.jetbrains.services.cfnlsp.stacks.ChangeSetsManager
 import software.aws.toolkits.jetbrains.services.cfnlsp.stacks.StacksManager
 
 class CloudFormationRootNode(private val nodeProject: Project) : AbstractTreeNode<Any>(nodeProject, Any()) {
+    private val stacksManager by lazy { StacksManager.getInstance(nodeProject) }
+    private val changeSetsManager by lazy { ChangeSetsManager.getInstance(nodeProject) }
+    private val resourceTypesManager by lazy { ResourceTypesManager.getInstance(nodeProject) }
+    private val resourcesManager by lazy { ResourcesManager.getInstance(nodeProject) }
+
     override fun update(presentation: PresentationData) {}
 
     override fun getChildren(): Collection<AbstractTreeNode<*>> {
-        val stacksManager = StacksManager.getInstance(nodeProject)
-        val changeSetsManager = ChangeSetsManager.getInstance(nodeProject)
-        val resourceTypesManager = ResourceTypesManager.getInstance(nodeProject)
-        val resourcesManager = ResourcesManager.getInstance(nodeProject)
-
         return listOf(
             StacksNode(nodeProject, stacksManager, changeSetsManager),
             ResourcesNode(nodeProject, resourceTypesManager, resourcesManager)

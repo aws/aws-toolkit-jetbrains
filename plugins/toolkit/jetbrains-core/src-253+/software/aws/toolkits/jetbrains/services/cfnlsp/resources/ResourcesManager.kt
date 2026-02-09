@@ -23,6 +23,7 @@ import software.aws.toolkit.jetbrains.utils.notifyWarn
 import software.aws.toolkits.jetbrains.services.cfnlsp.CfnClientService
 import software.aws.toolkits.jetbrains.services.cfnlsp.explorer.nodes.ResourceNode
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ListResourcesParams
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.RefreshResourcesParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ResourceRequest
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ResourceSelection
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ResourceStackManagementResult
@@ -68,7 +69,49 @@ internal class ResourcesManager(
         resourcesByType[resourceType]?.loaded ?: false
 
     fun reload(resourceType: String) {
-        loadResources(resourceType, loadMore = false)
+        refreshResources(resourceType)
+    }
+
+    private fun refreshResources(resourceType: String) {
+        loadingTypes.add(resourceType)
+        LOG.info { "Refreshing resources for type $resourceType" }
+
+        val params = RefreshResourcesParams(
+            resources = listOf(ResourceRequest(resourceType))
+        )
+
+        clientServiceProvider().refreshResources(params)
+            .thenAccept { result ->
+                loadingTypes.remove(resourceType)
+
+                if (result != null) {
+                    val resourceSummary = result.resources.firstOrNull { it.typeName == resourceType }
+                    if (resourceSummary != null) {
+                        LOG.info { "Refreshed ${resourceSummary.resourceIdentifiers.size} resources for $resourceType" }
+
+                        resourcesByType[resourceType] = ResourceTypeData(
+                            resourceIdentifiers = resourceSummary.resourceIdentifiers,
+                            nextToken = resourceSummary.nextToken,
+                            loaded = true
+                        )
+
+                        notifyListeners(resourceType, resourceSummary.resourceIdentifiers)
+                    } else {
+                        LOG.info { "No resources found for $resourceType after refresh" }
+                        resourcesByType[resourceType] = ResourceTypeData(
+                            resourceIdentifiers = emptyList(),
+                            nextToken = null,
+                            loaded = true
+                        )
+                        notifyListeners(resourceType, emptyList())
+                    }
+                }
+            }
+            .exceptionally { error ->
+                loadingTypes.remove(resourceType)
+                LOG.warn(error) { "Failed to refresh resources for $resourceType" }
+                null
+            }
     }
 
     fun loadMoreResources(resourceType: String) {

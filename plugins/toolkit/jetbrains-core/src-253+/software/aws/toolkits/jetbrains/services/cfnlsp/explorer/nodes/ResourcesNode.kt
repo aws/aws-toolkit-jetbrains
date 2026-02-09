@@ -27,18 +27,13 @@ internal class ResourcesNode(
     override fun isAlwaysShowPlus(): Boolean = true
 
     override fun getChildren(): Collection<AbstractTreeNode<*>> {
-        val nodes = mutableListOf<AbstractTreeNode<*>>()
-
-        // Only show AddResourceTypeNode if no resource types are selected
         val selectedTypes = resourceTypesManager.getSelectedResourceTypes()
-        if (selectedTypes.isEmpty()) {
-            nodes.add(AddResourceTypeNode(project, resourceTypesManager))
+        return if (selectedTypes.isEmpty()) {
+            listOf(AddResourceTypeNode(project, resourceTypesManager))
+        } else {
+            selectedTypes.map { typeName ->
+                ResourceTypeNode(project, typeName, resourcesManager)
+            }
         }
-
-        selectedTypes.forEach { typeName ->
-            nodes.add(ResourceTypeNode(project, typeName, resourcesManager))
-        }
-
-        return nodes
     }
 }

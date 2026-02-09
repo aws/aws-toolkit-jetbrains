@@ -13,6 +13,7 @@ import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkit.core.utils.info
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.AbstractActionTreeNode
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.ActionGroupOnRightClick
+import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourceTypesManager
 import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourcesManager
 import software.aws.toolkits.jetbrains.services.cfnlsp.ui.ResourceTypeDialogUtils
 import software.aws.toolkits.resources.AwsToolkitBundle.message
@@ -24,7 +25,7 @@ internal class ResourceTypeNode(
     private val resourcesManager: ResourcesManager,
 ) : AbstractTreeNode<String>(nodeProject, resourceType), ActionGroupOnRightClick {
 
-    override fun actionGroupName(): String = "aws.toolkit.cloudformation.resources.type.actions"
+    override fun actionGroupName(): String = ACTION_GROUP_NAME
 
     override fun isAlwaysShowPlus(): Boolean = true
 
@@ -66,6 +67,10 @@ internal class ResourceTypeNode(
             nodes
         }
     }
+
+    companion object {
+        private const val ACTION_GROUP_NAME = "aws.toolkit.cloudformation.resources.type.actions"
+    }
 }
 
 internal class LoadingResourcesNode(
@@ -88,8 +93,7 @@ internal class NoResourcesNode(
 ) : AbstractTreeNode<String>(nodeProject, "no-resources") {
 
     override fun update(presentation: PresentationData) {
-        presentation.addText(message("cloudformation.explorer.resources.no_resources", resourceType), SimpleTextAttributes.GRAYED_ATTRIBUTES)
-        presentation.setIcon(AllIcons.General.Settings)
+        presentation.addText(message("cloudformation.explorer.resources.no_resources"), SimpleTextAttributes.GRAYED_ATTRIBUTES)
     }
 
     override fun getChildren(): Collection<AbstractTreeNode<*>> = emptyList()
@@ -128,12 +132,8 @@ internal class ResourceNode(
 
 internal class AddResourceTypeNode(
     nodeProject: Project,
-    private val resourceTypesManager: software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourceTypesManager,
+    private val resourceTypesManager: ResourceTypesManager,
 ) : AbstractActionTreeNode(nodeProject, message("cloudformation.explorer.resources.add_type_node"), AllIcons.General.Add) {
-    companion object {
-        private val LOG = getLogger<AddResourceTypeNode>()
-    }
-
     override fun onDoubleClick(event: MouseEvent) {
         // Always load types (in case region changed)
         resourceTypesManager.loadAvailableTypes().thenRun {
@@ -150,4 +150,8 @@ internal class AddResourceTypeNode(
 
     override fun getChildren(): Collection<AbstractTreeNode<*>> = emptyList()
     override fun isAlwaysLeaf(): Boolean = true
+
+    companion object {
+        private val LOG = getLogger<AddResourceTypeNode>()
+    }
 }
