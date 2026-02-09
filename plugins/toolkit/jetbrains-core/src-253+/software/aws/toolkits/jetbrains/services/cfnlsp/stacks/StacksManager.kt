@@ -22,6 +22,7 @@ internal typealias StacksChangeListener = (List<StackSummary>) -> Unit
 internal class StacksManager(private val project: Project) : Disposable {
     internal var clientServiceProvider: () -> CfnClientService = { CfnClientService.getInstance(project) }
 
+    // test
     private var stacks: List<StackSummary> = emptyList()
 
     private var nextToken: String? = null
