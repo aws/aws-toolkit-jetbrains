@@ -19,7 +19,7 @@ dependencies {
 // detekt with type introspection configured in kotlin conventions
 private val detektFiles = fileTree(projectDir).matching {
     include("**/*.kt", "**/*.kts")
-    exclude("**/build")
+    exclude("**/build", "**/bin")
 }
 
 detekt {
