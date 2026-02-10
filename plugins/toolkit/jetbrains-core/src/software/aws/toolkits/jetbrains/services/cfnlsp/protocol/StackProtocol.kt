@@ -3,19 +3,20 @@
 
 package software.aws.toolkits.jetbrains.services.cfnlsp.protocol
 
+import com.google.gson.annotations.SerializedName
+
 internal data class ListStacksParams(
     val statusToExclude: List<String>? = null,
     val loadMore: Boolean = false,
 )
 
-// PascalCasing used to avoid serialization/gson import
 internal data class StackSummary(
-    val StackName: String? = null,
-    val StackId: String? = null,
-    val StackStatus: String? = null,
-    val CreationTime: String? = null,
-    val LastUpdatedTime: String? = null,
-    val TemplateDescription: String? = null,
+    @SerializedName("StackName") val stackName: String? = null,
+    @SerializedName("StackId") val stackId: String? = null,
+    @SerializedName("StackStatus") val stackStatus: String? = null,
+    @SerializedName("CreationTime") val creationTime: String? = null,
+    @SerializedName("LastUpdateTime") val lastUpdatedTime: String? = null,
+    @SerializedName("TemplateDescription") val templateDescription: String? = null,
 )
 
 internal data class ListStacksResult(
