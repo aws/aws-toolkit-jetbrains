@@ -98,23 +98,23 @@ internal class StackNode(
 ) : AbstractTreeNode<StackSummary>(nodeProject, stack) {
 
     override fun update(presentation: PresentationData) {
-        presentation.addText(stack.StackName ?: "Unknown Stack", SimpleTextAttributes.REGULAR_ATTRIBUTES)
+        presentation.addText(stack.stackName ?: "Unknown Stack", SimpleTextAttributes.REGULAR_ATTRIBUTES)
         presentation.setIcon(getStackIcon())
-        presentation.tooltip = "${stack.StackName ?: "Unknown"} [${stack.StackStatus ?: "Unknown"}]"
+        presentation.tooltip = "${stack.stackName ?: "Unknown"} [${stack.stackStatus ?: "Unknown"}]"
     }
 
     private fun getStackIcon() = when {
-        stack.StackStatus == null -> AllIcons.Nodes.Folder
-        stack.StackStatus.contains("COMPLETE") && !stack.StackStatus.contains("ROLLBACK") -> AllIcons.General.InspectionsOK
-        stack.StackStatus.contains("FAILED") || stack.StackStatus.contains("ROLLBACK") -> AllIcons.General.Error
-        stack.StackStatus.contains("PROGRESS") -> AllIcons.Process.Step_1
+        stack.stackStatus == null -> AllIcons.Nodes.Folder
+        stack.stackStatus.contains("COMPLETE") && !stack.stackStatus.contains("ROLLBACK") -> AllIcons.General.InspectionsOK
+        stack.stackStatus.contains("FAILED") || stack.stackStatus.contains("ROLLBACK") -> AllIcons.General.Error
+        stack.stackStatus.contains("PROGRESS") -> AllIcons.Process.Step_1
         else -> AllIcons.Nodes.Folder
     }
 
     override fun isAlwaysShowPlus(): Boolean = true
 
     override fun getChildren(): Collection<AbstractTreeNode<*>> {
-        val stackName = stack.StackName ?: return emptyList()
+        val stackName = stack.stackName ?: return emptyList()
         return listOf(StackChangeSetsNode(project, stackName, changeSetsManager))
     }
 }
