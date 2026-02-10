@@ -246,6 +246,13 @@ open class CodeWhispererCodeModernizerTestBase(
 
     @Before
     open fun setup() {
+        // Allow Python paths for test environment (Python plugin scans for interpreters)
+        if (com.intellij.openapi.util.SystemInfo.isWindows) {
+            com.intellij.openapi.vfs.newvfs.impl.VfsRootAccess.allowRootAccess(disposableRule.disposable, "C:/Program Files")
+        } else {
+            com.intellij.openapi.vfs.newvfs.impl.VfsRootAccess.allowRootAccess(disposableRule.disposable, "/usr/bin", "/usr/local/bin")
+        }
+
         project = projectRule.project
         toolkitConnectionManager = spy(ToolkitConnectionManager.getInstance(project))
 
