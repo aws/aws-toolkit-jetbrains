@@ -73,7 +73,8 @@ class CodeWhispererSettingsTest : CodeWhispererTestBase() {
         )
         ToolWindowManager.getInstance(projectRule.project).registerToolWindow(
             RegisterToolWindowTask(
-                id = CodeWhispererCodeReferenceToolWindowFactory.id
+                id = CodeWhispererCodeReferenceToolWindowFactory.id,
+                shouldBeAvailable = false
             )
         )
         projectRule.project.service<StatusBarWidgetsManager>().updateWidget(CodeWhispererStatusBarWidgetFactory::class.java)
