@@ -132,7 +132,7 @@ class ResourceLoaderTest {
         val loader = ResourceLoader(projectRule.project)
         var notificationReceived = false
         var notifiedResourceType: String? = null
-        
+
         val listener: ResourcesChangeListener = { resourceType, resources ->
             notificationReceived = true
             notifiedResourceType = resourceType

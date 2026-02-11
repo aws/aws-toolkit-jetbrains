@@ -13,8 +13,8 @@ import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkit.core.utils.info
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.AbstractActionTreeNode
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.ActionGroupOnRightClick
-import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourceTypesManager
 import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourceLoader
+import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourceTypesManager
 import software.aws.toolkits.jetbrains.services.cfnlsp.ui.ResourceTypeDialogUtils
 import software.aws.toolkits.resources.AwsToolkitBundle.message
 import java.awt.event.MouseEvent

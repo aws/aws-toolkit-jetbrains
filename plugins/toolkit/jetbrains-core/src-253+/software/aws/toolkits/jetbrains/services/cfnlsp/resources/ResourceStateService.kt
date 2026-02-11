@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.cfnlsp.resources
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
@@ -20,7 +21,7 @@ import software.aws.toolkits.resources.message
 
 @Service(Service.Level.PROJECT)
 internal class ResourceStateService(
-    private val project: Project
+    private val project: Project,
 ) {
     internal var clientServiceProvider: () -> CfnClientService = { CfnClientService.getInstance(project) }
     internal var editor = ResourceStateEditor.getInstance(project)
@@ -39,7 +40,7 @@ internal class ResourceStateService(
             .thenAccept { result ->
                 LOG.info { "Stack management info result for ${resourceNode.resourceIdentifier}: $result" }
 
-                com.intellij.openapi.application.ApplicationManager.getApplication().invokeLater {
+                ApplicationManager.getApplication().invokeLater {
                     if (result != null) {
                         notificationService.showStackManagementInfo(result)
                     } else {
@@ -49,7 +50,7 @@ internal class ResourceStateService(
             }
             .exceptionally { error ->
                 LOG.warn(error) { "Failed to get stack management info for resource: ${resourceNode.resourceIdentifier}" }
-                com.intellij.openapi.application.ApplicationManager.getApplication().invokeLater {
+                ApplicationManager.getApplication().invokeLater {
                     notifyError(
                         message("cloudformation.explorer.resources.stack_info.error"),
                         error.message ?: "Unknown error"
@@ -98,7 +99,7 @@ internal class ResourceStateService(
                 if (result != null) {
                     result.warning?.let { warning ->
                         LOG.warn { "Warning: $warning" }
-                        com.intellij.openapi.application.ApplicationManager.getApplication().invokeLater {
+                        ApplicationManager.getApplication().invokeLater {
                             notifyError(
                                 message("cloudformation.explorer.resources.${purpose.name.lowercase()}").removeSuffix(" Resource State"),
                                 warning,
@@ -115,7 +116,7 @@ internal class ResourceStateService(
                     val successCount = result.successfulImports.values.sumOf { it.size }
                     val failureCount = result.failedImports.values.sumOf { it.size }
 
-                    com.intellij.openapi.application.ApplicationManager.getApplication().invokeLater {
+                    ApplicationManager.getApplication().invokeLater {
                         notificationService.showResultNotification(successCount, failureCount, purpose)
                     }
 
@@ -129,7 +130,7 @@ internal class ResourceStateService(
             }
             .exceptionally { error ->
                 LOG.warn(error) { "Failed to execute ${purpose.name.lowercase()} operation" }
-                com.intellij.openapi.application.ApplicationManager.getApplication().invokeLater {
+                ApplicationManager.getApplication().invokeLater {
                     notifyError(
                         message("cloudformation.explorer.resources.${purpose.name.lowercase()}").removeSuffix(" Resource State"),
                         "Failed to ${purpose.name.lowercase()} resources: ${error.message ?: "Unknown error"}",

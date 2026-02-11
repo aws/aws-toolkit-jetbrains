@@ -18,9 +18,9 @@ import software.aws.toolkits.jetbrains.core.explorer.ExplorerTreeToolWindowDataK
 import software.aws.toolkits.jetbrains.services.cfnlsp.explorer.nodes.ResourceNode
 import software.aws.toolkits.jetbrains.services.cfnlsp.explorer.nodes.ResourceTypeNode
 import software.aws.toolkits.jetbrains.services.cfnlsp.explorer.nodes.ResourcesNode
-import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourceTypesManager
 import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourceLoader
 import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourceStateService
+import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourceTypesManager
 import software.aws.toolkits.jetbrains.services.cfnlsp.ui.ResourceTypeDialogUtils
 import software.aws.toolkits.resources.AwsToolkitBundle.message
 import java.awt.datatransfer.StringSelection
@@ -90,13 +90,12 @@ class RemoveResourceTypeAction : AnAction(
     }
 }
 
-class RefreshResourceTypeAction : AnAction() {
+class RefreshResourceTypeAction : AnAction(
+    message("cloudformation.explorer.resources.refresh_type"),
+    null,
+    AllIcons.Actions.Refresh
+) {
     override fun getActionUpdateThread() = ActionUpdateThread.EDT
-
-    override fun update(e: AnActionEvent) {
-        e.presentation.text = message("cloudformation.explorer.resources.refresh_type")
-        e.presentation.icon = AllIcons.Actions.Refresh
-    }
 
     override fun actionPerformed(e: AnActionEvent) {
         LOG.info { "RefreshResourceTypeAction triggered" }
@@ -121,13 +120,12 @@ class RefreshResourceTypeAction : AnAction() {
     }
 }
 
-class RefreshAllLoadedResourcesAction : AnAction() {
+class RefreshAllLoadedResourcesAction : AnAction(
+    message("cloudformation.explorer.resources.refresh_all_loaded"),
+    null,
+    AllIcons.Actions.Refresh
+) {
     override fun getActionUpdateThread() = ActionUpdateThread.EDT
-
-    override fun update(e: AnActionEvent) {
-        e.presentation.text = message("cloudformation.explorer.resources.refresh_all_loaded")
-        e.presentation.icon = AllIcons.Actions.Refresh
-    }
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return

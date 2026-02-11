@@ -52,7 +52,7 @@ internal class ResourceTypesManager(
         if (typeName in state.selectedTypes) {
             state.selectedTypes.remove(typeName)
             notifyListeners()
-            
+
             // Send async request to server to clear cache
             LOG.info { "Removing resource type from LSP server: $typeName" }
             clientServiceProvider().removeResourceType(typeName)

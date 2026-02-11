@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.cfnlsp
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
@@ -48,7 +49,7 @@ internal class CfnCredentialsService(private val project: Project) : Disposable 
     private var lastRegionId: String? = AwsConnectionManager.getInstance(project).selectedRegion?.id
 
     init {
-        val appBus = com.intellij.openapi.application.ApplicationManager.getApplication().messageBus.connect(this)
+        val appBus = ApplicationManager.getApplication().messageBus.connect(this)
         subscribeToCredentialChanges(appBus)
         subscribeToSettingsChanges(appBus)
         subscribeToServerStateChanges()

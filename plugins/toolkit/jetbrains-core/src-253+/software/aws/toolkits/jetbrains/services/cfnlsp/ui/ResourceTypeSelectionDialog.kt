@@ -9,8 +9,6 @@ import com.intellij.psi.codeStyle.NameUtil
 import com.intellij.ui.CheckBoxList
 import com.intellij.ui.SearchTextField
 import com.intellij.ui.components.JBScrollPane
-import software.aws.toolkit.core.utils.getLogger
-import software.aws.toolkit.core.utils.info
 import software.aws.toolkits.resources.AwsToolkitBundle.message
 import java.awt.BorderLayout
 import java.awt.Dimension

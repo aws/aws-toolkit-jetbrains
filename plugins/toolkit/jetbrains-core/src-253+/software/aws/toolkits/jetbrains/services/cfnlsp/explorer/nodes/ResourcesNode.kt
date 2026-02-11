@@ -8,8 +8,8 @@ import com.intellij.ide.util.treeView.AbstractTreeNode
 import com.intellij.openapi.project.Project
 import com.intellij.ui.SimpleTextAttributes
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.ActionGroupOnRightClick
-import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourceTypesManager
 import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourceLoader
+import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourceTypesManager
 import software.aws.toolkits.resources.AwsToolkitBundle.message
 
 internal class ResourcesNode(

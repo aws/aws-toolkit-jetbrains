@@ -24,7 +24,7 @@ typealias ResourcesChangeListener = (String, List<String>) -> Unit
 
 @Service(Service.Level.PROJECT)
 internal class ResourceLoader(
-    private val project: Project
+    private val project: Project,
 ) : Disposable {
     internal var clientServiceProvider: () -> CfnClientService = { CfnClientService.getInstance(project) }
 
@@ -75,11 +75,14 @@ internal class ResourceLoader(
 
                         if (!existingResources.contains(identifier)) {
                             val updatedResources = existingResources + identifier
-                            cache.put(resourceType, ResourceCache.ResourceTypeData(
-                                resourceIdentifiers = updatedResources,
-                                nextToken = currentData?.nextToken,
-                                loaded = true
-                            ))
+                            cache.put(
+                                resourceType,
+                                ResourceTypeData(
+                                    resourceIdentifiers = updatedResources,
+                                    nextToken = currentData?.nextToken,
+                                    loaded = true
+                                )
+                            )
                             notifyListeners(resourceType, updatedResources)
                         }
                     } else {
@@ -147,8 +150,8 @@ internal class ResourceLoader(
         resourceType: String,
         resources: List<ResourceSummary>?,
         loadMore: Boolean,
-        currentData: ResourceCache.ResourceTypeData?,
-        useRefresh: Boolean
+        currentData: ResourceTypeData?,
+        useRefresh: Boolean,
     ) {
         loadingTypes.remove(resourceType)
 
@@ -158,21 +161,27 @@ internal class ResourceLoader(
                 val existingResources = if (loadMore) currentData?.resourceIdentifiers ?: emptyList() else emptyList()
                 val allResources = existingResources + resourceSummary.resourceIdentifiers
 
-                cache.put(resourceType, ResourceCache.ResourceTypeData(
-                    resourceIdentifiers = allResources,
-                    nextToken = resourceSummary.nextToken,
-                    loaded = true
-                ))
+                cache.put(
+                    resourceType,
+                    ResourceTypeData(
+                        resourceIdentifiers = allResources,
+                        nextToken = resourceSummary.nextToken,
+                        loaded = true
+                    )
+                )
 
                 notifyListeners(resourceType, allResources)
                 LOG.info { "${if (useRefresh) "Refreshed" else "Loaded"} ${resourceSummary.resourceIdentifiers.size} resources for $resourceType" }
             } else {
                 LOG.info { "No resources found for $resourceType" }
-                cache.put(resourceType, ResourceCache.ResourceTypeData(
-                    resourceIdentifiers = emptyList(),
-                    nextToken = null,
-                    loaded = true
-                ))
+                cache.put(
+                    resourceType,
+                    ResourceTypeData(
+                        resourceIdentifiers = emptyList(),
+                        nextToken = null,
+                        loaded = true
+                    )
+                )
                 notifyListeners(resourceType, emptyList())
             }
         }
@@ -182,16 +191,19 @@ internal class ResourceLoader(
         resourceType: String,
         error: Throwable,
         loadMore: Boolean,
-        useRefresh: Boolean
+        useRefresh: Boolean,
     ): Nothing? {
         loadingTypes.remove(resourceType)
         LOG.warn(error) { "Failed to ${if (useRefresh) "refresh" else "load"} resources for $resourceType" }
         if (!loadMore) {
-            cache.put(resourceType, ResourceCache.ResourceTypeData(
-                resourceIdentifiers = emptyList(),
-                nextToken = null,
-                loaded = true
-            ))
+            cache.put(
+                resourceType,
+                ResourceTypeData(
+                    resourceIdentifiers = emptyList(),
+                    nextToken = null,
+                    loaded = true
+                )
+            )
         }
         return null
     }

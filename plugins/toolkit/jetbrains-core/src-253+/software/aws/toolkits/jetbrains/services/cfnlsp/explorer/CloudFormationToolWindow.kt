@@ -14,8 +14,8 @@ import software.aws.toolkit.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkit.jetbrains.core.credentials.ToolkitConnectionManagerListener
 import software.aws.toolkits.jetbrains.core.explorer.AbstractExplorerTreeToolWindow
 import software.aws.toolkits.jetbrains.core.gettingstarted.requestCredentialsForExplorer
-import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourceTypesManager
 import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourceLoader
+import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourceTypesManager
 import software.aws.toolkits.jetbrains.services.cfnlsp.server.CfnLspServerDescriptor
 import software.aws.toolkits.jetbrains.services.cfnlsp.server.CfnLspServerSupportProvider
 import software.aws.toolkits.jetbrains.services.cfnlsp.stacks.ChangeSetsManager

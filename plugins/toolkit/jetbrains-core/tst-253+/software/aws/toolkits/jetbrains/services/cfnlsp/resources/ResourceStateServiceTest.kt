@@ -17,8 +17,8 @@ import software.aws.toolkits.jetbrains.services.cfnlsp.CfnClientService
 import software.aws.toolkits.jetbrains.services.cfnlsp.explorer.nodes.ResourceNode
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ResourceStackManagementResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ResourceStateParams
-import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ResourceStateResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ResourceStatePurpose
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ResourceStateResult
 import java.util.concurrent.CompletableFuture
 
 class ResourceStateServiceTest {
@@ -55,7 +55,7 @@ class ResourceStateServiceTest {
 
         val paramsCaptor = argumentCaptor<ResourceStateParams>()
         verify(mockClientService).getResourceState(paramsCaptor.capture())
-        
+
         assertThat(paramsCaptor.firstValue.purpose).isEqualTo(ResourceStatePurpose.IMPORT.value)
         assertThat(paramsCaptor.firstValue.resourceSelections).hasSize(1)
         assertThat(paramsCaptor.firstValue.resourceSelections?.first()?.resourceType).isEqualTo("AWS::EC2::Instance")
@@ -91,7 +91,7 @@ class ResourceStateServiceTest {
 
         val paramsCaptor = argumentCaptor<ResourceStateParams>()
         verify(mockClientService).getResourceState(paramsCaptor.capture())
-        
+
         assertThat(paramsCaptor.firstValue.purpose).isEqualTo(ResourceStatePurpose.CLONE.value)
     }
 

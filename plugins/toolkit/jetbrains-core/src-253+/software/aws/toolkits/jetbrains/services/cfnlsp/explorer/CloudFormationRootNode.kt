@@ -8,8 +8,8 @@ import com.intellij.ide.util.treeView.AbstractTreeNode
 import com.intellij.openapi.project.Project
 import software.aws.toolkits.jetbrains.services.cfnlsp.explorer.nodes.ResourcesNode
 import software.aws.toolkits.jetbrains.services.cfnlsp.explorer.nodes.StacksNode
-import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourceTypesManager
 import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourceLoader
+import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourceTypesManager
 import software.aws.toolkits.jetbrains.services.cfnlsp.stacks.ChangeSetsManager
 import software.aws.toolkits.jetbrains.services.cfnlsp.stacks.StacksManager
 

@@ -9,8 +9,8 @@ import org.junit.Rule
 import org.junit.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
-import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourceTypesManager
 import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourceLoader
+import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourceTypesManager
 
 class ResourcesNodeTest {
 

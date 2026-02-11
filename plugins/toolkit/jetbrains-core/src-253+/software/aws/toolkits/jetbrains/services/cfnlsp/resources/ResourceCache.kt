@@ -5,6 +5,12 @@ package software.aws.toolkits.jetbrains.services.cfnlsp.resources
 
 import java.util.concurrent.ConcurrentHashMap
 
+internal data class ResourceTypeData(
+    val resourceIdentifiers: List<String>,
+    val nextToken: String? = null,
+    val loaded: Boolean = false,
+)
+
 internal class ResourceCache {
     private val resourcesByType = ConcurrentHashMap<String, ResourceTypeData>()
 
@@ -19,10 +25,4 @@ internal class ResourceCache {
     fun keys(): Set<String> = resourcesByType.keys.toSet()
 
     fun clear() = resourcesByType.clear()
-
-    internal data class ResourceTypeData(
-        val resourceIdentifiers: List<String>,
-        val nextToken: String? = null,
-        val loaded: Boolean = false,
-    )
 }

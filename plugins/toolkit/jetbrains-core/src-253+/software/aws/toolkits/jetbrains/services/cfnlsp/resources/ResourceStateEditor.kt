@@ -26,8 +26,6 @@ internal class ResourceStateEditor(private val project: Project) {
 
     fun getActiveEditor() = FileEditorManager.getInstance(project).selectedTextEditor
 
-    fun getActiveFile() = FileEditorManager.getInstance(project).selectedFiles.firstOrNull()
-
     companion object {
         fun getInstance(project: Project): ResourceStateEditor = project.service()
     }
