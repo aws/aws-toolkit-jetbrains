@@ -9,7 +9,7 @@ import com.intellij.openapi.project.Project
 import software.aws.toolkits.jetbrains.services.cfnlsp.explorer.nodes.ResourcesNode
 import software.aws.toolkits.jetbrains.services.cfnlsp.explorer.nodes.StacksNode
 import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourceTypesManager
-import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourcesManager
+import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourceLoader
 import software.aws.toolkits.jetbrains.services.cfnlsp.stacks.ChangeSetsManager
 import software.aws.toolkits.jetbrains.services.cfnlsp.stacks.StacksManager
 
@@ -17,14 +17,14 @@ class CloudFormationRootNode(private val nodeProject: Project) : AbstractTreeNod
     private val stacksManager by lazy { StacksManager.getInstance(nodeProject) }
     private val changeSetsManager by lazy { ChangeSetsManager.getInstance(nodeProject) }
     private val resourceTypesManager by lazy { ResourceTypesManager.getInstance(nodeProject) }
-    private val resourcesManager by lazy { ResourcesManager.getInstance(nodeProject) }
+    private val resourceLoader by lazy { ResourceLoader.getInstance(nodeProject) }
 
     override fun update(presentation: PresentationData) {}
 
     override fun getChildren(): Collection<AbstractTreeNode<*>> {
         return listOf(
             StacksNode(nodeProject, stacksManager, changeSetsManager),
-            ResourcesNode(nodeProject, resourceTypesManager, resourcesManager)
+            ResourcesNode(nodeProject, resourceTypesManager, resourceLoader)
         )
     }
 }

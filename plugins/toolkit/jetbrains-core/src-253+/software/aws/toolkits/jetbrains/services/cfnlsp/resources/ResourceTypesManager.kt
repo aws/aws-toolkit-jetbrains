@@ -20,16 +20,16 @@ import java.util.concurrent.CompletableFuture
 @State(name = "cfnResourceTypes", storages = [Storage("awsToolkit.xml", roamingType = RoamingType.DISABLED)])
 internal class ResourceTypesManager(
     private val project: Project,
-) : PersistentStateComponent<ResourceTypesManager.State> {
+) : PersistentStateComponent<ResourceTypesManagerState> {
     internal var clientServiceProvider: () -> CfnClientService = { CfnClientService.getInstance(project) }
 
-    private var state = State()
+    private var state = ResourceTypesManagerState()
     private var availableTypes: List<String> = emptyList()
     private var typesLoaded: Boolean = false
-    private val listeners = mutableListOf<ResourceTypesChangeListener>()
+    private val listeners = java.util.concurrent.CopyOnWriteArrayList<ResourceTypesChangeListener>()
 
-    override fun getState(): State = state
-    override fun loadState(state: State) { this.state = state }
+    override fun getState(): ResourceTypesManagerState = state
+    override fun loadState(state: ResourceTypesManagerState) { this.state = state }
 
     fun addListener(listener: ResourceTypesChangeListener) {
         listeners.add(listener)
@@ -50,12 +50,14 @@ internal class ResourceTypesManager(
 
     fun removeResourceType(typeName: String) {
         if (typeName in state.selectedTypes) {
+            state.selectedTypes.remove(typeName)
+            notifyListeners()
+            
+            // Send async request to server to clear cache
             LOG.info { "Removing resource type from LSP server: $typeName" }
             clientServiceProvider().removeResourceType(typeName)
                 .thenAccept {
                     LOG.info { "Successfully removed resource type: $typeName" }
-                    state.selectedTypes.remove(typeName)
-                    notifyListeners()
                 }
                 .exceptionally { error ->
                     LOG.warn(error) { "Failed to remove resource type from LSP server: $typeName" }
@@ -86,14 +88,14 @@ internal class ResourceTypesManager(
         listeners.forEach { it() }
     }
 
-    data class State(
-        var selectedTypes: MutableSet<String> = mutableSetOf(),
-    )
-
     companion object {
         private val LOG = getLogger<ResourceTypesManager>()
         fun getInstance(project: Project): ResourceTypesManager = project.service()
     }
 }
+
+internal data class ResourceTypesManagerState(
+    val selectedTypes: MutableSet<String> = mutableSetOf(),
+)
 
 typealias ResourceTypesChangeListener = () -> Unit

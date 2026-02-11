@@ -93,7 +93,7 @@ class ResourceTypesManagerTest {
     }
 
     @Test
-    fun `removeResourceType handles LSP server exception gracefully`() = runTest {
+    fun `removeResourceType removes from state immediately even when LSP server fails`() = runTest {
         val mockClientService = mock<CfnClientService>()
         val manager = ResourceTypesManager(projectRule.project)
 
@@ -108,8 +108,8 @@ class ResourceTypesManagerTest {
         testScheduler.advanceUntilIdle()
 
         verify(mockClientService).removeResourceType("AWS::EC2::Instance")
-        // Should not remove from state when LSP call fails
-        assertThat(manager.getSelectedResourceTypes()).containsExactly("AWS::EC2::Instance")
+        // Should remove from state immediately for responsive UI, even if LSP call fails
+        assertThat(manager.getSelectedResourceTypes()).isEmpty()
     }
 
     @Test
@@ -184,7 +184,7 @@ class ResourceTypesManagerTest {
     }
 
     @Test
-    fun `listeners are not notified when resource type removal fails`() = runTest {
+    fun `listeners are notified immediately when resource type removal is requested`() = runTest {
         val mockClientService = mock<CfnClientService>()
         val manager = ResourceTypesManager(projectRule.project)
 
@@ -202,8 +202,8 @@ class ResourceTypesManagerTest {
         manager.removeResourceType("AWS::EC2::Instance")
         testScheduler.advanceUntilIdle()
 
-        // Should not notify when removal fails
-        assertThat(notificationCount).isEqualTo(1)
+        // Should notify immediately when removal is requested (responsive UI)
+        assertThat(notificationCount).isEqualTo(2)
     }
 
     @Test

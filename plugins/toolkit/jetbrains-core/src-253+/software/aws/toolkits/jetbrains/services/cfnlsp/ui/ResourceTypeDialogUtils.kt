@@ -20,7 +20,6 @@ object ResourceTypeDialogUtils {
             return
         }
 
-        LOG.info { "starting dialog" }
         try {
             val dialog = ResourceTypeSelectionDialog(project, availableTypes, selectedTypes)
             if (dialog.showAndGet()) {
@@ -41,7 +40,7 @@ object ResourceTypeDialogUtils {
                     }
                 }
 
-                LOG.info { "finished updating resource types" }
+                LOG.info { "Finished updating resource types" }
             }
         } catch (e: Exception) {
             LOG.warn(e) { "Failed to show dialog" }

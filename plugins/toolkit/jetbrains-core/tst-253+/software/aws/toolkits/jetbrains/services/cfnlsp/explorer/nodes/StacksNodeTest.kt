@@ -58,8 +58,8 @@ class StacksNodeTest {
         whenever(mockStacksManager.isLoaded()).thenReturn(true)
         whenever(mockStacksManager.get()).thenReturn(
             listOf(
-                StackSummary(StackName = "stack-1", StackStatus = "CREATE_COMPLETE"),
-                StackSummary(StackName = "stack-2", StackStatus = "UPDATE_COMPLETE")
+                StackSummary(stackName = "stack-1", stackStatus = "CREATE_COMPLETE"),
+                StackSummary(stackName = "stack-2", stackStatus = "UPDATE_COMPLETE")
             )
         )
         whenever(mockStacksManager.hasMore()).thenReturn(false)
@@ -75,7 +75,7 @@ class StacksNodeTest {
         whenever(mockStacksManager.isLoaded()).thenReturn(true)
         whenever(mockStacksManager.get()).thenReturn(
             listOf(
-                StackSummary(StackName = "stack-1", StackStatus = "CREATE_COMPLETE")
+                StackSummary(stackName = "stack-1", stackStatus = "CREATE_COMPLETE")
             )
         )
         whenever(mockStacksManager.hasMore()).thenReturn(true)

@@ -10,7 +10,7 @@ import org.junit.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourceTypesManager
-import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourcesManager
+import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourceLoader
 
 class ResourcesNodeTest {
 
@@ -20,11 +20,11 @@ class ResourcesNodeTest {
     @Test
     fun `shows add resource type node when no types selected`() {
         val mockResourceTypesManager = mock<ResourceTypesManager>()
-        val mockResourcesManager = mock<ResourcesManager>()
+        val mockResourceLoader = mock<ResourceLoader>()
 
         whenever(mockResourceTypesManager.getSelectedResourceTypes()).thenReturn(emptySet())
 
-        val node = ResourcesNode(projectRule.project, mockResourceTypesManager, mockResourcesManager)
+        val node = ResourcesNode(projectRule.project, mockResourceTypesManager, mockResourceLoader)
         val children = node.children
 
         assertThat(children).hasSize(1) // Only AddResourceTypeNode
@@ -35,13 +35,13 @@ class ResourcesNodeTest {
     @Test
     fun `shows resource type nodes for selected types`() {
         val mockResourceTypesManager = mock<ResourceTypesManager>()
-        val mockResourcesManager = mock<ResourcesManager>()
+        val mockResourceLoader = mock<ResourceLoader>()
 
         whenever(mockResourceTypesManager.getSelectedResourceTypes()).thenReturn(
             setOf("AWS::EC2::Instance", "AWS::S3::Bucket")
         )
 
-        val node = ResourcesNode(projectRule.project, mockResourceTypesManager, mockResourcesManager)
+        val node = ResourcesNode(projectRule.project, mockResourceTypesManager, mockResourceLoader)
         val children = node.children
 
         assertThat(children).hasSize(2) // Only 2 ResourceTypeNodes (no AddResourceTypeNode when types are selected)
@@ -51,12 +51,12 @@ class ResourcesNodeTest {
 
     @Test
     fun `resource type node shows no resources when empty`() {
-        val mockResourcesManager = mock<ResourcesManager>()
+        val mockResourceLoader = mock<ResourceLoader>()
 
-        whenever(mockResourcesManager.isLoaded("AWS::EC2::Instance")).thenReturn(true)
-        whenever(mockResourcesManager.getResourceIdentifiers("AWS::EC2::Instance")).thenReturn(emptyList())
+        whenever(mockResourceLoader.isLoaded("AWS::EC2::Instance")).thenReturn(true)
+        whenever(mockResourceLoader.getResourceIdentifiers("AWS::EC2::Instance")).thenReturn(emptyList())
 
-        val node = ResourceTypeNode(projectRule.project, "AWS::EC2::Instance", mockResourcesManager)
+        val node = ResourceTypeNode(projectRule.project, "AWS::EC2::Instance", mockResourceLoader)
         val children = node.children
 
         assertThat(children).hasSize(1)
@@ -65,15 +65,15 @@ class ResourcesNodeTest {
 
     @Test
     fun `resource type node shows resource nodes when loaded`() {
-        val mockResourcesManager = mock<ResourcesManager>()
+        val mockResourceLoader = mock<ResourceLoader>()
 
-        whenever(mockResourcesManager.isLoaded("AWS::EC2::Instance")).thenReturn(true)
-        whenever(mockResourcesManager.getResourceIdentifiers("AWS::EC2::Instance")).thenReturn(
+        whenever(mockResourceLoader.isLoaded("AWS::EC2::Instance")).thenReturn(true)
+        whenever(mockResourceLoader.getResourceIdentifiers("AWS::EC2::Instance")).thenReturn(
             listOf("testResource1", "testResource2")
         )
-        whenever(mockResourcesManager.hasMore("AWS::EC2::Instance")).thenReturn(false)
+        whenever(mockResourceLoader.hasMore("AWS::EC2::Instance")).thenReturn(false)
 
-        val node = ResourceTypeNode(projectRule.project, "AWS::EC2::Instance", mockResourcesManager)
+        val node = ResourceTypeNode(projectRule.project, "AWS::EC2::Instance", mockResourceLoader)
         val children = node.children
 
         assertThat(children).hasSize(2)
@@ -82,15 +82,15 @@ class ResourcesNodeTest {
 
     @Test
     fun `resource type node shows load more when has pagination`() {
-        val mockResourcesManager = mock<ResourcesManager>()
+        val mockResourceLoader = mock<ResourceLoader>()
 
-        whenever(mockResourcesManager.isLoaded("AWS::EC2::Instance")).thenReturn(true)
-        whenever(mockResourcesManager.getResourceIdentifiers("AWS::EC2::Instance")).thenReturn(
+        whenever(mockResourceLoader.isLoaded("AWS::EC2::Instance")).thenReturn(true)
+        whenever(mockResourceLoader.getResourceIdentifiers("AWS::EC2::Instance")).thenReturn(
             listOf("testResource")
         )
-        whenever(mockResourcesManager.hasMore("AWS::EC2::Instance")).thenReturn(true)
+        whenever(mockResourceLoader.hasMore("AWS::EC2::Instance")).thenReturn(true)
 
-        val node = ResourceTypeNode(projectRule.project, "AWS::EC2::Instance", mockResourcesManager)
+        val node = ResourceTypeNode(projectRule.project, "AWS::EC2::Instance", mockResourceLoader)
         val children = node.children
 
         assertThat(children).hasSize(2) // 1 ResourceNode + 1 LoadMoreResourcesNode

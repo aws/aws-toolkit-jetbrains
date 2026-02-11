@@ -15,7 +15,7 @@ import software.aws.toolkit.jetbrains.core.credentials.ToolkitConnectionManagerL
 import software.aws.toolkits.jetbrains.core.explorer.AbstractExplorerTreeToolWindow
 import software.aws.toolkits.jetbrains.core.gettingstarted.requestCredentialsForExplorer
 import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourceTypesManager
-import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourcesManager
+import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourceLoader
 import software.aws.toolkits.jetbrains.services.cfnlsp.server.CfnLspServerDescriptor
 import software.aws.toolkits.jetbrains.services.cfnlsp.server.CfnLspServerSupportProvider
 import software.aws.toolkits.jetbrains.services.cfnlsp.stacks.ChangeSetsManager
@@ -37,7 +37,7 @@ internal class CloudFormationToolWindow(private val project: Project) : Abstract
         ChangeSetsManager.getInstance(project).addListener {
             runInEdt { redrawContent() }
         }
-        ResourcesManager.getInstance(project).addListener { _, _ ->
+        ResourceLoader.getInstance(project).addListener { _, _ ->
             runInEdt { redrawContent() }
         }
         ResourceTypesManager.getInstance(project).addListener {

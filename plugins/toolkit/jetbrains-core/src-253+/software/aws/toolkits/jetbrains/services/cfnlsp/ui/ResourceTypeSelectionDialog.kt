@@ -54,8 +54,6 @@ internal class ResourceTypeSelectionDialog(
 
         // Initial population - this will show pre-selected items as checked
         filterList()
-
-        LOG.info { "Set up list" }
     }
 
     private fun setupSearch() {
@@ -65,8 +63,6 @@ internal class ResourceTypeSelectionDialog(
             override fun removeUpdate(e: DocumentEvent?) = filterList()
             override fun changedUpdate(e: DocumentEvent?) = filterList()
         })
-
-        LOG.info { "Set up search bar" }
     }
 
     private fun filterList() {
@@ -99,9 +95,5 @@ internal class ResourceTypeSelectionDialog(
     override fun doOKAction() {
         selectedResourceTypes = currentSelections.toList() // Use tracked selections
         super.doOKAction()
-    }
-
-    companion object {
-        private val LOG = getLogger<ResourceTypeSelectionDialog>()
     }
 }

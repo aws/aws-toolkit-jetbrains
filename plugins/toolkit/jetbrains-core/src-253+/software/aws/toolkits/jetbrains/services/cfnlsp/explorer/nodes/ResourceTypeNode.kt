@@ -14,7 +14,7 @@ import software.aws.toolkit.core.utils.info
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.AbstractActionTreeNode
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.ActionGroupOnRightClick
 import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourceTypesManager
-import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourcesManager
+import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourceLoader
 import software.aws.toolkits.jetbrains.services.cfnlsp.ui.ResourceTypeDialogUtils
 import software.aws.toolkits.resources.AwsToolkitBundle.message
 import java.awt.event.MouseEvent
@@ -22,7 +22,7 @@ import java.awt.event.MouseEvent
 internal class ResourceTypeNode(
     nodeProject: Project,
     val resourceType: String,
-    private val resourcesManager: ResourcesManager,
+    private val resourceLoader: ResourceLoader,
 ) : AbstractTreeNode<String>(nodeProject, resourceType), ActionGroupOnRightClick {
 
     override fun actionGroupName(): String = ACTION_GROUP_NAME
@@ -34,10 +34,10 @@ internal class ResourceTypeNode(
         presentation.setIcon(null) // Remove any default icon
 
         // Only show count if resources have been loaded (dropdown was expanded)
-        if (resourcesManager.isLoaded(resourceType)) {
-            val resources = resourcesManager.getCachedResources(resourceType)
+        if (resourceLoader.isLoaded(resourceType)) {
+            val resources = resourceLoader.getCachedResources(resourceType)
             if (resources != null) {
-                val hasMore = resourcesManager.hasMore(resourceType)
+                val hasMore = resourceLoader.hasMore(resourceType)
                 val countText = if (hasMore) " (${resources.size}+)" else " (${resources.size})"
                 presentation.addText(countText, SimpleTextAttributes.GRAYED_ATTRIBUTES)
             }
@@ -45,13 +45,13 @@ internal class ResourceTypeNode(
     }
 
     override fun getChildren(): Collection<AbstractTreeNode<*>> {
-        if (!resourcesManager.isLoaded(resourceType)) {
+        if (!resourceLoader.isLoaded(resourceType)) {
             // Trigger loading when this node is expanded
-            resourcesManager.reload(resourceType)
+            resourceLoader.refreshResources(resourceType)
             return listOf(LoadingResourcesNode(project, resourceType))
         }
 
-        val resources = resourcesManager.getResourceIdentifiers(resourceType)
+        val resources = resourceLoader.getResourceIdentifiers(resourceType)
 
         if (resources.isEmpty()) {
             return listOf(NoResourcesNode(project))
@@ -61,8 +61,8 @@ internal class ResourceTypeNode(
             ResourceNode(project, resourceType, identifier)
         }
 
-        return if (resourcesManager.hasMore(resourceType)) {
-            nodes + LoadMoreResourcesNode(project, resourceType, resourcesManager)
+        return if (resourceLoader.hasMore(resourceType)) {
+            nodes + LoadMoreResourcesNode(project, resourceType, resourceLoader)
         } else {
             nodes
         }
@@ -102,11 +102,11 @@ internal class NoResourcesNode(
 internal class LoadMoreResourcesNode(
     nodeProject: Project,
     private val resourceType: String,
-    private val resourcesManager: ResourcesManager,
+    private val resourceLoader: ResourceLoader,
 ) : AbstractActionTreeNode(nodeProject, message("cloudformation.explorer.resources.load_more"), AllIcons.General.Add) {
 
     override fun onDoubleClick(event: MouseEvent) {
-        resourcesManager.loadMoreResources(resourceType)
+        resourceLoader.loadMoreResources(resourceType)
     }
 
     override fun getChildren(): Collection<AbstractTreeNode<*>> = emptyList()

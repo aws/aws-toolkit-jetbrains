@@ -19,7 +19,8 @@ import software.aws.toolkits.jetbrains.services.cfnlsp.explorer.nodes.ResourceNo
 import software.aws.toolkits.jetbrains.services.cfnlsp.explorer.nodes.ResourceTypeNode
 import software.aws.toolkits.jetbrains.services.cfnlsp.explorer.nodes.ResourcesNode
 import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourceTypesManager
-import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourcesManager
+import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourceLoader
+import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourceStateService
 import software.aws.toolkits.jetbrains.services.cfnlsp.ui.ResourceTypeDialogUtils
 import software.aws.toolkits.resources.AwsToolkitBundle.message
 import java.awt.datatransfer.StringSelection
@@ -77,7 +78,7 @@ class RemoveResourceTypeAction : AnAction(
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         val resourceTypesManager = ResourceTypesManager.getInstance(project)
-        val resourcesManager = ResourcesManager.getInstance(project)
+        val resourceLoader = ResourceLoader.getInstance(project)
 
         // Get the selected ResourceTypeNode
         val selectedNodes = e.getData(ExplorerTreeToolWindowDataKeys.SELECTED_NODES)
@@ -85,7 +86,7 @@ class RemoveResourceTypeAction : AnAction(
 
         // Remove the resource type
         resourceTypesManager.removeResourceType(resourceTypeNode.resourceType)
-        resourcesManager.clear(resourceTypeNode.resourceType)
+        resourceLoader.clear(resourceTypeNode.resourceType)
     }
 }
 
@@ -100,7 +101,7 @@ class RefreshResourceTypeAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
         LOG.info { "RefreshResourceTypeAction triggered" }
         val project = e.project ?: return
-        val resourcesManager = ResourcesManager.getInstance(project)
+        val resourceLoader = ResourceLoader.getInstance(project)
 
         // Get the selected nodes using the correct data key
         val selectedNodes = e.getData(ExplorerTreeToolWindowDataKeys.SELECTED_NODES)
@@ -110,7 +111,7 @@ class RefreshResourceTypeAction : AnAction() {
 
         if (resourceTypeNode != null) {
             LOG.info { "Reloading resource type: ${resourceTypeNode.resourceType}" }
-            resourcesManager.reload(resourceTypeNode.resourceType)
+            resourceLoader.refreshResources(resourceTypeNode.resourceType)
         } else {
             LOG.warn { "No ResourceTypeNode found in selection" }
         }
@@ -130,12 +131,12 @@ class RefreshAllLoadedResourcesAction : AnAction() {
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
-        val resourcesManager = ResourcesManager.getInstance(project)
+        val resourceLoader = ResourceLoader.getInstance(project)
 
         // Get all currently loaded resource types and reload them
-        val loadedTypes = resourcesManager.getLoadedResourceTypes()
+        val loadedTypes = resourceLoader.getLoadedResourceTypes()
         loadedTypes.forEach { resourceType ->
-            resourcesManager.reload(resourceType)
+            resourceLoader.refreshResources(resourceType)
         }
     }
 }
@@ -156,7 +157,7 @@ class SearchResourceAction : AnAction(
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
-        val resourcesManager = ResourcesManager.getInstance(project)
+        val resourceLoader = ResourceLoader.getInstance(project)
 
         // Get the selected ResourceTypeNode
         val selectedNodes = e.getData(ExplorerTreeToolWindowDataKeys.SELECTED_NODES)
@@ -173,7 +174,7 @@ class SearchResourceAction : AnAction(
         if (identifier.isBlank()) return
 
         // Search for the resource
-        resourcesManager.searchResource(resourceTypeNode.resourceType, identifier.trim())
+        resourceLoader.searchResource(resourceTypeNode.resourceType, identifier.trim())
     }
 }
 
@@ -192,12 +193,12 @@ class ImportResourceStateAction : AnAction(
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
-        val resourcesManager = ResourcesManager.getInstance(project)
+        val stateService = ResourceStateService.getInstance(project)
 
         val selectedNodes = e.getData(ExplorerTreeToolWindowDataKeys.SELECTED_NODES)
         val resourceNodes = selectedNodes?.filterIsInstance<ResourceNode>() ?: return
 
-        resourcesManager.importResourceState(resourceNodes)
+        stateService.importResourceState(resourceNodes)
     }
 }
 
@@ -216,12 +217,12 @@ class CloneResourceStateAction : AnAction(
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
-        val resourcesManager = ResourcesManager.getInstance(project)
+        val stateService = ResourceStateService.getInstance(project)
 
         val selectedNodes = e.getData(ExplorerTreeToolWindowDataKeys.SELECTED_NODES)
         val resourceNodes = selectedNodes?.filterIsInstance<ResourceNode>() ?: return
 
-        resourcesManager.cloneResourceState(resourceNodes)
+        stateService.cloneResourceState(resourceNodes)
     }
 }
 
@@ -267,11 +268,11 @@ class GetStackManagementInfoAction : AnAction(
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
-        val resourcesManager = ResourcesManager.getInstance(project)
+        val stateService = ResourceStateService.getInstance(project)
 
         val selectedNodes = e.getData(ExplorerTreeToolWindowDataKeys.SELECTED_NODES)
         val resourceNode = selectedNodes?.filterIsInstance<ResourceNode>()?.firstOrNull() ?: return
 
-        resourcesManager.getStackManagementInfo(resourceNode)
+        stateService.getStackManagementInfo(resourceNode)
     }
 }

@@ -9,13 +9,13 @@ import com.intellij.openapi.project.Project
 import com.intellij.ui.SimpleTextAttributes
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.ActionGroupOnRightClick
 import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourceTypesManager
-import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourcesManager
+import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourceLoader
 import software.aws.toolkits.resources.AwsToolkitBundle.message
 
 internal class ResourcesNode(
     nodeProject: Project,
     private val resourceTypesManager: ResourceTypesManager,
-    private val resourcesManager: ResourcesManager,
+    private val resourceLoader: ResourceLoader,
 ) : AbstractTreeNode<String>(nodeProject, "resources"), ActionGroupOnRightClick {
 
     override fun actionGroupName(): String = "aws.toolkit.cloudformation.resources.actions"
@@ -32,7 +32,7 @@ internal class ResourcesNode(
             listOf(AddResourceTypeNode(project, resourceTypesManager))
         } else {
             selectedTypes.map { typeName ->
-                ResourceTypeNode(project, typeName, resourcesManager)
+                ResourceTypeNode(project, typeName, resourceLoader)
             }
         }
     }
