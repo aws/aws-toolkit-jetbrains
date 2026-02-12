@@ -64,6 +64,12 @@ configurations {
                 useVersion(versionCatalog.findVersion("kotlin").get().toString())
                 because("resolve kotlin version conflicts in favor of local version catalog")
             }
+
+            // https://nvd.nist.gov/vuln/detail/cve-2022-25647
+            if (requested.group == "com.google.code.gson" && requested.name == "gson") {
+                useVersion("2.11.0")
+                because("CVE-2022-25647 requires Gson >= 2.8.9")
+            }
         }
     }
 }
