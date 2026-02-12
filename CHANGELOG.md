@@ -1,3 +1,9 @@
+# _3.103_ (2026-02-12)
+- **(Bug Fix)** Amazon Q: Fix race condition causing "Can't remove document listener" error during LSP restart
+- **(Bug Fix)** Amazon Q Chat: Fix chat history restoration to display rich UI elements and persist user preferences
+- **(Bug Fix)** Amazon Q: Fix LSP server startup failure when Node.js runtime path is configured as a directory instead of the executable path
+- **(Deprecation)** An upcoming release will remove support for JetBrains Gateway version 2025.2 and for IDEs based on the 2024.3 platform
+
 # _3.102_ (2026-01-15)
 
 # _3.101_ (2026-01-09)
