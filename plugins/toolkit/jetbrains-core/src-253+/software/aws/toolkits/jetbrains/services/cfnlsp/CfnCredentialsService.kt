@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.cfnlsp
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
@@ -28,6 +29,7 @@ import software.aws.toolkit.jetbrains.core.credentials.ConnectionState
 import software.aws.toolkit.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkit.jetbrains.core.credentials.ToolkitConnectionManagerListener
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.UpdateCredentialsParams
+import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourceLoader
 import software.aws.toolkits.jetbrains.services.cfnlsp.stacks.StacksManager
 import software.aws.toolkits.jetbrains.settings.CfnLspSettingsChangeListener
 import java.security.SecureRandom
@@ -47,7 +49,7 @@ internal class CfnCredentialsService(private val project: Project) : Disposable 
     private var lastRegionId: String? = AwsConnectionManager.getInstance(project).selectedRegion?.id
 
     init {
-        val appBus = com.intellij.openapi.application.ApplicationManager.getApplication().messageBus.connect(this)
+        val appBus = ApplicationManager.getApplication().messageBus.connect(this)
         subscribeToCredentialChanges(appBus)
         subscribeToSettingsChanges(appBus)
         subscribeToServerStateChanges()
@@ -65,6 +67,10 @@ internal class CfnCredentialsService(private val project: Project) : Disposable 
                 if (onRegionChange && result?.success == true) {
                     val stacksManager = StacksManager.getInstance(project)
                     stacksManager.clear()
+
+                    val resourceLoader = ResourceLoader.getInstance(project)
+                    resourceLoader.clear(null)
+
                     stacksManager.reload()
                 }
             }
