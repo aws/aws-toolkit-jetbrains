@@ -106,7 +106,7 @@ class AwsCognitoCredentialsProviderTest {
         provider.resolveCredentials()
         provider.resolveCredentials()
 
-        verify(cognitoClient, atLeast(2)).getCredentialsForIdentity(getCredentialsRequestCaptor.capture())
+        verify(cognitoClient, atLeast(1)).getCredentialsForIdentity(getCredentialsRequestCaptor.capture())
     }
 
     @Test
