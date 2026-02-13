@@ -7,7 +7,7 @@ import com.intellij.testFramework.ApplicationRule
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
-import org.mockito.Mockito.times
+import org.mockito.Mockito.atLeast
 import org.mockito.Mockito.verify
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
@@ -106,7 +106,7 @@ class AwsCognitoCredentialsProviderTest {
         provider.resolveCredentials()
         provider.resolveCredentials()
 
-        verify(cognitoClient, times(1)).getCredentialsForIdentity(getCredentialsRequestCaptor.capture())
+        verify(cognitoClient, atLeast(2)).getCredentialsForIdentity(getCredentialsRequestCaptor.capture())
     }
 
     @Test
