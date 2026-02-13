@@ -29,6 +29,7 @@ internal class ResourceTypesManager(
     private val listeners = java.util.concurrent.CopyOnWriteArrayList<ResourceTypesChangeListener>()
 
     override fun getState(): ResourceTypesManagerState = state
+
     override fun loadState(state: ResourceTypesManagerState) { this.state = state }
 
     fun addListener(listener: ResourceTypesChangeListener) {
@@ -95,7 +96,7 @@ internal class ResourceTypesManager(
 }
 
 internal data class ResourceTypesManagerState(
-    val selectedTypes: MutableSet<String> = mutableSetOf(),
+    var selectedTypes: MutableSet<String> = mutableSetOf(),
 )
 
 typealias ResourceTypesChangeListener = () -> Unit
