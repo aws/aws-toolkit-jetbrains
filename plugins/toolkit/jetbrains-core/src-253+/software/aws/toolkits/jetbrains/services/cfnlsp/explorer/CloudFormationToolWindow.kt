@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.cfnlsp.explorer
 
+import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
@@ -31,6 +32,11 @@ internal class CloudFormationToolWindow(private val project: Project) : Abstract
     override val actionPlace = ToolkitPlaces.CFN_TOOL_WINDOW
 
     init {
+        val toolbarGroup = ActionManager.getInstance().getAction("aws.toolkit.cloudformation.toolbar")
+        toolbar = ActionManager.getInstance().createActionToolbar(actionPlace, toolbarGroup as com.intellij.openapi.actionSystem.ActionGroup, true).apply {
+            targetComponent = this@CloudFormationToolWindow
+        }.component
+
         StacksManager.getInstance(project).addListener {
             runInEdt { redrawContent() }
         }

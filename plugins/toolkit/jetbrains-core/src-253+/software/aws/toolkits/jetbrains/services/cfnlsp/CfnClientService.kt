@@ -9,6 +9,11 @@ import com.intellij.openapi.project.Project
 import com.intellij.platform.lsp.api.LspServer
 import com.intellij.platform.lsp.api.LspServerManager
 import org.eclipse.lsp4j.DidChangeConfigurationParams
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.CreateStackActionResult
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.CreateValidationParams
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeValidationStatusResult
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.GetStackActionStatusResult
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.Identifiable
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ListChangeSetsParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ListChangeSetsResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ListResourcesParams
@@ -36,14 +41,23 @@ internal class CfnClientService(project: Project) {
             .firstOrNull()
     }
 
+    fun updateIamCredentials(params: UpdateCredentialsParams): CompletableFuture<UpdateCredentialsResult?> =
+        sendRequest { it.updateIamCredentials(params) }
+
     fun listStacks(params: ListStacksParams): CompletableFuture<ListStacksResult?> =
         sendRequest { it.listStacks(params) }
 
     fun listChangeSets(params: ListChangeSetsParams): CompletableFuture<ListChangeSetsResult?> =
         sendRequest { it.listChangeSets(params) }
 
-    fun updateIamCredentials(params: UpdateCredentialsParams): CompletableFuture<UpdateCredentialsResult?> =
-        sendRequest { it.updateIamCredentials(params) }
+    fun createValidation(params: CreateValidationParams): CompletableFuture<CreateStackActionResult?> =
+        sendRequest { it.createValidation(params) }
+
+    fun getValidationStatus(params: Identifiable): CompletableFuture<GetStackActionStatusResult?> =
+        sendRequest { it.getValidationStatus(params) }
+
+    fun describeValidationStatus(params: Identifiable): CompletableFuture<DescribeValidationStatusResult?> =
+        sendRequest { it.describeValidationStatus(params) }
 
     fun listResourceTypes(): CompletableFuture<ResourceTypesResult?> =
         sendRequest { it.listResourceTypes() }
