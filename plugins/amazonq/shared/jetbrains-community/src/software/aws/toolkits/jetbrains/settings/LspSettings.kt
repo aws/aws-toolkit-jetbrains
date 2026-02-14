@@ -27,12 +27,18 @@ class LspSettings : PersistentStateComponent<LspConfiguration> {
 
     fun getNodeRuntimePath() = state.nodeRuntimePath
 
+    fun isCpuProfilingEnabled() = state.cpuProfilingEnabled
+
     fun setArtifactPath(artifactPath: String?) {
         state.artifactPath = artifactPath.nullize(nullizeSpaces = true)
     }
 
     fun setNodeRuntimePath(nodeRuntimePath: String?) {
         state.nodeRuntimePath = nodeRuntimePath.nullize(nullizeSpaces = true)
+    }
+
+    fun setCpuProfilingEnabled(enabled: Boolean) {
+        state.cpuProfilingEnabled = enabled
     }
 
     companion object {
@@ -43,4 +49,5 @@ class LspSettings : PersistentStateComponent<LspConfiguration> {
 class LspConfiguration : BaseState() {
     var artifactPath by string()
     var nodeRuntimePath by string()
+    var cpuProfilingEnabled by property(false)
 }
