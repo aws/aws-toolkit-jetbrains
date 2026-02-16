@@ -89,7 +89,7 @@ internal class CfnTelemetryPrompter : ProjectActivity {
             }
         })
 
-        notification.addAction(object : NotificationAction(message("aws.settings.learn_more")) {
+        notification.addAction(object : NotificationAction(message("cloudformation.telemetry.prompt.action.learn_more")) {
             override fun actionPerformed(e: AnActionEvent, notification: Notification) {
                 BrowserUtil.browse(TELEMETRY_DOCS_URL)
             }
