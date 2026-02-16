@@ -158,8 +158,8 @@ internal class ResourceLoader(
         if (resources != null) {
             val resourceSummary = resources.firstOrNull { it.typeName == resourceType }
             if (resourceSummary != null) {
-                val existingResources = if (loadMore) currentData?.resourceIdentifiers ?: emptyList() else emptyList()
-                val allResources = existingResources + resourceSummary.resourceIdentifiers
+                // LSP server returns cumulative results, use them directly
+                val allResources = resourceSummary.resourceIdentifiers
 
                 cache.put(
                     resourceType,

@@ -38,6 +38,10 @@
                 class="software.aws.toolkits.jetbrains.services.cfnlsp.explorer.actions.SearchResourceAction"
                 text="Search Resource"/>
 
+        <action id="aws.toolkit.cloudformation.resources.load_more"
+                class="software.aws.toolkits.jetbrains.services.cfnlsp.explorer.actions.LoadMoreResourcesAction"
+                text="Load More Resources"/>
+
         <action id="aws.toolkit.cloudformation.resources.import"
                 class="software.aws.toolkits.jetbrains.services.cfnlsp.explorer.actions.ImportResourceStateAction"
                 text="Import Resource State"/>
@@ -70,6 +74,7 @@
 
         <group id="aws.toolkit.cloudformation.resources.type.actions">
             <reference ref="aws.toolkit.cloudformation.resources.refresh_type"/>
+            <reference ref="aws.toolkit.cloudformation.resources.load_more"/>
             <reference ref="aws.toolkit.cloudformation.resources.remove_type"/>
             <reference ref="aws.toolkit.cloudformation.resources.search"/>
         </group>

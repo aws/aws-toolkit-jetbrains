@@ -251,6 +251,39 @@ class CopyResourceIdentifierAction : AnAction(
     }
 }
 
+class LoadMoreResourcesAction : AnAction(
+    message("cloudformation.explorer.resources.load_more"),
+    null,
+    AllIcons.General.Add
+) {
+    override fun getActionUpdateThread() = ActionUpdateThread.EDT
+
+    override fun update(e: AnActionEvent) {
+        val selectedNodes = e.getData(ExplorerTreeToolWindowDataKeys.SELECTED_NODES)
+        val resourceTypeNode = selectedNodes?.filterIsInstance<ResourceTypeNode>()?.firstOrNull()
+        
+        if (resourceTypeNode != null) {
+            val project = e.project ?: return
+            val resourceLoader = ResourceLoader.getInstance(project)
+            val hasMore = resourceLoader.hasMore(resourceTypeNode.resourceType)
+            e.presentation.isVisible = hasMore
+            e.presentation.isEnabled = hasMore
+        } else {
+            e.presentation.isVisible = false
+        }
+    }
+
+    override fun actionPerformed(e: AnActionEvent) {
+        val project = e.project ?: return
+        val resourceLoader = ResourceLoader.getInstance(project)
+
+        val selectedNodes = e.getData(ExplorerTreeToolWindowDataKeys.SELECTED_NODES)
+        val resourceTypeNode = selectedNodes?.filterIsInstance<ResourceTypeNode>()?.firstOrNull() ?: return
+
+        resourceLoader.loadMoreResources(resourceTypeNode.resourceType)
+    }
+}
+
 class GetStackManagementInfoAction : AnAction(
     message("cloudformation.explorer.resources.stack_info"),
     null,

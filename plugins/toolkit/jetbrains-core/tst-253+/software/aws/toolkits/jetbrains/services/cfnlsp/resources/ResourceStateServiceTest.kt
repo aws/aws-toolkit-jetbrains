@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.cfnlsp.resources
 
 import com.intellij.testFramework.ProjectRule
-import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
@@ -27,7 +26,7 @@ class ResourceStateServiceTest {
     val projectRule = ProjectRule()
 
     @Test
-    fun `importResourceState calls LSP client with correct params`() = runTest {
+    fun `importResourceState calls LSP client with correct params`() {
         val mockClientService = mock<CfnClientService>()
         val stateService = ResourceStateService(projectRule.project)
         stateService.clientServiceProvider = { mockClientService }
@@ -51,7 +50,6 @@ class ResourceStateServiceTest {
         whenever(resourceNode.resourceIdentifier).thenReturn("test-ec2")
 
         stateService.importResourceState(listOf(resourceNode))
-        testScheduler.advanceUntilIdle()
 
         val paramsCaptor = argumentCaptor<ResourceStateParams>()
         verify(mockClientService).getResourceState(paramsCaptor.capture())
@@ -63,7 +61,7 @@ class ResourceStateServiceTest {
     }
 
     @Test
-    fun `cloneResourceState calls LSP client with correct params`() = runTest {
+    fun `cloneResourceState calls LSP client with correct params`() {
         val mockClientService = mock<CfnClientService>()
         val stateService = ResourceStateService(projectRule.project)
         stateService.clientServiceProvider = { mockClientService }
@@ -87,7 +85,6 @@ class ResourceStateServiceTest {
         whenever(resourceNode.resourceIdentifier).thenReturn("test-bucket")
 
         stateService.cloneResourceState(listOf(resourceNode))
-        testScheduler.advanceUntilIdle()
 
         val paramsCaptor = argumentCaptor<ResourceStateParams>()
         verify(mockClientService).getResourceState(paramsCaptor.capture())
@@ -96,7 +93,7 @@ class ResourceStateServiceTest {
     }
 
     @Test
-    fun `getStackManagementInfo calls LSP client`() = runTest {
+    fun `getStackManagementInfo calls LSP client`() {
         val mockClientService = mock<CfnClientService>()
         val stateService = ResourceStateService(projectRule.project)
         stateService.clientServiceProvider = { mockClientService }
@@ -113,7 +110,6 @@ class ResourceStateServiceTest {
         whenever(resourceNode.resourceIdentifier).thenReturn("test-ec2")
 
         stateService.getStackManagementInfo(resourceNode)
-        testScheduler.advanceUntilIdle()
 
         verify(mockClientService).getStackManagementInfo("test-ec2")
     }

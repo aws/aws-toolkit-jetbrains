@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.cfnlsp.resources
 
 import com.intellij.testFramework.ProjectRule
-import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
@@ -46,7 +45,7 @@ class ResourceTypesManagerTest {
     }
 
     @Test
-    fun `loads available types from LSP server`() = runTest {
+    fun `loads available types from LSP server`() {
         val mockClientService = mock<CfnClientService>()
         val manager = ResourceTypesManager(projectRule.project)
 
@@ -56,7 +55,6 @@ class ResourceTypesManagerTest {
         manager.clientServiceProvider = { mockClientService }
 
         manager.loadAvailableTypes()
-        testScheduler.advanceUntilIdle()
 
         verify(mockClientService).listResourceTypes()
         assertThat(manager.getAvailableResourceTypes()).containsExactlyInAnyOrder("AWS::EC2::Instance", "AWS::S3::Bucket")
@@ -64,7 +62,7 @@ class ResourceTypesManagerTest {
     }
 
     @Test
-    fun `removeResourceType sends request to LSP server`() = runTest {
+    fun `removeResourceType sends request to LSP server`() {
         val mockClientService = mock<CfnClientService>()
         val manager = ResourceTypesManager(projectRule.project)
 
@@ -76,7 +74,6 @@ class ResourceTypesManagerTest {
         assertThat(manager.getSelectedResourceTypes()).containsExactly("AWS::EC2::Instance")
 
         manager.removeResourceType("AWS::EC2::Instance")
-        testScheduler.advanceUntilIdle()
 
         verify(mockClientService).removeResourceType("AWS::EC2::Instance")
         assertThat(manager.getSelectedResourceTypes()).isEmpty()
@@ -93,7 +90,7 @@ class ResourceTypesManagerTest {
     }
 
     @Test
-    fun `removeResourceType removes from state immediately even when LSP server fails`() = runTest {
+    fun `removeResourceType removes from state immediately even when LSP server fails`() {
         val mockClientService = mock<CfnClientService>()
         val manager = ResourceTypesManager(projectRule.project)
 
@@ -105,7 +102,6 @@ class ResourceTypesManagerTest {
         assertThat(manager.getSelectedResourceTypes()).containsExactly("AWS::EC2::Instance")
 
         manager.removeResourceType("AWS::EC2::Instance")
-        testScheduler.advanceUntilIdle()
 
         verify(mockClientService).removeResourceType("AWS::EC2::Instance")
         // Should remove from state immediately for responsive UI, even if LSP call fails
@@ -113,20 +109,19 @@ class ResourceTypesManagerTest {
     }
 
     @Test
-    fun `removeResourceType does nothing for non-existent type`() = runTest {
+    fun `removeResourceType does nothing for non-existent type`() {
         val mockClientService = mock<CfnClientService>()
         val manager = ResourceTypesManager(projectRule.project)
         manager.clientServiceProvider = { mockClientService }
 
         manager.removeResourceType("AWS::EC2::Instance")
-        testScheduler.advanceUntilIdle()
 
         verify(mockClientService, never()).removeResourceType(any())
         assertThat(manager.getSelectedResourceTypes()).isEmpty()
     }
 
     @Test
-    fun `loadAvailableTypes handles null result gracefully`() = runTest {
+    fun `loadAvailableTypes handles null result gracefully`() {
         val mockClientService = mock<CfnClientService>()
         val manager = ResourceTypesManager(projectRule.project)
 
@@ -135,7 +130,6 @@ class ResourceTypesManagerTest {
         manager.clientServiceProvider = { mockClientService }
 
         manager.loadAvailableTypes()
-        testScheduler.advanceUntilIdle()
 
         verify(mockClientService).listResourceTypes()
         assertThat(manager.getAvailableResourceTypes()).isEmpty()
@@ -162,7 +156,7 @@ class ResourceTypesManagerTest {
     }
 
     @Test
-    fun `listeners are notified when resource types are removed successfully`() = runTest {
+    fun `listeners are notified when resource types are removed successfully`() {
         val mockClientService = mock<CfnClientService>()
         val manager = ResourceTypesManager(projectRule.project)
 
@@ -178,13 +172,12 @@ class ResourceTypesManagerTest {
         assertThat(notificationCount).isEqualTo(1)
 
         manager.removeResourceType("AWS::EC2::Instance")
-        testScheduler.advanceUntilIdle()
 
         assertThat(notificationCount).isEqualTo(2)
     }
 
     @Test
-    fun `listeners are notified immediately when resource type removal is requested`() = runTest {
+    fun `listeners are notified immediately when resource type removal is requested`() {
         val mockClientService = mock<CfnClientService>()
         val manager = ResourceTypesManager(projectRule.project)
 
@@ -200,7 +193,6 @@ class ResourceTypesManagerTest {
         assertThat(notificationCount).isEqualTo(1)
 
         manager.removeResourceType("AWS::EC2::Instance")
-        testScheduler.advanceUntilIdle()
 
         // Should notify immediately when removal is requested (responsive UI)
         assertThat(notificationCount).isEqualTo(2)
