@@ -5,10 +5,15 @@ package software.aws.toolkits.jetbrains.services.cfnlsp
 
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
+import com.intellij.openapi.fileEditor.FileDocumentManager
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.platform.lsp.api.LspServer
 import com.intellij.platform.lsp.api.LspServerManager
 import org.eclipse.lsp4j.DidChangeConfigurationParams
+import org.eclipse.lsp4j.DidOpenTextDocumentParams
+import org.eclipse.lsp4j.TextDocumentItem
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.CreateStackActionResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.CreateValidationParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeValidationStatusResult
@@ -79,6 +84,23 @@ internal class CfnClientService(project: Project) {
 
     fun getResourceState(params: ResourceStateParams): CompletableFuture<ResourceStateResult?> =
         sendRequest { it.getResourceState(params) }
+
+    fun ensureDocumentOpen(file: VirtualFile, project: Project) {
+        val isOpenInEditor = FileEditorManager.getInstance(project).isFileOpen(file)
+        if (isOpenInEditor) return
+
+        val server = lspServerProvider() ?: return
+        val descriptor = server.descriptor
+        val uri = descriptor.getFileUri(file)
+        val languageId = descriptor.getLanguageId(file)
+        val content = FileDocumentManager.getInstance().getDocument(file)?.text ?: return
+
+        server.sendNotification { lsp ->
+            lsp.textDocumentService.didOpen(
+                DidOpenTextDocumentParams(TextDocumentItem(uri, languageId, 0, content))
+            )
+        }
+    }
 
     fun notifyConfigurationChanged() {
         lspServerProvider()?.sendNotification { lsp ->
