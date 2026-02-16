@@ -4,7 +4,7 @@
 package software.aws.toolkits.jetbrains.services.cfnlsp.resources
 
 import com.intellij.testFramework.ProjectRule
-import kotlinx.coroutines.test.runTest
+
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
@@ -41,7 +41,7 @@ class ResourceLoaderTest {
     }
 
     @Test
-    fun `refreshResources sends request to LSP server`() = runTest {
+    fun `refreshResources sends request to LSP server`() {
         val mockClientService = mock<CfnClientService>()
         val loader = ResourceLoader(projectRule.project)
 
@@ -54,7 +54,6 @@ class ResourceLoaderTest {
 
         loader.clientServiceProvider = { mockClientService }
         loader.refreshResources("AWS::EC2::Instance")
-        testScheduler.advanceUntilIdle()
 
         val paramsCaptor = argumentCaptor<RefreshResourcesParams>()
         verify(mockClientService).refreshResources(paramsCaptor.capture())
@@ -64,7 +63,7 @@ class ResourceLoaderTest {
     }
 
     @Test
-    fun `searchResource adds found resource to cache`() = runTest {
+    fun `searchResource adds found resource to cache`() {
         val mockClientService = mock<CfnClientService>()
         val loader = ResourceLoader(projectRule.project)
 
@@ -77,7 +76,6 @@ class ResourceLoaderTest {
         assertThat(loader.getCachedResources("AWS::EC2::Instance")).isNull()
 
         val result = loader.searchResource("AWS::EC2::Instance", "test-instance")
-        testScheduler.advanceUntilIdle()
         assertThat(result.get()).isTrue()
 
         val paramsCaptor = argumentCaptor<SearchResourceParams>()
@@ -93,7 +91,7 @@ class ResourceLoaderTest {
     }
 
     @Test
-    fun `searchResource returns false when resource not found`() = runTest {
+    fun `searchResource returns false when resource not found`() {
         val mockClientService = mock<CfnClientService>()
         val loader = ResourceLoader(projectRule.project)
 
@@ -102,7 +100,6 @@ class ResourceLoaderTest {
         loader.clientServiceProvider = { mockClientService }
 
         val result = loader.searchResource("AWS::EC2::Instance", "test-instance")
-        testScheduler.advanceUntilIdle()
 
         assertThat(result.get()).isFalse()
 
@@ -114,7 +111,7 @@ class ResourceLoaderTest {
     }
 
     @Test
-    fun `searchResource handles exception gracefully`() = runTest {
+    fun `searchResource handles exception gracefully`() {
         val mockClientService = mock<CfnClientService>()
         val loader = ResourceLoader(projectRule.project)
 
@@ -122,7 +119,6 @@ class ResourceLoaderTest {
         loader.clientServiceProvider = { mockClientService }
 
         val result = loader.searchResource("AWS::EC2::Instance", "test-instance")
-        testScheduler.advanceUntilIdle()
 
         assertThat(result.get()).isFalse()
     }
@@ -182,7 +178,7 @@ class ResourceLoaderTest {
     }
 
     @Test
-    fun `loadMoreResources does nothing when no nextToken`() = runTest {
+    fun `loadMoreResources does nothing when no nextToken`() {
         val mockClientService = mock<CfnClientService>()
         val loader = ResourceLoader(projectRule.project)
         loader.clientServiceProvider = { mockClientService }
@@ -196,20 +192,18 @@ class ResourceLoaderTest {
         whenever(mockClientService.refreshResources(any())).thenReturn(CompletableFuture.completedFuture(mockResult))
 
         loader.refreshResources("AWS::EC2::Instance")
-        testScheduler.advanceUntilIdle()
 
         // Reset mock to verify no additional calls
         org.mockito.kotlin.reset(mockClientService)
 
         loader.loadMoreResources("AWS::EC2::Instance")
-        testScheduler.advanceUntilIdle()
 
         // Should not make any LSP calls since no nextToken
         verify(mockClientService, never()).listResources(any())
     }
 
     @Test
-    fun `loadMoreResources loads additional resources when nextToken exists`() = runTest {
+    fun `loadMoreResources loads additional resources when nextToken exists`() {
         val mockClientService = mock<CfnClientService>()
         val loader = ResourceLoader(projectRule.project)
         loader.clientServiceProvider = { mockClientService }
@@ -223,25 +217,23 @@ class ResourceLoaderTest {
         whenever(mockClientService.refreshResources(any())).thenReturn(CompletableFuture.completedFuture(initialResult))
 
         loader.refreshResources("AWS::EC2::Instance")
-        testScheduler.advanceUntilIdle()
 
-        // Mock loadMore response
+        // Mock loadMore response - LSP server returns cumulative results
         val loadMoreResult = ListResourcesResult(
             resources = listOf(
-                ResourceSummary("AWS::EC2::Instance", listOf("test-instance-2"), null)
+                ResourceSummary("AWS::EC2::Instance", listOf("test-instance-1", "test-instance-2"), null)
             )
         )
         whenever(mockClientService.listResources(any())).thenReturn(CompletableFuture.completedFuture(loadMoreResult))
 
         loader.loadMoreResources("AWS::EC2::Instance")
-        testScheduler.advanceUntilIdle()
 
         // Verify listResources was called with nextToken
         val paramsCaptor = argumentCaptor<ListResourcesParams>()
         verify(mockClientService).listResources(paramsCaptor.capture())
         assertThat(paramsCaptor.firstValue.resources?.first()?.nextToken).isEqualTo("token123")
 
-        // Verify resources were combined
+        // Verify resources use server's cumulative results
         val allResources = loader.getResourceIdentifiers("AWS::EC2::Instance")
         assertThat(allResources).containsExactly("test-instance-1", "test-instance-2")
     }
