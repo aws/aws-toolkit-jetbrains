@@ -104,8 +104,6 @@ internal class CfnCredentialsService(private val project: Project) : Disposable 
                         val regionChanged = lastRegionId != null && lastRegionId != newRegionId
                         lastRegionId = newRegionId
                         sendCredentials(onRegionChange = regionChanged)
-                    } else {
-                        sendCredentials()
                     }
                 }
             }
@@ -139,10 +137,10 @@ internal class CfnCredentialsService(private val project: Project) : Disposable 
 
     private fun resolveCredentials(): IamCredentials? {
         val connectionManager = AwsConnectionManager.getInstance(project)
-        val credentialProvider = connectionManager.activeCredentialProvider ?: return null
         val region = connectionManager.selectedRegion ?: return null
 
         return try {
+            val credentialProvider = connectionManager.activeCredentialProvider
             val awsCredentials = credentialProvider.resolveCredentials()
             val sessionCredentials = awsCredentials as? AwsSessionCredentials
 
