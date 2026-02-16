@@ -21,10 +21,8 @@ class CloudFormationRootNode(private val nodeProject: Project) : AbstractTreeNod
 
     override fun update(presentation: PresentationData) {}
 
-    override fun getChildren(): Collection<AbstractTreeNode<*>> {
-        return listOf(
-            StacksNode(nodeProject, stacksManager, changeSetsManager),
-            ResourcesNode(nodeProject, resourceTypesManager, resourceLoader)
-        )
-    }
+    override fun getChildren(): Collection<AbstractTreeNode<*>> = listOf(
+        StacksNode(nodeProject, stacksManager, changeSetsManager),
+        ResourcesNode(nodeProject, resourceTypesManager, resourceLoader)
+    )
 }
