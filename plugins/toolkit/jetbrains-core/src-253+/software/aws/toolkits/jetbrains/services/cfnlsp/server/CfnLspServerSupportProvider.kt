@@ -25,10 +25,10 @@ import software.aws.toolkits.jetbrains.settings.CfnLspSettings
 import software.aws.toolkits.resources.AwsToolkitBundle.message
 import java.nio.file.Path
 
-private val SUPPORTED_EXTENSIONS = setOf("yaml", "yml", "json", "template", "cfn", "txt")
+internal val CFN_SUPPORTED_EXTENSIONS = setOf("yaml", "yml", "json", "template", "cfn", "txt")
 
 private fun VirtualFile.isCfnTemplate(): Boolean =
-    extension?.lowercase() in SUPPORTED_EXTENSIONS
+    extension?.lowercase() in CFN_SUPPORTED_EXTENSIONS
 
 internal class CfnLspServerSupportProvider : LspServerSupportProvider {
     override fun fileOpened(

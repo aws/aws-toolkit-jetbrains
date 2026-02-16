@@ -5,6 +5,11 @@ package software.aws.toolkits.jetbrains.services.cfnlsp
 
 import org.eclipse.lsp4j.jsonrpc.services.JsonRequest
 import org.eclipse.lsp4j.services.LanguageServer
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.CreateStackActionResult
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.CreateValidationParams
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeValidationStatusResult
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.GetStackActionStatusResult
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.Identifiable
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ListChangeSetsParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ListChangeSetsResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ListResourcesParams
@@ -59,4 +64,14 @@ internal interface CfnLspServerProtocol : LanguageServer {
 
     @JsonRequest("aws/cfn/resources/list/remove")
     fun removeResourceType(resourceType: String): CompletableFuture<Void>
+
+    // Validation
+    @JsonRequest("aws/cfn/stack/validation/create")
+    fun createValidation(params: CreateValidationParams): CompletableFuture<CreateStackActionResult>
+
+    @JsonRequest("aws/cfn/stack/validation/status")
+    fun getValidationStatus(params: Identifiable): CompletableFuture<GetStackActionStatusResult>
+
+    @JsonRequest("aws/cfn/stack/validation/status/describe")
+    fun describeValidationStatus(params: Identifiable): CompletableFuture<DescribeValidationStatusResult>
 }
