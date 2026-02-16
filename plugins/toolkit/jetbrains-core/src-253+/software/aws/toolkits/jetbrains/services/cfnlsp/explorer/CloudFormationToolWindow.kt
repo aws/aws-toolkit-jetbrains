@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.cfnlsp.explorer
 
+import com.intellij.openapi.actionSystem.ActionGroup
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.Service
@@ -33,7 +34,7 @@ internal class CloudFormationToolWindow(private val project: Project) : Abstract
 
     init {
         val toolbarGroup = ActionManager.getInstance().getAction("aws.toolkit.cloudformation.toolbar")
-        toolbar = ActionManager.getInstance().createActionToolbar(actionPlace, toolbarGroup as com.intellij.openapi.actionSystem.ActionGroup, true).apply {
+        toolbar = ActionManager.getInstance().createActionToolbar(actionPlace, toolbarGroup as ActionGroup, true).apply {
             targetComponent = this@CloudFormationToolWindow
         }.component
 
