@@ -17,7 +17,6 @@ import software.aws.toolkit.core.utils.warn
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerTreeToolWindowDataKeys
 import software.aws.toolkits.jetbrains.services.cfnlsp.explorer.nodes.ResourceNode
 import software.aws.toolkits.jetbrains.services.cfnlsp.explorer.nodes.ResourceTypeNode
-import software.aws.toolkits.jetbrains.services.cfnlsp.explorer.nodes.ResourcesNode
 import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourceLoader
 import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourceStateService
 import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourceTypesManager
@@ -33,10 +32,7 @@ class AddResourceTypeAction : AnAction(
     override fun getActionUpdateThread() = ActionUpdateThread.EDT
 
     override fun update(e: AnActionEvent) {
-        // Only enable if a ResourcesNode is selected
-        val selectedNodes = e.getData(ExplorerTreeToolWindowDataKeys.SELECTED_NODES)
-        val hasResourcesNode = selectedNodes?.filterIsInstance<ResourcesNode>()?.isNotEmpty() == true
-        e.presentation.isEnabled = hasResourcesNode
+        e.presentation.isEnabled = true
     }
 
     override fun actionPerformed(e: AnActionEvent) {

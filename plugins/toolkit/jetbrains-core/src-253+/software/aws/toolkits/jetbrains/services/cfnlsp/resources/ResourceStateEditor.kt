@@ -9,6 +9,7 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
+import software.aws.toolkits.jetbrains.services.cfnlsp.server.CfnLspServerDescriptor
 
 @Service(Service.Level.PROJECT)
 internal class ResourceStateEditor(private val project: Project) {
@@ -22,7 +23,9 @@ internal class ResourceStateEditor(private val project: Project) {
     }
 
     fun getActiveDocumentUri(): String? =
-        FileEditorManager.getInstance(project).selectedFiles.firstOrNull()?.url
+        FileEditorManager.getInstance(project).selectedFiles.firstOrNull()?.let {
+            CfnLspServerDescriptor.getInstance(project).getFileUri(it)
+        }
 
     fun getActiveEditor() = FileEditorManager.getInstance(project).selectedTextEditor
 

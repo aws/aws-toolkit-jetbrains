@@ -95,7 +95,9 @@ internal class StackNode(
     nodeProject: Project,
     val stack: StackSummary,
     private val changeSetsManager: ChangeSetsManager,
-) : AbstractTreeNode<StackSummary>(nodeProject, stack) {
+) : AbstractTreeNode<StackSummary>(nodeProject, stack), ActionGroupOnRightClick {
+
+    override fun actionGroupName(): String = ACTION_GROUP_NAME
 
     override fun update(presentation: PresentationData) {
         presentation.addText(stack.stackName ?: "Unknown Stack", SimpleTextAttributes.REGULAR_ATTRIBUTES)
@@ -116,5 +118,9 @@ internal class StackNode(
     override fun getChildren(): Collection<AbstractTreeNode<*>> {
         val stackName = stack.stackName ?: return emptyList()
         return listOf(StackChangeSetsNode(project, stackName, changeSetsManager))
+    }
+
+    companion object {
+        const val ACTION_GROUP_NAME = "aws.toolkit.cloudformation.stack.actions"
     }
 }

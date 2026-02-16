@@ -18,6 +18,11 @@
         <action id="aws.toolkit.cloudformation.stacks.load_more"
                 class="software.aws.toolkits.jetbrains.services.cfnlsp.explorer.actions.LoadMoreStacksAction"/>
 
+        <action id="aws.toolkit.cloudformation.refresh_all"
+                class="software.aws.toolkits.jetbrains.services.cfnlsp.explorer.actions.RefreshAllAction"
+                text="Refresh"
+                icon="AllIcons.Actions.Refresh"/>
+
         <action id="aws.toolkit.cloudformation.resources.add_type"
                 class="software.aws.toolkits.jetbrains.services.cfnlsp.explorer.actions.AddResourceTypeAction"
                 text="Add Resource Types To List"/>
@@ -58,11 +63,30 @@
                 class="software.aws.toolkits.jetbrains.services.cfnlsp.explorer.actions.GetStackManagementInfoAction"
                 text="Get Stack Management Info"/>
 
+        <action id="aws.toolkit.cloudformation.validateAndDeploy"
+                class="software.aws.toolkits.jetbrains.services.cfnlsp.stacks.ValidateAndDeployAction"
+                text="Validate and Deploy"
+                description="Creates a change set to validate and deploy a CloudFormation template"
+                icon="AllIcons.Actions.Execute">
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+        </action>
+
+        <!-- Right-click on individual Stack node -->
+        <group id="aws.toolkit.cloudformation.stack.actions">
+            <reference ref="aws.toolkit.cloudformation.validateAndDeploy"/>
+        </group>
+
+        <!-- Right-click on Stacks node (no more stacks to load) -->
         <group id="aws.toolkit.cloudformation.stacks.actions">
+            <reference ref="aws.toolkit.cloudformation.validateAndDeploy"/>
+            <separator/>
             <reference ref="aws.toolkit.cloudformation.stacks.refresh"/>
         </group>
 
+        <!-- Right-click on Stacks node (with more stacks to load) -->
         <group id="aws.toolkit.cloudformation.stacks.actions.with_more">
+            <reference ref="aws.toolkit.cloudformation.validateAndDeploy"/>
+            <separator/>
             <reference ref="aws.toolkit.cloudformation.stacks.load_more"/>
             <reference ref="aws.toolkit.cloudformation.stacks.refresh"/>
         </group>
@@ -84,6 +108,13 @@
             <reference ref="aws.toolkit.cloudformation.resources.clone"/>
             <reference ref="aws.toolkit.cloudformation.resources.copy_identifier"/>
             <reference ref="aws.toolkit.cloudformation.resources.stack_info"/>
+        </group>
+
+        <!-- Toolbar above CloudFormation tree view -->
+        <group id="aws.toolkit.cloudformation.toolbar">
+            <reference ref="aws.toolkit.cloudformation.validateAndDeploy"/>
+            <reference ref="aws.toolkit.cloudformation.resources.add_type"/>
+            <reference ref="aws.toolkit.cloudformation.refresh_all"/>
         </group>
     </actions>
 </idea-plugin>
