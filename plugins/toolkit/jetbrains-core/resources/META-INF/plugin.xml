@@ -182,6 +182,7 @@
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.EcsExecCommandSettings"/>
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.SamDisplayDevModeWarningSettings"/>
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.CfnLspSettings"/>
+        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.services.cfnlsp.CfnTelemetryPromptState"/>
 
         <applicationService serviceInterface="software.aws.toolkits.jetbrains.settings.DynamicResourcesSettings"
                             serviceImplementation="software.aws.toolkits.jetbrains.settings.DefaultDynamicResourcesSettings"/>
@@ -286,6 +287,9 @@
         <postStartupActivity implementation="software.aws.toolkits.jetbrains.core.notification.MinimumVersionChange"/>
         <notificationGroup id="aws.toolkit_deprecation" displayType="STICKY_BALLOON" key="aws.toolkit_deprecation.title"/>
         <notificationGroup id="aws.toolkit_telemetry" displayType="STICKY_BALLOON" key="aws.settings.telemetry.prompt.title"/>
+        <notificationGroup id="aws.cfn.telemetry" displayType="STICKY_BALLOON" key="cloudformation.telemetry.prompt.title"/>
+
+        <postStartupActivity implementation="software.aws.toolkits.jetbrains.services.cfnlsp.CfnTelemetryPrompter"/>
 
         <!--Sticky notifications -->
         <notificationGroup id="aws.toolkit_sticky" displayType="STICKY_BALLOON" key="aws.settings.title"/>

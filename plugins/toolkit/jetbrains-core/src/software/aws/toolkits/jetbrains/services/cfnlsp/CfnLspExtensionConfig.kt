@@ -7,4 +7,5 @@ object CfnLspExtensionConfig {
     const val EXTENSION_NAME = "aws-toolkit-jetbrains"
     const val EXTENSION_VERSION = "1.0.0"
     const val ENCRYPTION_MODE = "JWT"
+    const val TELEMETRY_NOTIFICATION_GROUP_ID = "aws.cfn.telemetry"
 }
