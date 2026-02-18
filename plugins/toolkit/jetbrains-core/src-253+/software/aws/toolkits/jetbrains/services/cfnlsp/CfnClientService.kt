@@ -19,6 +19,8 @@ import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.CreateValidation
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeValidationStatusResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.GetStackActionStatusResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.Identifiable
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeStackParams
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeStackResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ListChangeSetsParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ListChangeSetsResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ListResourcesParams
@@ -101,6 +103,8 @@ internal class CfnClientService(project: Project) {
             )
         }
     }
+    fun describeStack(params: DescribeStackParams): CompletableFuture<DescribeStackResult?> =
+        sendRequest { it.describeStack(params) }
 
     fun notifyConfigurationChanged() {
         lspServerProvider()?.sendNotification { lsp ->

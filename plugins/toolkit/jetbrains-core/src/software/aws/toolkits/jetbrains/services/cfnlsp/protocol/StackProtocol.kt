@@ -40,3 +40,40 @@ internal data class ListChangeSetsResult(
     val changeSets: List<ChangeSetInfo>,
     val nextToken: String? = null,
 )
+
+data class DescribeStackParams(
+    val stackName: String,
+)
+
+data class DescribeStackResult(
+    val stack: LspStack?,
+)
+
+data class LspStack(
+    @SerializedName("StackName")
+    val stackName: String,
+    @SerializedName("StackId")
+    val stackId: String,
+    @SerializedName("StackStatus")
+    val stackStatus: String,
+    @SerializedName("StackStatusReason")
+    val stackStatusReason: String? = null,
+    @SerializedName("CreationTime")
+    val creationTime: String? = null,
+    @SerializedName("LastUpdatedTime")
+    val lastUpdatedTime: String? = null,
+    @SerializedName("Description")
+    val description: String? = null,
+    @SerializedName("Outputs")
+    val outputs: List<LspOutput> = emptyList(),
+    val isChangeSetMode: Boolean = false,
+)
+
+data class LspOutput(
+    @SerializedName("OutputKey")
+    val outputKey: String,
+    @SerializedName("OutputValue")
+    val outputValue: String,
+    @SerializedName("Description")
+    val description: String? = null,
+)

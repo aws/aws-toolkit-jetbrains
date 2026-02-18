@@ -76,6 +76,10 @@
             <reference ref="aws.toolkit.cloudformation.validateAndDeploy"/>
         </group>
 
+        <action id="aws.toolkit.cloudformation.stack.view"
+                class="software.aws.toolkits.jetbrains.services.cfnlsp.stacks.views.OpenLspStackViewAction"
+                text="View Stack Details"/>
+
         <!-- Right-click on Stacks node (no more stacks to load) -->
         <group id="aws.toolkit.cloudformation.stacks.actions">
             <reference ref="aws.toolkit.cloudformation.validateAndDeploy"/>
@@ -89,6 +93,10 @@
             <separator/>
             <reference ref="aws.toolkit.cloudformation.stacks.load_more"/>
             <reference ref="aws.toolkit.cloudformation.stacks.refresh"/>
+        </group>
+
+        <group id="aws.toolkit.cloudformation.stack.actions">
+            <reference ref="aws.toolkit.cloudformation.stack.view"/>
         </group>
 
         <group id="aws.toolkit.cloudformation.resources.actions">
