@@ -17,21 +17,40 @@ import java.awt.Font
 import javax.swing.JComponent
 import javax.swing.JPanel
 
-internal class LspStackUI(
-    private val project: Project,
+internal class StackDetailView(
+    project: Project,
     private val stackName: String,
     private val stackId: String,
 ) : Disposable {
 
-    private val coordinator = LspStackViewCoordinator.getInstance(project)
-    private val updater = LspUpdater(project, stackName, coordinator)
-    private val overviewPanel = LspOverviewPanel(project, coordinator)
+    private val coordinator = StackViewCoordinator.getInstance(project)
+    private val updater = StackDetailUpdater(project, stackName, coordinator)
+    private val overviewPanel = StackOverviewPanel(project, coordinator)
 
     private val tabbedPane = JBTabbedPane().apply {
         addTab("Resources", createResourcesPanel())
         addTab("Events", createEventsPanel())
         addTab("Outputs", createOutputsPanel())
-        selectedIndex = 0 // Default to Resources tab
+        selectedIndex = 0
+    }
+
+    // Used for future change set functionality
+    fun addTab(title: String, component: JComponent, index: Int? = null) {
+        if (index != null) {
+            tabbedPane.insertTab(title, null, component, null, index)
+        } else {
+            tabbedPane.addTab(title, component)
+        }
+    }
+
+    // Used for future change set functionality
+    fun removeTab(title: String) {
+        for (i in 0 until tabbedPane.tabCount) {
+            if (tabbedPane.getTitleAt(i) == title) {
+                tabbedPane.removeTabAt(i)
+                break
+            }
+        }
     }
 
     private val mainPanel = JBPanel<JBPanel<*>>(BorderLayout()).apply {
@@ -67,10 +86,6 @@ internal class LspStackUI(
             add(titleLabel, BorderLayout.NORTH)
             add(content, BorderLayout.CENTER)
         }
-
-    private fun createOverviewPanel(): JComponent {
-        return overviewPanel.component
-    }
 
     private fun createResourcesPanel(): JPanel = JBPanel<JBPanel<*>>().apply {
         add(JBLabel("Stack Resources - Coming Soon"))

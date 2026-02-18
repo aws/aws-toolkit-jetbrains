@@ -11,13 +11,15 @@ import software.aws.toolkits.jetbrains.core.explorer.ExplorerTreeToolWindowDataK
 import software.aws.toolkits.jetbrains.services.cfnlsp.explorer.nodes.StackNode
 import software.aws.toolkits.resources.message
 
-internal class OpenLspStackViewAction : AnAction(), DumbAware {
+internal class OpenStackViewAction : AnAction(), DumbAware {
 
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
 
     override fun update(e: AnActionEvent) {
         e.presentation.text = message("cloudformation.stack.view")
-        e.presentation.isEnabledAndVisible = getStackNode(e) != null
+        val selectedNodes = e.getData(ExplorerTreeToolWindowDataKeys.SELECTED_NODES)
+        val stackNode = selectedNodes?.singleOrNull() as? StackNode
+        e.presentation.isEnabledAndVisible = stackNode != null
     }
 
     override fun actionPerformed(e: AnActionEvent) {
@@ -27,12 +29,12 @@ internal class OpenLspStackViewAction : AnAction(), DumbAware {
         val stackName = stackNode.stack.stackName ?: return
         val stackId = stackNode.stack.stackId ?: return
 
-        LspStackWindowManager.getInstance(project)
+        StackDetailWindowManager.getInstance(project)
             .openStack(stackName, stackId)
     }
 
     private fun getStackNode(e: AnActionEvent): StackNode? {
         val selectedNodes = e.getData(ExplorerTreeToolWindowDataKeys.SELECTED_NODES)
-        return selectedNodes?.firstOrNull() as? StackNode
+        return selectedNodes?.singleOrNull() as? StackNode
     }
 }

@@ -7,14 +7,14 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
-class LspStackViewCoordinatorTest {
+class StackDetailViewCoordinatorTest {
 
-    private lateinit var coordinator: LspStackViewCoordinator
+    private lateinit var coordinator: StackViewCoordinator
     private val capturedEvents = mutableListOf<String>()
 
     @BeforeEach
     fun setUp() {
-        coordinator = LspStackViewCoordinator()
+        coordinator = StackViewCoordinator()
         capturedEvents.clear()
     }
 

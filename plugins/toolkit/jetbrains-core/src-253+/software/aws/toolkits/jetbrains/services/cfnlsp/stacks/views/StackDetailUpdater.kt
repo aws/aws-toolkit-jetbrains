@@ -11,10 +11,10 @@ import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeStackPar
 import java.util.Timer
 import java.util.TimerTask
 
-internal class LspUpdater(
+internal class StackDetailUpdater(
     project: Project,
     private val stackName: String,
-    private val coordinator: LspStackViewCoordinator,
+    private val coordinator: StackViewCoordinator,
 ) : Disposable {
 
     private val cfnClientService = CfnClientService.getInstance(project)

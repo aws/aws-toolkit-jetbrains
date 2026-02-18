@@ -20,7 +20,7 @@ interface StackStatusListener {
 interface StackPanelListener : StackSelectionListener, StackStatusListener
 
 @Service(Service.Level.PROJECT)
-class LspStackViewCoordinator : Disposable {
+class StackViewCoordinator : Disposable {
     private var currentStackName: String? = null
     private var currentStackArn: String? = null
     private var currentStackStatus: String? = null
@@ -62,6 +62,6 @@ class LspStackViewCoordinator : Disposable {
     }
 
     companion object {
-        fun getInstance(project: Project): LspStackViewCoordinator = project.service()
+        fun getInstance(project: Project): StackViewCoordinator = project.service()
     }
 }

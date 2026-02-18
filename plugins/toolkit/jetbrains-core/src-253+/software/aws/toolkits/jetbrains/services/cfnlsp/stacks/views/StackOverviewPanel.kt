@@ -15,7 +15,7 @@ import com.intellij.ui.components.JBTextArea
 import com.intellij.util.ui.JBUI
 import software.aws.toolkits.jetbrains.services.cfnlsp.CfnClientService
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeStackParams
-import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.LspStack
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.StackDetail
 import software.aws.toolkits.jetbrains.services.cfnlsp.ui.ConsoleUrlGenerator
 import software.aws.toolkits.jetbrains.services.cfnlsp.ui.IconUtils
 import software.aws.toolkits.jetbrains.services.cfnlsp.ui.WrappingTextArea
@@ -29,9 +29,9 @@ import javax.swing.Box
 import javax.swing.JComponent
 import javax.swing.JPanel
 
-class LspOverviewPanel(
+class StackOverviewPanel(
     project: Project,
-    private val coordinator: LspStackViewCoordinator,
+    private val coordinator: StackViewCoordinator,
 ) : Disposable, StackPanelListener {
 
     private val cfnClientService = CfnClientService.getInstance(project)
@@ -134,7 +134,7 @@ class LspOverviewPanel(
         disposables.clear()
     }
 
-    fun renderStack(stack: LspStack) {
+    fun renderStack(stack: StackDetail) {
         stackNameValue.text = stack.stackName
         updateStatusDisplay(stack.stackStatus)
         consoleLink.isVisible = stack.stackId.isNotEmpty()

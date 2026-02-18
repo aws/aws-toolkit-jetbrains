@@ -8,19 +8,19 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
 import org.mockito.kotlin.mock
-import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.LspStack
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.StackDetail
 
-class LspOverviewPanelTest {
+class StackOverviewPanelTest {
 
     @get:Rule
     val projectRule = ProjectRule()
 
     @Test
     fun `renderStack updates all field values correctly`() {
-        val mockCoordinator = mock<LspStackViewCoordinator>()
-        val panel = LspOverviewPanel(projectRule.project, mockCoordinator)
+        val mockCoordinator = mock<StackViewCoordinator>()
+        val panel = StackOverviewPanel(projectRule.project, mockCoordinator)
 
-        val testStack = LspStack(
+        val testStack = StackDetail(
             stackName = "my-test-stack",
             stackId = "arn:aws:cloudformation:us-east-1:123456789012:stack/my-test-stack/12345",
             stackStatus = "CREATE_COMPLETE",
@@ -41,10 +41,10 @@ class LspOverviewPanelTest {
 
     @Test
     fun `renderStack with empty stack ID hides console link`() {
-        val mockCoordinator = mock<LspStackViewCoordinator>()
-        val panel = LspOverviewPanel(projectRule.project, mockCoordinator)
+        val mockCoordinator = mock<StackViewCoordinator>()
+        val panel = StackOverviewPanel(projectRule.project, mockCoordinator)
 
-        val testStack = LspStack(
+        val testStack = StackDetail(
             stackName = "test-stack",
             stackId = "",
             stackStatus = "CREATE_COMPLETE",
@@ -61,10 +61,10 @@ class LspOverviewPanelTest {
 
     @Test
     fun `renderStack with null optional fields handles gracefully`() {
-        val mockCoordinator = mock<LspStackViewCoordinator>()
-        val panel = LspOverviewPanel(projectRule.project, mockCoordinator)
+        val mockCoordinator = mock<StackViewCoordinator>()
+        val panel = StackOverviewPanel(projectRule.project, mockCoordinator)
 
-        val testStack = LspStack(
+        val testStack = StackDetail(
             stackName = "minimal-stack",
             stackId = "arn:aws:cloudformation:us-east-1:123456789012:stack/minimal-stack/12345",
             stackStatus = "CREATE_COMPLETE",
@@ -82,10 +82,10 @@ class LspOverviewPanelTest {
 
     @Test
     fun `renderStack formats dates correctly`() {
-        val mockCoordinator = mock<LspStackViewCoordinator>()
-        val panel = LspOverviewPanel(projectRule.project, mockCoordinator)
+        val mockCoordinator = mock<StackViewCoordinator>()
+        val panel = StackOverviewPanel(projectRule.project, mockCoordinator)
 
-        val testStack = LspStack(
+        val testStack = StackDetail(
             stackName = "date-test-stack",
             stackId = "arn:aws:cloudformation:us-east-1:123456789012:stack/date-test-stack/12345",
             stackStatus = "CREATE_COMPLETE",
@@ -103,8 +103,8 @@ class LspOverviewPanelTest {
 
     @Test
     fun `onStackChanged with null shows empty state`() {
-        val mockCoordinator = mock<LspStackViewCoordinator>()
-        val panel = LspOverviewPanel(projectRule.project, mockCoordinator)
+        val mockCoordinator = mock<StackViewCoordinator>()
+        val panel = StackOverviewPanel(projectRule.project, mockCoordinator)
 
         panel.onStackChanged(null, null, false)
 
@@ -114,8 +114,8 @@ class LspOverviewPanelTest {
 
     @Test
     fun `onStackChanged with change set mode shows empty state`() {
-        val mockCoordinator = mock<LspStackViewCoordinator>()
-        val panel = LspOverviewPanel(projectRule.project, mockCoordinator)
+        val mockCoordinator = mock<StackViewCoordinator>()
+        val panel = StackOverviewPanel(projectRule.project, mockCoordinator)
 
         panel.onStackChanged("test-stack", "test-arn", true)
 

@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.cfnlsp.stacks.views
 
 import com.intellij.ui.JBColor
+import software.aws.toolkit.core.utils.getLogger
 import java.awt.Color
 import java.time.Instant
 import java.time.ZoneId
@@ -12,19 +13,19 @@ import java.time.format.DateTimeFormatter
 object StackStatusUtils {
     fun getStatusColors(status: String): Pair<Color?, Color?> = when {
         status.contains("COMPLETE") && !status.contains("ROLLBACK") ->
-            JBColor(0x28A745, 0x28A745) to JBColor.WHITE
+            JBColor.GREEN to JBColor.BLACK
         status.contains("FAILED") || status.contains("ROLLBACK") ->
-            JBColor(0xDC3545, 0xDC3545) to JBColor.WHITE
+            JBColor.RED to JBColor.BLACK
         status.contains("PROGRESS") ->
-            JBColor(0xFFC107, 0xFFC107) to JBColor(0x212529, 0x212529)
+            JBColor.YELLOW to JBColor.BLACK
         else -> null to null
     }
 
-    fun isInTransientState(status: String): Boolean =
-        status.contains("_IN_PROGRESS") || status.contains("_CLEANUP_IN_PROGRESS")
+    fun isInTransientState(status: String): Boolean = status.contains("_CLEANUP_IN_PROGRESS")
 }
 
 object StackDateFormatter {
+    private val LOG = getLogger<StackDateFormatter>()
     private val dateFormatter = DateTimeFormatter.ofPattern("d/M/yyyy, h:mm:ss a")
 
     fun formatDate(dateString: String?): String? = try {
@@ -33,6 +34,7 @@ object StackDateFormatter {
             instant.atZone(ZoneId.systemDefault()).format(dateFormatter)
         }
     } catch (e: Exception) {
-        dateString
+        LOG.warn("Failed to parse date string: $dateString", e)
+        null
     }
 }

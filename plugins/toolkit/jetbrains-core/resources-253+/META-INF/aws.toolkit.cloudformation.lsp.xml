@@ -5,6 +5,15 @@
     <extensions defaultExtensionNs="com.intellij">
         <platform.lsp.serverSupportProvider
             implementation="software.aws.toolkits.jetbrains.services.cfnlsp.server.CfnLspServerSupportProvider"/>
+        
+        <toolWindow id="AWS CloudFormation Stack Details"
+                    anchor="bottom"
+                    icon="AwsIcons.Logos.CLOUD_FORMATION_TOOL"
+                    doNotActivateOnStart="true"
+                    canCloseContents="false"
+                    secondary="true"
+                    visibleOnLargeStripe="false"
+                    factoryClass="software.aws.toolkits.jetbrains.services.cfnlsp.stacks.views.StackDetailToolWindowFactory"/>
     </extensions>
 
     <extensions defaultExtensionNs="aws.toolkit">
@@ -63,6 +72,10 @@
                 class="software.aws.toolkits.jetbrains.services.cfnlsp.explorer.actions.GetStackManagementInfoAction"
                 text="Get Stack Management Info"/>
 
+        <action id="aws.toolkit.cloudformation.stack.view"
+                class="software.aws.toolkits.jetbrains.services.cfnlsp.stacks.views.OpenStackViewAction"
+                text="View Stack Details"/>
+
         <action id="aws.toolkit.cloudformation.validateAndDeploy"
                 class="software.aws.toolkits.jetbrains.services.cfnlsp.stacks.ValidateAndDeployAction"
                 text="Validate and Deploy"
@@ -74,11 +87,8 @@
         <!-- Right-click on individual Stack node -->
         <group id="aws.toolkit.cloudformation.stack.actions">
             <reference ref="aws.toolkit.cloudformation.validateAndDeploy"/>
+            <reference ref="aws.toolkit.cloudformation.stack.view"/>
         </group>
-
-        <action id="aws.toolkit.cloudformation.stack.view"
-                class="software.aws.toolkits.jetbrains.services.cfnlsp.stacks.views.OpenLspStackViewAction"
-                text="View Stack Details"/>
 
         <!-- Right-click on Stacks node (no more stacks to load) -->
         <group id="aws.toolkit.cloudformation.stacks.actions">
@@ -93,10 +103,6 @@
             <separator/>
             <reference ref="aws.toolkit.cloudformation.stacks.load_more"/>
             <reference ref="aws.toolkit.cloudformation.stacks.refresh"/>
-        </group>
-
-        <group id="aws.toolkit.cloudformation.stack.actions">
-            <reference ref="aws.toolkit.cloudformation.stack.view"/>
         </group>
 
         <group id="aws.toolkit.cloudformation.resources.actions">

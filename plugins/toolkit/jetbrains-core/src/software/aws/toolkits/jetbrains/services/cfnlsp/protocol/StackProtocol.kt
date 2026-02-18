@@ -46,10 +46,10 @@ data class DescribeStackParams(
 )
 
 data class DescribeStackResult(
-    val stack: LspStack?,
+    val stack: StackDetail?,
 )
 
-data class LspStack(
+data class StackDetail(
     @SerializedName("StackName")
     val stackName: String,
     @SerializedName("StackId")
@@ -65,11 +65,11 @@ data class LspStack(
     @SerializedName("Description")
     val description: String? = null,
     @SerializedName("Outputs")
-    val outputs: List<LspOutput> = emptyList(),
+    val outputs: List<StackOutput> = emptyList(),
     val isChangeSetMode: Boolean = false,
 )
 
-data class LspOutput(
+data class StackOutput(
     @SerializedName("OutputKey")
     val outputKey: String,
     @SerializedName("OutputValue")
