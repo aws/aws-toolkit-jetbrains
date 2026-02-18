@@ -110,9 +110,11 @@ class QRegionProfileManager : PersistentStateComponent<QProfileState>, Disposabl
             if (mappedProfiles.size == 1) {
                 switchProfile(project, mappedProfiles.first(), intent = QProfileSwitchIntent.Update)
             }
-            mappedProfiles.takeIf { it.isNotEmpty() }?.also {
-                connectionIdToProfileCount[connection.id] = it.size
-            } ?: error("You don't have access to the resource")
+            // Return null for empty profiles instead of throwing, let callers handle gracefully
+            if (mappedProfiles.isNotEmpty()) {
+                connectionIdToProfileCount[connection.id] = mappedProfiles.size
+            }
+            mappedProfiles.takeIf { it.isNotEmpty() }
         } catch (e: Exception) {
             if (e is AccessDeniedException) {
                 LOG.warn { "Failed to list region profiles: ${e.message}" }
