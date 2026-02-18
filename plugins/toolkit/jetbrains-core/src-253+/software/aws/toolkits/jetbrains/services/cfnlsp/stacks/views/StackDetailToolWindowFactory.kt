@@ -3,20 +3,25 @@
 
 package software.aws.toolkits.jetbrains.services.cfnlsp.stacks.views
 
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.ui.content.ContentFactory
+import software.aws.toolkits.resources.message
 import javax.swing.JLabel
 
 class StackDetailToolWindowFactory : ToolWindowFactory {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
-        val contentFactory = ContentFactory.getInstance()
-        val content = contentFactory.createContent(
-            JLabel("Select a stack to view details"),
-            "Stack Details",
-            false
-        )
-        toolWindow.contentManager.addContent(content)
+        runInEdt {
+            toolWindow.installWatcher(toolWindow.contentManager)
+        }
+        // Don't create any initial content - tabs will be created when stacks are opened
     }
+
+    override fun init(toolWindow: ToolWindow) {
+        toolWindow.stripeTitle = message("cloudformation.lsp.stack.view")
+    }
+
+    override fun shouldBeAvailable(project: Project): Boolean = false
 }

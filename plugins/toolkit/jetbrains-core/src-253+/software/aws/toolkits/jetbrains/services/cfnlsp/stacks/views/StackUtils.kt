@@ -21,7 +21,7 @@ object StackStatusUtils {
         else -> null to null
     }
 
-    fun isInTransientState(status: String): Boolean = status.contains("_CLEANUP_IN_PROGRESS")
+    fun isInTransientState(status: String): Boolean = status.contains("_IN_PROGRESS")
 }
 
 object StackDateFormatter {

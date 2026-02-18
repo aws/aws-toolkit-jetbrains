@@ -5,29 +5,25 @@ package software.aws.toolkits.jetbrains.services.cfnlsp.stacks.views
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
-import com.intellij.ui.JBColor
-import com.intellij.ui.JBSplitter
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBTabbedPane
-import com.intellij.util.ui.JBUI
-import com.intellij.util.ui.UIUtil
 import java.awt.BorderLayout
-import java.awt.Font
 import javax.swing.JComponent
 import javax.swing.JPanel
 
 internal class StackDetailView(
     project: Project,
     private val stackName: String,
-    private val stackId: String,
+    private val stackArn: String, // Use ARN as primary identifier
 ) : Disposable {
 
     private val coordinator = StackViewCoordinator.getInstance(project)
-    private val updater = StackDetailUpdater(project, stackName, coordinator)
-    private val overviewPanel = StackOverviewPanel(project, coordinator)
+    private val updater = StackDetailUpdater(project, stackName, stackArn, coordinator)
+    private val overviewPanel = StackOverviewPanel(project, coordinator, stackArn)
 
     private val tabbedPane = JBTabbedPane().apply {
+        addTab("Overview", createOverviewPanel())
         addTab("Resources", createResourcesPanel())
         addTab("Events", createEventsPanel())
         addTab("Outputs", createOutputsPanel())
@@ -54,38 +50,16 @@ internal class StackDetailView(
     }
 
     private val mainPanel = JBPanel<JBPanel<*>>(BorderLayout()).apply {
-        add(createPanelsContainer(), BorderLayout.CENTER)
+        add(tabbedPane, BorderLayout.CENTER)
     }
 
     private fun createPanelsContainer(): JPanel {
-        val overviewSectionPanel = createSectionPanel("OVERVIEW", overviewPanel.component)
-
-        val splitter = JBSplitter(false, 0.3f).apply {
-            firstComponent = overviewSectionPanel
-            secondComponent = tabbedPane
-        }
-
         return JBPanel<JBPanel<*>>(BorderLayout()).apply {
-            add(splitter, BorderLayout.CENTER)
+            add(tabbedPane, BorderLayout.CENTER)
         }
     }
 
-    private fun createSectionPanel(title: String, content: JComponent): JPanel =
-        JBPanel<JBPanel<*>>(BorderLayout()).apply {
-            border = JBUI.Borders.compound(
-                JBUI.Borders.empty(8),
-                JBUI.Borders.customLine(JBColor.border())
-            )
-
-            val titleLabel = JBLabel(title).apply {
-                font = font.deriveFont(Font.BOLD, 12f)
-                foreground = UIUtil.getContextHelpForeground()
-                border = JBUI.Borders.emptyBottom(8)
-            }
-
-            add(titleLabel, BorderLayout.NORTH)
-            add(content, BorderLayout.CENTER)
-        }
+    private fun createOverviewPanel(): JComponent = overviewPanel.component
 
     private fun createResourcesPanel(): JPanel = JBPanel<JBPanel<*>>().apply {
         add(JBLabel("Stack Resources - Coming Soon"))
@@ -100,7 +74,7 @@ internal class StackDetailView(
     }
 
     fun start() {
-        coordinator.setStack(stackName, stackId)
+        coordinator.setStack(stackArn, stackName)
         updater.setViewVisible(true)
     }
 
@@ -108,5 +82,6 @@ internal class StackDetailView(
 
     override fun dispose() {
         updater.dispose()
+        coordinator.removeStack(stackArn)
     }
 }

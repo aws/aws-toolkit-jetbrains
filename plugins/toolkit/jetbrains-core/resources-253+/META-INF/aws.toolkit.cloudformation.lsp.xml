@@ -6,14 +6,9 @@
         <platform.lsp.serverSupportProvider
             implementation="software.aws.toolkits.jetbrains.services.cfnlsp.server.CfnLspServerSupportProvider"/>
         
-        <toolWindow id="AWS CloudFormation Stack Details"
-                    anchor="bottom"
-                    icon="AwsIcons.Logos.CLOUD_FORMATION_TOOL"
-                    doNotActivateOnStart="true"
-                    canCloseContents="false"
-                    secondary="true"
-                    visibleOnLargeStripe="false"
-                    factoryClass="software.aws.toolkits.jetbrains.services.cfnlsp.stacks.views.StackDetailToolWindowFactory"/>
+        <toolWindow id="cloudformation.lsp.stack.view" anchor="bottom" doNotActivateOnStart="true" canCloseContents="true"
+                    factoryClass="software.aws.toolkits.jetbrains.services.cfnlsp.stacks.views.StackDetailToolWindowFactory"
+                    icon="AwsIcons.Logos.CLOUD_FORMATION_TOOL"/>
     </extensions>
 
     <extensions defaultExtensionNs="aws.toolkit">
