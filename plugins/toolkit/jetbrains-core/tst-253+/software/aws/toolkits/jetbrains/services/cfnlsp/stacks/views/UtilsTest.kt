@@ -8,7 +8,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
-class StackUtilsTest {
+class UtilsTest {
 
     @Nested
     inner class StackStatusUtilsTest {
@@ -23,8 +23,8 @@ class StackUtilsTest {
 
             testCases.forEach { status ->
                 val (bgColor, fgColor) = StackStatusUtils.getStatusColors(status)
-                assertThat(bgColor).isEqualTo(JBColor(0x28A745, 0x28A745))
-                assertThat(fgColor).isEqualTo(JBColor.WHITE)
+                assertThat(bgColor).isEqualTo(JBColor.GREEN)
+                assertThat(fgColor).isEqualTo(JBColor.BLACK)
             }
         }
 
@@ -39,8 +39,8 @@ class StackUtilsTest {
 
             testCases.forEach { status ->
                 val (bgColor, fgColor) = StackStatusUtils.getStatusColors(status)
-                assertThat(bgColor).isEqualTo(JBColor(0xDC3545, 0xDC3545))
-                assertThat(fgColor).isEqualTo(JBColor.WHITE)
+                assertThat(bgColor).isEqualTo(JBColor.RED)
+                assertThat(fgColor).isEqualTo(JBColor.BLACK)
             }
         }
 
@@ -54,8 +54,8 @@ class StackUtilsTest {
 
             testCases.forEach { status ->
                 val (bgColor, fgColor) = StackStatusUtils.getStatusColors(status)
-                assertThat(bgColor).isEqualTo(JBColor(0xFFC107, 0xFFC107))
-                assertThat(fgColor).isEqualTo(JBColor(0x212529, 0x212529))
+                assertThat(bgColor).isEqualTo(JBColor.YELLOW)
+                assertThat(fgColor).isEqualTo(JBColor.BLACK)
             }
         }
 
@@ -138,25 +138,25 @@ class StackUtilsTest {
         }
 
         @Test
-        fun `formatDate returns original string for invalid date`() {
+        fun `formatDate returns null for invalid date`() {
             val invalidDate = "not-a-date"
             val result = StackDateFormatter.formatDate(invalidDate)
 
-            assertThat(result).isEqualTo("not-a-date")
+            assertThat(result).isNull()
         }
 
         @Test
-        fun `formatDate returns original string for empty string`() {
+        fun `formatDate returns null for empty string`() {
             val result = StackDateFormatter.formatDate("")
-            assertThat(result).isEqualTo("")
+            assertThat(result).isNull()
         }
 
         @Test
-        fun `formatDate returns original string for malformed ISO date`() {
+        fun `formatDate returns null for malformed ISO date`() {
             val malformedDate = "2024-13-45T25:70:80Z"
             val result = StackDateFormatter.formatDate(malformedDate)
 
-            assertThat(result).isEqualTo("2024-13-45T25:70:80Z")
+            assertThat(result).isNull()
         }
     }
 }

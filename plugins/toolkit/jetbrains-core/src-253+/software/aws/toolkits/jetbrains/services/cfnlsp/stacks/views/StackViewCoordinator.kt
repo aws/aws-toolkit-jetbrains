@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 
 interface StackSelectionListener {
-    fun onStackChanged(stackArn: String, stackName: String?, isChangeSetMode: Boolean)
+    fun onStackChanged(stackArn: String, stackName: String?)
 }
 
 interface StackStatusListener {
@@ -26,8 +26,7 @@ data class StackState(
     val stackName: String,
     val stackArn: String,
     val status: String?,
-    val isChangeSetMode: Boolean,
-    val lastUpdated: Instant
+    val lastUpdated: Instant,
 )
 
 @Service(Service.Level.PROJECT)
@@ -35,21 +34,17 @@ class StackViewCoordinator : Disposable {
     private val stackStates = ConcurrentHashMap<String, StackState>()
     private val listeners = ConcurrentHashMap<String, CopyOnWriteArrayList<StackPanelListener>>()
 
-    fun setStack(stackArn: String, stackName: String, isChangeSetMode: Boolean = false) {
-        LOG.info("Setting stack: $stackName (ARN: $stackArn)")
-        val state = StackState(stackName, stackArn, null, isChangeSetMode, Instant.now())
+    fun setStack(stackArn: String, stackName: String) {
+        val state = StackState(stackName, stackArn, null, Instant.now())
         stackStates[stackArn] = state
         notifyStackChanged(stackArn)
     }
 
     fun updateStackStatus(stackArn: String, status: String) {
-        LOG.info("Updating stack status: $stackArn -> $status")
         stackStates[stackArn]?.let { currentState ->
             if (currentState.status != status) {
                 stackStates[stackArn] = currentState.copy(status = status, lastUpdated = Instant.now())
                 notifyStatusChanged(stackArn, status)
-            } else {
-                LOG.debug("Status unchanged for $stackArn: $status")
             }
         } ?: LOG.warn("Stack not found for status update: $stackArn")
     }
@@ -57,26 +52,22 @@ class StackViewCoordinator : Disposable {
     fun getStackState(stackArn: String): StackState? = stackStates[stackArn]
 
     fun removeStack(stackArn: String) {
-        LOG.info("Removing stack: $stackArn")
         stackStates.remove(stackArn)
         listeners.remove(stackArn)
     }
 
     fun addListener(stackArn: String, listener: StackPanelListener): Disposable {
-        LOG.info("Adding listener for stack: $stackArn")
         listeners.computeIfAbsent(stackArn) { CopyOnWriteArrayList() }.add(listener)
-        
+
         // Immediately notify new listener of current state
         stackStates[stackArn]?.let { state ->
-            LOG.info("Notifying new listener of current state: ${state.stackName}")
-            listener.onStackChanged(stackArn, state.stackName, state.isChangeSetMode)
+            listener.onStackChanged(stackArn, state.stackName)
             state.status?.let { status ->
                 listener.onStackStatusChanged(stackArn, status)
             }
         }
-        
-        return Disposable { 
-            LOG.info("Removing listener for stack: $stackArn")
+
+        return Disposable {
             listeners[stackArn]?.remove(listener)
             if (listeners[stackArn]?.isEmpty() == true) {
                 listeners.remove(stackArn)
@@ -86,23 +77,18 @@ class StackViewCoordinator : Disposable {
 
     private fun notifyStackChanged(stackArn: String) {
         val state = stackStates[stackArn] ?: return
-        val listenerCount = listeners[stackArn]?.size ?: 0
-        LOG.info("Notifying $listenerCount listeners of stack change: ${state.stackName}")
-        listeners[stackArn]?.forEach { 
-            it.onStackChanged(stackArn, state.stackName, state.isChangeSetMode) 
+        listeners[stackArn]?.forEach {
+            it.onStackChanged(stackArn, state.stackName)
         }
     }
 
     private fun notifyStatusChanged(stackArn: String, status: String) {
-        val listenerCount = listeners[stackArn]?.size ?: 0
-        LOG.info("Notifying $listenerCount listeners of status change: $stackArn -> $status")
-        listeners[stackArn]?.forEach { 
-            it.onStackStatusChanged(stackArn, status) 
+        listeners[stackArn]?.forEach {
+            it.onStackStatusChanged(stackArn, status)
         }
     }
 
     override fun dispose() {
-        LOG.info("Disposing coordinator with ${stackStates.size} stacks")
         stackStates.clear()
         listeners.clear()
     }

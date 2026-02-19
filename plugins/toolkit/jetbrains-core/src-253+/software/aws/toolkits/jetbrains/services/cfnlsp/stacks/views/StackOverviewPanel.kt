@@ -13,13 +13,13 @@ import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBTextArea
 import com.intellij.util.ui.JBUI
+import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.cfnlsp.CfnClientService
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeStackParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.StackDetail
 import software.aws.toolkits.jetbrains.services.cfnlsp.ui.ConsoleUrlGenerator
 import software.aws.toolkits.jetbrains.services.cfnlsp.ui.IconUtils
 import software.aws.toolkits.jetbrains.services.cfnlsp.ui.WrappingTextArea
-import software.aws.toolkit.core.utils.getLogger
 import java.awt.Cursor
 import java.awt.FlowLayout
 import java.awt.Font
@@ -32,11 +32,12 @@ import javax.swing.JPanel
 
 class StackOverviewPanel(
     project: Project,
-    private val coordinator: StackViewCoordinator,
-    private val stackArn: String, // Know which stack this panel belongs to
+    coordinator: StackViewCoordinator,
+    private val stackArn: String,
 ) : Disposable, StackPanelListener {
 
-    private val cfnClientService = CfnClientService.getInstance(project)
+    internal var clientServiceProvider: () -> CfnClientService = { CfnClientService.getInstance(project) }
+    private val cfnClientService get() = clientServiceProvider()
     private val disposables = mutableListOf<Disposable>()
 
     internal val consoleLink = JBLabel(IconUtils.createBlueIcon(AllIcons.Ide.External_link_arrow)).apply {
@@ -64,7 +65,6 @@ class StackOverviewPanel(
     val component: JComponent = createPanel()
 
     init {
-        LOG.info("Creating StackOverviewPanel for ARN: $stackArn")
         disposables.add(coordinator.addListener(stackArn, this))
         setupStyling()
     }
@@ -78,10 +78,8 @@ class StackOverviewPanel(
         statusValue.horizontalAlignment = JBLabel.CENTER
     }
 
-    override fun onStackChanged(updatedStackArn: String, stackName: String?, isChangeSetMode: Boolean) {
-        LOG.info("StackOverviewPanel.onStackChanged: $updatedStackArn, $stackName (my ARN: $stackArn)")
-        // Only respond to updates for MY stack
-        if (updatedStackArn == this.stackArn && stackName != null && !isChangeSetMode) {
+    override fun onStackChanged(updatedStackArn: String, stackName: String?) {
+        if (updatedStackArn == this.stackArn && stackName != null) {
             stackNameValue.text = stackName
             renderEmpty() // Show loading state
             loadStackDetails(stackName)
@@ -89,26 +87,23 @@ class StackOverviewPanel(
     }
 
     override fun onStackStatusChanged(updatedStackArn: String, status: String?) {
-        LOG.info("StackOverviewPanel.onStackStatusChanged: $updatedStackArn -> $status (my ARN: $stackArn)")
-        // Only respond to updates for MY stack
         if (updatedStackArn == this.stackArn && status != null) {
             updateStatusDisplay(status)
         }
     }
 
     private fun loadStackDetails(stackName: String) {
-        LOG.info("Loading stack details for: $stackName")
         cfnClientService.describeStack(DescribeStackParams(stackName))
             .thenApply { result -> result?.stack }
             .whenComplete { result, error ->
+                // LSP callbacks run on background threads, must switch to EDT for UI updates
                 ApplicationManager.getApplication().invokeLater {
                     if (error != null) {
                         LOG.warn("Failed to load stack details for $stackName: ${error.message}")
                         renderError("Failed to load stack: ${error.message}")
                     } else {
-                        result?.let { 
-                            LOG.info("Successfully loaded stack details for $stackName")
-                            renderStack(it) 
+                        result?.let {
+                            renderStack(it)
                         } ?: run {
                             LOG.warn("No stack data received for $stackName")
                             renderEmpty()
@@ -145,7 +140,6 @@ class StackOverviewPanel(
     }
 
     fun renderStack(stack: StackDetail) {
-        LOG.info("Rendering stack: ${stack.stackName} with status: ${stack.stackStatus}")
         stackNameValue.text = stack.stackName
         updateStatusDisplay(stack.stackStatus)
         consoleLink.isVisible = stack.stackId.isNotEmpty()
@@ -160,7 +154,6 @@ class StackOverviewPanel(
     }
 
     private fun renderEmpty() {
-        LOG.debug("Rendering empty state")
         stackNameValue.text = "Select a stack to view details"
         statusValue.text = "-"
         stackIdValue.text = "-"
@@ -182,7 +175,6 @@ class StackOverviewPanel(
     }
 
     private fun updateStatusDisplay(status: String) {
-        LOG.debug("Updating status display to: $status")
         statusValue.text = status
         val (bgColor, fgColor) = StackStatusUtils.getStatusColors(status)
 
@@ -226,7 +218,6 @@ class StackOverviewPanel(
     }
 
     override fun dispose() {
-        LOG.info("Disposing StackOverviewPanel for ARN: $stackArn")
         disposables.forEach { it.dispose() }
         disposables.clear()
     }

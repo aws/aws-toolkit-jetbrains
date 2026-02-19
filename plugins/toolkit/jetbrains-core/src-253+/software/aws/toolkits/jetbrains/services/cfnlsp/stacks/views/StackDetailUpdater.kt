@@ -24,7 +24,6 @@ internal class StackDetailUpdater(
     private var isViewVisible: Boolean = false
 
     fun setViewVisible(visible: Boolean) {
-        LOG.info("Setting view visibility for $stackName: $visible")
         isViewVisible = visible
         if (visible) {
             start()
@@ -34,7 +33,6 @@ internal class StackDetailUpdater(
     }
 
     fun start() {
-        LOG.info("Starting polling for stack: $stackName")
         stop() // Stop any existing polling
         pollingTimer = Timer().apply {
             scheduleAtFixedRate(
@@ -52,14 +50,12 @@ internal class StackDetailUpdater(
 
     fun stop() {
         if (pollingTimer != null) {
-            LOG.info("Stopping polling for stack: $stackName")
             pollingTimer?.cancel()
             pollingTimer = null
         }
     }
 
     private fun fetchStackData() {
-        LOG.debug("Fetching stack data for: $stackName")
         cfnClientService.describeStack(DescribeStackParams(stackName))
             .whenComplete { result, error ->
                 // Ensure coordinator updates happen on EDT
@@ -68,7 +64,6 @@ internal class StackDetailUpdater(
                         LOG.warn("Error fetching stack data for $stackName: ${error.message}")
                     } else {
                         result?.stack?.let { stack ->
-                            LOG.debug("Received stack status for $stackName: ${stack.stackStatus}")
                             coordinator.updateStackStatus(stackArn, stack.stackStatus)
 
                             // Stop polling if stack reaches terminal state
@@ -83,7 +78,6 @@ internal class StackDetailUpdater(
     }
 
     override fun dispose() {
-        LOG.info("Disposing updater for stack: $stackName")
         stop()
     }
 

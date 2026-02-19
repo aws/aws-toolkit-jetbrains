@@ -10,6 +10,8 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.ui.content.ContentFactory
+import com.intellij.ui.content.ContentManagerEvent
+import com.intellij.ui.content.ContentManagerListener
 import software.aws.toolkit.core.utils.getLogger
 import java.util.concurrent.ConcurrentHashMap
 
@@ -18,13 +20,12 @@ class StackDetailWindowManager(private val project: Project) {
 
     private val activeStacks = ConcurrentHashMap<String, StackDetailView>()
     private val maxTabs = 10
+    private var listenerRegistered = false
 
     fun openStack(stackName: String, stackId: String) {
-        LOG.info("StackDetailWindowManager.openStack called for: $stackName (ARN: $stackId)")
-        
         val toolWindowManager = ToolWindowManager.getInstance(project)
         val toolWindow = toolWindowManager.getToolWindow("cloudformation.lsp.stack.view")
-        
+
         if (toolWindow == null) {
             LOG.error("Tool window 'cloudformation.lsp.stack.view' not found")
             return
@@ -34,16 +35,15 @@ class StackDetailWindowManager(private val project: Project) {
         if (!toolWindow.isAvailable) {
             toolWindow.setAvailable(true, null)
         }
-        
+
         val contentManager = toolWindow.contentManager
 
         // Check if tab already exists
         val existingContent = contentManager.contents.find {
             it.getUserData(STACK_ARN_KEY) == stackId
         }
-        
+
         if (existingContent != null) {
-            LOG.info("Tab already exists for stack $stackId, activating")
             contentManager.setSelectedContent(existingContent)
             runInEdt {
                 toolWindow.show()
@@ -52,9 +52,7 @@ class StackDetailWindowManager(private val project: Project) {
             return
         }
 
-        // Enforce tab limit
         if (contentManager.contentCount >= maxTabs) {
-            LOG.info("Tab limit reached, removing oldest tab")
             removeOldestTab()
         }
 
@@ -66,41 +64,39 @@ class StackDetailWindowManager(private val project: Project) {
             return
         }
 
-        // Create new tab
         val content = ContentFactory.getInstance().createContent(
             stackView.getComponent(),
-            stackName, // Tab title is stack name
-            true // Closeable
+            stackName, // Tab title is stack name, key is stack arn
+            true
         )
         content.putUserData(STACK_ARN_KEY, stackId)
-        
+
+        // Register global listener only once - handles tab closure cleanup for ALL stacks
+        // Note: Each StackOverviewPanel has separate listeners for stack-specific state updates
+        if (!listenerRegistered) {
+            contentManager.addContentManagerListener(object : ContentManagerListener {
+                override fun contentRemoved(event: ContentManagerEvent) {
+                    val removedContent = event.content
+                    val stackArn = removedContent.getUserData(STACK_ARN_KEY)
+                    if (stackArn != null) {
+                        LOG.info("Tab closed by user, disposing resources for stack: $stackArn")
+                        activeStacks[stackArn]?.dispose()
+                        activeStacks.remove(stackArn)
+                    }
+                }
+            })
+            listenerRegistered = true
+        }
+
         contentManager.addContent(content)
         contentManager.setSelectedContent(content)
-        
+
         activeStacks[stackId] = stackView
         stackView.start()
 
         runInEdt {
             toolWindow.show()
             toolWindow.activate(null, true)
-            LOG.info("New tab created and activated for stack $stackId")
-        }
-    }
-
-    fun closeStack(stackArn: String) {
-        val toolWindowManager = ToolWindowManager.getInstance(project)
-        val toolWindow = toolWindowManager.getToolWindow("cloudformation.lsp.stack.view") ?: return
-        val contentManager = toolWindow.contentManager
-
-        val content = contentManager.contents.find { 
-            it.getUserData(STACK_ARN_KEY) == stackArn 
-        }
-        
-        content?.let {
-            activeStacks[stackArn]?.dispose()
-            activeStacks.remove(stackArn)
-            contentManager.removeContent(it, true)
-            LOG.info("Closed tab for stack $stackArn")
         }
     }
 
@@ -108,23 +104,22 @@ class StackDetailWindowManager(private val project: Project) {
         val toolWindowManager = ToolWindowManager.getInstance(project)
         val toolWindow = toolWindowManager.getToolWindow("cloudformation.lsp.stack.view") ?: return
         val contentManager = toolWindow.contentManager
-        
+
         if (contentManager.contentCount > 0) {
             val oldestContent = contentManager.contents.first()
             val stackArn = oldestContent.getUserData(STACK_ARN_KEY)
-            stackArn?.let { 
+            stackArn?.let {
                 activeStacks[it]?.dispose()
                 activeStacks.remove(it)
             }
             contentManager.removeContent(oldestContent, true)
-            LOG.info("Removed oldest tab for stack $stackArn")
         }
     }
 
     companion object {
         private val LOG = getLogger<StackDetailWindowManager>()
         private val STACK_ARN_KEY = Key.create<String>("STACK_ARN")
-        
+
         fun getInstance(project: Project): StackDetailWindowManager = project.service()
     }
 }

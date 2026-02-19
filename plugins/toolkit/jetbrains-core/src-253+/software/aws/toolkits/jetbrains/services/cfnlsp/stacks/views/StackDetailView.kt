@@ -53,12 +53,6 @@ internal class StackDetailView(
         add(tabbedPane, BorderLayout.CENTER)
     }
 
-    private fun createPanelsContainer(): JPanel {
-        return JBPanel<JBPanel<*>>(BorderLayout()).apply {
-            add(tabbedPane, BorderLayout.CENTER)
-        }
-    }
-
     private fun createOverviewPanel(): JComponent = overviewPanel.component
 
     private fun createResourcesPanel(): JPanel = JBPanel<JBPanel<*>>().apply {
@@ -82,6 +76,7 @@ internal class StackDetailView(
 
     override fun dispose() {
         updater.dispose()
+        overviewPanel.dispose()
         coordinator.removeStack(stackArn)
     }
 }

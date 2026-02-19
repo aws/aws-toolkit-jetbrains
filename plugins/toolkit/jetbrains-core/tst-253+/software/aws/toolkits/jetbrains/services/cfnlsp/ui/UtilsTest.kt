@@ -6,7 +6,7 @@ package software.aws.toolkits.jetbrains.services.cfnlsp.ui
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
-class ConsoleUrlGeneratorTest {
+class UtilsTest {
 
     @Test
     fun `generateUrl creates correct AWS console URL`() {

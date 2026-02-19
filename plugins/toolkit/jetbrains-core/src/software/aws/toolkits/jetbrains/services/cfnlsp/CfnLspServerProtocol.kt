@@ -7,11 +7,11 @@ import org.eclipse.lsp4j.jsonrpc.services.JsonRequest
 import org.eclipse.lsp4j.services.LanguageServer
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.CreateStackActionResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.CreateValidationParams
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeStackParams
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeStackResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeValidationStatusResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.GetStackActionStatusResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.Identifiable
-import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeStackParams
-import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeStackResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ListChangeSetsParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ListChangeSetsResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ListResourcesParams
