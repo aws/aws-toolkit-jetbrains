@@ -92,6 +92,27 @@ class StackViewWindowManager(private val project: Project) {
         contentManager.setSelectedContent(content)
 
         activeStacks[stackId] = stackView
+
+        // Add status listener for this specific stack to update tab title with status
+        val coordinator = StackViewCoordinator.getInstance(project)
+        coordinator.addListener(
+            stackId,
+            object : StackPanelListener {
+                override fun onStackChanged(stackArn: String, stackName: String?) {}
+                override fun onStackStatusChanged(stackArn: String, status: String?) {
+                    LOG.info("Updating tab title for stack: $stackArn, status: $status")
+                    runInEdt {
+                        val displayName = if (status != null) {
+                            "$stackName [$status]"
+                        } else {
+                            stackName
+                        }
+                        content.setDisplayName(displayName)
+                    }
+                }
+            }
+        )
+
         stackView.start()
 
         runInEdt {
