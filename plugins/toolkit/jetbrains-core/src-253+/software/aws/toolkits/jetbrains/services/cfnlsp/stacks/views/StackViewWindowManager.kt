@@ -16,9 +16,9 @@ import software.aws.toolkit.core.utils.getLogger
 import java.util.concurrent.ConcurrentHashMap
 
 @Service(Service.Level.PROJECT)
-class StackDetailWindowManager(private val project: Project) {
+class StackViewWindowManager(private val project: Project) {
 
-    private val activeStacks = ConcurrentHashMap<String, StackDetailView>()
+    private val activeStacks = ConcurrentHashMap<String, StackViewPanelTabber>()
     private val maxTabs = 10
     private var listenerRegistered = false
 
@@ -58,7 +58,7 @@ class StackDetailWindowManager(private val project: Project) {
 
         // Create new stack view
         val stackView = try {
-            StackDetailView(project, stackName, stackId)
+            StackViewPanelTabber(project, stackName, stackId)
         } catch (e: Exception) {
             LOG.error("Failed to create StackDetailView", e)
             return
@@ -117,9 +117,9 @@ class StackDetailWindowManager(private val project: Project) {
     }
 
     companion object {
-        private val LOG = getLogger<StackDetailWindowManager>()
+        private val LOG = getLogger<StackViewWindowManager>()
         private val STACK_ARN_KEY = Key.create<String>("STACK_ARN")
 
-        fun getInstance(project: Project): StackDetailWindowManager = project.service()
+        fun getInstance(project: Project): StackViewWindowManager = project.service()
     }
 }

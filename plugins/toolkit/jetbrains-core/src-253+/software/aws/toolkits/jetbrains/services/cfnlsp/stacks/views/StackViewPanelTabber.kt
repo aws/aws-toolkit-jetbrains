@@ -12,14 +12,14 @@ import java.awt.BorderLayout
 import javax.swing.JComponent
 import javax.swing.JPanel
 
-internal class StackDetailView(
+internal class StackViewPanelTabber(
     project: Project,
     private val stackName: String,
     private val stackArn: String, // Use ARN as primary identifier
 ) : Disposable {
 
     private val coordinator = StackViewCoordinator.getInstance(project)
-    private val updater = StackDetailUpdater(project, stackName, stackArn, coordinator)
+    private val poller = StackEventPoller(project, stackName, stackArn, coordinator)
     private val overviewPanel = StackOverviewPanel(project, coordinator, stackArn)
 
     private val tabbedPane = JBTabbedPane().apply {
@@ -69,13 +69,13 @@ internal class StackDetailView(
 
     fun start() {
         coordinator.setStack(stackArn, stackName)
-        updater.setViewVisible(true)
+        poller.setViewVisible(true)
     }
 
     fun getComponent(): JPanel = mainPanel
 
     override fun dispose() {
-        updater.dispose()
+        poller.dispose()
         overviewPanel.dispose()
         coordinator.removeStack(stackArn)
     }

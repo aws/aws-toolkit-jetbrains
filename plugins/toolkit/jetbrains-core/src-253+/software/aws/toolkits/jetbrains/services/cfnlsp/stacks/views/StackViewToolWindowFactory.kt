@@ -9,7 +9,7 @@ import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
 import software.aws.toolkits.resources.message
 
-class StackDetailToolWindowFactory : ToolWindowFactory {
+class StackViewToolWindowFactory : ToolWindowFactory {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         runInEdt {
             toolWindow.installWatcher(toolWindow.contentManager)

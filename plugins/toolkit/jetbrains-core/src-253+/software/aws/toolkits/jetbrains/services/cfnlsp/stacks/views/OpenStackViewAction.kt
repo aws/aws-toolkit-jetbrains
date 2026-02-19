@@ -29,7 +29,7 @@ internal class OpenStackViewAction : AnAction(), DumbAware {
         val stackName = stackNode.stack.stackName ?: return
         val stackId = stackNode.stack.stackId ?: return
 
-        StackDetailWindowManager.getInstance(project)
+        StackViewWindowManager.getInstance(project)
             .openStack(stackName, stackId)
     }
 

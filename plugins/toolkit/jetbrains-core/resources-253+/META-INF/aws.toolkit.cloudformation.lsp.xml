@@ -7,7 +7,7 @@
             implementation="software.aws.toolkits.jetbrains.services.cfnlsp.server.CfnLspServerSupportProvider"/>
         
         <toolWindow id="cloudformation.lsp.stack.view" anchor="bottom" doNotActivateOnStart="true" canCloseContents="true"
-                    factoryClass="software.aws.toolkits.jetbrains.services.cfnlsp.stacks.views.StackDetailToolWindowFactory"
+                    factoryClass="software.aws.toolkits.jetbrains.services.cfnlsp.stacks.views.StackViewToolWindowFactory"
                     icon="AwsIcons.Logos.CLOUD_FORMATION_TOOL"/>
     </extensions>
 

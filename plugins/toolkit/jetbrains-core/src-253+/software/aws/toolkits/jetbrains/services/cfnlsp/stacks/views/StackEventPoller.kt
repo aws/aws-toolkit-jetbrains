@@ -12,7 +12,7 @@ import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeStackPar
 import java.util.Timer
 import java.util.TimerTask
 
-internal class StackDetailUpdater(
+internal class StackEventPoller(
     project: Project,
     private val stackName: String,
     private val stackArn: String, // Primary identifier
@@ -82,6 +82,6 @@ internal class StackDetailUpdater(
     }
 
     companion object {
-        private val LOG = getLogger<StackDetailUpdater>()
+        private val LOG = getLogger<StackEventPoller>()
     }
 }
