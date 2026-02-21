@@ -1,0 +1,4 @@
+{
+  "type" : "feature",
+  "description" : "Add the stack view panel. Users can right click on a stack name to bring up the panel. The overview panel shows stack name, status, stack ID, description, create time, update time, and status reason."
+}

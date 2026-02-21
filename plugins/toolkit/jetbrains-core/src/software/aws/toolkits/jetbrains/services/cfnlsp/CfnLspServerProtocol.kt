@@ -7,6 +7,8 @@ import org.eclipse.lsp4j.jsonrpc.services.JsonRequest
 import org.eclipse.lsp4j.services.LanguageServer
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.CreateStackActionResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.CreateValidationParams
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeStackParams
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeStackResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeValidationStatusResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.GetStackActionStatusResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.Identifiable
@@ -42,8 +44,6 @@ internal interface CfnLspServerProtocol : LanguageServer {
     @JsonRequest("aws/cfn/stack/changeSet/list")
     fun listChangeSets(params: ListChangeSetsParams): CompletableFuture<ListChangeSetsResult>
 
-    // Resources: aws/cfn/resources
-
     @JsonRequest("aws/cfn/resources/types")
     fun listResourceTypes(): CompletableFuture<ResourceTypesResult>
 
@@ -74,4 +74,8 @@ internal interface CfnLspServerProtocol : LanguageServer {
 
     @JsonRequest("aws/cfn/stack/validation/status/describe")
     fun describeValidationStatus(params: Identifiable): CompletableFuture<DescribeValidationStatusResult>
+
+    // Stack View
+    @JsonRequest("aws/cfn/stack/describe")
+    fun describeStack(params: DescribeStackParams): CompletableFuture<DescribeStackResult>
 }
