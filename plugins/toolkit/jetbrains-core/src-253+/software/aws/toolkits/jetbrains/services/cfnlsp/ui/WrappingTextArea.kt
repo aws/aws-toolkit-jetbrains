@@ -7,7 +7,7 @@ import com.intellij.ui.components.JBTextArea
 import java.awt.Dimension
 import java.awt.Font
 
-class WrappingTextArea(text: String) : JBTextArea(text) {
+internal class WrappingTextArea(text: String) : JBTextArea(text) {
     init {
         isEditable = false
         isOpaque = false

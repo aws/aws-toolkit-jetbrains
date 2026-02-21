@@ -12,7 +12,7 @@ import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeStackPar
 import java.util.Timer
 import java.util.TimerTask
 
-internal class StackEventPoller(
+internal class StackStatusPoller(
     project: Project,
     private val stackName: String,
     private val stackArn: String, // Primary identifier
@@ -43,16 +43,14 @@ internal class StackEventPoller(
                         }
                     }
                 },
-                0, 5000L
+                0, POLLING_INTERVAL_MS
             ) // Poll every 5 seconds
         }
     }
 
     fun stop() {
-        if (pollingTimer != null) {
-            pollingTimer?.cancel()
-            pollingTimer = null
-        }
+        pollingTimer?.cancel()
+        pollingTimer = null
     }
 
     private fun fetchStackData() {
@@ -63,15 +61,18 @@ internal class StackEventPoller(
                     if (error != null) {
                         LOG.warn("Error fetching stack data for $stackName: ${error.message}")
                     } else {
-                        result?.stack?.let { stack ->
-                            coordinator.updateStackStatus(stackArn, stack.stackStatus)
+                        if (result?.stack == null) {
+                            LOG.warn("No stack data received for $stackName")
+                            return@invokeLater
+                        }
+                        val stack = result.stack
+                        coordinator.updateStackStatus(stackArn, stack.stackStatus)
 
-                            // Stop polling if stack reaches terminal state
-                            if (!StackStatusUtils.isInTransientState(stack.stackStatus)) {
-                                LOG.info("Stack $stackName reached terminal state: ${stack.stackStatus}, stopping polling")
-                                stop()
-                            }
-                        } ?: LOG.warn("No stack data received for $stackName")
+                        // Stop polling if stack reaches terminal state
+                        if (!StackStatusUtils.isInTransientState(stack.stackStatus)) {
+                            LOG.info("Stack $stackName reached terminal state: ${stack.stackStatus}, stopping polling")
+                            stop()
+                        }
                     }
                 }
             }
@@ -82,6 +83,7 @@ internal class StackEventPoller(
     }
 
     companion object {
-        private val LOG = getLogger<StackEventPoller>()
+        private val LOG = getLogger<StackStatusPoller>()
+        private const val POLLING_INTERVAL_MS = 5000L
     }
 }

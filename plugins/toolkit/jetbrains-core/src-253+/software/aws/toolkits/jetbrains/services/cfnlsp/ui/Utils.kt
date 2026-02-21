@@ -11,12 +11,12 @@ import java.net.URLEncoder
 import javax.swing.Icon
 import javax.swing.ImageIcon
 
-object ConsoleUrlGenerator {
-    fun generateUrl(stackId: String): String =
-        "https://console.aws.amazon.com/go/view?arn=${URLEncoder.encode(stackId, "UTF-8")}"
+internal object ConsoleUrlGenerator {
+    fun generateUrl(arn: String): String =
+        "https://console.aws.amazon.com/go/view?arn=${URLEncoder.encode(arn, "UTF-8")}"
 }
 
-object IconUtils {
+internal object IconUtils {
     fun createBlueIcon(originalIcon: Icon): Icon {
         val size = 16
         val image = UIUtil.createImage(size, size, BufferedImage.TYPE_INT_ARGB)

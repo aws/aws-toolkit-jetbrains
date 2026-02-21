@@ -6,12 +6,15 @@ package software.aws.toolkits.jetbrains.services.cfnlsp.stacks.views
 import com.intellij.testFramework.PlatformTestUtil
 import com.intellij.testFramework.ProjectRule
 import com.intellij.testFramework.runInEdtAndWait
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.mockkObject
+import io.mockk.unmockkObject
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.After
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.mockito.kotlin.any
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.whenever
 import software.aws.toolkits.jetbrains.services.cfnlsp.CfnClientService
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeStackResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.StackDetail
@@ -23,10 +26,25 @@ class StackOverviewPanelTest {
     val projectRule = ProjectRule()
 
     private val testStackArn = "arn:aws:cloudformation:us-east-1:123456789012:stack/my-test-stack/12345"
+    private lateinit var mockCfnClient: CfnClientService
+    private lateinit var mockCoordinator: StackViewCoordinator
+
+    @Before
+    fun setUp() {
+        mockCfnClient = mockk()
+        mockCoordinator = mockk()
+        mockkObject(CfnClientService)
+        every { CfnClientService.getInstance(projectRule.project) } returns mockCfnClient
+        every { mockCoordinator.addListener(any(), any()) } returns mockk()
+    }
+
+    @After
+    fun tearDown() {
+        unmockkObject(CfnClientService)
+    }
 
     @Test
     fun `renderStack updates all field values correctly`() {
-        val mockCoordinator = mock<StackViewCoordinator>()
         val panel = StackOverviewPanel(projectRule.project, mockCoordinator, testStackArn)
 
         val testStack = StackDetail(
@@ -50,7 +68,6 @@ class StackOverviewPanelTest {
 
     @Test
     fun `renderStack with empty stack ID hides console link`() {
-        val mockCoordinator = mock<StackViewCoordinator>()
         val panel = StackOverviewPanel(projectRule.project, mockCoordinator, testStackArn)
 
         val testStack = StackDetail(
@@ -70,7 +87,6 @@ class StackOverviewPanelTest {
 
     @Test
     fun `renderStack with null optional fields handles gracefully`() {
-        val mockCoordinator = mock<StackViewCoordinator>()
         val panel = StackOverviewPanel(projectRule.project, mockCoordinator, testStackArn)
 
         val testStack = StackDetail(
@@ -91,7 +107,6 @@ class StackOverviewPanelTest {
 
     @Test
     fun `renderStack formats dates correctly`() {
-        val mockCoordinator = mock<StackViewCoordinator>()
         val panel = StackOverviewPanel(projectRule.project, mockCoordinator, testStackArn)
 
         val testStack = StackDetail(
@@ -112,16 +127,11 @@ class StackOverviewPanelTest {
 
     @Test
     fun `onStackChanged only responds to matching ARN`() {
-        val mockCoordinator = mock<StackViewCoordinator>()
-        val mockCfnClient = mock<CfnClientService>()
         val panel = StackOverviewPanel(projectRule.project, mockCoordinator, testStackArn)
-
-        // Inject mock service
-        panel.clientServiceProvider = { mockCfnClient }
 
         // Create a future we can control
         val futureResult = CompletableFuture<DescribeStackResult?>()
-        whenever(mockCfnClient.describeStack(any())).thenReturn(futureResult)
+        every { mockCfnClient.describeStack(any()) } returns futureResult
 
         val otherStackArn = "arn:aws:cloudformation:us-east-1:123456789012:stack/other-stack/67890"
 
@@ -154,7 +164,6 @@ class StackOverviewPanelTest {
 
     @Test
     fun `onStackStatusChanged only responds to matching ARN`() {
-        val mockCoordinator = mock<StackViewCoordinator>()
         val panel = StackOverviewPanel(projectRule.project, mockCoordinator, testStackArn)
 
         val otherStackArn = "arn:aws:cloudformation:us-east-1:123456789012:stack/other-stack/67890"
@@ -170,16 +179,11 @@ class StackOverviewPanelTest {
 
     @Test
     fun `panel only processes events for its assigned stack ARN`() {
-        val mockCoordinator = mock<StackViewCoordinator>()
-        val mockCfnClient = mock<CfnClientService>()
         val panel = StackOverviewPanel(projectRule.project, mockCoordinator, testStackArn)
-
-        // Inject mock service
-        panel.clientServiceProvider = { mockCfnClient }
 
         // Create a future we can control
         val futureResult = CompletableFuture<DescribeStackResult?>()
-        whenever(mockCfnClient.describeStack(any())).thenReturn(futureResult)
+        every { mockCfnClient.describeStack(any()) } returns futureResult
 
         val stack1Arn = "arn:aws:cloudformation:us-east-1:123456789012:stack/stack-1/11111"
         val stack2Arn = "arn:aws:cloudformation:us-east-1:123456789012:stack/stack-2/22222"

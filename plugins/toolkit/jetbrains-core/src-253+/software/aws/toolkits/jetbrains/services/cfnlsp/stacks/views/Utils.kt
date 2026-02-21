@@ -10,7 +10,7 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
-object StackStatusUtils {
+internal object StackStatusUtils {
     fun getStatusColors(status: String): Pair<Color?, Color?> = when {
         status.contains("COMPLETE") && !status.contains("ROLLBACK") ->
             JBColor.GREEN to JBColor.BLACK
@@ -24,15 +24,13 @@ object StackStatusUtils {
     fun isInTransientState(status: String): Boolean = status.contains("_IN_PROGRESS")
 }
 
-object StackDateFormatter {
+internal object StackDateFormatter {
     private val LOG = getLogger<StackDateFormatter>()
     private val dateFormatter = DateTimeFormatter.ofPattern("d/M/yyyy, h:mm:ss a")
 
-    fun formatDate(dateString: String?): String? = try {
-        dateString?.let {
-            val instant = Instant.parse(it)
-            instant.atZone(ZoneId.systemDefault()).format(dateFormatter)
-        }
+    fun formatDate(dateString: String): String? = try {
+        val instant = Instant.parse(dateString)
+        instant.atZone(ZoneId.systemDefault()).format(dateFormatter)
     } catch (e: Exception) {
         LOG.warn("Failed to parse date string: $dateString", e)
         null

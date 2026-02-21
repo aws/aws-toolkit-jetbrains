@@ -41,15 +41,15 @@ internal data class ListChangeSetsResult(
     val nextToken: String? = null,
 )
 
-data class DescribeStackParams(
+internal data class DescribeStackParams(
     val stackName: String,
 )
 
-data class DescribeStackResult(
+internal data class DescribeStackResult(
     val stack: StackDetail?,
 )
 
-data class StackDetail(
+internal data class StackDetail(
     @SerializedName("StackName")
     val stackName: String,
     @SerializedName("StackId")
@@ -69,7 +69,7 @@ data class StackDetail(
     val isChangeSetMode: Boolean = false,
 )
 
-data class StackOutput(
+internal data class StackOutput(
     @SerializedName("OutputKey")
     val outputKey: String,
     @SerializedName("OutputValue")

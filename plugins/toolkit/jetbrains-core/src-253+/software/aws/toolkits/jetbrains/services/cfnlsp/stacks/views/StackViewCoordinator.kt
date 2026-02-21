@@ -12,15 +12,15 @@ import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 
-interface StackSelectionListener {
+internal interface StackSelectionListener {
     fun onStackChanged(stackArn: String, stackName: String?)
 }
 
-interface StackStatusListener {
+internal interface StackStatusListener {
     fun onStackStatusChanged(stackArn: String, status: String?)
 }
 
-interface StackPanelListener : StackSelectionListener, StackStatusListener
+internal interface StackPanelListener : StackSelectionListener, StackStatusListener
 
 data class StackState(
     val stackName: String,
@@ -30,7 +30,7 @@ data class StackState(
 )
 
 @Service(Service.Level.PROJECT)
-class StackViewCoordinator : Disposable {
+internal class StackViewCoordinator : Disposable {
     private val stackStates = ConcurrentHashMap<String, StackState>()
     private val listeners = ConcurrentHashMap<String, CopyOnWriteArrayList<StackPanelListener>>()
 

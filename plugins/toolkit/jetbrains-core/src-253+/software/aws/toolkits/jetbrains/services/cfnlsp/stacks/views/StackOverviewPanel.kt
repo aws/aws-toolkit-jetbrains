@@ -30,14 +30,13 @@ import javax.swing.Box
 import javax.swing.JComponent
 import javax.swing.JPanel
 
-class StackOverviewPanel(
+internal class StackOverviewPanel(
     project: Project,
     coordinator: StackViewCoordinator,
     private val stackArn: String,
 ) : Disposable, StackPanelListener {
 
-    internal var clientServiceProvider: () -> CfnClientService = { CfnClientService.getInstance(project) }
-    private val cfnClientService get() = clientServiceProvider()
+    private val cfnClientService = CfnClientService.getInstance(project)
     private val disposables = mutableListOf<Disposable>()
 
     internal val consoleLink = JBLabel(IconUtils.createBlueIcon(AllIcons.Ide.External_link_arrow)).apply {
@@ -74,7 +73,7 @@ class StackOverviewPanel(
             label.font = label.font.deriveFont(Font.PLAIN)
         }
 
-        statusValue.border = JBUI.Borders.empty(4, 8)
+        statusValue.border = JBUI.Borders.empty(STATUS_PADDING_VERTICAL, STATUS_PADDING_HORIZONTAL)
         statusValue.horizontalAlignment = JBLabel.CENTER
     }
 
@@ -135,7 +134,7 @@ class StackOverviewPanel(
     private fun createStackNamePanel(): JPanel = JBPanel<JBPanel<*>>().apply {
         layout = FlowLayout(FlowLayout.LEFT, 0, 0)
         add(stackNameValue)
-        add(Box.createHorizontalStrut(8))
+        add(Box.createHorizontalStrut(ICON_SPACING))
         add(consoleLink)
     }
 
@@ -146,8 +145,8 @@ class StackOverviewPanel(
 
         updateConditionalField(stackIdValue, stack.stackId.takeIf { it.isNotEmpty() })
         updateConditionalField(descriptionValue, stack.description?.takeIf { it.isNotEmpty() })
-        updateConditionalField(createdValue, StackDateFormatter.formatDate(stack.creationTime))
-        updateConditionalField(lastUpdatedValue, StackDateFormatter.formatDate(stack.lastUpdatedTime))
+        updateConditionalField(createdValue, stack.creationTime?.let { StackDateFormatter.formatDate(it) })
+        updateConditionalField(lastUpdatedValue, stack.lastUpdatedTime?.let { StackDateFormatter.formatDate(it) })
         updateConditionalField(statusReasonValue, stack.stackStatusReason?.takeIf { it.isNotEmpty() })
 
         currentStackId = stack.stackId
@@ -164,7 +163,6 @@ class StackOverviewPanel(
     }
 
     private fun renderError(message: String) {
-        LOG.warn("Rendering error state: $message")
         stackNameValue.text = "Error"
         statusValue.text = "Error"
         stackIdValue.text = message
@@ -182,7 +180,7 @@ class StackOverviewPanel(
             statusValue.isOpaque = true
             statusValue.background = bgColor
             statusValue.foreground = fgColor
-            statusValue.font = statusValue.font.deriveFont(12.0f)
+            statusValue.font = statusValue.font.deriveFont(STATUS_FONT_SIZE)
         } else {
             resetStatusStyling()
         }
@@ -224,5 +222,9 @@ class StackOverviewPanel(
 
     companion object {
         private val LOG = getLogger<StackOverviewPanel>()
+        private const val STATUS_FONT_SIZE = 12.0f
+        private const val ICON_SPACING = 8
+        private const val STATUS_PADDING_VERTICAL = 4
+        private const val STATUS_PADDING_HORIZONTAL = 8
     }
 }

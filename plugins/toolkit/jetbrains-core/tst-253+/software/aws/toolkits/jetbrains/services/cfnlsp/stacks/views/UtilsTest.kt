@@ -132,12 +132,6 @@ class UtilsTest {
         }
 
         @Test
-        fun `formatDate returns null for null input`() {
-            val result = StackDateFormatter.formatDate(null)
-            assertThat(result).isNull()
-        }
-
-        @Test
         fun `formatDate returns null for invalid date`() {
             val invalidDate = "not-a-date"
             val result = StackDateFormatter.formatDate(invalidDate)

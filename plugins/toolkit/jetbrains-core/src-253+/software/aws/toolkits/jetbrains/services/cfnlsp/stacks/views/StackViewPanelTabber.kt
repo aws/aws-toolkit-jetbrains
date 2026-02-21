@@ -19,7 +19,7 @@ internal class StackViewPanelTabber(
 ) : Disposable {
 
     private val coordinator = StackViewCoordinator.getInstance(project)
-    private val poller = StackEventPoller(project, stackName, stackArn, coordinator)
+    private val poller = StackStatusPoller(project, stackName, stackArn, coordinator)
     private val overviewPanel = StackOverviewPanel(project, coordinator, stackArn)
 
     private val tabbedPane = JBTabbedPane().apply {

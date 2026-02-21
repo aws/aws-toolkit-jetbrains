@@ -16,18 +16,17 @@ import software.aws.toolkit.core.utils.getLogger
 import java.util.concurrent.ConcurrentHashMap
 
 @Service(Service.Level.PROJECT)
-class StackViewWindowManager(private val project: Project) {
+internal class StackViewWindowManager(private val project: Project) {
 
     private val activeStacks = ConcurrentHashMap<String, StackViewPanelTabber>()
-    private val maxTabs = 10
     private var listenerRegistered = false
 
     fun openStack(stackName: String, stackId: String) {
         val toolWindowManager = ToolWindowManager.getInstance(project)
-        val toolWindow = toolWindowManager.getToolWindow("cloudformation.lsp.stack.view")
+        val toolWindow = toolWindowManager.getToolWindow(TOOL_WINDOW_ID)
 
         if (toolWindow == null) {
-            LOG.error("Tool window 'cloudformation.lsp.stack.view' not found")
+            LOG.error("Tool window '$TOOL_WINDOW_ID' not found")
             return
         }
 
@@ -52,7 +51,7 @@ class StackViewWindowManager(private val project: Project) {
             return
         }
 
-        if (contentManager.contentCount >= maxTabs) {
+        if (contentManager.contentCount >= MAX_TABS) {
             removeOldestTab()
         }
 
@@ -107,7 +106,7 @@ class StackViewWindowManager(private val project: Project) {
                         } else {
                             stackName
                         }
-                        content.setDisplayName(displayName)
+                        content.displayName = displayName
                     }
                 }
             }
@@ -123,7 +122,7 @@ class StackViewWindowManager(private val project: Project) {
 
     private fun removeOldestTab() {
         val toolWindowManager = ToolWindowManager.getInstance(project)
-        val toolWindow = toolWindowManager.getToolWindow("cloudformation.lsp.stack.view") ?: return
+        val toolWindow = toolWindowManager.getToolWindow(TOOL_WINDOW_ID) ?: return
         val contentManager = toolWindow.contentManager
 
         if (contentManager.contentCount > 0) {
@@ -140,6 +139,9 @@ class StackViewWindowManager(private val project: Project) {
     companion object {
         private val LOG = getLogger<StackViewWindowManager>()
         private val STACK_ARN_KEY = Key.create<String>("STACK_ARN")
+
+        private const val MAX_TABS = 10
+        private const val TOOL_WINDOW_ID = "cloudformation.lsp.stack.view"
 
         fun getInstance(project: Project): StackViewWindowManager = project.service()
     }

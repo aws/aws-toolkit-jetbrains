@@ -13,14 +13,17 @@ import java.awt.GridBagLayout
 import javax.swing.JComponent
 import javax.swing.JPanel
 
-object StackPanelLayoutBuilder {
+internal object StackPanelLayoutBuilder {
+
+    private const val DEFAULT_PADDING = 20
+    private const val FIELD_SPACING = 12
 
     fun createTitleLabel(text: String): JBLabel = JBLabel(text).apply {
         foreground = UIUtil.getContextHelpForeground() // Muted color like --vscode-descriptionForeground
         font = font.deriveFont(Font.BOLD) // Semi-bold like font-weight: 600
     }
 
-    fun createFormPanel(padding: Int = 20): JBPanel<JBPanel<*>> = JBPanel<JBPanel<*>>(GridBagLayout()).apply {
+    fun createFormPanel(padding: Int = DEFAULT_PADDING): JBPanel<JBPanel<*>> = JBPanel<JBPanel<*>>(GridBagLayout()).apply {
         border = JBUI.Borders.empty(padding)
     }
 
@@ -41,7 +44,7 @@ object StackPanelLayoutBuilder {
 
         // Add component
         gbc.gridy = startRow + 1
-        gbc.insets = if (isLast) JBUI.emptyInsets() else JBUI.insetsBottom(12)
+        gbc.insets = if (isLast) JBUI.emptyInsets() else JBUI.insetsBottom(FIELD_SPACING)
         if (fillNone) {
             gbc.fill = GridBagConstraints.NONE
             gbc.anchor = GridBagConstraints.WEST
