@@ -60,11 +60,9 @@ internal class StackStatusPoller(
                 ApplicationManager.getApplication().invokeLater {
                     if (error != null) {
                         LOG.warn("Error fetching stack data for $stackName: ${error.message}")
+                    } else if (result?.stack == null) {
+                        LOG.warn("No stack data received for $stackName")
                     } else {
-                        if (result?.stack == null) {
-                            LOG.warn("No stack data received for $stackName")
-                            return@invokeLater
-                        }
                         val stack = result.stack
                         coordinator.updateStackStatus(stackArn, stack.stackStatus)
 
