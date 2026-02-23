@@ -3,7 +3,9 @@
 
 package software.aws.toolkits.jetbrains.services.cfnlsp.server
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Test
 
 class GitHubManifestAdapterTest {
@@ -120,5 +122,151 @@ class GitHubManifestAdapterTest {
         val remapped = GitHubManifestAdapter.remapLegacyLinux(versions)
 
         assertThat(remapped[0].targets.map { it.platform }).containsExactlyInAnyOrder("linux", "darwin")
+    }
+
+    @Test
+    fun `parseManifest selects highest compatible version by semver`() {
+        val adapter = GitHubManifestAdapter(
+            environment = CfnLspEnvironment.PROD,
+            versionRange = SemVerRange.parse("<2.0.0"),
+        )
+
+        // Versions deliberately in wrong order to prove sorting works
+        val manifest = buildManifestJson(
+            "prod",
+            listOf("1.2.0", "1.4.0", "1.0.0", "1.3.1")
+        )
+
+        val result = adapter.parseManifest(manifest)
+        assertThat(result.version).isEqualTo("1.4.0")
+    }
+
+    @Test
+    fun `parseManifest respects version range and excludes 2_x`() {
+        val adapter = GitHubManifestAdapter(
+            environment = CfnLspEnvironment.PROD,
+            versionRange = SemVerRange.parse("<2.0.0"),
+        )
+
+        val manifest = buildManifestJson(
+            "prod",
+            listOf("2.1.0", "2.0.0", "1.4.0", "1.2.0")
+        )
+
+        val result = adapter.parseManifest(manifest)
+        assertThat(result.version).isEqualTo("1.4.0")
+    }
+
+    @Test
+    fun `parseManifest skips delisted versions`() {
+        val adapter = GitHubManifestAdapter(
+            environment = CfnLspEnvironment.PROD,
+            versionRange = SemVerRange.parse("<2.0.0"),
+        )
+
+        val manifest = buildManifestJsonWithDelisted(
+            "prod",
+            listOf("1.4.0" to true, "1.3.0" to false, "1.2.0" to false)
+        )
+
+        val result = adapter.parseManifest(manifest)
+        assertThat(result.version).isEqualTo("1.3.0")
+    }
+
+    @Test
+    fun `parseManifest errors when no compatible version exists`() {
+        val adapter = GitHubManifestAdapter(
+            environment = CfnLspEnvironment.PROD,
+            versionRange = SemVerRange.parse("<1.0.0"),
+        )
+
+        val manifest = buildManifestJson("prod", listOf("1.4.0", "1.2.0"))
+
+        assertThatThrownBy { adapter.parseManifest(manifest) }
+            .hasMessageContaining("No compatible version found")
+    }
+
+    @Test
+    fun `parseManifest handles beta versions correctly`() {
+        val adapter = GitHubManifestAdapter(
+            environment = CfnLspEnvironment.BETA,
+            versionRange = SemVerRange.parse("<2.0.0"),
+        )
+
+        val manifest = buildManifestJson(
+            "beta",
+            listOf("1.4.0-beta", "1.2.0-beta")
+        )
+
+        val result = adapter.parseManifest(manifest)
+        assertThat(result.version).isEqualTo("1.4.0-beta")
+    }
+
+    @Test
+    fun `parseManifest numeric sort not lexicographic`() {
+        val adapter = GitHubManifestAdapter(
+            environment = CfnLspEnvironment.PROD,
+            versionRange = SemVerRange.parse("<100.0.0"),
+        )
+
+        // Lexicographic: "9.0.0" > "10.0.0" — semver: 10.0.0 > 9.0.0
+        val manifest = buildManifestJson("prod", listOf("9.0.0", "10.0.0", "2.0.0"))
+
+        val result = adapter.parseManifest(manifest)
+        assertThat(result.version).isEqualTo("10.0.0")
+    }
+
+    // --- helpers ---
+
+    private fun buildManifestJson(env: String, versions: List<String>): String {
+        val mapper = jacksonObjectMapper()
+        val versionObjects = versions.map { v ->
+            mapOf(
+                "server_version" to v,
+                "is_delisted" to false,
+                "targets" to listOf(currentPlatformTarget(v))
+            )
+        }
+        return mapper.writeValueAsString(mapOf(env to versionObjects))
+    }
+
+    private fun buildManifestJsonWithDelisted(env: String, versions: List<Pair<String, Boolean>>): String {
+        val mapper = jacksonObjectMapper()
+        val versionObjects = versions.map { (v, delisted) ->
+            mapOf(
+                "server_version" to v,
+                "is_delisted" to delisted,
+                "targets" to listOf(currentPlatformTarget(v))
+            )
+        }
+        return mapper.writeValueAsString(mapOf(env to versionObjects))
+    }
+
+    private fun currentPlatformTarget(version: String): Map<String, Any> {
+        val os = System.getProperty("os.name").lowercase().let {
+            when {
+                it.contains("mac") -> "darwin"
+                it.contains("win") -> "windows"
+                else -> "linux"
+            }
+        }
+        val arch = System.getProperty("os.arch").lowercase().let {
+            when {
+                it.contains("aarch64") || it.contains("arm64") -> "arm64"
+                else -> "x64"
+            }
+        }
+        return mapOf(
+            "platform" to os,
+            "arch" to arch,
+            "contents" to listOf(
+                mapOf(
+                    "filename" to "server-$version.zip",
+                    "url" to "https://example.com/server-$version.zip",
+                    "hashes" to emptyList<String>(),
+                    "bytes" to 50000000
+                )
+            )
+        )
     }
 }

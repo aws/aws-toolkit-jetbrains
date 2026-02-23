@@ -63,6 +63,7 @@ internal data class ServerRelease(
 
 internal class GitHubManifestAdapter(
     private val environment: CfnLspEnvironment,
+    private val versionRange: SemVerRange = SemVerRange.parse(CfnLspServerConfig.SUPPORTED_VERSION_RANGE),
     private val legacyLinuxDetector: LegacyLinuxDetector = LegacyLinuxDetector(),
 ) {
     private val httpClient = HttpClient.newBuilder().build()
@@ -100,15 +101,12 @@ internal class GitHubManifestAdapter(
         }
 
         LOG.info {
-            "Candidate versions for $environment: ${versions.map { v ->
-                "${v.serverVersion}[${v.targets.joinToString(
-                    ","
-                ) { "${it.platform}-${it.arch}" }}]"
+            "Candidate versions for $environment: ${versions.joinToString { v ->
+                "${v.serverVersion}[${v.targets.joinToString(",") { "${it.platform}-${it.arch}" }}]"
             }}"
         }
 
-        val version = versions.firstOrNull { !it.isDelisted }
-            ?: error("No versions found for $environment")
+        val version = latestCompatibleVersion(versions)
 
         val platform = getEffectivePlatform()
         val arch = getCurrentArchitecture()
@@ -130,6 +128,15 @@ internal class GitHubManifestAdapter(
         )
     }
 
+    private fun latestCompatibleVersion(versions: List<ManifestVersion>): ManifestVersion =
+        versions
+            .filter { !it.isDelisted }
+            .mapNotNull { v -> SemVer.parse(v.serverVersion)?.let { v to it } }
+            .filter { (_, semver) -> versionRange.satisfiedBy(semver) }
+            .maxByOrNull { (_, semver) -> semver }
+            ?.first
+            ?: error("No compatible version found for range ${CfnLspServerConfig.SUPPORTED_VERSION_RANGE} in $environment")
+
     private fun fetchManifestJson(): String {
         val url = "https://raw.githubusercontent.com/${CfnLspServerConfig.GITHUB_OWNER}/${CfnLspServerConfig.GITHUB_REPO}/main/assets/release-manifest.json"
         val request = HttpRequest.newBuilder()
@@ -149,18 +156,26 @@ internal class GitHubManifestAdapter(
     private fun getFromGitHubReleases(): ServerRelease {
         val releases = fetchGitHubReleases()
         val filtered = filterByEnvironment(releases)
-        val release = filtered.firstOrNull() ?: error("No releases found for $environment")
+        val release = latestCompatibleRelease(filtered)
         val asset = getAssetForPlatform(release)
 
         LOG.info { "Found version ${release.tagName} from GitHub Releases" }
 
         return ServerRelease(
-            version = release.tagName,
+            version = release.tagName.removePrefix("v"),
             downloadUrl = asset.browserDownloadUrl,
             filename = asset.name,
             size = asset.size
         )
     }
+
+    private fun latestCompatibleRelease(releases: List<GitHubRelease>): GitHubRelease =
+        releases
+            .mapNotNull { r -> SemVer.parse(r.tagName)?.let { r to it } }
+            .filter { (_, semver) -> versionRange.satisfiedBy(semver) }
+            .maxByOrNull { (_, semver) -> semver }
+            ?.first
+            ?: error("No compatible release found for range ${CfnLspServerConfig.SUPPORTED_VERSION_RANGE} in $environment")
 
     private fun fetchGitHubReleases(): List<GitHubRelease> {
         val url = "https://api.github.com/repos/${CfnLspServerConfig.GITHUB_OWNER}/${CfnLspServerConfig.GITHUB_REPO}/releases"
@@ -178,15 +193,13 @@ internal class GitHubManifestAdapter(
     }
 
     private fun filterByEnvironment(releases: List<GitHubRelease>): List<GitHubRelease> =
-        releases
-            .filter { release ->
-                when (environment) {
-                    CfnLspEnvironment.ALPHA -> release.prerelease && release.tagName.endsWith("-alpha")
-                    CfnLspEnvironment.BETA -> release.prerelease && release.tagName.endsWith("-beta")
-                    CfnLspEnvironment.PROD -> !release.prerelease
-                }
+        releases.filter { release ->
+            when (environment) {
+                CfnLspEnvironment.ALPHA -> release.prerelease && release.tagName.endsWith("-alpha")
+                CfnLspEnvironment.BETA -> release.prerelease && release.tagName.endsWith("-beta")
+                CfnLspEnvironment.PROD -> !release.prerelease
             }
-            .sortedByDescending { it.tagName }
+        }
 
     private fun getAssetForPlatform(release: GitHubRelease): GitHubAsset {
         val platform = getEffectivePlatform()

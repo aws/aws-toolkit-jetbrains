@@ -30,6 +30,8 @@ internal class CfnLspInstaller(
         .connectTimeout(java.time.Duration.ofSeconds(30))
         .build()
 
+    private val versionRange = SemVerRange.parse(CfnLspServerConfig.SUPPORTED_VERSION_RANGE)
+
     fun getServerPath(): Path {
         val release = try {
             manifestAdapter.getLatestRelease().also { saveManifestCache() }
@@ -67,14 +69,24 @@ internal class CfnLspInstaller(
         }
     }
 
+    /**
+     * Finds the highest compatible cached server version.
+     * Uses semver comparison to pick the best available fallback.
+     */
     private fun findCachedServer(): Path? {
         if (!Files.exists(storageDir)) return null
 
-        return Files.walk(storageDir, 2)
-            .filter { it.fileName.toString() == CfnLspServerConfig.SERVER_FILE }
-            .findFirst()
-            .orElse(null)
-            ?.also { LOG.info { "Using fallback cached server: $it" } }
+        return Files.list(storageDir).use { stream ->
+            stream.toList()
+                .filter { it.isDirectory() }
+                .filter { Files.exists(it.resolve(CfnLspServerConfig.SERVER_FILE)) }
+                .mapNotNull { dir -> SemVer.parse(dir.fileName.toString())?.let { dir to it } }
+                .filter { (_, ver) -> versionRange.satisfiedBy(ver) }
+                .maxByOrNull { (_, ver) -> ver }
+                ?.first
+                ?.resolve(CfnLspServerConfig.SERVER_FILE)
+                ?.also { LOG.info { "Using fallback cached server: $it" } }
+        }
     }
 
     private fun downloadAndInstall(release: ServerRelease): Path {
@@ -132,12 +144,31 @@ internal class CfnLspInstaller(
         }
     }
 
+    /**
+     * Removes old versions, keeping the current version and one fallback
+     * (the highest compatible version below current).
+     */
     private fun cleanupOldVersions(currentVersion: String) {
         if (!Files.exists(storageDir)) return
 
         try {
-            Files.list(storageDir)
-                .filter { it.isDirectory() && it.fileName.toString() != currentVersion }
+            val currentSemVer = SemVer.parse(currentVersion) ?: return
+
+            val dirs = Files.list(storageDir).use { stream ->
+                stream.filter { it.isDirectory() }.toList()
+            }
+
+            // Find the best fallback: highest compatible version below current
+            val fallbackDir = dirs
+                .filter { it.fileName.toString() != currentVersion }
+                .mapNotNull { dir -> SemVer.parse(dir.fileName.toString())?.let { dir to it } }
+                .filter { (_, ver) -> versionRange.satisfiedBy(ver) && ver < currentSemVer }
+                .maxByOrNull { (_, ver) -> ver }
+                ?.first
+
+            val keep = setOfNotNull(currentVersion, fallbackDir?.fileName?.toString())
+
+            dirs.filter { it.fileName.toString() !in keep }
                 .forEach { oldDir ->
                     LOG.debug { "Removing old LSP version: ${oldDir.fileName}" }
                     oldDir.toFile().deleteRecursively()
