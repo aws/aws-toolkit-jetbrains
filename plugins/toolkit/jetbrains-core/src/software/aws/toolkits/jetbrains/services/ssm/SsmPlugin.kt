@@ -28,7 +28,7 @@ import java.nio.file.Path
 import java.time.Duration
 import kotlin.streams.asSequence
 
-object SsmPlugin : ManagedToolType<FourPartVersion>, DocumentedToolType<FourPartVersion>, BaseToolType<FourPartVersion>() {
+class SsmPlugin : ManagedToolType<FourPartVersion>, DocumentedToolType<FourPartVersion>, BaseToolType<FourPartVersion>() {
     private val hasDpkg by lazy { hasCommand("dpkg-deb") }
     private val hasRpm2Cpio by lazy { hasCommand("rpm2cpio") }
 
@@ -133,9 +133,12 @@ object SsmPlugin : ManagedToolType<FourPartVersion>, DocumentedToolType<FourPart
         val output = ExecUtil.execAndGetOutput(GeneralCommandLine("sh", "-c", "command -v $cmd"), EXECUTION_TIMEOUT.toMillis().toInt())
         return output.exitCode == 0
     }
-    private val LOGGER = getLogger<SsmPlugin>()
-    private const val BASE_URL = "https://s3.us-east-1.amazonaws.com/session-manager-downloads/plugin"
-    private const val VERSION_FILE = "$BASE_URL/latest/VERSION"
-    private val EXECUTION_TIMEOUT = Duration.ofSeconds(5)
-    private val INSTALL_TIMEOUT = Duration.ofSeconds(30)
+
+    companion object {
+        private val LOGGER = getLogger<SsmPlugin>()
+        private const val BASE_URL = "https://s3.us-east-1.amazonaws.com/session-manager-downloads/plugin"
+        private const val VERSION_FILE = "$BASE_URL/latest/VERSION"
+        private val EXECUTION_TIMEOUT = Duration.ofSeconds(5)
+        private val INSTALL_TIMEOUT = Duration.ofSeconds(30)
+    }
 }
