@@ -257,7 +257,7 @@ class LoadMoreResourcesAction : AnAction(
     override fun update(e: AnActionEvent) {
         val selectedNodes = e.getData(ExplorerTreeToolWindowDataKeys.SELECTED_NODES)
         val resourceTypeNode = selectedNodes?.filterIsInstance<ResourceTypeNode>()?.firstOrNull()
-        
+
         if (resourceTypeNode != null) {
             val project = e.project ?: return
             val resourceLoader = ResourceLoader.getInstance(project)

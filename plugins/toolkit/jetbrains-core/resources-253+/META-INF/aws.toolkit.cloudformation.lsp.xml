@@ -5,6 +5,10 @@
     <extensions defaultExtensionNs="com.intellij">
         <platform.lsp.serverSupportProvider
             implementation="software.aws.toolkits.jetbrains.services.cfnlsp.server.CfnLspServerSupportProvider"/>
+        
+        <toolWindow id="cloudformation.lsp.stack.view" anchor="bottom" doNotActivateOnStart="true" canCloseContents="true"
+                    factoryClass="software.aws.toolkits.jetbrains.services.cfnlsp.stacks.views.StackViewToolWindowFactory"
+                    icon="AwsIcons.Logos.CLOUD_FORMATION_TOOL"/>
     </extensions>
 
     <extensions defaultExtensionNs="aws.toolkit">
@@ -63,6 +67,10 @@
                 class="software.aws.toolkits.jetbrains.services.cfnlsp.explorer.actions.GetStackManagementInfoAction"
                 text="Get Stack Management Info"/>
 
+        <action id="aws.toolkit.cloudformation.stack.view"
+                class="software.aws.toolkits.jetbrains.services.cfnlsp.stacks.views.OpenStackViewAction"
+                text="View Stack Details"/>
+
         <action id="aws.toolkit.cloudformation.validateAndDeploy"
                 class="software.aws.toolkits.jetbrains.services.cfnlsp.stacks.ValidateAndDeployAction"
                 text="Validate and Deploy"
@@ -74,6 +82,7 @@
         <!-- Right-click on individual Stack node -->
         <group id="aws.toolkit.cloudformation.stack.actions">
             <reference ref="aws.toolkit.cloudformation.validateAndDeploy"/>
+            <reference ref="aws.toolkit.cloudformation.stack.view"/>
         </group>
 
         <!-- Right-click on Stacks node (no more stacks to load) -->
