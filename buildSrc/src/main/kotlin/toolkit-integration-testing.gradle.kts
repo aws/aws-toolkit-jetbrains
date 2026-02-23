@@ -55,8 +55,8 @@ val testJar = tasks.named<Jar>("testJar").configure {
 
 idea {
     module {
-        testSourceDirs = testSourceDirs + integrationTests.java.srcDirs
-        testResourceDirs = testResourceDirs + integrationTests.resources.srcDirs
+        testSources.from(integrationTests.java.srcDirs)
+        testResources.from(integrationTests.resources.srcDirs)
     }
 }
 val integrationTestConfiguration: Test.() -> Unit = {
