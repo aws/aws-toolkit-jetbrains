@@ -47,7 +47,7 @@ phases:
       - CI_BUILD_ID="${CODEBUILD_BUILD_ID}"
       - test -n "$CODE_COV_TOKEN" && curl -Os https://uploader.codecov.io/latest/linux/codecov && chmod +x codecov || true # this sometimes times out but we don't want to fail the build
       - test -n "$CODE_COV_TOKEN" && test -n "$CODEBUILD_BUILD_SUCCEEDING" && ./codecov -t $CODE_COV_TOKEN -F unittest || true
-      - test -n "$CODE_COV_TOKEN" && test -n "$CODEBUILD_BUILD_SUCCEEDING" && ./codecov -t $CODE_COV_TOKEN -F codewhisperer || true
+#      - test -n "$CODE_COV_TOKEN" && test -n "$CODEBUILD_BUILD_SUCCEEDING" && ./codecov -t $CODE_COV_TOKEN -F codewhisperer || true
 
   post_build:
     commands:
@@ -57,6 +57,7 @@ phases:
       - mkdir -p $BUILD_ARTIFACTS
       - rsync -rmq --include='*/' --include '**/build/idea-sandbox/**/log*/**' --exclude='*' . $TEST_ARTIFACTS/ || true
       - rsync -rmq --include='*/' --include '**/build/reports/**' --exclude='*' . $TEST_ARTIFACTS/ || true
+      - rsync -rmq --include='*/' --include '**/build/**/*.exec' --exclude='*' . $TEST_ARTIFACTS/ || true
       - rsync -rmq --include='*/' --include '**/test-results/**/*.xml' --exclude='*' . $TEST_ARTIFACTS/test-reports || true
       - find plugins -path '*/build/distributions/*.zip' -exec cp {} $BUILD_ARTIFACTS/ \; || touch $BUILD_ARTIFACTS/build_failed
 
