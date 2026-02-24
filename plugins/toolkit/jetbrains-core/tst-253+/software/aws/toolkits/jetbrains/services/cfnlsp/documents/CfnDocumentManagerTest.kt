@@ -25,9 +25,9 @@ class CfnDocumentManagerTest {
     @Test
     fun `getValidTemplates filters by cfnType template`() {
         val documents = listOf(
-            createDocument("template.yaml", "template"),
-            createDocument("config.json", "other"),
-            createDocument("stack.yaml", "template")
+            createDocument("template.yaml", "template", "yaml"),
+            createDocument("config.json", "other", "json"),
+            createDocument("stack.yaml", "template", "yaml")
         )
 
         documentManager.updateDocuments(documents)
@@ -40,8 +40,8 @@ class CfnDocumentManagerTest {
     @Test
     fun `getValidTemplates returns empty list when no templates`() {
         val documents = listOf(
-            createDocument("config.json", "other"),
-            createDocument("readme.md", "other")
+            createDocument("config.json", "other", "json"),
+            createDocument("readme.md", "other", "md")
         )
 
         documentManager.updateDocuments(documents)
@@ -52,13 +52,13 @@ class CfnDocumentManagerTest {
 
     @Test
     fun `updateDocuments replaces existing documents`() {
-        val initialDocs = listOf(createDocument("old.yaml", "template"))
+        val initialDocs = listOf(createDocument("old.yaml", "template", "yaml"))
         documentManager.updateDocuments(initialDocs)
         assertThat(documentManager.getValidTemplates()).hasSize(1)
 
         val newDocs = listOf(
-            createDocument("new1.yaml", "template"),
-            createDocument("new2.yaml", "template")
+            createDocument("new1.yaml", "template", "yaml"),
+            createDocument("new2.yaml", "template", "yaml")
         )
         documentManager.updateDocuments(newDocs)
 
@@ -67,13 +67,13 @@ class CfnDocumentManagerTest {
         assertThat(validTemplates.map { it.fileName }).containsExactly("new1.yaml", "new2.yaml")
     }
 
-    private fun createDocument(fileName: String, cfnType: String) = DocumentMetadata(
+    private fun createDocument(fileName: String, cfnType: String, languageId: String) = DocumentMetadata(
         uri = "file:///path/to/$fileName",
         fileName = fileName,
         ext = fileName.substringAfterLast('.'),
         type = "document",
         cfnType = cfnType,
-        languageId = "yaml",
+        languageId = languageId,
         version = 1,
         lineCount = 10
     )
