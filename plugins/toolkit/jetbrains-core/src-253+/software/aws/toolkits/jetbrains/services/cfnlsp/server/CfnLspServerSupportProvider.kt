@@ -56,7 +56,7 @@ class CfnLspServerDescriptor private constructor(project: Project) :
     override fun isSupportedFile(file: VirtualFile) = file.isCfnTemplate()
 
     override fun createLsp4jClient(handler: LspServerNotificationsHandler): Lsp4jClient =
-        CfnLsp4jClient(CfnLspNotificationsHandler(handler), project)
+        CfnLspClient(CfnLspNotificationsHandler(handler), project)
 
     override fun createCommandLine(): GeneralCommandLine {
         val serverPath = try {

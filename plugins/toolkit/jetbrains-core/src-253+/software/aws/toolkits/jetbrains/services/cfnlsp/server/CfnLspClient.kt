@@ -10,7 +10,7 @@ import org.eclipse.lsp4j.jsonrpc.services.JsonNotification
 import software.aws.toolkits.jetbrains.services.cfnlsp.documents.CfnDocumentManager
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DocumentMetadata
 
-internal class CfnLsp4jClient(
+internal class CfnLspClient(
     handler: LspServerNotificationsHandler,
     private val project: Project,
 ) : Lsp4jClient(handler) {
