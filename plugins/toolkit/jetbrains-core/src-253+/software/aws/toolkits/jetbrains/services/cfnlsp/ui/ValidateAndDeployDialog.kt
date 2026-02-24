@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.cfnlsp.ui
 
+import com.intellij.icons.AllIcons
 import com.intellij.openapi.fileChooser.FileChooser
 import com.intellij.openapi.fileChooser.FileChooserDescriptor
 import com.intellij.openapi.project.Project
@@ -13,12 +14,10 @@ import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.util.ui.JBUI
 import software.aws.toolkits.jetbrains.services.cfnlsp.documents.CfnDocumentManager
-import software.aws.toolkits.jetbrains.services.cfnlsp.documents.DocumentUtils
+import software.aws.toolkits.jetbrains.services.cfnlsp.documents.RelativePathParser
 import software.aws.toolkits.jetbrains.services.cfnlsp.server.CFN_SUPPORTED_EXTENSIONS
 import software.aws.toolkits.resources.AwsToolkitBundle.message
-import java.awt.event.ActionEvent
 import java.io.File
-import javax.swing.AbstractAction
 import javax.swing.JButton
 import javax.swing.JComboBox
 import javax.swing.JComponent
@@ -48,12 +47,11 @@ internal class ValidateAndDeployDialog(
 
     private val templateDropdown = JComboBox<TemplateItem>()
 
-    private val browseButton = JButton("📁").apply {
-        action = object : AbstractAction("📁") {
-            override fun actionPerformed(e: ActionEvent) {
-                val selectedFile = FileChooser.chooseFile(descriptor, project, null)
-                selectedFile?.let { addFileToDropdown(it.path) }
-            }
+    private val browseButton = JButton().apply {
+        icon = AllIcons.Actions.NewFolder
+        addActionListener {
+            val selectedFile = FileChooser.chooseFile(descriptor, project, null)
+            selectedFile?.let { addFileToDropdown(it.path) }
         }
         toolTipText = "Browse for CloudFormation template"
     }
@@ -78,7 +76,7 @@ internal class ValidateAndDeployDialog(
             templateDropdown.addItem(TemplateItem("No templates detected, browse with folder icon", null))
         } else {
             templates.sortedBy { it.fileName }.forEach { template ->
-                val relativePath = DocumentUtils.getRelativePath(template.uri, project)
+                val relativePath = RelativePathParser.getRelativePath(template.uri, project)
                 val displayName = "${template.fileName} ($relativePath)"
                 templateDropdown.addItem(TemplateItem(displayName, template.uri))
             }
@@ -100,7 +98,7 @@ internal class ValidateAndDeployDialog(
             templateDropdown.selectedItem = existingItem
         } else {
             // Add new item and select it
-            val relativePath = DocumentUtils.getRelativePath(fileUri, project)
+            val relativePath = RelativePathParser.getRelativePath(fileUri, project)
             val displayName = "${file.name} ($relativePath)"
             val newItem = TemplateItem(displayName, fileUri)
 

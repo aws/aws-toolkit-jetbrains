@@ -10,7 +10,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
 
-class DocumentUtilsTest {
+class UtilsTest {
     @JvmField
     @Rule
     val projectRule = ProjectRule()
@@ -28,7 +28,7 @@ class DocumentUtilsTest {
         }
 
         val uri = templateFile.url
-        val result = DocumentUtils.getRelativePath(uri, project)
+        val result = RelativePathParser.getRelativePath(uri, project)
 
         assertThat(result).isEqualTo("src/template.yaml")
     }
@@ -37,7 +37,7 @@ class DocumentUtilsTest {
     fun `getRelativePath returns original URI for file outside project`() {
         val uri = "file:///completely/different/path/template.yaml"
 
-        val result = DocumentUtils.getRelativePath(uri, projectRule.project)
+        val result = RelativePathParser.getRelativePath(uri, projectRule.project)
 
         assertThat(result).isEqualTo(uri)
     }
@@ -46,7 +46,7 @@ class DocumentUtilsTest {
     fun `getRelativePath returns original URI for invalid URI`() {
         val invalidUri = "not-a-valid-uri"
 
-        val result = DocumentUtils.getRelativePath(invalidUri, projectRule.project)
+        val result = RelativePathParser.getRelativePath(invalidUri, projectRule.project)
 
         assertThat(result).isEqualTo(invalidUri)
     }
