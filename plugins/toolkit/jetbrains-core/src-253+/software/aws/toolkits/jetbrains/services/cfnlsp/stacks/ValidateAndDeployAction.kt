@@ -10,6 +10,7 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.vfs.VfsUtil
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerTreeToolWindowDataKeys
 import software.aws.toolkits.jetbrains.services.cfnlsp.CfnClientService
+import software.aws.toolkits.jetbrains.services.cfnlsp.documents.CfnDocumentManager
 import software.aws.toolkits.jetbrains.services.cfnlsp.explorer.nodes.StackNode
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.CreateValidationParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.server.CFN_SUPPORTED_EXTENSIONS
@@ -31,8 +32,11 @@ internal class ValidateAndDeployAction : AnAction() {
         val prefilledTemplate = templateFile?.path
         val prefilledStackName = (selectedNode as? StackNode)?.stack?.stackName
 
+        val documentManager = CfnDocumentManager.getInstance(project)
+
         val dialog = ValidateAndDeployDialog(
             project = project,
+            documentManager = documentManager,
             prefilledTemplatePath = prefilledTemplate,
             prefilledStackName = prefilledStackName,
         )
