@@ -7,6 +7,7 @@ import com.intellij.icons.AllIcons
 import com.intellij.openapi.fileChooser.FileChooser
 import com.intellij.openapi.fileChooser.FileChooserDescriptor
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.ui.components.JBTextField
@@ -19,7 +20,6 @@ import software.aws.toolkits.jetbrains.services.cfnlsp.server.CFN_SUPPORTED_EXTE
 import software.aws.toolkits.resources.AwsToolkitBundle.message
 import java.io.File
 import javax.swing.JButton
-import javax.swing.JComboBox
 import javax.swing.JComponent
 
 internal data class TemplateItem(
@@ -45,7 +45,7 @@ internal class ValidateAndDeployDialog(
         it.extension?.lowercase() in CFN_SUPPORTED_EXTENSIONS
     }
 
-    private val templateDropdown = JComboBox<TemplateItem>()
+    private val templateDropdown = ComboBox<TemplateItem>()
 
     private val browseButton = JButton().apply {
         icon = AllIcons.Actions.NewFolder
@@ -73,7 +73,7 @@ internal class ValidateAndDeployDialog(
         templateDropdown.removeAllItems()
 
         if (templates.isEmpty()) {
-            templateDropdown.addItem(TemplateItem("No templates detected, browse with folder icon", null))
+            templateDropdown.addItem(TemplateItem("No templates opened", null))
         } else {
             templates.sortedBy { it.fileName }.forEach { template ->
                 val relativePath = RelativePathParser.getRelativePath(template.uri, project)
@@ -127,10 +127,7 @@ internal class ValidateAndDeployDialog(
     override fun doValidate(): ValidationInfo? {
         val selectedItem = templateDropdown.selectedItem as? TemplateItem
         val uri = selectedItem?.uri
-
-        if (uri == null) {
-            return ValidationInfo(message("cloudformation.deploy.dialog.template.required"), templateDropdown)
-        }
+            ?: return ValidationInfo(message("cloudformation.deploy.dialog.template.required"), templateDropdown)
 
         val file = File(uri.removePrefix("file://"))
         if (!file.isFile) {
