@@ -16,6 +16,8 @@ import org.eclipse.lsp4j.DidOpenTextDocumentParams
 import org.eclipse.lsp4j.TextDocumentItem
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.CreateStackActionResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.CreateValidationParams
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeStackParams
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeStackResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeValidationStatusResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.GetStackActionStatusResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.Identifiable
@@ -101,6 +103,8 @@ internal class CfnClientService(project: Project) {
             )
         }
     }
+    fun describeStack(params: DescribeStackParams): CompletableFuture<DescribeStackResult?> =
+        sendRequest { it.describeStack(params) }
 
     fun notifyConfigurationChanged() {
         lspServerProvider()?.sendNotification { lsp ->
