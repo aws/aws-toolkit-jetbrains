@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.cfnlsp.server
 
 import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.databind.PropertyNamingStrategies
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.openapi.util.SystemInfo
@@ -18,9 +17,9 @@ import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 
-// Release manifest types (primary source)
 internal data class ManifestVersion(
     val serverVersion: String,
+    val latest: Boolean = false,
     val isDelisted: Boolean = false,
     val targets: List<ManifestTarget>,
 )
@@ -39,20 +38,6 @@ internal data class ManifestContent(
     val bytes: Long,
 )
 
-// GitHub releases types (fallback)
-internal data class GitHubRelease(
-    val tagName: String,
-    val prerelease: Boolean,
-    val assets: List<GitHubAsset>,
-)
-
-internal data class GitHubAsset(
-    val name: String,
-    val browserDownloadUrl: String,
-    val size: Long,
-)
-
-// Unified result type
 internal data class ServerRelease(
     val version: String,
     val downloadUrl: String,
@@ -63,28 +48,19 @@ internal data class ServerRelease(
 
 internal class GitHubManifestAdapter(
     private val environment: CfnLspEnvironment,
+    private val versionRange: SemVerRange = SemVerRange.parse(CfnLspServerConfig.SUPPORTED_VERSION_RANGE),
     private val legacyLinuxDetector: LegacyLinuxDetector = LegacyLinuxDetector(),
 ) {
     private val httpClient = HttpClient.newBuilder().build()
     private val mapper = jacksonObjectMapper()
         .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-        .setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
 
-    // Cached manifest JSON for offline fallback
     @Volatile
     private var cachedManifestJson: String? = null
 
-    fun getLatestRelease(): ServerRelease = try {
-        getFromManifest()
-    } catch (e: Exception) {
-        LOG.warn(e) { "Failed to fetch release manifest, falling back to GitHub Releases API" }
-        getFromGitHubReleases()
-    }
-
-    private fun getFromManifest(): ServerRelease {
+    fun getLatestRelease(): ServerRelease {
         val manifestJson = fetchManifestJson()
         cachedManifestJson = manifestJson
-
         return parseManifest(manifestJson)
     }
 
@@ -93,22 +69,18 @@ internal class GitHubManifestAdapter(
         val envKey = environment.name.lowercase()
         var versions: List<ManifestVersion> = mapper.readValue(root.get(envKey).toString())
 
-        // Apply legacy Linux remapping if needed
         if (SystemInfo.isLinux && legacyLinuxDetector.useLegacyLinux()) {
             LOG.info { "Legacy Linux environment detected, remapping to linuxglib2.28" }
             versions = remapLegacyLinux(versions)
         }
 
         LOG.info {
-            "Candidate versions for $environment: ${versions.map { v ->
-                "${v.serverVersion}[${v.targets.joinToString(
-                    ","
-                ) { "${it.platform}-${it.arch}" }}]"
+            "Candidate versions for $environment: ${versions.joinToString { v ->
+                "${v.serverVersion}[${v.targets.joinToString(",") { "${it.platform}-${it.arch}" }}]"
             }}"
         }
 
-        val version = versions.firstOrNull { !it.isDelisted }
-            ?: error("No versions found for $environment")
+        val version = latestCompatibleVersion(versions)
 
         val platform = getEffectivePlatform()
         val arch = getCurrentArchitecture()
@@ -130,6 +102,28 @@ internal class GitHubManifestAdapter(
         )
     }
 
+    /**
+     * Selects the best compatible version from the manifest.
+     * Prefers the version marked as "latest" if it's compatible, otherwise falls back to
+     * the highest compatible version by semver.
+     */
+    private fun latestCompatibleVersion(versions: List<ManifestVersion>): ManifestVersion {
+        val compatible = versions
+            .filter { !it.isDelisted }
+            .mapNotNull { v -> SemVer.parse(v.serverVersion)?.let { v to it } }
+            .filter { (_, semver) -> versionRange.satisfiedBy(semver) }
+
+        // Prefer the version explicitly marked as latest
+        val markedLatest = compatible.firstOrNull { (v, _) -> v.latest }
+        if (markedLatest != null) return markedLatest.first
+
+        // Fall back to the highest by semver
+        return compatible
+            .maxByOrNull { (_, semver) -> semver }
+            ?.first
+            ?: error("No compatible version found for range ${CfnLspServerConfig.SUPPORTED_VERSION_RANGE} in $environment")
+    }
+
     private fun fetchManifestJson(): String {
         val url = "https://raw.githubusercontent.com/${CfnLspServerConfig.GITHUB_OWNER}/${CfnLspServerConfig.GITHUB_REPO}/main/assets/release-manifest.json"
         val request = HttpRequest.newBuilder()
@@ -145,59 +139,6 @@ internal class GitHubManifestAdapter(
     }
 
     fun getCachedManifest(): String? = cachedManifestJson
-
-    private fun getFromGitHubReleases(): ServerRelease {
-        val releases = fetchGitHubReleases()
-        val filtered = filterByEnvironment(releases)
-        val release = filtered.firstOrNull() ?: error("No releases found for $environment")
-        val asset = getAssetForPlatform(release)
-
-        LOG.info { "Found version ${release.tagName} from GitHub Releases" }
-
-        return ServerRelease(
-            version = release.tagName,
-            downloadUrl = asset.browserDownloadUrl,
-            filename = asset.name,
-            size = asset.size
-        )
-    }
-
-    private fun fetchGitHubReleases(): List<GitHubRelease> {
-        val url = "https://api.github.com/repos/${CfnLspServerConfig.GITHUB_OWNER}/${CfnLspServerConfig.GITHUB_REPO}/releases"
-        val request = HttpRequest.newBuilder()
-            .uri(URI.create(url))
-            .GET()
-            .build()
-
-        val response = httpClient.send(request, HttpResponse.BodyHandlers.ofString())
-        if (response.statusCode() != 200) {
-            error("GitHub API error: ${response.statusCode()}")
-        }
-
-        return mapper.readValue(response.body())
-    }
-
-    private fun filterByEnvironment(releases: List<GitHubRelease>): List<GitHubRelease> =
-        releases
-            .filter { release ->
-                when (environment) {
-                    CfnLspEnvironment.ALPHA -> release.prerelease && release.tagName.endsWith("-alpha")
-                    CfnLspEnvironment.BETA -> release.prerelease && release.tagName.endsWith("-beta")
-                    CfnLspEnvironment.PROD -> !release.prerelease
-                }
-            }
-            .sortedByDescending { it.tagName }
-
-    private fun getAssetForPlatform(release: GitHubRelease): GitHubAsset {
-        val platform = getEffectivePlatform()
-        val arch = getCurrentArchitecture()
-        // Asset filenames use "win32" not "windows"
-        val filenamePlatform = if (platform == "windows") "win32" else platform
-
-        return release.assets.firstOrNull { asset ->
-            asset.name.contains("$filenamePlatform-$arch")
-        } ?: error("No asset found for $platform-$arch")
-    }
 
     private fun getEffectivePlatform(): String {
         if (SystemInfo.isLinux && legacyLinuxDetector.useLegacyLinux()) {

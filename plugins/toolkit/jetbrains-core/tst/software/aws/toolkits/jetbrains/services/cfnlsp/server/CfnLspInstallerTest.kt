@@ -18,102 +18,152 @@ class CfnLspInstallerTest {
 
     @Test
     fun `findCachedServer returns null when storage dir does not exist`() {
-        val nonExistentDir = tempFolder.root.toPath().resolve("non-existent")
-        val installer = CfnLspInstaller(nonExistentDir)
-
+        val installer = installerWithDir("non-existent")
         assertThat(installer.findCachedServerForTest()).isNull()
     }
 
     @Test
-    fun `findCachedServer returns null when server file not present`() {
+    fun `findCachedServer returns null when no server files present`() {
         val storageDir = tempFolder.newFolder("lsp-storage").toPath()
-        val installer = CfnLspInstaller(storageDir)
+        Files.createDirectories(storageDir.resolve("1.2.0"))
 
-        assertThat(installer.findCachedServerForTest()).isNull()
+        assertThat(CfnLspInstaller(storageDir).findCachedServerForTest()).isNull()
     }
 
     @Test
-    fun `findCachedServer returns path when server file exists`() {
+    fun `findCachedServer returns highest compatible version`() {
         val storageDir = tempFolder.newFolder("lsp-storage").toPath()
-        val versionDir = storageDir.resolve("v1.0.0")
-        Files.createDirectories(versionDir)
-        val serverFile = versionDir.resolve(CfnLspServerConfig.SERVER_FILE)
-        Files.createFile(serverFile)
+        createServerVersion(storageDir, "1.0.0")
+        createServerVersion(storageDir, "1.2.0")
+        createServerVersion(storageDir, "1.4.0")
 
-        val installer = CfnLspInstaller(storageDir)
-
-        assertThat(installer.findCachedServerForTest()).isEqualTo(serverFile)
+        val result = CfnLspInstaller(storageDir).findCachedServerForTest()
+        assertThat(result?.parent?.fileName.toString()).isEqualTo("1.4.0")
     }
 
     @Test
-    fun `defaultStorageDir returns path under toolkit cache`() {
-        val defaultDir = CfnLspInstaller.defaultStorageDir()
+    fun `findCachedServer uses semver not lexicographic ordering`() {
+        val storageDir = tempFolder.newFolder("lsp-storage").toPath()
+        createServerVersion(storageDir, "1.9.0")
+        createServerVersion(storageDir, "1.10.0")
 
-        assertThat(defaultDir.toString()).contains("cloudformation-lsp")
-        assertThat(defaultDir.toString()).contains("toolkits")
+        val result = CfnLspInstaller(storageDir).findCachedServerForTest()
+        assertThat(result?.parent?.fileName.toString()).isEqualTo("1.10.0")
     }
 
     @Test
-    fun `cleanupOldVersions removes directories not matching current version`() {
+    fun `findCachedServer excludes versions outside supported range`() {
         val storageDir = tempFolder.newFolder("lsp-storage").toPath()
-        val oldVersion = storageDir.resolve("v1.0.0")
-        val currentVersion = storageDir.resolve("v2.0.0")
-        Files.createDirectories(oldVersion)
-        Files.createDirectories(currentVersion)
-        Files.createFile(oldVersion.resolve("some-file.txt"))
+        createServerVersion(storageDir, "1.4.0")
+        createServerVersion(storageDir, "2.0.0")
+        createServerVersion(storageDir, "3.0.0")
 
-        val installer = CfnLspInstaller(storageDir)
-        installer.cleanupOldVersionsForTest("v2.0.0")
-
-        assertThat(Files.exists(oldVersion)).isFalse()
-        assertThat(Files.exists(currentVersion)).isTrue()
+        // Default range is <2.0.0
+        val result = CfnLspInstaller(storageDir).findCachedServerForTest()
+        assertThat(result?.parent?.fileName.toString()).isEqualTo("1.4.0")
     }
 
     @Test
-    fun `cleanupOldVersions preserves current version directory`() {
+    fun `findCachedServer returns null when all versions outside range`() {
         val storageDir = tempFolder.newFolder("lsp-storage").toPath()
-        val currentVersion = storageDir.resolve("v2.0.0")
-        Files.createDirectories(currentVersion)
-        val serverFile = currentVersion.resolve(CfnLspServerConfig.SERVER_FILE)
-        Files.createFile(serverFile)
+        createServerVersion(storageDir, "2.0.0")
+        createServerVersion(storageDir, "3.0.0")
 
-        val installer = CfnLspInstaller(storageDir)
-        installer.cleanupOldVersionsForTest("v2.0.0")
+        assertThat(CfnLspInstaller(storageDir).findCachedServerForTest()).isNull()
+    }
 
-        assertThat(Files.exists(currentVersion)).isTrue()
-        assertThat(Files.exists(serverFile)).isTrue()
+    @Test
+    fun `findCachedServer skips directories with unparseable names`() {
+        val storageDir = tempFolder.newFolder("lsp-storage").toPath()
+        createServerVersion(storageDir, "not-a-version")
+        createServerVersion(storageDir, "1.2.0")
+
+        val result = CfnLspInstaller(storageDir).findCachedServerForTest()
+        assertThat(result?.parent?.fileName.toString()).isEqualTo("1.2.0")
+    }
+
+    // --- cleanupOldVersions ---
+
+    @Test
+    fun `cleanupOldVersions keeps current version and one fallback`() {
+        val storageDir = tempFolder.newFolder("lsp-storage").toPath()
+        createServerVersion(storageDir, "1.0.0")
+        createServerVersion(storageDir, "1.2.0")
+        createServerVersion(storageDir, "1.4.0")
+
+        CfnLspInstaller(storageDir).cleanupOldVersionsForTest("1.4.0")
+
+        assertThat(Files.exists(storageDir.resolve("1.4.0"))).isTrue() // current
+        assertThat(Files.exists(storageDir.resolve("1.2.0"))).isTrue() // fallback
+        assertThat(Files.exists(storageDir.resolve("1.0.0"))).isFalse() // removed
+    }
+
+    @Test
+    fun `cleanupOldVersions removes versions outside supported range`() {
+        val storageDir = tempFolder.newFolder("lsp-storage").toPath()
+        createServerVersion(storageDir, "1.4.0")
+        createServerVersion(storageDir, "2.0.0")
+
+        CfnLspInstaller(storageDir).cleanupOldVersionsForTest("1.4.0")
+
+        assertThat(Files.exists(storageDir.resolve("1.4.0"))).isTrue()
+        assertThat(Files.exists(storageDir.resolve("2.0.0"))).isFalse()
+    }
+
+    @Test
+    fun `cleanupOldVersions preserves only current when no valid fallback`() {
+        val storageDir = tempFolder.newFolder("lsp-storage").toPath()
+        createServerVersion(storageDir, "1.4.0")
+
+        CfnLspInstaller(storageDir).cleanupOldVersionsForTest("1.4.0")
+
+        assertThat(Files.exists(storageDir.resolve("1.4.0"))).isTrue()
     }
 
     @Test
     fun `cleanupOldVersions handles non-existent storage dir gracefully`() {
-        val nonExistentDir = tempFolder.root.toPath().resolve("non-existent")
-        val installer = CfnLspInstaller(nonExistentDir)
-
+        val installer = installerWithDir("non-existent")
         // Should not throw
-        installer.cleanupOldVersionsForTest("v1.0.0")
+        installer.cleanupOldVersionsForTest("1.0.0")
     }
 
     @Test
-    fun `cleanupOldVersions removes multiple old versions`() {
+    fun `cleanupOldVersions picks highest compatible version as fallback`() {
         val storageDir = tempFolder.newFolder("lsp-storage").toPath()
-        val v1 = storageDir.resolve("v1.0.0")
-        val v2 = storageDir.resolve("v1.5.0")
-        val current = storageDir.resolve("v2.0.0")
-        listOf(v1, v2, current).forEach { Files.createDirectories(it) }
+        createServerVersion(storageDir, "1.0.0")
+        createServerVersion(storageDir, "1.1.0")
+        createServerVersion(storageDir, "1.2.0")
+        createServerVersion(storageDir, "1.3.0")
+        createServerVersion(storageDir, "1.4.0")
 
-        val installer = CfnLspInstaller(storageDir)
-        installer.cleanupOldVersionsForTest("v2.0.0")
+        CfnLspInstaller(storageDir).cleanupOldVersionsForTest("1.4.0")
 
-        assertThat(Files.exists(v1)).isFalse()
-        assertThat(Files.exists(v2)).isFalse()
-        assertThat(Files.exists(current)).isTrue()
+        assertThat(Files.exists(storageDir.resolve("1.4.0"))).isTrue() // current
+        assertThat(Files.exists(storageDir.resolve("1.3.0"))).isTrue() // fallback (highest below current)
+        assertThat(Files.exists(storageDir.resolve("1.2.0"))).isFalse()
+        assertThat(Files.exists(storageDir.resolve("1.1.0"))).isFalse()
+        assertThat(Files.exists(storageDir.resolve("1.0.0"))).isFalse()
     }
+
+    @Test
+    fun `cleanupOldVersions skips unparseable directory names`() {
+        val storageDir = tempFolder.newFolder("lsp-storage").toPath()
+        createServerVersion(storageDir, "1.4.0")
+        createServerVersion(storageDir, "temp-download")
+
+        CfnLspInstaller(storageDir).cleanupOldVersionsForTest("1.4.0")
+
+        assertThat(Files.exists(storageDir.resolve("1.4.0"))).isTrue()
+        // unparseable dirs get cleaned up since they're not in the keep set
+        assertThat(Files.exists(storageDir.resolve("temp-download"))).isFalse()
+    }
+
+    // --- hash utilities ---
 
     @Test
     fun `parseHashString extracts algorithm and hash`() {
-        val result = CfnLspInstaller.parseHashString("sha256:abc123def456")
-
-        assertThat(result).isEqualTo("sha256" to "abc123def456")
+        assertThat(CfnLspInstaller.parseHashString("sha256:abc123def456"))
+            .isEqualTo("sha256" to "abc123def456")
     }
 
     @Test
@@ -123,27 +173,31 @@ class CfnLspInstallerTest {
 
     @Test
     fun `computeHash calculates sha256 correctly`() {
-        val data = "test data".toByteArray()
-        val hash = CfnLspInstaller.computeHash(data, "sha256")
-
-        // Known SHA-256 hash of "test data"
+        val hash = CfnLspInstaller.computeHash("test data".toByteArray(), "sha256")
         assertThat(hash).isEqualTo("916f0027a575074ce72a331777c3478d6513f786a591bd892da1a577bf2335f9")
     }
 
     @Test
     fun `computeHash calculates sha384 correctly`() {
-        val data = "test data".toByteArray()
-        val hash = CfnLspInstaller.computeHash(data, "sha384")
-
+        val hash = CfnLspInstaller.computeHash("test data".toByteArray(), "sha384")
         assertThat(hash).hasSize(96) // SHA-384 produces 96 hex characters
     }
 
-    private fun CfnLspInstaller.findCachedServerForTest(): Path? = try {
+    // --- helpers ---
+
+    private fun createServerVersion(storageDir: Path, version: String) {
+        val dir = storageDir.resolve(version)
+        Files.createDirectories(dir)
+        Files.createFile(dir.resolve(CfnLspServerConfig.SERVER_FILE))
+    }
+
+    private fun installerWithDir(name: String) =
+        CfnLspInstaller(tempFolder.root.toPath().resolve(name))
+
+    private fun CfnLspInstaller.findCachedServerForTest(): Path? {
         val method = this::class.java.getDeclaredMethod("findCachedServer")
         method.isAccessible = true
-        method.invoke(this) as? Path
-    } catch (e: Exception) {
-        null
+        return method.invoke(this) as? Path
     }
 
     private fun CfnLspInstaller.cleanupOldVersionsForTest(currentVersion: String) {
