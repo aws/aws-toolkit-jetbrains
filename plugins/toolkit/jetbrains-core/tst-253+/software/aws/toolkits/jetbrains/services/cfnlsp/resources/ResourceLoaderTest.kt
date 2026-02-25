@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.cfnlsp.resources
 
 import com.intellij.testFramework.ProjectRule
-
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
