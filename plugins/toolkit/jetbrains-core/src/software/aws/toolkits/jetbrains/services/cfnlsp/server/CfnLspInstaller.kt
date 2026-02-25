@@ -145,24 +145,21 @@ internal class CfnLspInstaller(
     }
 
     /**
-     * Removes old versions, keeping the current version and one fallback
-     * (the highest compatible version below current).
+     * Removes old versions, keeping the current version and one compatible fallback.
      */
     private fun cleanupOldVersions(currentVersion: String) {
         if (!Files.exists(storageDir)) return
 
         try {
-            val currentSemVer = SemVer.parse(currentVersion) ?: return
-
             val dirs = Files.list(storageDir).use { stream ->
                 stream.filter { it.isDirectory() }.toList()
             }
 
-            // Find the best fallback: highest compatible version below current
+            // Keep the highest compatible version other than current as fallback
             val fallbackDir = dirs
                 .filter { it.fileName.toString() != currentVersion }
                 .mapNotNull { dir -> SemVer.parse(dir.fileName.toString())?.let { dir to it } }
-                .filter { (_, ver) -> versionRange.satisfiedBy(ver) && ver < currentSemVer }
+                .filter { (_, ver) -> versionRange.satisfiedBy(ver) }
                 .maxByOrNull { (_, ver) -> ver }
                 ?.first
 

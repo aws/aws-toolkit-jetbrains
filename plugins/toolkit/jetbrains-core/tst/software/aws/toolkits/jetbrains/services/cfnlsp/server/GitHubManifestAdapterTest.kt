@@ -11,40 +11,16 @@ import org.junit.Test
 class GitHubManifestAdapterTest {
 
     @Test
-    fun `GitHubRelease data class holds correct values`() {
-        val release = GitHubRelease(
-            tagName = "v1.2.3",
-            prerelease = true,
-            assets = emptyList()
-        )
-
-        assertThat(release.tagName).isEqualTo("v1.2.3")
-        assertThat(release.prerelease).isTrue()
-        assertThat(release.assets).isEmpty()
-    }
-
-    @Test
-    fun `GitHubAsset data class holds correct values`() {
-        val asset = GitHubAsset(
-            name = "test-asset.zip",
-            browserDownloadUrl = "https://example.com/download",
-            size = 12345
-        )
-
-        assertThat(asset.name).isEqualTo("test-asset.zip")
-        assertThat(asset.browserDownloadUrl).isEqualTo("https://example.com/download")
-        assertThat(asset.size).isEqualTo(12345)
-    }
-
-    @Test
     fun `ManifestVersion data class holds correct values`() {
         val version = ManifestVersion(
             serverVersion = "1.3.0",
+            latest = true,
             isDelisted = false,
             targets = emptyList()
         )
 
         assertThat(version.serverVersion).isEqualTo("1.3.0")
+        assertThat(version.latest).isTrue()
         assertThat(version.isDelisted).isFalse()
         assertThat(version.targets).isEmpty()
     }
@@ -125,13 +101,32 @@ class GitHubManifestAdapterTest {
     }
 
     @Test
-    fun `parseManifest selects highest compatible version by semver`() {
+    fun `parseManifest prefers version marked as latest`() {
         val adapter = GitHubManifestAdapter(
             environment = CfnLspEnvironment.PROD,
             versionRange = SemVerRange.parse("<2.0.0"),
         )
 
-        // Versions deliberately in wrong order to prove sorting works
+        val manifest = buildManifestJsonFull(
+            "prod",
+            listOf(
+                Triple("1.4.0", true, false),
+                Triple("1.2.0", false, false),
+            )
+        )
+
+        val result = adapter.parseManifest(manifest)
+        assertThat(result.version).isEqualTo("1.4.0")
+    }
+
+    @Test
+    fun `parseManifest falls back to semver sort when no latest flag`() {
+        val adapter = GitHubManifestAdapter(
+            environment = CfnLspEnvironment.PROD,
+            versionRange = SemVerRange.parse("<2.0.0"),
+        )
+
+        // No version marked as latest — should pick highest by semver
         val manifest = buildManifestJson(
             "prod",
             listOf("1.2.0", "1.4.0", "1.0.0", "1.3.1")
@@ -139,6 +134,46 @@ class GitHubManifestAdapterTest {
 
         val result = adapter.parseManifest(manifest)
         assertThat(result.version).isEqualTo("1.4.0")
+    }
+
+    @Test
+    fun `parseManifest skips latest if outside version range`() {
+        val adapter = GitHubManifestAdapter(
+            environment = CfnLspEnvironment.PROD,
+            versionRange = SemVerRange.parse("<2.0.0"),
+        )
+
+        val manifest = buildManifestJsonFull(
+            "prod",
+            listOf(
+                Triple("2.0.0", true, false),
+                Triple("1.4.0", false, false),
+                Triple("1.2.0", false, false),
+            )
+        )
+
+        val result = adapter.parseManifest(manifest)
+        assertThat(result.version).isEqualTo("1.4.0")
+    }
+
+    @Test
+    fun `parseManifest skips latest if delisted`() {
+        val adapter = GitHubManifestAdapter(
+            environment = CfnLspEnvironment.PROD,
+            versionRange = SemVerRange.parse("<2.0.0"),
+        )
+
+        val manifest = buildManifestJsonFull(
+            "prod",
+            listOf(
+                Triple("1.4.0", true, true),
+                Triple("1.3.0", false, false),
+                Triple("1.2.0", false, false),
+            )
+        )
+
+        val result = adapter.parseManifest(manifest)
+        assertThat(result.version).isEqualTo("1.3.0")
     }
 
     @Test
@@ -164,9 +199,13 @@ class GitHubManifestAdapterTest {
             versionRange = SemVerRange.parse("<2.0.0"),
         )
 
-        val manifest = buildManifestJsonWithDelisted(
+        val manifest = buildManifestJsonFull(
             "prod",
-            listOf("1.4.0" to true, "1.3.0" to false, "1.2.0" to false)
+            listOf(
+                Triple("1.4.0", false, true),
+                Triple("1.3.0", false, false),
+                Triple("1.2.0", false, false),
+            )
         )
 
         val result = adapter.parseManifest(manifest)
@@ -209,7 +248,6 @@ class GitHubManifestAdapterTest {
             versionRange = SemVerRange.parse("<100.0.0"),
         )
 
-        // Lexicographic: "9.0.0" > "10.0.0" — semver: 10.0.0 > 9.0.0
         val manifest = buildManifestJson("prod", listOf("9.0.0", "10.0.0", "2.0.0"))
 
         val result = adapter.parseManifest(manifest)
@@ -218,23 +256,18 @@ class GitHubManifestAdapterTest {
 
     // --- helpers ---
 
-    private fun buildManifestJson(env: String, versions: List<String>): String {
-        val mapper = jacksonObjectMapper()
-        val versionObjects = versions.map { v ->
-            mapOf(
-                "server_version" to v,
-                "is_delisted" to false,
-                "targets" to listOf(currentPlatformTarget(v))
-            )
-        }
-        return mapper.writeValueAsString(mapOf(env to versionObjects))
-    }
+    private fun buildManifestJson(env: String, versions: List<String>): String =
+        buildManifestJsonFull(env, versions.map { Triple(it, false, false) })
 
-    private fun buildManifestJsonWithDelisted(env: String, versions: List<Pair<String, Boolean>>): String {
+    private fun buildManifestJsonFull(
+        env: String,
+        versions: List<Triple<String, Boolean, Boolean>>,
+    ): String {
         val mapper = jacksonObjectMapper()
-        val versionObjects = versions.map { (v, delisted) ->
+        val versionObjects = versions.map { (v, latest, delisted) ->
             mapOf(
                 "server_version" to v,
+                "latest" to latest,
                 "is_delisted" to delisted,
                 "targets" to listOf(currentPlatformTarget(v))
             )

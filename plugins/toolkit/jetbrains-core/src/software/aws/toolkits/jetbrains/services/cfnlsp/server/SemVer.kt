@@ -5,7 +5,7 @@ package software.aws.toolkits.jetbrains.services.cfnlsp.server
 
 /**
  * Minimal semver implementation for comparing language server versions.
- * Handles formats: "1.4.0", "v1.4.0", "1.4.0-beta", "1.4.0-2030-alpha"
+ * Handles formats: "1.4.0", "v1.4.0", "1.4.0-beta"
  */
 internal data class SemVer(
     val major: Int,
@@ -25,19 +25,19 @@ internal data class SemVer(
 
         // Compare prerelease identifiers left to right
         for (i in 0 until maxOf(prerelease.size, other.prerelease.size)) {
-            val a = prerelease.getOrNull(i)
-            val b = other.prerelease.getOrNull(i)
-            if (a == null) return -1 // fewer fields = lower precedence
-            if (b == null) return 1
-            val aNum = a.toIntOrNull()
-            val bNum = b.toIntOrNull()
-            val cmp = when {
-                aNum != null && bNum != null -> aNum.compareTo(bNum)
-                aNum != null -> -1 // numeric < string
-                bNum != null -> 1
-                else -> a.compareTo(b)
+            val thisId = prerelease.getOrNull(i)
+            val otherId = other.prerelease.getOrNull(i)
+            if (thisId == null) return -1 // fewer fields = lower precedence
+            if (otherId == null) return 1
+            val thisNum = thisId.toIntOrNull()
+            val otherNum = otherId.toIntOrNull()
+            val result = when {
+                thisNum != null && otherNum != null -> thisNum.compareTo(otherNum)
+                thisNum != null -> -1 // numeric < string
+                otherNum != null -> 1
+                else -> thisId.compareTo(otherId)
             }
-            if (cmp != 0) return cmp
+            if (result != 0) return result
         }
         return 0
     }
@@ -45,7 +45,6 @@ internal data class SemVer(
     companion object {
         fun parse(version: String): SemVer? {
             val cleaned = version.removePrefix("v")
-            // Split "1.4.0-beta" into core="1.4.0" and pre="beta"
             val hyphenIdx = cleaned.indexOf('-')
             val core = if (hyphenIdx >= 0) cleaned.substring(0, hyphenIdx) else cleaned
             val prePart = if (hyphenIdx >= 0) cleaned.substring(hyphenIdx + 1) else null
@@ -56,7 +55,7 @@ internal data class SemVer(
             val major = parts[0].toIntOrNull() ?: return null
             val minor = parts[1].toIntOrNull() ?: return null
             val patch = parts[2].toIntOrNull() ?: return null
-            val prerelease = prePart?.split('.')?.flatMap { it.split('-') } ?: emptyList()
+            val prerelease = prePart?.split('-') ?: emptyList()
 
             return SemVer(major, minor, patch, prerelease)
         }
@@ -73,14 +72,13 @@ internal class SemVerRange private constructor(
     private data class Constraint(val op: String, val version: SemVer)
 
     fun satisfiedBy(version: SemVer): Boolean =
-        // For range checks, compare only major.minor.patch (ignore prerelease on the constraint bound)
-        constraints.all { c ->
+        constraints.all { constraint ->
             val coreVersion = SemVer(version.major, version.minor, version.patch)
-            when (c.op) {
-                "<" -> coreVersion < c.version
-                "<=" -> coreVersion <= c.version
-                ">" -> coreVersion > c.version
-                ">=" -> coreVersion >= c.version
+            when (constraint.op) {
+                "<" -> coreVersion < constraint.version
+                "<=" -> coreVersion <= constraint.version
+                ">" -> coreVersion > constraint.version
+                ">=" -> coreVersion >= constraint.version
                 else -> false
             }
         }

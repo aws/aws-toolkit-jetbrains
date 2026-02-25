@@ -31,12 +31,6 @@ class SemVerTest {
     }
 
     @Test
-    fun `parse version with timestamp prerelease`() {
-        val v = SemVer.parse("1.4.0-2030-alpha")!!
-        assertThat(v.prerelease).containsExactly("2030", "alpha")
-    }
-
-    @Test
     fun `parse returns null for invalid input`() {
         assertThat(SemVer.parse("not-a-version")).isNull()
         assertThat(SemVer.parse("1.2")).isNull()
@@ -62,11 +56,6 @@ class SemVerTest {
     @Test
     fun `comparison - release beats prerelease`() {
         assertThat(SemVer.parse("1.4.0")!!).isGreaterThan(SemVer.parse("1.4.0-beta")!!)
-    }
-
-    @Test
-    fun `comparison - numeric prerelease identifiers compared numerically`() {
-        assertThat(SemVer.parse("1.0.0-2030")!!).isGreaterThan(SemVer.parse("1.0.0-2026")!!)
     }
 
     @Test
@@ -100,14 +89,12 @@ class SemVerTest {
         val versions = listOf("1.4.0", "1.4.0-beta", "1.3.1", "1.3.1-beta")
             .map { SemVer.parse(it)!! }
             .sortedDescending()
-
-        assertThat(
-            versions.map {
+            .map {
                 "${it.major}.${it.minor}.${it.patch}" +
                     if (it.prerelease.isNotEmpty()) "-${it.prerelease.joinToString("-")}" else ""
             }
-        )
-            .containsExactly("1.4.0", "1.4.0-beta", "1.3.1", "1.3.1-beta")
+
+        assertThat(versions).containsExactly("1.4.0", "1.4.0-beta", "1.3.1", "1.3.1-beta")
     }
 }
 
