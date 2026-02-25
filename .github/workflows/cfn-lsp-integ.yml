@@ -1,0 +1,36 @@
+name: CloudFormation LSP Integration Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main, feature/* ]
+    paths:
+      - '.github/workflows/cfn-lsp-integ.yml'
+      - 'plugins/toolkit/jetbrains-core/src*/**/cfnlsp/**'
+      - 'plugins/toolkit/jetbrains-core/it-253+/**/cfnlsp/**'
+
+jobs:
+  build:
+    name: ${{ matrix.os }}
+
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - name: Support longpaths
+        if: ${{ matrix.os == 'windows-latest' }}
+        run: git config --system core.longpaths true
+      - uses: actions/checkout@v2
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'corretto'
+          java-version: '21'
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+      - name: Run CloudFormation LSP Integration Tests
+        run: ./gradlew :plugin-toolkit:jetbrains-core:integrationTest --info --full-stacktrace --console plain --tests "software.aws.toolkits.jetbrains.services.cfnlsp.CfnLspIntegrationTest"
