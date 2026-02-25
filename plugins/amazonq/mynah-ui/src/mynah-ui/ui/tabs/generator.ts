@@ -48,7 +48,8 @@ export class TabDataGenerator {
         ],
         [
             'codetransform',
-            `Welcome to Code Transformation! **You can also run transformations from the command line. To install the tool, see the [documentation](https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/run-CLI-transformations.html).**`,
+            `Welcome to Code Transformation!
+            **ℹ️ AWS Transform custom now available for Java upgrades. Agentic AI that handles version upgrades, SDK migration, and more, and improves with every execution. [Learn more](https://aws.amazon.com/transform/custom/)**`,
         ],
     ])
 
