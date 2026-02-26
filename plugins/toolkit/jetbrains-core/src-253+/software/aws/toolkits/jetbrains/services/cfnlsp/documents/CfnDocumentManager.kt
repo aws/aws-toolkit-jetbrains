@@ -8,7 +8,17 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkit.core.utils.info
-import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DocumentMetadata
+
+internal data class DocumentMetadata(
+    val uri: String,
+    val fileName: String,
+    val ext: String,
+    val type: String,
+    val cfnType: String,
+    val languageId: String,
+    val version: Int,
+    val lineCount: Int,
+)
 
 @Service(Service.Level.PROJECT)
 internal class CfnDocumentManager {

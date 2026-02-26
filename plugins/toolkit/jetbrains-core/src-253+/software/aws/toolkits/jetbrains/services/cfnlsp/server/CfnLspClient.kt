@@ -8,7 +8,7 @@ import com.intellij.platform.lsp.api.Lsp4jClient
 import com.intellij.platform.lsp.api.LspServerNotificationsHandler
 import org.eclipse.lsp4j.jsonrpc.services.JsonNotification
 import software.aws.toolkits.jetbrains.services.cfnlsp.documents.CfnDocumentManager
-import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DocumentMetadata
+import software.aws.toolkits.jetbrains.services.cfnlsp.documents.DocumentMetadata
 
 internal class CfnLspClient(
     handler: LspServerNotificationsHandler,
