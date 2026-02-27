@@ -5,11 +5,16 @@ package software.aws.toolkits.jetbrains.services.cfnlsp.stacks.views
 
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
+import com.intellij.ui.dsl.builder.Align
+import com.intellij.ui.dsl.builder.AlignX
+import com.intellij.ui.dsl.builder.panel
+import com.intellij.ui.table.JBTable
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
 import java.awt.Font
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
+import javax.swing.JButton
 import javax.swing.JComponent
 import javax.swing.JPanel
 
@@ -65,5 +70,33 @@ internal object StackPanelLayoutBuilder {
         gbc.weighty = 1.0
         gbc.fill = GridBagConstraints.BOTH
         parent.add(JPanel(), gbc)
+    }
+
+    fun createTableWithPaginationPanel(
+        title: String,
+        consoleLink: JComponent,
+        pageLabel: JComponent,
+        prevButton: JButton,
+        nextButton: JButton,
+        table: JBTable,
+    ): JComponent = panel {
+        row {
+            panel {
+                row {
+                    label(title).bold()
+                    cell(consoleLink)
+                }
+            }
+            panel {
+                row {
+                    cell(pageLabel)
+                    cell(prevButton)
+                    cell(nextButton)
+                }
+            }.align(AlignX.RIGHT)
+        }
+        row {
+            scrollCell(table).align(Align.FILL)
+        }.resizableRow()
     }
 }
