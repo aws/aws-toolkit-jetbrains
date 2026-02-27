@@ -67,6 +67,22 @@ if (providers.gradleProperty("ideProfileName").get() == "2024.3") {
     }
 }
 
+if (providers.gradleProperty("ideProfileName").get() == "2025.3") {
+    configurations.all {
+        resolutionStrategy.dependencySubstitution {
+            listOf(
+                "com.jetbrains.intellij.java:java-test-framework",
+                "com.jetbrains.intellij.platform:test-framework",
+                "com.jetbrains.intellij.platform:test-framework-junit5"
+            ).forEach {
+                substitute(module(it))
+                    .using(module("$it:253.28294.334"))
+                    .because("Rider 2024.3.0 requires a newer version of test-framework")
+            }
+        }
+    }
+}
+
 configurations {
     all {
         exclude(group = "com.jetbrains.intellij.spellchecker")
