@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer.util
 
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.vfs.newvfs.impl.VfsRootAccess
 import com.intellij.testFramework.HeavyPlatformTestCase
 import com.intellij.testFramework.replaceService
 import io.mockk.every
@@ -24,7 +23,6 @@ class CodeWhispererUtilTest : HeavyPlatformTestCase() {
 
     override fun setUp() {
         super.setUp()
-        VfsRootAccess.allowRootAccess(testRootDisposable, "C:/Program Files/pypy3.11-v7.3.20-win64")
         mockRegionProviderExtension.apply(
             object : org.junit.runners.model.Statement() {
                 override fun evaluate() {}
