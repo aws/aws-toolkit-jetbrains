@@ -1,3 +1,5 @@
+# _3.104_ (2026-02-27)
+
 # _3.103_ (2026-02-12)
 - **(Bug Fix)** Amazon Q Chat: Fix chat history restoration to display rich UI elements and persist user preferences
 - **(Bug Fix)** Amazon Q: Fix LSP server startup failure when Node.js runtime path is configured as a directory instead of the executable path
