@@ -77,7 +77,7 @@ if (providers.gradleProperty("ideProfileName").get() == "2025.3") {
             ).forEach {
                 substitute(module(it))
                     .using(module("$it:253.28294.334"))
-                    .because("Rider 2024.3.0 requires a newer version of test-framework")
+                    .because("Rider 2025.3.0 requires a newer version of test-framework")
             }
         }
     }
@@ -96,7 +96,7 @@ dependencies {
 
         // FIX_WHEN_MIN_IS_251: https://github.com/JetBrains/intellij-platform-gradle-plugin/issues/1774
         when (providers.gradleProperty("ideProfileName").get()) {
-            "2024.3", "2025.1" -> {
+            "2024.3", "2025.1, 2025.3" -> {
                 bundledModule("intellij.rider")
             }
         }
