@@ -10,15 +10,16 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.ValidationInfo
+import com.intellij.ui.SimpleListCellRenderer
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.util.ui.JBUI
 import software.aws.toolkits.jetbrains.services.cfnlsp.documents.CfnDocumentManager
-import software.aws.toolkits.jetbrains.services.cfnlsp.documents.RelativePathParser
 import software.aws.toolkits.jetbrains.services.cfnlsp.server.CFN_SUPPORTED_EXTENSIONS
 import software.aws.toolkits.resources.AwsToolkitBundle.message
 import java.io.File
+import java.net.URI
 import javax.swing.JButton
 import javax.swing.JComponent
 
@@ -45,10 +46,16 @@ internal class ValidateAndDeployDialog(
         it.extension?.lowercase() in CFN_SUPPORTED_EXTENSIONS
     }
 
-    private val templateDropdown = ComboBox<TemplateItem>()
+    private val templateDropdown = ComboBox<TemplateItem>().apply {
+        renderer = SimpleListCellRenderer.create { label, item, _ ->
+            label.text = item.displayName
+            label.toolTipText = item.uri?.let { URI(it).path }
+        }
+        addActionListener { toolTipText = getSelectedTooltip() }
+    }
 
     private val browseButton = JButton().apply {
-        icon = AllIcons.Actions.NewFolder
+        icon = AllIcons.General.OpenDisk
         addActionListener {
             val selectedFile = FileChooser.chooseFile(descriptor, project, null)
             selectedFile?.let { addFileToDropdown(it.path) }
@@ -65,7 +72,13 @@ internal class ValidateAndDeployDialog(
         title = message("cloudformation.deploy.dialog.title")
         populateTemplateDropdown()
         prefilledTemplatePath?.let { addFileToDropdown(it) }
+        templateDropdown.toolTipText = getSelectedTooltip()
         init()
+    }
+
+    private fun getSelectedTooltip(): String? {
+        val selectedItem = templateDropdown.selectedItem as? TemplateItem
+        return selectedItem?.uri?.let { URI(it).path }
     }
 
     private fun populateTemplateDropdown() {
@@ -73,12 +86,10 @@ internal class ValidateAndDeployDialog(
         templateDropdown.removeAllItems()
 
         if (templates.isEmpty()) {
-            templateDropdown.addItem(TemplateItem("No templates opened", null))
+            templateDropdown.addItem(TemplateItem("Click browse button to select template", null))
         } else {
             templates.sortedBy { it.fileName }.forEach { template ->
-                val relativePath = RelativePathParser.getRelativePath(template.uri, project)
-                val displayName = "${template.fileName} ($relativePath)"
-                templateDropdown.addItem(TemplateItem(displayName, template.uri))
+                templateDropdown.addItem(TemplateItem(template.fileName, template.uri))
             }
         }
     }
@@ -98,13 +109,12 @@ internal class ValidateAndDeployDialog(
             templateDropdown.selectedItem = existingItem
         } else {
             // Add new item and select it
-            val relativePath = RelativePathParser.getRelativePath(fileUri, project)
-            val displayName = "${file.name} ($relativePath)"
-            val newItem = TemplateItem(displayName, fileUri)
+            val newItem = TemplateItem(file.name, fileUri)
 
             templateDropdown.addItem(newItem)
             templateDropdown.selectedItem = newItem
         }
+        templateDropdown.toolTipText = getSelectedTooltip()
     }
 
     override fun getDimensionServiceKey(): String = "aws.toolkit.cloudformation.validateAndDeploy"
@@ -129,7 +139,7 @@ internal class ValidateAndDeployDialog(
         val uri = selectedItem?.uri
             ?: return ValidationInfo(message("cloudformation.deploy.dialog.template.required"), templateDropdown)
 
-        val file = File(uri.removePrefix("file://"))
+        val file = File(URI(uri))
         if (!file.isFile) {
             return ValidationInfo(message("cloudformation.deploy.dialog.template.not_found"), templateDropdown)
         }
@@ -152,7 +162,7 @@ internal class ValidateAndDeployDialog(
 
     fun getSettings(): ValidateAndDeploySettings {
         val selectedItem = templateDropdown.selectedItem as? TemplateItem
-        val templatePath = selectedItem?.uri?.removePrefix("file://") ?: ""
+        val templatePath = selectedItem?.uri?.let { URI(it).path } ?: ""
 
         return ValidateAndDeploySettings(
             templatePath = templatePath,
