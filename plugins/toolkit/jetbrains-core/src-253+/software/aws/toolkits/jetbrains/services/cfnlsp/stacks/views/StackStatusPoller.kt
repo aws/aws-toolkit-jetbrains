@@ -6,7 +6,7 @@ package software.aws.toolkits.jetbrains.services.cfnlsp.stacks.views
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
-import software.aws.toolkit.core.utils.getLogger
+import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.cfnlsp.CfnClientService
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeStackParams
 import java.util.Timer

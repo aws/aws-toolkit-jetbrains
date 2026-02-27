@@ -4,9 +4,9 @@
 package software.aws.toolkits.jetbrains.services.cfnlsp.server
 
 import com.intellij.openapi.util.SystemInfo
-import software.aws.toolkit.core.utils.getLogger
-import software.aws.toolkit.core.utils.info
-import software.aws.toolkit.core.utils.warn
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.info
+import software.aws.toolkits.core.utils.warn
 import java.io.File
 import java.util.concurrent.TimeUnit
 

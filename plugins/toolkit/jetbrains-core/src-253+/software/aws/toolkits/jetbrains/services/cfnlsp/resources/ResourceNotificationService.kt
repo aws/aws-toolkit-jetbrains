@@ -7,11 +7,11 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.openapi.project.Project
-import software.aws.toolkit.jetbrains.utils.notifyError
-import software.aws.toolkit.jetbrains.utils.notifyInfo
-import software.aws.toolkit.jetbrains.utils.notifyWarn
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ResourceStackManagementResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ResourceStatePurpose
+import software.aws.toolkits.jetbrains.utils.notifyError
+import software.aws.toolkits.jetbrains.utils.notifyInfo
+import software.aws.toolkits.jetbrains.utils.notifyWarn
 import software.aws.toolkits.resources.message
 import java.awt.datatransfer.StringSelection
 

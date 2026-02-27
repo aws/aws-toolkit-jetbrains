@@ -14,7 +14,7 @@ import com.intellij.ui.content.ContentFactory
 import com.intellij.ui.content.ContentManager
 import com.intellij.ui.content.ContentManagerEvent
 import com.intellij.ui.content.ContentManagerListener
-import software.aws.toolkit.core.utils.getLogger
+import software.aws.toolkits.core.utils.getLogger
 import java.util.concurrent.ConcurrentHashMap
 
 @Service(Service.Level.PROJECT)

@@ -10,9 +10,9 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import software.aws.toolkit.core.utils.getLogger
-import software.aws.toolkit.core.utils.info
-import software.aws.toolkit.core.utils.warn
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.info
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.cfnlsp.CfnClientService
 import java.util.concurrent.CompletableFuture
 

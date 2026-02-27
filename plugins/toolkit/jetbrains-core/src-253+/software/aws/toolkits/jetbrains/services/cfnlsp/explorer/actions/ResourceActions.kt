@@ -11,9 +11,9 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
-import software.aws.toolkit.core.utils.getLogger
-import software.aws.toolkit.core.utils.info
-import software.aws.toolkit.core.utils.warn
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.info
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerTreeToolWindowDataKeys
 import software.aws.toolkits.jetbrains.services.cfnlsp.explorer.nodes.ResourceNode
 import software.aws.toolkits.jetbrains.services.cfnlsp.explorer.nodes.ResourceTypeNode
