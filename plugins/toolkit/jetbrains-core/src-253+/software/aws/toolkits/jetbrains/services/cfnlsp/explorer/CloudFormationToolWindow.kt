@@ -10,10 +10,10 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.platform.lsp.api.LspServerManager
-import software.aws.toolkit.jetbrains.ToolkitPlaces
-import software.aws.toolkit.jetbrains.core.credentials.CredentialManager
-import software.aws.toolkit.jetbrains.core.credentials.ToolkitConnection
-import software.aws.toolkit.jetbrains.core.credentials.ToolkitConnectionManagerListener
+import software.aws.toolkits.jetbrains.ToolkitPlaces
+import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
 import software.aws.toolkits.jetbrains.core.explorer.AbstractExplorerTreeToolWindow
 import software.aws.toolkits.jetbrains.core.gettingstarted.requestCredentialsForExplorer
 import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourceLoader

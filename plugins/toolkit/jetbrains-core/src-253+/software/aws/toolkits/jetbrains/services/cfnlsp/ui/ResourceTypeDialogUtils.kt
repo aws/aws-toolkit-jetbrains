@@ -4,9 +4,9 @@
 package software.aws.toolkits.jetbrains.services.cfnlsp.ui
 
 import com.intellij.openapi.project.Project
-import software.aws.toolkit.core.utils.getLogger
-import software.aws.toolkit.core.utils.info
-import software.aws.toolkit.core.utils.warn
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.info
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourceTypesManager
 
 object ResourceTypeDialogUtils {
