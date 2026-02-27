@@ -11,11 +11,13 @@ import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeStackPar
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeStackResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeValidationStatusResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.GetStackActionStatusResult
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.GetStackResourcesParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.Identifiable
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ListChangeSetsParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ListChangeSetsResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ListResourcesParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ListResourcesResult
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ListStackResourcesResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ListStacksParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ListStacksResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.RefreshResourcesParams
@@ -78,4 +80,7 @@ internal interface CfnLspServerProtocol : LanguageServer {
     // Stack View
     @JsonRequest("aws/cfn/stack/describe")
     fun describeStack(params: DescribeStackParams): CompletableFuture<DescribeStackResult>
+
+    @JsonRequest("aws/cfn/stack/resources")
+    fun getStackResources(params: GetStackResourcesParams): CompletableFuture<ListStackResourcesResult>
 }

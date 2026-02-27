@@ -76,3 +76,27 @@ internal data class StackOutput(
     @SerializedName("Description")
     val description: String? = null,
 )
+
+// Stack Resources Protocol
+internal data class GetStackResourcesParams(
+    val stackName: String,
+    val nextToken: String? = null,
+)
+
+internal data class StackResourceSummary(
+    @SerializedName("LogicalResourceId")
+    val logicalResourceId: String,
+    @SerializedName("PhysicalResourceId")
+    val physicalResourceId: String?,
+    @SerializedName("ResourceType")
+    val resourceType: String,
+    @SerializedName("ResourceStatus")
+    val resourceStatus: String,
+    @SerializedName("Timestamp")
+    val timestamp: String?,
+)
+
+internal data class ListStackResourcesResult(
+    val resources: List<StackResourceSummary>,
+    val nextToken: String? = null,
+)
