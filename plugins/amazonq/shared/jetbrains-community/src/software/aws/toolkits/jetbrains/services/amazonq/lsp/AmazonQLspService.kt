@@ -453,7 +453,6 @@ private class AmazonQServerInstance(private val project: Project, private val cs
 
         val node = if (SystemInfo.isWindows) "node.exe" else "node"
         val nodePath = NodeExePatcher.getNodeRuntimePath(project, artifact.resolve(node))
-        val emptyFile = Files.createTempFile("empty", null).toAbsolutePath().toString()
 
         val cmd = NodeExePatcher.patch(nodePath)
             .withParameters(
@@ -466,9 +465,6 @@ private class AmazonQServerInstance(private val project: Project, private val cs
                         LOG.info { "Starting Flare with NODE_EXTRA_CA_CERTS: $it" }
                         put("NODE_EXTRA_CA_CERTS", it)
                     }
-
-                    put("AWS_CONFIG_FILE", emptyFile)
-                    put("AWS_SHARED_CREDENTIALS_FILE", emptyFile)
 
                     // assume default endpoint will pick correct proxy if needed
                     val qUri = URI(QDefaultServiceConfig.ENDPOINT)
