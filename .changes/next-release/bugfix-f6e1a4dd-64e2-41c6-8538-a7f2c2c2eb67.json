@@ -1,4 +1,0 @@
-{
-  "type" : "bugfix",
-  "description" : "Amazon Q: Fix LSP server startup failure when Node.js runtime path is configured as a directory instead of the executable path"
-}
