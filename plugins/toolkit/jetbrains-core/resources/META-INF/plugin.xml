@@ -106,6 +106,7 @@
     <depends optional="true" config-file="ext-java.xml">com.intellij.modules.java</depends>
     <depends optional="true" config-file="ext-python.xml">com.intellij.modules.python</depends>
     <depends optional="true" config-file="ext-gateway.xml">com.jetbrains.gateway</depends>
+    <depends optional="true" config-file="aws.toolkit.cloudformation.lsp.xml">com.intellij.modules.lsp</depends>
 
     <xi:include href="services/caws.xml" xpointer="xpointer(/idea-plugin/*)">
         <xi:fallback/>
@@ -172,6 +173,7 @@
         <extensionPoint name="tool" interface="software.aws.toolkits.jetbrains.core.tools.ToolType" dynamic="true"/>
         <extensionPoint name="devTools.serviceNode" interface="software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.DevToolsServiceNode" dynamic="true"/>
         <extensionPoint name="devTools.treeStructure" interface="software.aws.toolkits.jetbrains.core.explorer.devToolsTab.DevToolsTreeStructureProvider" dynamic="true"/>
+        <extensionPoint name="toolWindowTab" interface="software.aws.toolkits.jetbrains.core.explorer.ToolkitToolWindowTab" dynamic="true"/>
     </extensionPoints>
 
     <extensions defaultExtensionNs="com.intellij">
@@ -179,6 +181,8 @@
 
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.EcsExecCommandSettings"/>
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.SamDisplayDevModeWarningSettings"/>
+        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.CfnLspSettings"/>
+        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.services.cfnlsp.CfnTelemetryPromptState"/>
 
         <applicationService serviceInterface="software.aws.toolkits.jetbrains.settings.DynamicResourcesSettings"
                             serviceImplementation="software.aws.toolkits.jetbrains.settings.DefaultDynamicResourcesSettings"/>
@@ -262,6 +266,13 @@
             key="aws.settings.dynamic_resources_configurable.title"
             instance="software.aws.toolkits.jetbrains.settings.DynamicResourcesConfigurable"
         />
+        <applicationConfigurable
+            parentId="aws.toolkit"
+            id="aws.cloudformation"
+            bundle="software.aws.toolkits.resources.MessagesBundle"
+            key="cloudformation.settings.title"
+            instance="software.aws.toolkits.jetbrains.settings.CfnLspSettingsConfigurable"
+        />
 
         <programRunner implementation="software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamInvokeRunner"/>
         <programRunner implementation="software.aws.toolkits.jetbrains.services.lambda.execution.remote.RemoteLambdaRunner"/>
@@ -276,6 +287,9 @@
         <postStartupActivity implementation="software.aws.toolkits.jetbrains.core.notification.MinimumVersionChange"/>
         <notificationGroup id="aws.toolkit_deprecation" displayType="STICKY_BALLOON" key="aws.toolkit_deprecation.title"/>
         <notificationGroup id="aws.toolkit_telemetry" displayType="STICKY_BALLOON" key="aws.settings.telemetry.prompt.title"/>
+        <notificationGroup id="aws.cfn.telemetry" displayType="STICKY_BALLOON" key="cloudformation.telemetry.prompt.title"/>
+
+        <postStartupActivity implementation="software.aws.toolkits.jetbrains.services.cfnlsp.CfnTelemetryPrompter"/>
 
         <!--Sticky notifications -->
         <notificationGroup id="aws.toolkit_sticky" displayType="STICKY_BALLOON" key="aws.settings.title"/>

@@ -1,0 +1,129 @@
+<!-- Copyright 2025 Amazon.com, Inc. or its affiliates. All Rights Reserved. -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
+<idea-plugin>
+    <extensions defaultExtensionNs="com.intellij">
+        <platform.lsp.serverSupportProvider
+            implementation="software.aws.toolkits.jetbrains.services.cfnlsp.server.CfnLspServerSupportProvider"/>
+        
+        <toolWindow id="cloudformation.lsp.stack.view" anchor="bottom" doNotActivateOnStart="true" canCloseContents="true"
+                    factoryClass="software.aws.toolkits.jetbrains.services.cfnlsp.stacks.views.StackViewToolWindowFactory"
+                    icon="AwsIcons.Logos.CLOUD_FORMATION_TOOL"/>
+    </extensions>
+
+    <extensions defaultExtensionNs="aws.toolkit">
+        <toolWindowTab implementation="software.aws.toolkits.jetbrains.services.cfnlsp.explorer.CloudFormationToolWindowTab"/>
+    </extensions>
+
+    <actions>
+        <action id="aws.toolkit.cloudformation.stacks.refresh"
+                class="software.aws.toolkits.jetbrains.services.cfnlsp.explorer.actions.RefreshStacksAction"/>
+
+        <action id="aws.toolkit.cloudformation.stacks.load_more"
+                class="software.aws.toolkits.jetbrains.services.cfnlsp.explorer.actions.LoadMoreStacksAction"/>
+
+        <action id="aws.toolkit.cloudformation.refresh_all"
+                class="software.aws.toolkits.jetbrains.services.cfnlsp.explorer.actions.RefreshAllAction"
+                text="Refresh"
+                icon="AllIcons.Actions.Refresh"/>
+
+        <action id="aws.toolkit.cloudformation.resources.add_type"
+                class="software.aws.toolkits.jetbrains.services.cfnlsp.explorer.actions.AddResourceTypeAction"
+                text="Add Resource Types To List"/>
+
+        <action id="aws.toolkit.cloudformation.resources.refresh_type"
+                class="software.aws.toolkits.jetbrains.services.cfnlsp.explorer.actions.RefreshResourceTypeAction"
+                text="Refresh Resource Type"/>
+
+        <action id="aws.toolkit.cloudformation.resources.refresh_all_loaded"
+                class="software.aws.toolkits.jetbrains.services.cfnlsp.explorer.actions.RefreshAllLoadedResourcesAction"
+                text="Refresh All Loaded Resources"/>
+
+        <action id="aws.toolkit.cloudformation.resources.remove_type"
+                class="software.aws.toolkits.jetbrains.services.cfnlsp.explorer.actions.RemoveResourceTypeAction"
+                text="Remove Resource Type"/>
+
+        <action id="aws.toolkit.cloudformation.resources.search"
+                class="software.aws.toolkits.jetbrains.services.cfnlsp.explorer.actions.SearchResourceAction"
+                text="Search Resource"/>
+
+        <action id="aws.toolkit.cloudformation.resources.load_more"
+                class="software.aws.toolkits.jetbrains.services.cfnlsp.explorer.actions.LoadMoreResourcesAction"
+                text="Load More Resources"/>
+
+        <action id="aws.toolkit.cloudformation.resources.import"
+                class="software.aws.toolkits.jetbrains.services.cfnlsp.explorer.actions.ImportResourceStateAction"
+                text="Import Resource State"/>
+
+        <action id="aws.toolkit.cloudformation.resources.clone"
+                class="software.aws.toolkits.jetbrains.services.cfnlsp.explorer.actions.CloneResourceStateAction"
+                text="Clone Resource State"/>
+
+        <action id="aws.toolkit.cloudformation.resources.copy_identifier"
+                class="software.aws.toolkits.jetbrains.services.cfnlsp.explorer.actions.CopyResourceIdentifierAction"
+                text="Copy Resource Identifier"/>
+
+        <action id="aws.toolkit.cloudformation.resources.stack_info"
+                class="software.aws.toolkits.jetbrains.services.cfnlsp.explorer.actions.GetStackManagementInfoAction"
+                text="Get Stack Management Info"/>
+
+        <action id="aws.toolkit.cloudformation.stack.view"
+                class="software.aws.toolkits.jetbrains.services.cfnlsp.stacks.views.OpenStackViewAction"
+                text="View Stack Details"/>
+
+        <action id="aws.toolkit.cloudformation.validateAndDeploy"
+                class="software.aws.toolkits.jetbrains.services.cfnlsp.stacks.ValidateAndDeployAction"
+                text="Validate and Deploy"
+                description="Creates a change set to validate and deploy a CloudFormation template"
+                icon="AllIcons.Actions.Execute">
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+        </action>
+
+        <!-- Right-click on individual Stack node -->
+        <group id="aws.toolkit.cloudformation.stack.actions">
+            <reference ref="aws.toolkit.cloudformation.validateAndDeploy"/>
+            <reference ref="aws.toolkit.cloudformation.stack.view"/>
+        </group>
+
+        <!-- Right-click on Stacks node (no more stacks to load) -->
+        <group id="aws.toolkit.cloudformation.stacks.actions">
+            <reference ref="aws.toolkit.cloudformation.validateAndDeploy"/>
+            <separator/>
+            <reference ref="aws.toolkit.cloudformation.stacks.refresh"/>
+        </group>
+
+        <!-- Right-click on Stacks node (with more stacks to load) -->
+        <group id="aws.toolkit.cloudformation.stacks.actions.with_more">
+            <reference ref="aws.toolkit.cloudformation.validateAndDeploy"/>
+            <separator/>
+            <reference ref="aws.toolkit.cloudformation.stacks.load_more"/>
+            <reference ref="aws.toolkit.cloudformation.stacks.refresh"/>
+        </group>
+
+        <group id="aws.toolkit.cloudformation.resources.actions">
+            <reference ref="aws.toolkit.cloudformation.resources.add_type"/>
+            <reference ref="aws.toolkit.cloudformation.resources.refresh_all_loaded"/>
+        </group>
+
+        <group id="aws.toolkit.cloudformation.resources.type.actions">
+            <reference ref="aws.toolkit.cloudformation.resources.refresh_type"/>
+            <reference ref="aws.toolkit.cloudformation.resources.load_more"/>
+            <reference ref="aws.toolkit.cloudformation.resources.remove_type"/>
+            <reference ref="aws.toolkit.cloudformation.resources.search"/>
+        </group>
+
+        <group id="aws.toolkit.cloudformation.resources.resource.actions">
+            <reference ref="aws.toolkit.cloudformation.resources.import"/>
+            <reference ref="aws.toolkit.cloudformation.resources.clone"/>
+            <reference ref="aws.toolkit.cloudformation.resources.copy_identifier"/>
+            <reference ref="aws.toolkit.cloudformation.resources.stack_info"/>
+        </group>
+
+        <!-- Toolbar above CloudFormation tree view -->
+        <group id="aws.toolkit.cloudformation.toolbar">
+            <reference ref="aws.toolkit.cloudformation.validateAndDeploy"/>
+            <reference ref="aws.toolkit.cloudformation.resources.add_type"/>
+            <reference ref="aws.toolkit.cloudformation.refresh_all"/>
+        </group>
+    </actions>
+</idea-plugin>

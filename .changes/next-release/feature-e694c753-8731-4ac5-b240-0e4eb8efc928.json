@@ -1,0 +1,4 @@
+{
+  "type" : "feature",
+  "description" : "Add opt-in prompt for anonymous usage telemetry by CloudFormation Language Server"
+}

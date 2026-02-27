@@ -1,0 +1,4 @@
+{
+  "type" : "feature",
+  "description" : "Add validate and deploy functionality and actions toolbar to CloudFormation Language Server panel"
+}
