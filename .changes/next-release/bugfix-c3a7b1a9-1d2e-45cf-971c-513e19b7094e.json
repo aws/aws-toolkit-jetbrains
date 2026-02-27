@@ -1,4 +1,0 @@
-{
-  "type" : "bugfix",
-  "description" : "Amazon Q: Fix race condition causing \"Can't remove document listener\" error during LSP restart"
-}
