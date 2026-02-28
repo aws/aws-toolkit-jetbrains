@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Amazon Q: Fix profile selection errors and EDT threading violations (#6039)"
+}
