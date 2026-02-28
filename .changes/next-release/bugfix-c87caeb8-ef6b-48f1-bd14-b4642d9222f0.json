@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Amazon Q: Fix file change notifications not being reflected in IDE and improve error handling in chat commands"
+}

@@ -130,7 +130,12 @@ class DefaultCodeWhispererModelConfigurator(
         calculateIfIamIdentityCenterConnection(project) {
             // 1. fetch all profiles, invoke fetch customizations API and get result for each profile and aggregate all the results
             val profiles = QRegionProfileManager.getInstance().listRegionProfiles(project)
-                ?: error("Attempted to fetch profiles while there does not exist")
+            // Profiles are required for customization features - return empty list if unavailable
+            // This can happen when: (1) user has no profiles configured, (2) API call fails, (3) connection not authorized
+            if (profiles.isNullOrEmpty()) {
+                LOG.debug { "No profiles available for customization listing - profiles required for this feature" }
+                return@calculateIfIamIdentityCenterConnection emptyList()
+            }
 
             val customizations = profiles.flatMap { profile ->
                 runCatching {
