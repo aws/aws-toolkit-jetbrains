@@ -1,0 +1,4 @@
+{
+  "type" : "feature",
+  "description" : "Add the stack resource panel to the cloudformation tool window. This allows the user to quickly view the logical ID, physical ID, resource type, and status for all of the resources in their stack"
+}

@@ -20,11 +20,13 @@ import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeStackPar
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeStackResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeValidationStatusResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.GetStackActionStatusResult
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.GetStackResourcesParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.Identifiable
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ListChangeSetsParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ListChangeSetsResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ListResourcesParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ListResourcesResult
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ListStackResourcesResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ListStacksParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ListStacksResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.RefreshResourcesParams
@@ -137,6 +139,9 @@ internal class CfnClientService(project: Project) {
         }
         return future
     }
+
+    fun getStackResources(params: GetStackResourcesParams): CompletableFuture<ListStackResourcesResult?> =
+        sendRequest { it.getStackResources(params) }
 
     companion object {
         fun getInstance(project: Project): CfnClientService = project.service()

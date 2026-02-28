@@ -21,6 +21,7 @@ internal class StackViewPanelTabber(
     private val coordinator = StackViewCoordinator.getInstance(project)
     private val poller = StackStatusPoller(project, stackName, stackArn, coordinator)
     private val overviewPanel = StackOverviewPanel(project, coordinator, stackArn, stackName)
+    private val resourcesPanel = StackResourcesPanel(project, coordinator, stackArn, stackName)
 
     private val tabbedPane = JBTabbedPane().apply {
         addTab("Overview", createOverviewPanel())
@@ -55,9 +56,7 @@ internal class StackViewPanelTabber(
 
     private fun createOverviewPanel(): JComponent = overviewPanel.component
 
-    private fun createResourcesPanel(): JPanel = JBPanel<JBPanel<*>>().apply {
-        add(JBLabel("Stack Resources - Coming Soon"))
-    }
+    private fun createResourcesPanel(): JComponent = resourcesPanel.component
 
     private fun createEventsPanel(): JPanel = JBPanel<JBPanel<*>>().apply {
         add(JBLabel("Stack Events - Coming Soon"))
@@ -77,6 +76,7 @@ internal class StackViewPanelTabber(
     override fun dispose() {
         poller.dispose()
         overviewPanel.dispose()
+        resourcesPanel.dispose()
         coordinator.removeStack(stackArn)
     }
 }
