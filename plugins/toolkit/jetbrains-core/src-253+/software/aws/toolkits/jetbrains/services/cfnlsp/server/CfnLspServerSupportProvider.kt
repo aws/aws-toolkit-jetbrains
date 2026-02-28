@@ -12,6 +12,7 @@ import com.intellij.platform.lsp.api.Lsp4jClient
 import com.intellij.platform.lsp.api.LspServerNotificationsHandler
 import com.intellij.platform.lsp.api.LspServerSupportProvider
 import com.intellij.platform.lsp.api.ProjectWideLspServerDescriptor
+import com.intellij.psi.codeStyle.CodeStyleSettings
 import org.eclipse.lsp4j.ConfigurationItem
 import org.eclipse.lsp4j.MessageParams
 import org.eclipse.lsp4j.services.LanguageServer
@@ -55,7 +56,7 @@ class CfnLspServerDescriptor private constructor(project: Project) :
     override fun isSupportedFile(file: VirtualFile) = file.isCfnTemplate()
 
     override fun createLsp4jClient(handler: LspServerNotificationsHandler): Lsp4jClient =
-        Lsp4jClient(CfnLspNotificationsHandler(handler))
+        CfnLspClient(CfnLspNotificationsHandler(handler), project)
 
     override fun createCommandLine(): GeneralCommandLine {
         val serverPath = try {
@@ -191,7 +192,7 @@ class CfnLspServerDescriptor private constructor(project: Project) :
     )
 
     private fun buildEditorConfiguration(): Map<String, Any> {
-        val indentOptions = com.intellij.psi.codeStyle.CodeStyleSettings.getDefaults().indentOptions
+        val indentOptions = CodeStyleSettings.getDefaults().indentOptions
         return mapOf(
             "tabSize" to indentOptions.TAB_SIZE,
             "insertSpaces" to !indentOptions.USE_TAB_CHARACTER,

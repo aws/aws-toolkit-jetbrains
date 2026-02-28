@@ -41,7 +41,7 @@ import software.aws.toolkits.jetbrains.services.cfnlsp.server.CfnLspServerSuppor
 import java.util.concurrent.CompletableFuture
 
 @Service(Service.Level.PROJECT)
-internal class CfnClientService(project: Project) {
+internal class CfnClientService(private val project: Project) {
     private val lspServerProvider: () -> LspServer? = {
         LspServerManager.getInstance(project)
             .getServersForProvider(CfnLspServerSupportProvider::class.java)

@@ -1,0 +1,4 @@
+{
+  "type" : "feature",
+  "description" : "Added a dropdown in the validation worfklow to allow users to select from opened valid cloudformation template files. The user will still also have the option to browse through all files."
+}
