@@ -75,6 +75,8 @@ internal data class StackOutput(
     val outputValue: String,
     @SerializedName("Description")
     val description: String? = null,
+    @SerializedName("ExportName")
+    val exportName: String? = null,
 )
 
 // Stack Resources Protocol
