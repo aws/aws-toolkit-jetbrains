@@ -22,13 +22,13 @@ class StackViewCoordinatorTest {
     fun `setStack updates state and notifies listeners for specific stack`() {
         var notificationCount = 0
 
-        val listener = object : StackPanelListener {
-            override fun onStackUpdated() {
+        val listener = object : StackStatusListener {
+            override fun onStackStatusUpdated() {
                 notificationCount++
             }
         }
 
-        coordinator.addListener(testStackArn1, listener)
+        coordinator.addStatusListener(testStackArn1, listener)
         coordinator.setStack(testStackArn1, "test-stack-1")
 
         assertThat(notificationCount).isEqualTo(1)
@@ -43,20 +43,20 @@ class StackViewCoordinatorTest {
         var stack1Updates = 0
         var stack2Updates = 0
 
-        val listener1 = object : StackPanelListener {
-            override fun onStackUpdated() {
+        val listener1 = object : StackStatusListener {
+            override fun onStackStatusUpdated() {
                 stack1Updates++
             }
         }
 
-        val listener2 = object : StackPanelListener {
-            override fun onStackUpdated() {
+        val listener2 = object : StackStatusListener {
+            override fun onStackStatusUpdated() {
                 stack2Updates++
             }
         }
 
-        coordinator.addListener(testStackArn1, listener1)
-        coordinator.addListener(testStackArn2, listener2)
+        coordinator.addStatusListener(testStackArn1, listener1)
+        coordinator.addStatusListener(testStackArn2, listener2)
         coordinator.setStack(testStackArn1, "stack-1")
         coordinator.setStack(testStackArn2, "stack-2")
 
@@ -105,20 +105,20 @@ class StackViewCoordinatorTest {
         val stack1Updates = mutableListOf<String>()
         val stack2Updates = mutableListOf<String>()
 
-        val listener1 = object : StackPanelListener {
-            override fun onStackUpdated() {
+        val listener1 = object : StackStatusListener {
+            override fun onStackStatusUpdated() {
                 stack1Updates.add("updated")
             }
         }
 
-        val listener2 = object : StackPanelListener {
-            override fun onStackUpdated() {
+        val listener2 = object : StackStatusListener {
+            override fun onStackStatusUpdated() {
                 stack2Updates.add("updated")
             }
         }
 
-        coordinator.addListener(testStackArn1, listener1)
-        coordinator.addListener(testStackArn2, listener2)
+        coordinator.addStatusListener(testStackArn1, listener1)
+        coordinator.addStatusListener(testStackArn2, listener2)
 
         coordinator.setStack(testStackArn1, "stack-1")
         coordinator.setStack(testStackArn2, "stack-2")
@@ -137,14 +137,14 @@ class StackViewCoordinatorTest {
 
         var notificationCount = 0
 
-        val listener = object : StackPanelListener {
-            override fun onStackUpdated() {
+        val listener = object : StackStatusListener {
+            override fun onStackStatusUpdated() {
                 notificationCount++
             }
         }
 
         // Listener should immediately receive current state
-        coordinator.addListener(testStackArn1, listener)
+        coordinator.addStatusListener(testStackArn1, listener)
 
         assertThat(notificationCount).isEqualTo(1)
     }
@@ -152,10 +152,10 @@ class StackViewCoordinatorTest {
     @Test
     fun `removeStack cleans up state and listeners`() {
         coordinator.setStack(testStackArn1, "stack-1")
-        coordinator.addListener(
+        coordinator.addStatusListener(
             testStackArn1,
-            object : StackPanelListener {
-                override fun onStackUpdated() {}
+            object : StackStatusListener {
+                override fun onStackStatusUpdated() {}
             }
         )
 
@@ -170,19 +170,55 @@ class StackViewCoordinatorTest {
     fun `listener disposal removes listener for specific stack`() {
         var notificationCount = 0
 
-        val listener = object : StackPanelListener {
-            override fun onStackUpdated() {
+        val listener = object : StackStatusListener {
+            override fun onStackStatusUpdated() {
                 notificationCount++
             }
         }
 
-        val disposable = coordinator.addListener(testStackArn1, listener)
+        val disposable = coordinator.addStatusListener(testStackArn1, listener)
         coordinator.setStack(testStackArn1, "test")
         assertThat(notificationCount).isEqualTo(1)
 
         disposable.dispose()
         coordinator.setStack(testStackArn1, "test-updated")
         assertThat(notificationCount).isEqualTo(1) // Should not increment
+    }
+
+    @Test
+    fun `updateStackStatus notifies both status and polling listeners`() {
+        var statusUpdates = 0
+        var pollingUpdates = 0
+
+        val statusListener = object : StackStatusListener {
+            override fun onStackStatusUpdated() {
+                statusUpdates++
+            }
+        }
+
+        val pollingListener = object : StackPollingListener {
+            override fun onStackPolled() {
+                pollingUpdates++
+            }
+        }
+
+        coordinator.addStatusListener(testStackArn1, statusListener)
+        coordinator.addPollingListener(testStackArn1, pollingListener)
+        coordinator.setStack(testStackArn1, "test-stack")
+
+        // Reset counters after initial setStack
+        statusUpdates = 0
+        pollingUpdates = 0
+
+        // Status change should notify both
+        coordinator.updateStackStatus(testStackArn1, "CREATE_IN_PROGRESS")
+        assertThat(statusUpdates).isEqualTo(1)
+        assertThat(pollingUpdates).isEqualTo(1)
+
+        // Same status should only notify polling listeners
+        coordinator.updateStackStatus(testStackArn1, "CREATE_IN_PROGRESS")
+        assertThat(statusUpdates).isEqualTo(1) // No change
+        assertThat(pollingUpdates).isEqualTo(2) // Always notified
     }
 
     @Test

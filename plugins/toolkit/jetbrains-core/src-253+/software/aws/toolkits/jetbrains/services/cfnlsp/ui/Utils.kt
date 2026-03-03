@@ -14,6 +14,14 @@ import javax.swing.ImageIcon
 internal object ConsoleUrlGenerator {
     fun generateUrl(arn: String): String =
         "https://console.aws.amazon.com/go/view?arn=${URLEncoder.encode(arn, "UTF-8")}"
+
+    fun generateStackResourcesUrl(stackArn: String): String =
+        arnToConsoleTabUrl(stackArn, "resources")
+
+    private fun arnToConsoleTabUrl(arn: String, tab: String): String {
+        val region = arn.split(":").getOrNull(3) ?: "us-east-1"
+        return "https://$region.console.aws.amazon.com/cloudformation/home?region=$region#/stacks/$tab?stackId=${URLEncoder.encode(arn, "UTF-8")}"
+    }
 }
 
 internal object IconUtils {

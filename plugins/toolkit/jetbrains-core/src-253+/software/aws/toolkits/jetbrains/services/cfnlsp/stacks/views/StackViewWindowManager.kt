@@ -108,10 +108,10 @@ internal class StackViewWindowManager(private val project: Project) {
 
     private fun setupStackStatusListener(stackId: String, stackName: String, content: Content) {
         val coordinator = StackViewCoordinator.getInstance(project)
-        coordinator.addListener(
+        coordinator.addStatusListener(
             stackId,
-            object : StackPanelListener {
-                override fun onStackUpdated() {
+            object : StackStatusListener {
+                override fun onStackStatusUpdated() {
                     val stackState = coordinator.getStackState(stackId)
                     val status = stackState?.status
                     LOG.info("Updating tab title for stack: $stackId, status: $status")

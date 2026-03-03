@@ -12,8 +12,12 @@ import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 
-internal interface StackPanelListener {
-    fun onStackUpdated()
+internal interface StackStatusListener {
+    fun onStackStatusUpdated()
+}
+
+internal interface StackPollingListener {
+    fun onStackPolled()
 }
 
 data class StackState(
@@ -26,7 +30,8 @@ data class StackState(
 @Service(Service.Level.PROJECT)
 internal class StackViewCoordinator : Disposable {
     private val stackStates = ConcurrentHashMap<String, StackState>()
-    private val listeners = ConcurrentHashMap<String, CopyOnWriteArrayList<StackPanelListener>>()
+    private val statusListeners = ConcurrentHashMap<String, CopyOnWriteArrayList<StackStatusListener>>()
+    private val pollingListeners = ConcurrentHashMap<String, CopyOnWriteArrayList<StackPollingListener>>()
 
     fun setStack(stackArn: String, stackName: String) {
         val state = StackState(stackName, stackArn, null, Instant.now())
@@ -40,6 +45,8 @@ internal class StackViewCoordinator : Disposable {
                 stackStates[stackArn] = currentState.copy(status = status, lastUpdated = Instant.now())
                 notifyListeners(stackArn)
             }
+            // Always notify polling listeners regardless of status change
+            notifyPollingListeners(stackArn)
         } ?: LOG.warn("Stack not found for status update: $stackArn")
     }
 
@@ -47,34 +54,53 @@ internal class StackViewCoordinator : Disposable {
 
     fun removeStack(stackArn: String) {
         stackStates.remove(stackArn)
-        listeners.remove(stackArn)
+        statusListeners.remove(stackArn)
+        pollingListeners.remove(stackArn)
     }
 
-    fun addListener(stackArn: String, listener: StackPanelListener): Disposable {
-        listeners.computeIfAbsent(stackArn) { CopyOnWriteArrayList() }.add(listener)
+    fun addStatusListener(stackArn: String, listener: StackStatusListener): Disposable {
+        statusListeners.computeIfAbsent(stackArn) { CopyOnWriteArrayList() }.add(listener)
 
         // Immediately notify new listener of current state
         stackStates[stackArn]?.let {
-            listener.onStackUpdated()
+            listener.onStackStatusUpdated()
         }
 
         return Disposable {
-            listeners[stackArn]?.remove(listener)
-            if (listeners[stackArn]?.isEmpty() == true) {
-                listeners.remove(stackArn)
+            statusListeners[stackArn]?.remove(listener)
+            if (statusListeners[stackArn]?.isEmpty() == true) {
+                statusListeners.remove(stackArn)
+            }
+        }
+    }
+
+    fun addPollingListener(stackArn: String, listener: StackPollingListener): Disposable {
+        pollingListeners.computeIfAbsent(stackArn) { CopyOnWriteArrayList() }.add(listener)
+
+        return Disposable {
+            pollingListeners[stackArn]?.remove(listener)
+            if (pollingListeners[stackArn]?.isEmpty() == true) {
+                pollingListeners.remove(stackArn)
             }
         }
     }
 
     private fun notifyListeners(stackArn: String) {
-        listeners[stackArn]?.forEach {
-            it.onStackUpdated()
+        statusListeners[stackArn]?.forEach {
+            it.onStackStatusUpdated()
+        }
+    }
+
+    private fun notifyPollingListeners(stackArn: String) {
+        pollingListeners[stackArn]?.forEach {
+            it.onStackPolled()
         }
     }
 
     override fun dispose() {
         stackStates.clear()
-        listeners.clear()
+        statusListeners.clear()
+        pollingListeners.clear()
     }
 
     companion object {

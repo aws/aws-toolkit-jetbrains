@@ -35,7 +35,7 @@ class StackOverviewPanelTest {
         mockCoordinator = mockk()
         mockkObject(CfnClientService)
         every { CfnClientService.getInstance(projectRule.project) } returns mockCfnClient
-        every { mockCoordinator.addListener(any(), any()) } returns mockk()
+        every { mockCoordinator.addStatusListener(any(), any()) } returns mockk()
     }
 
     @After
@@ -126,7 +126,7 @@ class StackOverviewPanelTest {
     }
 
     @Test
-    fun `onStackUpdated triggers stack reload`() {
+    fun `onStackStatusUpdated triggers stack reload`() {
         val panel = StackOverviewPanel(projectRule.project, mockCoordinator, testStackArn, "my-stack")
 
         // Create a future we can control
@@ -134,7 +134,7 @@ class StackOverviewPanelTest {
         every { mockCfnClient.describeStack(any()) } returns futureResult
 
         // Should trigger reload
-        panel.onStackUpdated()
+        panel.onStackStatusUpdated()
 
         // Complete the future synchronously
         val mockStack = StackDetail(
