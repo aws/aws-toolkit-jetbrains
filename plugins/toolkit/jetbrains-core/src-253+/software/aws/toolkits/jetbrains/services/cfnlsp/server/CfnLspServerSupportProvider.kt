@@ -19,6 +19,7 @@ import org.eclipse.lsp4j.services.LanguageServer
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
+import org.jetbrains.annotations.TestOnly
 import software.aws.toolkits.jetbrains.core.lsp.NodeRuntimeResolver
 import software.aws.toolkits.jetbrains.services.cfnlsp.CfnCredentialsService
 import software.aws.toolkits.jetbrains.services.cfnlsp.CfnLspExtensionConfig
@@ -209,6 +210,9 @@ class CfnLspServerDescriptor private constructor(project: Project) :
 
         fun getInstance(project: Project): CfnLspServerDescriptor =
             instances.getOrPut(project) { CfnLspServerDescriptor(project) }
+
+        @TestOnly
+        fun providerClass(): Class<out LspServerSupportProvider> = CfnLspServerSupportProvider::class.java
     }
 }
 
