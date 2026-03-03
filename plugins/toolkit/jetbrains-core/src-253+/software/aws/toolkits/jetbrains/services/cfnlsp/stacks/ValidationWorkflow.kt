@@ -3,14 +3,17 @@
 
 package software.aws.toolkits.jetbrains.services.cfnlsp.stacks
 
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
 import software.aws.toolkits.jetbrains.services.cfnlsp.CfnClientService
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.CreateValidationParams
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeChangeSetParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeValidationStatusResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.Identifiable
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.StackActionPhase
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.StackActionState
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.StackChange
+import software.aws.toolkits.jetbrains.services.cfnlsp.ui.ChangeSetDiffPanel
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.AwsToolkitBundle.message
@@ -33,6 +36,8 @@ internal class ValidationWorkflow(
     private val clientService: CfnClientService = CfnClientService.getInstance(project),
 ) {
     fun validate(params: CreateValidationParams): CompletableFuture<ValidationResult> {
+        LastValidationService.getInstance(project).lastParams = params
+
         notifyInfo(
             title = message("cloudformation.validation.title"),
             content = message("cloudformation.validation.started", params.stackName),
@@ -41,10 +46,24 @@ internal class ValidationWorkflow(
 
         return clientService.createValidation(params).thenCompose { result ->
             if (result == null) {
+                notifyError(
+                    title = message("cloudformation.validation.title"),
+                    content = message("cloudformation.validation.failed", params.stackName, "Failed to start validation"),
+                    project = project
+                )
                 CompletableFuture.completedFuture(ValidationResult.Failed("Failed to start validation"))
             } else {
+                StacksManager.getInstance(project).reload()
+                ChangeSetsManager.getInstance(project).refreshChangeSets(params.stackName)
                 pollForCompletion(result.id, result.changeSetName, params.stackName)
             }
+        }.exceptionally { error ->
+            notifyError(
+                title = message("cloudformation.validation.title"),
+                content = message("cloudformation.validation.failed", params.stackName, error.cause?.message ?: error.message ?: "Unknown error"),
+                project = project
+            )
+            ValidationResult.Failed(error.message)
         }
     }
 
@@ -78,6 +97,21 @@ internal class ValidationWorkflow(
                                                 content = message("cloudformation.validation.success", stackName),
                                                 project = project
                                             )
+                                            // Fetch full change set details (includes property-level changes)
+                                            clientService.describeChangeSet(
+                                                software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeChangeSetParams(changeSetName, stackName)
+                                            ).thenAccept { changeSetResult ->
+                                                val fullChanges = changeSetResult?.changes ?: status.changes ?: emptyList()
+                                                runInEdt {
+                                                    ChangeSetDiffPanel.show(
+                                                        project = project,
+                                                        stackName = stackName,
+                                                        changeSetName = changeSetName,
+                                                        changes = fullChanges,
+                                                        enableDeploy = true,
+                                                    )
+                                                }
+                                            }
                                             future.complete(
                                                 ValidationResult.Success(
                                                     changes = status.changes ?: emptyList(),
@@ -93,6 +127,7 @@ internal class ValidationWorkflow(
                                             )
                                             future.complete(ValidationResult.Failed(details.failureReason))
                                         }
+                                        ChangeSetsManager.getInstance(project).refreshChangeSets(stackName)
                                         scheduler.shutdown()
                                     }
                             }
@@ -106,6 +141,7 @@ internal class ValidationWorkflow(
                                             project = project
                                         )
                                         future.complete(ValidationResult.Failed(details?.failureReason))
+                                        ChangeSetsManager.getInstance(project).refreshChangeSets(stackName)
                                         scheduler.shutdown()
                                     }
                             }

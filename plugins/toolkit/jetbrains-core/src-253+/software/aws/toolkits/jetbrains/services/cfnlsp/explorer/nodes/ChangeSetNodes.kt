@@ -6,17 +6,25 @@ package software.aws.toolkits.jetbrains.services.cfnlsp.explorer.nodes
 import com.intellij.icons.AllIcons
 import com.intellij.ide.projectView.PresentationData
 import com.intellij.ide.util.treeView.AbstractTreeNode
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
 import com.intellij.ui.SimpleTextAttributes
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.AbstractActionTreeNode
+import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.ActionGroupOnRightClick
+import software.aws.toolkits.jetbrains.services.cfnlsp.CfnClientService
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeChangeSetParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.stacks.ChangeSetsManager
+import software.aws.toolkits.jetbrains.services.cfnlsp.ui.ChangeSetDiffPanel
 import software.aws.toolkits.resources.AwsToolkitBundle.message
+import java.awt.event.MouseEvent
 
 internal class StackChangeSetsNode(
     nodeProject: Project,
-    private val stackName: String,
+    internal val stackName: String,
     private val changeSetsManager: ChangeSetsManager,
-) : AbstractTreeNode<String>(nodeProject, "changesets-$stackName") {
+) : AbstractTreeNode<String>(nodeProject, "changesets-$stackName"), ActionGroupOnRightClick {
+
+    override fun actionGroupName(): String = "aws.toolkit.cloudformation.changesets.actions"
 
     override fun update(presentation: PresentationData) {
         val changeSets = changeSetsManager.get(stackName)
@@ -40,7 +48,7 @@ internal class StackChangeSetsNode(
         }
 
         val nodes = changeSets.map { changeSet ->
-            ChangeSetNode(project, changeSet.changeSetName, changeSet.status)
+            ChangeSetNode(project, stackName, changeSet.changeSetName, changeSet.status)
         }
 
         return if (changeSetsManager.hasMore(stackName)) {
@@ -70,7 +78,7 @@ internal class LoadMoreChangeSetsNode(
         presentation.setIcon(AllIcons.General.Add)
     }
 
-    override fun onDoubleClick(event: java.awt.event.MouseEvent) {
+    override fun onDoubleClick(event: MouseEvent) {
         changeSetsManager.loadMoreChangeSets(stackName)
     }
 
@@ -80,13 +88,42 @@ internal class LoadMoreChangeSetsNode(
 
 internal class ChangeSetNode(
     nodeProject: Project,
-    private val changeSetName: String,
-    private val status: String,
-) : AbstractTreeNode<String>(nodeProject, changeSetName) {
+    val stackName: String,
+    val changeSetName: String,
+    internal val status: String,
+) : AbstractActionTreeNode(nodeProject, changeSetName, null), ActionGroupOnRightClick {
+
+    override fun actionGroupName(): String = "aws.toolkit.cloudformation.changeset.actions"
+
+    override fun onDoubleClick(event: MouseEvent) {
+        val clientService = CfnClientService.getInstance(project)
+        clientService.describeChangeSet(DescribeChangeSetParams(changeSetName, stackName))
+            .thenAccept { result ->
+                if (result != null) {
+                    runInEdt {
+                        ChangeSetDiffPanel.show(
+                            project = project,
+                            stackName = stackName,
+                            changeSetName = changeSetName,
+                            changes = result.changes ?: emptyList(),
+                            enableDeploy = result.status == "CREATE_COMPLETE",
+                        )
+                    }
+                }
+            }
+    }
 
     override fun update(presentation: PresentationData) {
         presentation.addText(changeSetName, SimpleTextAttributes.REGULAR_ATTRIBUTES)
         presentation.addText(" [$status]", SimpleTextAttributes.GRAY_ATTRIBUTES)
+        presentation.setIcon(getStatusIcon())
+    }
+
+    private fun getStatusIcon() = when {
+        status.contains("COMPLETE") && !status.contains("FAILED") -> AllIcons.General.InspectionsOK
+        status.contains("FAILED") -> AllIcons.General.Error
+        status.contains("IN_PROGRESS") || status.contains("PENDING") -> AllIcons.Process.Step_1
+        else -> null
     }
 
     override fun getChildren(): Collection<AbstractTreeNode<*>> = emptyList()

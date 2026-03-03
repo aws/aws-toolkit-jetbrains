@@ -35,9 +35,29 @@ internal data class ResourceToImport(
 )
 
 internal enum class StackActionPhase {
+    @SerializedName("VALIDATION_STARTED") VALIDATION_STARTED,
+
+    @SerializedName("VALIDATION_IN_PROGRESS") VALIDATION_IN_PROGRESS,
+
     @SerializedName("VALIDATION_COMPLETE") VALIDATION_COMPLETE,
 
     @SerializedName("VALIDATION_FAILED") VALIDATION_FAILED,
+
+    @SerializedName("DEPLOYMENT_STARTED") DEPLOYMENT_STARTED,
+
+    @SerializedName("DEPLOYMENT_IN_PROGRESS") DEPLOYMENT_IN_PROGRESS,
+
+    @SerializedName("DEPLOYMENT_COMPLETE") DEPLOYMENT_COMPLETE,
+
+    @SerializedName("DEPLOYMENT_FAILED") DEPLOYMENT_FAILED,
+
+    @SerializedName("DELETION_STARTED") DELETION_STARTED,
+
+    @SerializedName("DELETION_IN_PROGRESS") DELETION_IN_PROGRESS,
+
+    @SerializedName("DELETION_COMPLETE") DELETION_COMPLETE,
+
+    @SerializedName("DELETION_FAILED") DELETION_FAILED,
 }
 
 internal enum class StackActionState {
@@ -151,4 +171,117 @@ internal data class ResourceTargetDefinition(
     val afterValue: String? = null,
     @SerializedName("AttributeChangeType")
     val attributeChangeType: String? = null,
+)
+
+internal data class DescribeChangeSetParams(
+    val changeSetName: String,
+    val stackName: String,
+)
+
+internal data class DescribeChangeSetResult(
+    val changeSetName: String,
+    val stackName: String,
+    val status: String,
+    val creationTime: String? = null,
+    val description: String? = null,
+    val changes: List<StackChange>? = null,
+    val deploymentMode: DeploymentMode? = null,
+)
+
+// Deployment
+
+internal data class CreateDeploymentParams(
+    val id: String,
+    val changeSetName: String,
+    val stackName: String,
+)
+
+internal data class DeploymentEvent(
+    @SerializedName("LogicalResourceId")
+    val logicalResourceId: String? = null,
+    @SerializedName("ResourceType")
+    val resourceType: String? = null,
+    @SerializedName("ResourceStatus")
+    val resourceStatus: String? = null,
+    @SerializedName("ResourceStatusReason")
+    val resourceStatusReason: String? = null,
+)
+
+internal data class DescribeDeploymentStatusResult(
+    val id: String,
+    val phase: StackActionPhase,
+    val state: StackActionState,
+    val changes: List<StackChange>? = null,
+    @SerializedName("DeploymentEvents")
+    val deploymentEvents: List<DeploymentEvent>? = null,
+    @SerializedName("FailureReason")
+    val failureReason: String? = null,
+)
+
+// Change set deletion
+
+internal data class DeleteChangeSetParams(
+    val id: String,
+    val changeSetName: String,
+    val stackName: String,
+)
+
+internal data class DescribeDeletionStatusResult(
+    val id: String,
+    val phase: StackActionPhase,
+    val state: StackActionState,
+    @SerializedName("FailureReason")
+    val failureReason: String? = null,
+)
+
+// Template analysis
+
+internal data class TemplateParameter(
+    val name: String,
+    @SerializedName("Type")
+    val type: String? = null,
+    @SerializedName("Default")
+    val default: Any? = null,
+    @SerializedName("Description")
+    val description: String? = null,
+    @SerializedName("AllowedValues")
+    val allowedValues: List<Any>? = null,
+    @SerializedName("AllowedPattern")
+    val allowedPattern: String? = null,
+    @SerializedName("MinLength")
+    val minLength: Int? = null,
+    @SerializedName("MaxLength")
+    val maxLength: Int? = null,
+    @SerializedName("MinValue")
+    val minValue: Number? = null,
+    @SerializedName("MaxValue")
+    val maxValue: Number? = null,
+)
+
+internal data class GetParametersResult(
+    val parameters: List<TemplateParameter>,
+)
+
+internal data class GetCapabilitiesResult(
+    val capabilities: List<String>,
+)
+
+internal data class TemplateResource(
+    val logicalId: String,
+    val type: String,
+    val primaryIdentifierKeys: List<String>? = null,
+    val primaryIdentifier: Map<String, String>? = null,
+)
+
+internal data class GetTemplateResourcesResult(
+    val resources: List<TemplateResource>,
+)
+
+internal data class Artifact(
+    val resourceType: String,
+    val filePath: String,
+)
+
+internal data class GetTemplateArtifactsResult(
+    val artifacts: List<Artifact>,
 )

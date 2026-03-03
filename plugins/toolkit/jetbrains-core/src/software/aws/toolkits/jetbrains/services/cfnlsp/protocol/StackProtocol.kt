@@ -66,6 +66,10 @@ internal data class StackDetail(
     val description: String? = null,
     @SerializedName("Outputs")
     val outputs: List<StackOutput>? = null,
+    @SerializedName("Parameters")
+    val parameters: List<Parameter>? = null,
+    @SerializedName("Tags")
+    val tags: List<Tag>? = null,
 )
 
 internal data class StackOutput(
