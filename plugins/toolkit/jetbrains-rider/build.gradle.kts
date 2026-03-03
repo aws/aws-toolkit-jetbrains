@@ -48,6 +48,22 @@ sourceSets {
     }
 }
 
+if (providers.gradleProperty("ideProfileName").get() == "2025.3") {
+    configurations.all {
+        resolutionStrategy.dependencySubstitution {
+            listOf(
+                "com.jetbrains.intellij.java:java-test-framework",
+                "com.jetbrains.intellij.platform:test-framework",
+                "com.jetbrains.intellij.platform:test-framework-junit5"
+            ).forEach {
+                substitute(module(it))
+                    .using(module("$it:253.28294.334"))
+                    .because("Rider 2025.3.0 requires a newer version of test-framework")
+            }
+        }
+    }
+}
+
 configurations {
     all {
         exclude(group = "com.jetbrains.intellij.spellchecker")
@@ -59,9 +75,9 @@ dependencies {
         localPlugin(project(":plugin-core"))
         testFramework(TestFrameworkType.Bundled)
 
-        // FIX_WHEN_MIN_IS_252: https://github.com/JetBrains/intellij-platform-gradle-plugin/issues/1774
+        // FIX_WHEN_MIN_IS_253: https://github.com/JetBrains/intellij-platform-gradle-plugin/issues/1774
         when (providers.gradleProperty("ideProfileName").get()) {
-            "2025.1" -> {
+            "2025.1, 2025.3" -> {
                 bundledModule("intellij.rider")
             }
         }
