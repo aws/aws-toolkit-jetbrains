@@ -17,6 +17,9 @@ internal object ConsoleUrlGenerator {
 
     fun generateStackResourcesUrl(stackArn: String): String =
         arnToConsoleTabUrl(stackArn, "resources")
+        
+    fun generateStackOutputsUrl(stackArn: String): String =
+        arnToConsoleTabUrl(stackArn, "outputs")
 
     private fun arnToConsoleTabUrl(arn: String, tab: String): String {
         val region = arn.split(":").getOrNull(3) ?: "us-east-1"

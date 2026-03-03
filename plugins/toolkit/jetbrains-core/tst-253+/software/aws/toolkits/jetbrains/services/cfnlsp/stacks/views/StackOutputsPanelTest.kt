@@ -45,8 +45,14 @@ class StackOutputsPanelTest {
     }
 
     @Test
-    fun `renderOutputs updates table and count correctly`() {
+    fun `onStackUpdated triggers outputs reload and updates table correctly`() {
         val panel = StackOutputsPanel(projectRule.project, mockCoordinator, testStackArn, "my-test-stack")
+
+        // Assert initial state
+        assertThat(panel.outputCountLabel.text).isEqualTo("0 outputs")
+        assertThat(panel.consoleLink.isVisible).isFalse()
+        assertThat(panel.outputTable.rowCount).isEqualTo(1)
+        assertThat(panel.outputTable.getValueAt(0, 0)).isEqualTo("No outputs found")
 
         val testOutputs = listOf(
             StackOutput(
@@ -70,7 +76,15 @@ class StackOutputsPanelTest {
             outputs = testOutputs
         )
 
-        panel.renderOutputs(testStack)
+        val futureResult = CompletableFuture<DescribeStackResult?>()
+        every { mockCfnClient.describeStack(any()) } returns futureResult
+
+        panel.onStackUpdated()
+        futureResult.complete(DescribeStackResult(testStack))
+
+        runInEdtAndWait {
+            PlatformTestUtil.dispatchAllEventsInIdeEventQueue()
+        }
 
         assertThat(panel.outputCountLabel.text).isEqualTo("2 outputs")
         assertThat(panel.consoleLink.isVisible).isTrue()
@@ -83,7 +97,7 @@ class StackOutputsPanelTest {
     }
 
     @Test
-    fun `renderOutputs with empty outputs shows no outputs found`() {
+    fun `onStackUpdated with empty outputs shows no outputs found`() {
         val panel = StackOutputsPanel(projectRule.project, mockCoordinator, testStackArn, "empty-stack")
 
         val testStack = StackDetail(
@@ -93,7 +107,15 @@ class StackOutputsPanelTest {
             outputs = emptyList()
         )
 
-        panel.renderOutputs(testStack)
+        val futureResult = CompletableFuture<DescribeStackResult?>()
+        every { mockCfnClient.describeStack(any()) } returns futureResult
+
+        panel.onStackUpdated()
+        futureResult.complete(DescribeStackResult(testStack))
+
+        runInEdtAndWait {
+            PlatformTestUtil.dispatchAllEventsInIdeEventQueue()
+        }
 
         assertThat(panel.outputCountLabel.text).isEqualTo("0 outputs")
         assertThat(panel.consoleLink.isVisible).isTrue()
@@ -103,7 +125,7 @@ class StackOutputsPanelTest {
     }
 
     @Test
-    fun `renderOutputs with single output uses singular form`() {
+    fun `onStackUpdated with single output uses singular form`() {
         val panel = StackOutputsPanel(projectRule.project, mockCoordinator, testStackArn, "single-output-stack")
 
         val testStack = StackDetail(
@@ -120,13 +142,21 @@ class StackOutputsPanelTest {
             )
         )
 
-        panel.renderOutputs(testStack)
+        val futureResult = CompletableFuture<DescribeStackResult?>()
+        every { mockCfnClient.describeStack(any()) } returns futureResult
+
+        panel.onStackUpdated()
+        futureResult.complete(DescribeStackResult(testStack))
+
+        runInEdtAndWait {
+            PlatformTestUtil.dispatchAllEventsInIdeEventQueue()
+        }
 
         assertThat(panel.outputCountLabel.text).isEqualTo("1 output")
     }
 
     @Test
-    fun `renderOutputs with empty stack ID hides console link`() {
+    fun `onStackUpdated with empty stack ID hides console link`() {
         val panel = StackOutputsPanel(projectRule.project, mockCoordinator, testStackArn, "test-stack")
 
         val testStack = StackDetail(
@@ -143,47 +173,17 @@ class StackOutputsPanelTest {
             )
         )
 
-        panel.renderOutputs(testStack)
-
-        assertThat(panel.consoleLink.isVisible).isFalse()
-    }
-
-    @Test
-    fun `onStackUpdated triggers outputs reload`() {
-        val panel = StackOutputsPanel(projectRule.project, mockCoordinator, testStackArn, "my-stack")
-
-        // Assert initial state
-        assertThat(panel.outputCountLabel.text).isEqualTo("0 outputs")
-        assertThat(panel.consoleLink.isVisible).isFalse()
-        assertThat(panel.outputTable.rowCount).isEqualTo(1)
-        assertThat(panel.outputTable.getValueAt(0, 0)).isEqualTo("No outputs found")
-
         val futureResult = CompletableFuture<DescribeStackResult?>()
         every { mockCfnClient.describeStack(any()) } returns futureResult
 
         panel.onStackUpdated()
-
-        val mockStack = StackDetail(
-            stackName = "my-stack",
-            stackId = testStackArn,
-            stackStatus = "CREATE_COMPLETE",
-            outputs = listOf(
-                StackOutput(
-                    outputKey = "TestKey",
-                    outputValue = "TestValue",
-                    description = "Test Description",
-                    exportName = "TestExport"
-                )
-            )
-        )
-        futureResult.complete(DescribeStackResult(mockStack))
+        futureResult.complete(DescribeStackResult(testStack))
 
         runInEdtAndWait {
             PlatformTestUtil.dispatchAllEventsInIdeEventQueue()
         }
 
-        assertThat(panel.outputCountLabel.text).isEqualTo("1 output")
-        assertThat(panel.outputTable.getValueAt(0, 0)).isEqualTo("TestKey")
+        assertThat(panel.consoleLink.isVisible).isFalse()
     }
 
     @Test
@@ -217,7 +217,6 @@ class StackOutputsPanelTest {
 
         panel.onStackUpdated()
 
-        // Complete with null result
         futureResult.complete(null)
 
         runInEdtAndWait {

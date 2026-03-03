@@ -17,7 +17,6 @@ import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.StackDetail
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.StackOutput
 import software.aws.toolkits.jetbrains.services.cfnlsp.ui.ConsoleUrlGenerator
 import software.aws.toolkits.jetbrains.services.cfnlsp.ui.IconUtils
-import software.aws.toolkits.jetbrains.services.cfnlsp.ui.StackConsoleTab
 import java.awt.Cursor
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
@@ -48,7 +47,7 @@ internal class StackOutputsPanel(
         addMouseListener(object : MouseAdapter() {
             override fun mouseClicked(e: MouseEvent) {
                 currentStackId?.let { stackId ->
-                    val consoleUrl = ConsoleUrlGenerator.generateTabUrl(stackId, StackConsoleTab.OUTPUTS)
+                    val consoleUrl = ConsoleUrlGenerator.generateStackOutputsUrl(stackId)
                     BrowserUtil.browse(consoleUrl)
                 }
             }
@@ -85,8 +84,8 @@ internal class StackOutputsPanel(
             }
     }
 
-    fun renderOutputs(stack: StackDetail) {
-        outputs = stack.outputs
+    private fun renderOutputs(stack: StackDetail) {
+        outputs = stack.outputs ?: emptyList()
         currentStackId = stack.stackId
         consoleLink.isVisible = stack.stackId.isNotEmpty()
 
