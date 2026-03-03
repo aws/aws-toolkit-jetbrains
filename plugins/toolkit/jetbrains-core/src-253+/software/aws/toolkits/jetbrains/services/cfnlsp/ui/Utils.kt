@@ -17,7 +17,7 @@ internal object ConsoleUrlGenerator {
 
     fun generateStackResourcesUrl(stackArn: String): String =
         arnToConsoleTabUrl(stackArn, "resources")
-        
+
     fun generateStackOutputsUrl(stackArn: String): String =
         arnToConsoleTabUrl(stackArn, "outputs")
 

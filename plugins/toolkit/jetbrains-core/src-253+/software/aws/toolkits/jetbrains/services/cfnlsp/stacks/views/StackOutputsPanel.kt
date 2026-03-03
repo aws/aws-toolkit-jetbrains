@@ -27,7 +27,7 @@ internal class StackOutputsPanel(
     coordinator: StackViewCoordinator,
     stackArn: String,
     private val stackName: String,
-) : Disposable, StackPanelListener {
+) : Disposable, StackStatusListener {
 
     private val cfnClientService = CfnClientService.getInstance(project)
     private val disposables = mutableListOf<Disposable>()
@@ -62,10 +62,10 @@ internal class StackOutputsPanel(
     )
 
     init {
-        disposables.add(coordinator.addListener(stackArn, this))
+        disposables.add(coordinator.addStatusListener(stackArn, this))
     }
 
-    override fun onStackUpdated() {
+    override fun onStackStatusUpdated() {
         loadOutputs()
     }
 

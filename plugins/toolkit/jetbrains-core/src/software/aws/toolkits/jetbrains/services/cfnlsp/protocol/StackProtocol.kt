@@ -65,7 +65,7 @@ internal data class StackDetail(
     @SerializedName("Description")
     val description: String? = null,
     @SerializedName("Outputs")
-    val outputs: List<StackOutput> = emptyList(),
+    val outputs: List<StackOutput>? = null,
 )
 
 internal data class StackOutput(

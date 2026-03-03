@@ -36,7 +36,7 @@ class StackOutputsPanelTest {
         mockCoordinator = mockk()
         mockkObject(CfnClientService)
         every { CfnClientService.getInstance(projectRule.project) } returns mockCfnClient
-        every { mockCoordinator.addListener(any(), any()) } returns mockk()
+        every { mockCoordinator.addStatusListener(any(), any()) } returns mockk()
     }
 
     @After
@@ -79,7 +79,7 @@ class StackOutputsPanelTest {
         val futureResult = CompletableFuture<DescribeStackResult?>()
         every { mockCfnClient.describeStack(any()) } returns futureResult
 
-        panel.onStackUpdated()
+        panel.onStackStatusUpdated()
         futureResult.complete(DescribeStackResult(testStack))
 
         runInEdtAndWait {
@@ -110,7 +110,7 @@ class StackOutputsPanelTest {
         val futureResult = CompletableFuture<DescribeStackResult?>()
         every { mockCfnClient.describeStack(any()) } returns futureResult
 
-        panel.onStackUpdated()
+        panel.onStackStatusUpdated()
         futureResult.complete(DescribeStackResult(testStack))
 
         runInEdtAndWait {
@@ -145,7 +145,7 @@ class StackOutputsPanelTest {
         val futureResult = CompletableFuture<DescribeStackResult?>()
         every { mockCfnClient.describeStack(any()) } returns futureResult
 
-        panel.onStackUpdated()
+        panel.onStackStatusUpdated()
         futureResult.complete(DescribeStackResult(testStack))
 
         runInEdtAndWait {
@@ -176,7 +176,7 @@ class StackOutputsPanelTest {
         val futureResult = CompletableFuture<DescribeStackResult?>()
         every { mockCfnClient.describeStack(any()) } returns futureResult
 
-        panel.onStackUpdated()
+        panel.onStackStatusUpdated()
         futureResult.complete(DescribeStackResult(testStack))
 
         runInEdtAndWait {
@@ -193,7 +193,7 @@ class StackOutputsPanelTest {
         val futureResult = CompletableFuture<DescribeStackResult?>()
         every { mockCfnClient.describeStack(any()) } returns futureResult
 
-        panel.onStackUpdated()
+        panel.onStackStatusUpdated()
 
         // Complete with error
         futureResult.completeExceptionally(RuntimeException("Test error"))
@@ -215,7 +215,7 @@ class StackOutputsPanelTest {
         val futureResult = CompletableFuture<DescribeStackResult?>()
         every { mockCfnClient.describeStack(any()) } returns futureResult
 
-        panel.onStackUpdated()
+        panel.onStackStatusUpdated()
 
         futureResult.complete(null)
 
@@ -225,6 +225,33 @@ class StackOutputsPanelTest {
 
         assertThat(panel.outputCountLabel.text).isEqualTo("0 outputs")
         assertThat(panel.consoleLink.isVisible).isFalse()
+        assertThat(panel.outputTable.getValueAt(0, 0)).isEqualTo("No outputs found")
+    }
+
+    @Test
+    fun `onStackUpdated with null outputs shows empty state`() {
+        val panel = StackOutputsPanel(projectRule.project, mockCoordinator, testStackArn, "null-outputs-stack")
+
+        val testStack = StackDetail(
+            stackName = "null-outputs-stack",
+            stackId = testStackArn,
+            stackStatus = "CREATE_COMPLETE",
+            outputs = null
+        )
+
+        val futureResult = CompletableFuture<DescribeStackResult?>()
+        every { mockCfnClient.describeStack(any()) } returns futureResult
+
+        panel.onStackStatusUpdated()
+        futureResult.complete(DescribeStackResult(testStack))
+
+        runInEdtAndWait {
+            PlatformTestUtil.dispatchAllEventsInIdeEventQueue()
+        }
+
+        assertThat(panel.outputCountLabel.text).isEqualTo("0 outputs")
+        assertThat(panel.consoleLink.isVisible).isTrue()
+        assertThat(panel.outputTable.rowCount).isEqualTo(1)
         assertThat(panel.outputTable.getValueAt(0, 0)).isEqualTo("No outputs found")
     }
 }
