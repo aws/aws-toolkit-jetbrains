@@ -20,6 +20,17 @@ internal object ConsoleUrlGenerator {
 
     fun generateStackOutputsUrl(stackArn: String): String =
         arnToConsoleTabUrl(stackArn, "outputs")
+        
+    fun generateStackEventsUrl(stackArn: String): String =
+        arnToConsoleTabUrl(stackArn, "events")
+
+    fun generateOperationUrl(arn: String, operationId: String): String {
+        val region = arn.split(":").getOrNull(3) ?: "us-east-1"
+        return "https://$region.console.aws.amazon.com/cloudformation/home?region=$region#/stacks/operations/info?stackId=${URLEncoder.encode(
+            arn,
+            "UTF-8"
+        )}&operationId=$operationId"
+    }
 
     private fun arnToConsoleTabUrl(arn: String, tab: String): String {
         val region = arn.split(":").getOrNull(3) ?: "us-east-1"

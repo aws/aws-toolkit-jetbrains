@@ -15,6 +15,7 @@ import org.eclipse.lsp4j.DidChangeConfigurationParams
 import org.eclipse.lsp4j.DidOpenTextDocumentParams
 import org.eclipse.lsp4j.TextDocumentItem
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.CreateDeploymentParams
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ClearStackEventsParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.CreateStackActionResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.CreateValidationParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DeleteChangeSetParams
@@ -28,6 +29,8 @@ import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeValidati
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.GetCapabilitiesResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.GetParametersResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.GetStackActionStatusResult
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.GetStackEventsParams
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.GetStackEventsResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.GetStackResourcesParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.GetTemplateArtifactsResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.GetTemplateResourcesResult
@@ -181,6 +184,12 @@ internal class CfnClientService(private val project: Project) {
 
     fun getStackResources(params: GetStackResourcesParams): CompletableFuture<ListStackResourcesResult?> =
         sendRequest { it.getStackResources(params) }
+
+    fun getStackEvents(params: GetStackEventsParams): CompletableFuture<GetStackEventsResult?> =
+        sendRequest { it.getStackEvents(params) }
+
+    fun clearStackEvents(params: ClearStackEventsParams): CompletableFuture<Void?> =
+        sendRequest { it.clearStackEvents(params) }
 
     companion object {
         fun getInstance(project: Project): CfnClientService = project.service()
