@@ -35,7 +35,7 @@ internal class StackOverviewPanel(
     coordinator: StackViewCoordinator,
     stackArn: String,
     private val stackName: String,
-) : Disposable, StackPanelListener {
+) : Disposable, StackStatusListener {
 
     private val cfnClientService = CfnClientService.getInstance(project)
     private val disposables = mutableListOf<Disposable>()
@@ -65,7 +65,7 @@ internal class StackOverviewPanel(
     val component: JComponent = createPanel()
 
     init {
-        disposables.add(coordinator.addListener(stackArn, this))
+        disposables.add(coordinator.addStatusListener(stackArn, this))
         setupStyling()
     }
 
@@ -78,7 +78,7 @@ internal class StackOverviewPanel(
         statusValue.horizontalAlignment = JBLabel.CENTER
     }
 
-    override fun onStackUpdated() {
+    override fun onStackStatusUpdated() {
         stackNameValue.text = stackName
         renderEmpty() // Show loading state
         loadStackDetails(stackName)

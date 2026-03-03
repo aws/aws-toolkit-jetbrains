@@ -10,8 +10,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.table.JBTable
-import com.intellij.util.Alarm
-import software.aws.toolkit.core.utils.getLogger
+import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.cfnlsp.CfnClientService
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.GetStackResourcesParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.StackResourceSummary
@@ -28,16 +27,13 @@ import kotlin.math.ceil
 
 internal class StackResourcesPanel(
     project: Project,
-    private val coordinator: StackViewCoordinator,
+    coordinator: StackViewCoordinator,
     private val stackArn: String,
     private val stackName: String,
-    private val autoRefreshDelayMs: Int = 5000,
-) : Disposable, StackPanelListener {
+) : Disposable, StackPollingListener {
 
     private val cfnClientService = CfnClientService.getInstance(project)
     private val disposables = mutableListOf<Disposable>()
-
-    private var autoRefreshAlarm: Alarm? = null
 
     // Resource data management
     private var allResources: List<StackResourceSummary> = emptyList()
@@ -53,6 +49,7 @@ internal class StackResourcesPanel(
 
     private val resourceTable = JBTable(tableModel).apply {
         setDefaultEditor(Any::class.java, null) // Make table non-editable
+        autoResizeMode = JBTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS
     }
 
     internal val pageLabel = JBLabel("Page 1")
@@ -80,23 +77,15 @@ internal class StackResourcesPanel(
 
     init {
         loadResources()
-        disposables.add(coordinator.addListener(stackArn, this))
+        disposables.add(coordinator.addPollingListener(stackArn, this))
     }
 
-    override fun onStackUpdated() {
-        val stackState = coordinator.getStackState(stackArn)
-        val currentStatus = stackState?.status
-
+    override fun onStackPolled() {
         currentPage = 0
         allResources = emptyList()
         nextToken = null
+        isLoading = false // Reset loading flag to ensure refresh happens
         loadResources()
-
-        if (currentStatus?.let { StackStatusUtils.isInTransientState(it) } == true) {
-            startAutoRefresh()
-        } else {
-            stopAutoRefresh()
-        }
     }
 
     private fun loadResources(): CompletableFuture<Void> {
@@ -195,42 +184,7 @@ internal class StackResourcesPanel(
     private fun hasMorePages(): Boolean =
         (currentPage + 1) * resourcesPerPage < allResources.size || nextToken != null
 
-    private fun startAutoRefresh() {
-        if (autoRefreshAlarm != null) {
-            return
-        }
-
-        LOG.info("Starting auto-refresh for stack $stackName with ${autoRefreshDelayMs}ms interval")
-        autoRefreshAlarm = Alarm(this).apply {
-            fun scheduleNext() {
-                addRequest({
-                    val stackState = coordinator.getStackState(stackArn)
-
-                    if (stackState?.status?.let { StackStatusUtils.isInTransientState(it) } == true) {
-                        currentPage = 0
-                        allResources = emptyList()
-                        nextToken = null
-                        loadResources()
-                        scheduleNext()
-                    } else {
-                        stopAutoRefresh()
-                    }
-                }, autoRefreshDelayMs)
-            }
-            scheduleNext()
-        }
-    }
-
-    private fun stopAutoRefresh() {
-        if (autoRefreshAlarm != null) {
-            LOG.info("Stopping auto-refresh for stack $stackName")
-            autoRefreshAlarm?.cancelAllRequests()
-            autoRefreshAlarm = null
-        }
-    }
-
     override fun dispose() {
-        stopAutoRefresh()
         disposables.forEach { it.dispose() }
         disposables.clear()
     }

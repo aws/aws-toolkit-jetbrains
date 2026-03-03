@@ -81,19 +81,16 @@ internal object StackPanelLayoutBuilder {
         table: JBTable,
     ): JComponent = panel {
         row {
-            panel {
-                row {
-                    label(title).bold()
-                    cell(consoleLink)
+            label(title).bold()
+            cell(consoleLink)
+            cell(
+                JBPanel<JBPanel<*>>().apply {
+                    layout = java.awt.FlowLayout(java.awt.FlowLayout.RIGHT)
+                    add(pageLabel)
+                    add(prevButton)
+                    add(nextButton)
                 }
-            }
-            panel {
-                row {
-                    cell(pageLabel)
-                    cell(prevButton)
-                    cell(nextButton)
-                }
-            }.align(AlignX.RIGHT)
+            ).align(AlignX.FILL)
         }
         row {
             scrollCell(table).align(Align.FILL)

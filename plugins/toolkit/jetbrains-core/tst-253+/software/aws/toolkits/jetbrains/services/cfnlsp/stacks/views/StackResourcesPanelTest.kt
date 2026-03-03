@@ -19,7 +19,6 @@ import org.junit.Test
 import software.aws.toolkits.jetbrains.services.cfnlsp.CfnClientService
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ListStackResourcesResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.StackResourceSummary
-import java.time.Instant
 import java.util.concurrent.CompletableFuture
 
 class StackResourcesPanelTest {
@@ -37,7 +36,7 @@ class StackResourcesPanelTest {
         mockCoordinator = mockk()
         mockkObject(CfnClientService)
         every { CfnClientService.getInstance(projectRule.project) } returns mockCfnClient
-        every { mockCoordinator.addListener(any(), any()) } returns mockk(relaxed = true)
+        every { mockCoordinator.addPollingListener(any(), any()) } returns mockk(relaxed = true)
     }
 
     @After
@@ -156,7 +155,7 @@ class StackResourcesPanelTest {
     }
 
     @Test
-    fun `timer based auto refresh resets to page 1 and reloads data`() {
+    fun `onStackPolled resets to page 1 and reloads data`() {
         val initialResources = (1..100).map {
             StackResourceSummary("LogicalId$it", "PhysicalId$it", "AWS::S3::Bucket", "CREATE_COMPLETE", null)
         }
@@ -169,11 +168,7 @@ class StackResourcesPanelTest {
 
         every { mockCfnClient.getStackResources(any()) } returnsMany listOf(initialResult, refreshResult)
 
-        // Mock coordinator for transient state (enables auto-refresh alarm)
-        every { mockCoordinator.addListener(any(), any()) } returns mockk(relaxed = true)
-        every { mockCoordinator.getStackState(any()) } returns StackState("test-stack", testStackArn, "UPDATE_IN_PROGRESS", Instant.now())
-
-        val panel = StackResourcesPanel(projectRule.project, mockCoordinator, testStackArn, "test-stack", 100) // 100ms delay for testing
+        val panel = StackResourcesPanel(projectRule.project, mockCoordinator, testStackArn, "test-stack")
 
         try {
             runInEdtAndWait {
@@ -193,19 +188,16 @@ class StackResourcesPanelTest {
             // Verify we're on page 2
             assertThat(panel.pageLabel.text).isEqualTo("Page 2")
 
-            // Start auto-refresh (happens when stack is in transient state)
-            val startAutoRefreshMethod = panel.javaClass.getDeclaredMethod("startAutoRefresh").apply {
-                isAccessible = true
-            }
-            startAutoRefreshMethod.invoke(panel)
+            // Simulate coordinator calling onStackPolled
+            panel.onStackPolled()
 
-            // Use IntelliJ's alarm testing - wait for 100ms alarm to fire
             runInEdtAndWait {
                 PlatformTestUtil.dispatchAllEventsInIdeEventQueue()
             }
 
-            // Verify alarm-based auto-refresh made new LSP call
-            verify(timeout = 1000, atLeast = 2) { mockCfnClient.getStackResources(any()) }
+            // Verify polling refresh made new LSP call and reset to page 1
+            verify(atLeast = 2) { mockCfnClient.getStackResources(any()) }
+            assertThat(panel.pageLabel.text).isEqualTo("Page 1")
         } finally {
             panel.dispose()
         }
