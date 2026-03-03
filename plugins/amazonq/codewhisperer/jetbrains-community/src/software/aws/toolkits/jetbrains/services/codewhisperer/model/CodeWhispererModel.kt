@@ -219,20 +219,31 @@ data class LatencyContext(
 
     var firstRequestId: String = "",
 ) {
-    fun getCodeWhispererEndToEndLatency() = TimeUnit.NANOSECONDS.toMillis(
-        codewhispererEndToEndEnd - codewhispererEndToEndStart
-    ).toDouble()
+    fun getCodeWhispererEndToEndLatency(): Double {
+        // Guard against uninitialized timestamps which would result in incorrect latency values
+        if (codewhispererEndToEndStart == 0L || codewhispererEndToEndEnd == 0L) {
+            return 0.0
+        }
+        return TimeUnit.NANOSECONDS.toMillis(
+            codewhispererEndToEndEnd - codewhispererEndToEndStart
+        ).toDouble()
+    }
 
     // For auto-trigger it's from the time when last char typed
     // for manual-trigger it's from the time when last trigger action happened(alt + c)
-    fun getPerceivedLatency(triggerType: CodewhispererTriggerType) =
-        if (triggerType == CodewhispererTriggerType.OnDemand) {
+    fun getPerceivedLatency(triggerType: CodewhispererTriggerType): Double {
+        // Guard against uninitialized timestamps which would result in incorrect latency values
+        if (codewhispererEndToEndEnd == 0L) {
+            return 0.0
+        }
+        return if (triggerType == CodewhispererTriggerType.OnDemand) {
             getCodeWhispererEndToEndLatency()
         } else {
             TimeUnit.NANOSECONDS.toMillis(
                 codewhispererEndToEndEnd - CodeWhispererAutoTriggerService.getInstance().timeAtLastCharTyped
             ).toDouble()
         }
+    }
 }
 
 data class TryExampleRowContext(
