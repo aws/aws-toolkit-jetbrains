@@ -1,0 +1,4 @@
+{
+  "type" : "feature",
+  "description" : "Add the events panel to the stack view tool window. This allows users to see their stack events, grouped by Operation ID. The display includes Operation, Timestamp, Status, Status Reason, and Hook Invocation"
+}
