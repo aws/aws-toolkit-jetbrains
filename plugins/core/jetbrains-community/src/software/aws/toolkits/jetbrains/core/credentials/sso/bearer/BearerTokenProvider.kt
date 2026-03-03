@@ -113,6 +113,7 @@ class InteractiveBearerTokenProvider(
         get() = accessTokenProvider.authorization
 
     init {
+        // todo
         ApplicationManager.getApplication().messageBus.connect(this).subscribe(
             TOPIC,
             object : BearerTokenProviderListener {
