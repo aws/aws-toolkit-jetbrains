@@ -129,9 +129,10 @@ internal class ChangeSetDiffPanel(
             creationTime?.let { add("Created: $it") }
             description?.let { add(it) }
         }
-        add(JBLabel(parts.joinToString("  |  ")).apply {
+        val label = JBLabel(parts.joinToString("  |  ")).apply {
             foreground = JBColor.GRAY
-        })
+        }
+        add(label)
         add(javax.swing.JSeparator().apply { border = JBUI.Borders.emptyTop(4) })
     }
 
@@ -320,8 +321,14 @@ internal class ChangeSetDiffPanel(
             description: String? = null,
         ) {
             val panel = ChangeSetDiffPanel(
-                project, stackName, changeSetName, changes, enableDeploy,
-                status, creationTime, description,
+                project,
+                stackName,
+                changeSetName,
+                changes,
+                enableDeploy,
+                status,
+                creationTime,
+                description,
             )
             val windowManager = StackViewWindowManager.getInstance(project)
             var tabber = windowManager.getTabberByName(stackName)
@@ -423,9 +430,22 @@ private class ResourceTableModel(
 ) : AbstractTableModel() {
 
     private val columns = if (showDrift) {
-        arrayOf("Action", "Logical ID", "Physical ID", "Type", "Replacement", "Drift Status")
+        arrayOf(
+            "Action",
+            "Logical ID",
+            "Physical ID",
+            "Type",
+            "Replacement",
+            "Drift Status",
+        )
     } else {
-        arrayOf("Action", "Logical ID", "Physical ID", "Type", "Replacement")
+        arrayOf(
+            "Action",
+            "Logical ID",
+            "Physical ID",
+            "Type",
+            "Replacement",
+        )
     }
 
     override fun getRowCount() = resources.size
@@ -452,14 +472,25 @@ private class DetailTableModel(
 
     private val columns = if (showDrift) {
         arrayOf(
-            "Attribute Change Type", "Name", "Requires Recreation",
-            "Before Value", "After Value", "Change Source", "Causing Entity",
-            "Drift: Previous", "Drift: Actual",
+            "Attribute Change Type",
+            "Name",
+            "Requires Recreation",
+            "Before Value",
+            "After Value",
+            "Change Source",
+            "Causing Entity",
+            "Drift: Previous",
+            "Drift: Actual",
         )
     } else {
         arrayOf(
-            "Attribute Change Type", "Name", "Requires Recreation",
-            "Before Value", "After Value", "Change Source", "Causing Entity",
+            "Attribute Change Type",
+            "Name",
+            "Requires Recreation",
+            "Before Value",
+            "After Value",
+            "Change Source",
+            "Causing Entity",
         )
     }
 

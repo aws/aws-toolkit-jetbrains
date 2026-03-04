@@ -23,8 +23,6 @@ internal class StackViewWindowManager(private val project: Project) {
     private val activeStacks = ConcurrentHashMap<String, StackViewPanelTabber>()
     private var listenerRegistered = false
 
-    fun getTabber(stackId: String): StackViewPanelTabber? = activeStacks[stackId]
-
     fun getTabberByName(stackName: String): StackViewPanelTabber? =
         activeStacks.values.firstOrNull { it.stackName == stackName }
 

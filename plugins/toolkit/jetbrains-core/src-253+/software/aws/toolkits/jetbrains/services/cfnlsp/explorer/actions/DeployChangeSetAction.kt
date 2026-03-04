@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.cfnlsp.explorer.actions
 
+import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerTreeToolWindowDataKeys
@@ -10,6 +11,7 @@ import software.aws.toolkits.jetbrains.services.cfnlsp.explorer.nodes.ChangeSetN
 import software.aws.toolkits.jetbrains.services.cfnlsp.stacks.DeploymentWorkflow
 
 internal class DeployChangeSetAction : AnAction() {
+    override fun getActionUpdateThread() = ActionUpdateThread.BGT
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         val node = e.getData(ExplorerTreeToolWindowDataKeys.SELECTED_NODES)

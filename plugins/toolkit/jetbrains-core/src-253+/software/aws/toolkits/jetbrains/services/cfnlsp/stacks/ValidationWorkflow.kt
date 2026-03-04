@@ -7,6 +7,7 @@ import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
 import software.aws.toolkits.jetbrains.services.cfnlsp.CfnClientService
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.CreateValidationParams
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeChangeSetParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeValidationStatusResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.Identifiable
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.StackActionPhase
@@ -98,7 +99,7 @@ internal class ValidationWorkflow(
                                             )
                                             // Fetch full change set details (includes property-level changes)
                                             clientService.describeChangeSet(
-                                                software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeChangeSetParams(changeSetName, stackName)
+                                                DescribeChangeSetParams(changeSetName, stackName)
                                             ).thenAccept { changeSetResult ->
                                                 val fullChanges = changeSetResult?.changes ?: status.changes ?: emptyList()
                                                 runInEdt {

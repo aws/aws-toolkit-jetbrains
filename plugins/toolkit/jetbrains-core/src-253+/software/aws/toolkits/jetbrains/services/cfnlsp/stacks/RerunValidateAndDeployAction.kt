@@ -3,12 +3,15 @@
 
 package software.aws.toolkits.jetbrains.services.cfnlsp.stacks
 
+import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import software.aws.toolkits.jetbrains.utils.notifyError
 import java.util.UUID
 
 internal class RerunValidateAndDeployAction : AnAction() {
+    override fun getActionUpdateThread() = ActionUpdateThread.BGT
+
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         val lastParams = LastValidationService.getInstance(project).lastParams

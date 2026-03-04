@@ -61,8 +61,8 @@ internal data class ValidateAndDeploySettings(
 )
 
 internal class ValidateAndDeployWizard(
-    private val project: Project,
-    private val documentManager: CfnDocumentManager,
+    project: Project,
+    documentManager: CfnDocumentManager,
     prefilledTemplatePath: String? = null,
     prefilledStackName: String? = null,
     templateParameters: List<TemplateParameter> = emptyList(),
@@ -176,7 +176,7 @@ private class ConfigurationStep(
     private val documentManager: CfnDocumentManager,
     prefilledTemplatePath: String?,
     prefilledStackName: String?,
-    private val templateParameters: List<TemplateParameter>,
+    templateParameters: List<TemplateParameter>,
     detectedCapabilities: List<String>,
     existingParameters: List<Parameter>?,
     existingTags: List<Tag>?,
@@ -506,7 +506,7 @@ private class ImportResourcesStep(
 
     private val component = JBPanel<JBPanel<*>>(BorderLayout()).apply {
         val topPanel = panel {
-            group("Select resources to import") {
+            group("Select Resources to Import") {
                 row {
                     cell(
                         JBScrollPane(resourceCheckboxList).apply {
@@ -518,7 +518,7 @@ private class ImportResourcesStep(
         }
 
         val bottomPanel = panel {
-            group("Resource identifiers") {
+            group("Resource Identifiers") {
                 row {
                     cell(
                         JBScrollPane(identifierTable).apply {

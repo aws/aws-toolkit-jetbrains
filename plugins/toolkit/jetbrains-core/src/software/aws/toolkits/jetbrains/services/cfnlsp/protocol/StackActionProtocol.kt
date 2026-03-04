@@ -34,6 +34,7 @@ internal data class ResourceToImport(
     val resourceIdentifier: Map<String, String>,
 )
 
+@Suppress("unused") // All values required for Gson deserialization
 internal enum class StackActionPhase {
     @SerializedName("VALIDATION_STARTED") VALIDATION_STARTED,
 
@@ -60,6 +61,7 @@ internal enum class StackActionPhase {
     @SerializedName("DELETION_FAILED") DELETION_FAILED,
 }
 
+@Suppress("unused") // All values required for Gson deserialization
 internal enum class StackActionState {
     @SerializedName("IN_PROGRESS") IN_PROGRESS,
 
