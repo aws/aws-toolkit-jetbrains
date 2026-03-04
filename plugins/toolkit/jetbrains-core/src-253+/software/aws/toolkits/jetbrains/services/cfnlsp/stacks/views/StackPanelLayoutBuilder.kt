@@ -11,12 +11,15 @@ import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.table.JBTable
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.StackOutput
 import java.awt.Font
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
 import javax.swing.JButton
 import javax.swing.JComponent
 import javax.swing.JPanel
+import javax.swing.ListSelectionModel
+import javax.swing.table.DefaultTableModel
 
 internal object StackPanelLayoutBuilder {
 
@@ -91,6 +94,55 @@ internal object StackPanelLayoutBuilder {
                     add(nextButton)
                 }
             ).align(AlignX.FILL)
+        }
+        row {
+            scrollCell(table).align(Align.FILL)
+        }.resizableRow()
+    }
+
+    fun createOutputsTable(): JBTable = JBTable().apply {
+        setShowGrid(true)
+        autoResizeMode = JBTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS
+        selectionModel.selectionMode = ListSelectionModel.SINGLE_SELECTION
+        // Set initial empty state
+        model = object : DefaultTableModel(
+            arrayOf(arrayOf("No outputs found", "", "", "")),
+            arrayOf("Key", "Value", "Description", "Export Name")
+        ) {
+            override fun isCellEditable(row: Int, column: Int): Boolean = false
+        }
+    }
+
+    fun updateOutputsTable(table: JBTable, outputs: List<StackOutput>, errorMessage: String? = null) {
+        val columnNames = arrayOf("Key", "Value", "Description", "Export Name")
+        val data = when {
+            errorMessage != null -> arrayOf(arrayOf(errorMessage, "", "", ""))
+            outputs.isEmpty() -> arrayOf(arrayOf("No outputs found", "", "", ""))
+            else -> outputs.map { output ->
+                arrayOf(
+                    output.outputKey,
+                    output.outputValue,
+                    output.description ?: "",
+                    output.exportName ?: ""
+                )
+            }.toTypedArray()
+        }
+
+        table.model = object : DefaultTableModel(data, columnNames) {
+            override fun isCellEditable(row: Int, column: Int): Boolean = false
+        }
+    }
+
+    fun createTablePanel(
+        title: String,
+        consoleLink: JComponent,
+        outputCountLabel: JComponent,
+        table: JBTable,
+    ): JComponent = panel {
+        row {
+            label(title).bold()
+            cell(consoleLink)
+            cell(outputCountLabel).align(AlignX.RIGHT)
         }
         row {
             scrollCell(table).align(Align.FILL)
