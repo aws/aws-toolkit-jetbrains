@@ -9,6 +9,7 @@ import software.aws.toolkits.jetbrains.utils.notifyError
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 
 internal sealed class PollResult<out T> {
     data class Success<T>(val value: T) : PollResult<T>()
@@ -25,9 +26,23 @@ internal abstract class PollingWorkflow(
     fun <T> poll(id: String): CompletableFuture<PollResult<T>> {
         val future = CompletableFuture<PollResult<T>>()
         val scheduler = Executors.newSingleThreadScheduledExecutor()
+        val pollCount = AtomicInteger(0)
 
         scheduler.scheduleWithFixedDelay(
             {
+                if (project.isDisposed) {
+                    future.complete(PollResult.Failed("Project closed"))
+                    scheduler.shutdown()
+                    return@scheduleWithFixedDelay
+                }
+
+                if (pollCount.incrementAndGet() > MAX_POLL_COUNT) {
+                    notifyError(operationTitle, "Operation timed out", project = project)
+                    future.complete(PollResult.Failed("Timed out after ${MAX_POLL_COUNT * POLL_INTERVAL_MS / 1000}s"))
+                    scheduler.shutdown()
+                    return@scheduleWithFixedDelay
+                }
+
                 fetchStatus(id)
                     .thenCompose { status ->
                         if (status == null) {
@@ -63,5 +78,6 @@ internal abstract class PollingWorkflow(
 
     companion object {
         private const val POLL_INTERVAL_MS = 1000L
+        private const val MAX_POLL_COUNT = 3600 // 1 hour at 1s intervals
     }
 }

@@ -29,6 +29,7 @@ import software.aws.toolkits.jetbrains.services.cfnlsp.ui.ValidateAndDeployWizar
 import software.aws.toolkits.jetbrains.utils.notifyError
 import java.io.File
 import java.util.UUID
+import java.util.concurrent.TimeUnit
 
 internal class ValidateAndDeployAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
@@ -64,21 +65,21 @@ internal class ValidateAndDeployAction : AnAction() {
 
                     indicator.text = "Fetching template parameters..."
                     try {
-                        templateParams = clientService.getParameters(uri).get()?.parameters ?: emptyList()
+                        templateParams = clientService.getParameters(uri).get(LSP_TIMEOUT_SECONDS, TimeUnit.SECONDS)?.parameters ?: emptyList()
                     } catch (ex: Exception) {
                         LOG.warn(ex) { "Failed to fetch template parameters" }
                     }
 
                     indicator.text = "Analyzing capabilities..."
                     try {
-                        detectedCaps = clientService.getCapabilities(uri).get()?.capabilities ?: emptyList()
+                        detectedCaps = clientService.getCapabilities(uri).get(LSP_TIMEOUT_SECONDS, TimeUnit.SECONDS)?.capabilities ?: emptyList()
                     } catch (ex: Exception) {
                         LOG.warn(ex) { "Failed to fetch capabilities" }
                     }
 
                     indicator.text = "Checking artifacts..."
                     try {
-                        val artifactsResult = clientService.getTemplateArtifacts(uri).get()
+                        val artifactsResult = clientService.getTemplateArtifacts(uri).get(LSP_TIMEOUT_SECONDS, TimeUnit.SECONDS)
                         val artifacts = artifactsResult?.artifacts ?: emptyList()
                         hasArtifacts = artifacts.isNotEmpty()
                         val templateDir = templateFile.parent?.path ?: ""
@@ -99,7 +100,7 @@ internal class ValidateAndDeployAction : AnAction() {
 
                     indicator.text = "Fetching template resources..."
                     try {
-                        templateResources = clientService.getTemplateResources(uri).get()?.resources ?: emptyList()
+                        templateResources = clientService.getTemplateResources(uri).get(LSP_TIMEOUT_SECONDS, TimeUnit.SECONDS)?.resources ?: emptyList()
                     } catch (ex: Exception) {
                         LOG.warn(ex) { "Failed to fetch template resources" }
                     }
@@ -108,7 +109,7 @@ internal class ValidateAndDeployAction : AnAction() {
                 if (prefilledStackName != null) {
                     indicator.text = "Fetching stack details..."
                     try {
-                        val stackResult = clientService.describeStack(DescribeStackParams(prefilledStackName)).get()
+                        val stackResult = clientService.describeStack(DescribeStackParams(prefilledStackName)).get(LSP_TIMEOUT_SECONDS, TimeUnit.SECONDS)
                         existingParams = stackResult?.stack?.parameters
                         existingTags = stackResult?.stack?.tags
                         isExistingStack = stackResult?.stack != null
@@ -170,5 +171,6 @@ internal class ValidateAndDeployAction : AnAction() {
 
     companion object {
         private val LOG = getLogger<ValidateAndDeployAction>()
+        private const val LSP_TIMEOUT_SECONDS = 30L
     }
 }

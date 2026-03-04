@@ -33,6 +33,7 @@ import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.StackChange
 import software.aws.toolkits.jetbrains.services.cfnlsp.stacks.ChangeSetDeletionWorkflow
 import software.aws.toolkits.jetbrains.services.cfnlsp.stacks.DeploymentWorkflow
 import software.aws.toolkits.jetbrains.services.cfnlsp.stacks.views.StackViewWindowManager
+import software.aws.toolkits.jetbrains.utils.notifyError
 import java.awt.BorderLayout
 import java.awt.Component
 import java.awt.Font
@@ -337,10 +338,14 @@ internal class ChangeSetDiffPanel(
                 try {
                     val stackResult = CfnClientService.getInstance(project)
                         .describeStack(DescribeStackParams(stackName)).get()
-                    val stackId = stackResult?.stack?.stackId ?: return
+                    val stackId = stackResult?.stack?.stackId ?: run {
+                        notifyError("CloudFormation", "Could not open stack view for '$stackName'", project = project)
+                        return
+                    }
                     windowManager.openStack(stackName, stackId)
                     tabber = windowManager.getTabberByName(stackName)
-                } catch (_: Exception) {
+                } catch (e: Exception) {
+                    notifyError("CloudFormation", "Failed to open stack view: ${e.message}", project = project)
                     return
                 }
             }
