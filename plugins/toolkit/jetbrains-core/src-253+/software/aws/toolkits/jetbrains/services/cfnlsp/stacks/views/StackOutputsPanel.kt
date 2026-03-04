@@ -3,8 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.cfnlsp.stacks.views
 
-import com.intellij.icons.AllIcons
-import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
@@ -16,10 +14,6 @@ import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeStackPar
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.StackDetail
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.StackOutput
 import software.aws.toolkits.jetbrains.services.cfnlsp.ui.ConsoleUrlGenerator
-import software.aws.toolkits.jetbrains.services.cfnlsp.ui.IconUtils
-import java.awt.Cursor
-import java.awt.event.MouseAdapter
-import java.awt.event.MouseEvent
 import javax.swing.JComponent
 
 internal class StackOutputsPanel(
@@ -33,7 +27,6 @@ internal class StackOutputsPanel(
     private val disposables = mutableListOf<Disposable>()
 
     private var outputs: List<StackOutput> = emptyList()
-    private var currentStackId: String? = null
 
     // UI Components using StackPanelLayoutBuilder
     internal val outputTable = StackPanelLayoutBuilder.createOutputsTable()
@@ -41,24 +34,11 @@ internal class StackOutputsPanel(
         foreground = UIUtil.getContextHelpForeground()
     }
 
-    internal val consoleLink = JBLabel(IconUtils.createBlueIcon(AllIcons.Ide.External_link_arrow)).apply {
-        cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
-        isVisible = false
-        addMouseListener(object : MouseAdapter() {
-            override fun mouseClicked(e: MouseEvent) {
-                currentStackId?.let { stackId ->
-                    val consoleUrl = ConsoleUrlGenerator.generateStackOutputsUrl(stackId)
-                    BrowserUtil.browse(consoleUrl)
-                }
-            }
-        })
-    }
-
-    val component: JComponent = StackPanelLayoutBuilder.createTablePanel(
-        "Stack: $stackName",
-        consoleLink,
-        outputCountLabel,
-        outputTable
+    val component: JComponent = StackPanelLayoutBuilder.createStackTablePanel(
+        stackName,
+        { ConsoleUrlGenerator.generateStackOutputsUrl(stackArn) },
+        outputTable,
+        outputCountLabel
     )
 
     init {
@@ -86,8 +66,6 @@ internal class StackOutputsPanel(
 
     private fun renderOutputs(stack: StackDetail) {
         outputs = stack.outputs ?: emptyList()
-        currentStackId = stack.stackId
-        consoleLink.isVisible = stack.stackId.isNotEmpty()
 
         StackPanelLayoutBuilder.updateOutputsTable(outputTable, outputs)
         updateOutputCount(outputs.size)
@@ -97,14 +75,12 @@ internal class StackOutputsPanel(
         outputs = emptyList()
         StackPanelLayoutBuilder.updateOutputsTable(outputTable, outputs)
         updateOutputCount(0)
-        consoleLink.isVisible = false
     }
 
     private fun renderError(message: String) {
         outputs = emptyList()
         StackPanelLayoutBuilder.updateOutputsTable(outputTable, emptyList(), message)
         updateOutputCount(0)
-        consoleLink.isVisible = false
     }
 
     private fun updateOutputCount(count: Int) {

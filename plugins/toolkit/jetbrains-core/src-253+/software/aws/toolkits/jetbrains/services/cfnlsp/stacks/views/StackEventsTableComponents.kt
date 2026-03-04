@@ -3,11 +3,14 @@
 
 package software.aws.toolkits.jetbrains.services.cfnlsp.stacks.views
 
+import com.intellij.icons.AllIcons
 import com.intellij.ui.JBColor
+import com.intellij.ui.components.JBLabel
 import com.intellij.util.ui.UIUtil
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.StackEvent
 import java.awt.Component
 import java.awt.Font
+import javax.swing.Icon
 import javax.swing.JTable
 import javax.swing.table.AbstractTableModel
 import javax.swing.table.DefaultTableCellRenderer
@@ -20,6 +23,9 @@ internal object StackEventsTableComponents {
     const val STATUS_COLUMN = 3
     const val STATUS_REASON_COLUMN = 4
     const val HOOK_COLUMN = 5
+
+    // Pagination constants
+    const val EVENTS_PER_PAGE = 50
 }
 
 // Data class to represent a table row (either parent group or child event)
@@ -38,7 +44,7 @@ internal class ExpandableEventsTableModel : AbstractTableModel() {
     private var hasHooks = false
     private val columnNames = arrayOf("", "Operation", "Timestamp", "Status", "Status Reason", "Hook Invocation")
     private var currentPage = 0
-    private val eventsPerPage = 50
+    private val eventsPerPage = StackEventsTableComponents.EVENTS_PER_PAGE
 
     fun setEvents(events: List<StackEvent>) {
         allEvents = events
@@ -148,7 +154,7 @@ internal class ExpandableEventsTableModel : AbstractTableModel() {
         return when (columnIndex) {
             StackEventsTableComponents.ARROW_COLUMN -> if (row.isParent) {
                 val isExpanded = (row.event.operationId ?: "") in expandedGroups
-                if (isExpanded) "⏷" else "⏵"
+                if (isExpanded) AllIcons.General.ArrowDown else AllIcons.General.ArrowRight
             } else {
                 ""
             }
@@ -218,6 +224,24 @@ internal class EventsTableCellRenderer : DefaultTableCellRenderer() {
         column: Int,
     ): Component {
         val component = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column)
+
+        // Handle both icons and strings in arrow column
+        if (column == StackEventsTableComponents.ARROW_COLUMN) {
+            val label = JBLabel()
+            when (value) {
+                is Icon -> {
+                    label.icon = value
+                    label.text = null
+                    label.horizontalAlignment = JBLabel.CENTER
+                }
+                is String -> {
+                    label.text = value
+                    label.icon = null
+                    label.horizontalAlignment = JBLabel.CENTER
+                }
+            }
+            return label
+        }
 
         if (!isSelected && column == StackEventsTableComponents.STATUS_COLUMN) { // Status column
             val status = value?.toString() ?: ""

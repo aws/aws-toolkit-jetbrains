@@ -11,8 +11,10 @@ import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.table.JBTable
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
-import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.StackOutput
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.StackEvent
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.StackOutput
+import software.aws.toolkits.jetbrains.services.cfnlsp.ui.IconUtils
+import java.awt.Cursor
 import java.awt.FlowLayout
 import java.awt.Font
 import java.awt.GridBagConstraints
@@ -22,10 +24,16 @@ import java.awt.event.MouseEvent
 import javax.swing.JButton
 import javax.swing.JComponent
 import javax.swing.JPanel
-import javax.swing.ListSelectionModel
-import javax.swing.table.DefaultTableModel
 import javax.swing.JTable
+import javax.swing.ListSelectionModel
 import javax.swing.table.DefaultTableCellRenderer
+import javax.swing.table.DefaultTableModel
+
+internal data class PaginationControls(
+    val pageLabel: JComponent,
+    val prevButton: JButton,
+    val nextButton: JButton,
+)
 
 internal object StackPanelLayoutBuilder {
 
@@ -81,31 +89,37 @@ internal object StackPanelLayoutBuilder {
         parent.add(JPanel(), gbc)
     }
 
-    fun createTableWithPaginationPanel(
-        title: String,
-        consoleLink: JComponent,
-        pageLabel: JComponent,
-        prevButton: JButton,
-        nextButton: JButton,
+    fun createStackTablePanel(
+        stackName: String,
+        consoleUrlProvider: () -> String?,
         table: JBTable,
         countLabel: JComponent? = null,
-    ): JComponent = panel {
-        row {
-            label(title).bold()
-            cell(consoleLink)
-            countLabel?.let { cell(it) }
-            cell(
-                JBPanel<JBPanel<*>>().apply {
-                    layout = FlowLayout(FlowLayout.RIGHT)
-                    add(pageLabel)
-                    add(prevButton)
-                    add(nextButton)
-                }
-            ).align(AlignX.FILL)
+        paginationControls: PaginationControls? = null,
+    ): JComponent {
+        val consoleLink = IconUtils.createConsoleLinkIcon(consoleUrlProvider).apply {
+            isVisible = true
         }
-        row {
-            scrollCell(table).align(Align.FILL)
-        }.resizableRow()
+
+        return panel {
+            row {
+                label("Stack: $stackName").bold()
+                cell(consoleLink)
+                countLabel?.let { cell(it) }
+                paginationControls?.let { pagination ->
+                    cell(
+                        JBPanel<JBPanel<*>>().apply {
+                            layout = FlowLayout(FlowLayout.RIGHT)
+                            add(pagination.pageLabel)
+                            add(pagination.prevButton)
+                            add(pagination.nextButton)
+                        }
+                    ).align(AlignX.FILL)
+                }
+            }
+            row {
+                scrollCell(table).align(Align.FILL)
+            }.resizableRow()
+        }
     }
 
     fun createOutputsTable(): JBTable = JBTable().apply {
@@ -141,22 +155,6 @@ internal object StackPanelLayoutBuilder {
         }
     }
 
-    fun createTablePanel(
-        title: String,
-        consoleLink: JComponent,
-        outputCountLabel: JComponent,
-        table: JBTable,
-    ): JComponent = panel {
-        row {
-            label(title).bold()
-            cell(consoleLink)
-            cell(outputCountLabel).align(AlignX.RIGHT)
-        }
-        row {
-            scrollCell(table).align(Align.FILL)
-        }.resizableRow()
-    }
-
     fun createEventsTable(onOperationClick: ((String) -> Unit)? = null): JBTable {
         val tableModel = ExpandableEventsTableModel()
         return JBTable(tableModel).apply {
@@ -168,6 +166,9 @@ internal object StackPanelLayoutBuilder {
             columnModel.getColumn(StackEventsTableComponents.ARROW_COLUMN).cellRenderer = DefaultTableCellRenderer()
             columnModel.getColumn(StackEventsTableComponents.ARROW_COLUMN).preferredWidth = 25
             columnModel.getColumn(StackEventsTableComponents.ARROW_COLUMN).maxWidth = 50
+
+            // Arrow column renderer for icons
+            columnModel.getColumn(StackEventsTableComponents.ARROW_COLUMN).cellRenderer = EventsTableCellRenderer()
 
             // Custom renderer for the second column (Operation) to show hyperlinks
             columnModel.getColumn(StackEventsTableComponents.OPERATION_COLUMN).cellRenderer = OperationCellRenderer()
@@ -201,6 +202,26 @@ internal object StackPanelLayoutBuilder {
                                 onOperationClick?.invoke(operationId)
                             }
                         }
+                    }
+                }
+            })
+
+            // Mouse motion listener for cursor changes on hyperlinks
+            addMouseMotionListener(object : MouseAdapter() {
+                override fun mouseMoved(e: MouseEvent) {
+                    val row = rowAtPoint(e.point)
+                    val col = columnAtPoint(e.point)
+                    if (row >= 0 && col == StackEventsTableComponents.OPERATION_COLUMN) {
+                        val model = model as ExpandableEventsTableModel
+                        val tableRow = model.getRowAt(row)
+                        val operationId = tableRow?.event?.operationId
+                        if (!operationId.isNullOrEmpty() && operationId.trim() != "-") {
+                            cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+                        } else {
+                            cursor = Cursor.getDefaultCursor()
+                        }
+                    } else {
+                        cursor = Cursor.getDefaultCursor()
                     }
                 }
             })

@@ -3,8 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.cfnlsp.stacks.views
 
-import com.intellij.icons.AllIcons
-import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
@@ -15,10 +13,6 @@ import software.aws.toolkits.jetbrains.services.cfnlsp.CfnClientService
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.GetStackResourcesParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.StackResourceSummary
 import software.aws.toolkits.jetbrains.services.cfnlsp.ui.ConsoleUrlGenerator
-import software.aws.toolkits.jetbrains.services.cfnlsp.ui.IconUtils
-import java.awt.Cursor
-import java.awt.event.MouseAdapter
-import java.awt.event.MouseEvent
 import java.util.concurrent.CompletableFuture
 import javax.swing.JButton
 import javax.swing.JComponent
@@ -56,23 +50,12 @@ internal class StackResourcesPanel(
     internal val prevButton = JButton("Previous").apply { addActionListener { loadPrevPage() } }
     internal val nextButton = JButton("Next").apply { addActionListener { loadNextPage() } }
 
-    private val consoleLink = JBLabel(IconUtils.createBlueIcon(AllIcons.Ide.External_link_arrow)).apply {
-        cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
-        addMouseListener(object : MouseAdapter() {
-            override fun mouseClicked(e: MouseEvent) {
-                val consoleUrl = ConsoleUrlGenerator.generateStackResourcesUrl(stackArn)
-                BrowserUtil.browse(consoleUrl)
-            }
-        })
-    }
-
-    val component: JComponent = StackPanelLayoutBuilder.createTableWithPaginationPanel(
+    val component: JComponent = StackPanelLayoutBuilder.createStackTablePanel(
         stackName,
-        consoleLink,
-        pageLabel,
-        prevButton,
-        nextButton,
-        resourceTable
+        { ConsoleUrlGenerator.generateStackResourcesUrl(stackArn) },
+        resourceTable,
+        null,
+        PaginationControls(pageLabel, prevButton, nextButton)
     )
 
     init {

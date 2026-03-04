@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.cfnlsp.stacks.views
 
-import com.intellij.icons.AllIcons
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
@@ -17,11 +16,7 @@ import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.GetStackEventsPa
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.GetStackEventsResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.StackEvent
 import software.aws.toolkits.jetbrains.services.cfnlsp.ui.ConsoleUrlGenerator
-import software.aws.toolkits.jetbrains.services.cfnlsp.ui.IconUtils
 import software.aws.toolkits.jetbrains.utils.notifyInfo
-import java.awt.Cursor
-import java.awt.event.MouseAdapter
-import java.awt.event.MouseEvent
 import java.util.concurrent.CompletableFuture
 import javax.swing.JButton
 import javax.swing.JComponent
@@ -40,28 +35,12 @@ internal class StackEventsPanel(
     private var allEvents: List<StackEvent> = emptyList()
     private var currentPage: Int = 0
     private var nextToken: String? = null
-    private val eventsPerPage = 50
-    private var currentStackId: String? = null
+    private val eventsPerPage = StackEventsTableComponents.EVENTS_PER_PAGE
     private var isLoading = false // Prevents rapid-fire clicks from triggering multiple concurrent operations
 
     private val eventTable = StackPanelLayoutBuilder.createEventsTable { operationId ->
-        currentStackId?.let { stackId ->
-            val consoleUrl = ConsoleUrlGenerator.generateOperationUrl(stackId, operationId)
-            BrowserUtil.browse(consoleUrl)
-        }
-    }
-
-    private val consoleLink = JBLabel(IconUtils.createBlueIcon(AllIcons.Ide.External_link_arrow)).apply {
-        cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
-        isVisible = false
-        addMouseListener(object : MouseAdapter() {
-            override fun mouseClicked(e: MouseEvent) {
-                currentStackId?.let { stackId ->
-                    val consoleUrl = ConsoleUrlGenerator.generateStackEventsUrl(stackId)
-                    BrowserUtil.browse(consoleUrl)
-                }
-            }
-        })
+        val consoleUrl = ConsoleUrlGenerator.generateOperationUrl(stackArn, operationId)
+        BrowserUtil.browse(consoleUrl)
     }
 
     private val eventCountLabel = JBLabel("0 events").apply {
@@ -78,57 +57,17 @@ internal class StackEventsPanel(
         isEnabled = false
     }
 
-    val component: JComponent = StackPanelLayoutBuilder.createTableWithPaginationPanel(
-        "Stack: $stackName",
-        consoleLink,
-        pageLabel,
-        prevButton,
-        nextButton,
+    val component: JComponent = StackPanelLayoutBuilder.createStackTablePanel(
+        stackName,
+        { ConsoleUrlGenerator.generateStackEventsUrl(stackArn) },
         eventTable,
-        eventCountLabel
+        eventCountLabel,
+        PaginationControls(pageLabel, prevButton, nextButton)
     )
 
     init {
         disposables.add(coordinator.addPollingListener(stackArn, this))
-        setupTableClickHandler()
         loadEvents()
-    }
-
-    private fun setupTableClickHandler() {
-        eventTable.addMouseListener(object : MouseAdapter() {
-            override fun mouseClicked(e: MouseEvent) {
-                if (e.clickCount == 1) {
-                    val row = eventTable.rowAtPoint(e.point)
-                    val col = eventTable.columnAtPoint(e.point)
-                    if (row >= 0 && col == StackEventsTableComponents.ARROW_COLUMN) { // Operation ID column should be clickable link to console
-                        val operationId = eventTable.getValueAt(row, 0) as? String
-                        if (!operationId.isNullOrEmpty() && operationId != "-") {
-                            currentStackId?.let { stackId ->
-                                val consoleUrl = ConsoleUrlGenerator.generateOperationUrl(stackId, operationId)
-                                BrowserUtil.browse(consoleUrl)
-                            }
-                        }
-                    }
-                }
-            }
-        })
-
-        eventTable.addMouseMotionListener(object : MouseAdapter() {
-            override fun mouseMoved(e: MouseEvent) {
-                val row = eventTable.rowAtPoint(e.point)
-                val col = eventTable.columnAtPoint(e.point)
-                if (row >= 0 && col == StackEventsTableComponents.OPERATION_COLUMN) {
-                    val operationId = eventTable.getValueAt(row, 1) as? String
-                    if (!operationId.isNullOrEmpty() && operationId.trim() != "-") {
-                        eventTable.cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
-                    } else {
-                        eventTable.cursor = Cursor.getDefaultCursor()
-                    }
-                } else {
-                    eventTable.cursor = Cursor.getDefaultCursor()
-                }
-            }
-        })
     }
 
     override fun onStackPolled() {
@@ -176,7 +115,6 @@ internal class StackEventsPanel(
     private fun handleLoadResult(result: GetStackEventsResult) {
         if (nextToken == null) {
             allEvents = result.events
-            currentStackId = result.events.firstOrNull()?.stackId
         } else {
             allEvents = allEvents + result.events
         }
@@ -257,8 +195,6 @@ internal class StackEventsPanel(
         val isAtLastPage = currentPage >= totalPages - 1
         nextButton.text = if (isAtLastPage && hasMore) "Load More" else "Next"
         nextButton.isEnabled = (!isAtLastPage || hasMore) && !isLoading
-
-        consoleLink.isVisible = currentStackId != null
     }
 
     private fun renderError(message: String) {

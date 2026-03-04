@@ -50,7 +50,6 @@ class StackOutputsPanelTest {
 
         // Assert initial state
         assertThat(panel.outputCountLabel.text).isEqualTo("0 outputs")
-        assertThat(panel.consoleLink.isVisible).isFalse()
         assertThat(panel.outputTable.rowCount).isEqualTo(1)
         assertThat(panel.outputTable.getValueAt(0, 0)).isEqualTo("No outputs found")
 
@@ -87,7 +86,6 @@ class StackOutputsPanelTest {
         }
 
         assertThat(panel.outputCountLabel.text).isEqualTo("2 outputs")
-        assertThat(panel.consoleLink.isVisible).isTrue()
         assertThat(panel.outputTable.rowCount).isEqualTo(2)
         assertThat(panel.outputTable.getValueAt(0, 0)).isEqualTo("WebsiteURL")
         assertThat(panel.outputTable.getValueAt(0, 1)).isEqualTo("https://example.com")
@@ -118,7 +116,6 @@ class StackOutputsPanelTest {
         }
 
         assertThat(panel.outputCountLabel.text).isEqualTo("0 outputs")
-        assertThat(panel.consoleLink.isVisible).isTrue()
         assertThat(panel.outputTable.rowCount).isEqualTo(1)
         assertThat(panel.outputTable.getValueAt(0, 0)).isEqualTo("No outputs found")
         assertThat(panel.outputTable.getValueAt(0, 1)).isEqualTo("")
@@ -182,8 +179,6 @@ class StackOutputsPanelTest {
         runInEdtAndWait {
             PlatformTestUtil.dispatchAllEventsInIdeEventQueue()
         }
-
-        assertThat(panel.consoleLink.isVisible).isFalse()
     }
 
     @Test
@@ -203,7 +198,6 @@ class StackOutputsPanelTest {
         }
 
         assertThat(panel.outputCountLabel.text).isEqualTo("0 outputs")
-        assertThat(panel.consoleLink.isVisible).isFalse()
         assertThat(panel.outputTable.getValueAt(0, 0)).asString().contains("Failed to load outputs:")
         assertThat(panel.outputTable.getValueAt(0, 0)).asString().contains("Test error")
     }
@@ -224,7 +218,6 @@ class StackOutputsPanelTest {
         }
 
         assertThat(panel.outputCountLabel.text).isEqualTo("0 outputs")
-        assertThat(panel.consoleLink.isVisible).isFalse()
         assertThat(panel.outputTable.getValueAt(0, 0)).isEqualTo("No outputs found")
     }
 
@@ -250,7 +243,6 @@ class StackOutputsPanelTest {
         }
 
         assertThat(panel.outputCountLabel.text).isEqualTo("0 outputs")
-        assertThat(panel.consoleLink.isVisible).isTrue()
         assertThat(panel.outputTable.rowCount).isEqualTo(1)
         assertThat(panel.outputTable.getValueAt(0, 0)).isEqualTo("No outputs found")
     }

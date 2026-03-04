@@ -3,8 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.cfnlsp.stacks.views
 
-import com.intellij.icons.AllIcons
-import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
@@ -20,12 +18,9 @@ import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.StackDetail
 import software.aws.toolkits.jetbrains.services.cfnlsp.ui.ConsoleUrlGenerator
 import software.aws.toolkits.jetbrains.services.cfnlsp.ui.IconUtils
 import software.aws.toolkits.jetbrains.services.cfnlsp.ui.WrappingTextArea
-import java.awt.Cursor
 import java.awt.FlowLayout
 import java.awt.Font
 import java.awt.GridBagConstraints
-import java.awt.event.MouseAdapter
-import java.awt.event.MouseEvent
 import javax.swing.Box
 import javax.swing.JComponent
 import javax.swing.JPanel
@@ -40,17 +35,10 @@ internal class StackOverviewPanel(
     private val cfnClientService = CfnClientService.getInstance(project)
     private val disposables = mutableListOf<Disposable>()
 
-    internal val consoleLink = JBLabel(IconUtils.createBlueIcon(AllIcons.Ide.External_link_arrow)).apply {
-        cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
-        isVisible = false
-        addMouseListener(object : MouseAdapter() {
-            override fun mouseClicked(e: MouseEvent) {
-                currentStackId?.let { stackId ->
-                    val consoleUrl = ConsoleUrlGenerator.generateUrl(stackId)
-                    BrowserUtil.browse(consoleUrl)
-                }
-            }
-        })
+    internal val consoleLink = IconUtils.createConsoleLinkIcon {
+        currentStackId?.let { stackId ->
+            ConsoleUrlGenerator.generateUrl(stackId)
+        }
     }
 
     internal val stackNameValue = JBLabel("-")
