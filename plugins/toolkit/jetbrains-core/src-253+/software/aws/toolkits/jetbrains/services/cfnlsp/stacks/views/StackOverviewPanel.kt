@@ -115,7 +115,7 @@ internal class StackOverviewPanel(
     private fun createStackNamePanel(): JPanel = JBPanel<JBPanel<*>>().apply {
         layout = FlowLayout(FlowLayout.LEFT, 0, 0)
         add(stackNameValue)
-        add(Box.createHorizontalStrut(ICON_SPACING))
+        add(Box.createHorizontalStrut(StackPanelLayoutBuilder.ICON_SPACING))
         add(consoleLink)
     }
 
@@ -204,7 +204,6 @@ internal class StackOverviewPanel(
     companion object {
         private val LOG = getLogger<StackOverviewPanel>()
         private const val STATUS_FONT_SIZE = 12.0f
-        private const val ICON_SPACING = 8
         private const val STATUS_PADDING_VERTICAL = 4
         private const val STATUS_PADDING_HORIZONTAL = 8
     }

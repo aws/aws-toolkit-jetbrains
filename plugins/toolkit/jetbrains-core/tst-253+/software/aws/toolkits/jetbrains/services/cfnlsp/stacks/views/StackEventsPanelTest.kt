@@ -24,6 +24,8 @@ import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.GetStackEventsRe
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.StackEvent
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import java.util.concurrent.CompletableFuture
+import javax.swing.JScrollPane
+import javax.swing.JTable
 
 class StackEventsPanelTest {
 
@@ -370,6 +372,35 @@ class StackEventsPanelTest {
             val eventCountLabel = eventCountLabelField.get(panel) as JBLabel
 
             assertThat(eventCountLabel.text).isEqualTo("75 events loaded")
+        } finally {
+            panel.dispose()
+        }
+    }
+
+    @Test
+    fun `handles API error correctly`() {
+        val futureResult = CompletableFuture<GetStackEventsResult?>()
+        every { mockCfnClient.getStackEvents(any()) } returns futureResult
+
+        val panel = StackEventsPanel(projectRule.project, mockCoordinator, testStackArn, "test-stack")
+
+        futureResult.completeExceptionally(RuntimeException("API error"))
+
+        runInEdtAndWait {
+            PlatformTestUtil.dispatchAllEventsInIdeEventQueue()
+        }
+
+        try {
+            assertThat(panel.consoleLink.isVisible).isFalse()
+            assertThat(panel.prevButton.isEnabled).isFalse()
+            assertThat(panel.nextButton.isEnabled).isFalse()
+            assertThat(panel.pageLabel.text).isEqualTo("Page 1 of 1")
+            // Verify error message is displayed in table
+            val tableComponent = panel.component.components
+                .filterIsInstance<JScrollPane>()
+                .first().viewport.view as JTable
+            assertThat(tableComponent.getValueAt(0, 4)).asString().contains("Failed to load events:")
+            assertThat(tableComponent.getValueAt(0, 4)).asString().contains("API error")
         } finally {
             panel.dispose()
         }

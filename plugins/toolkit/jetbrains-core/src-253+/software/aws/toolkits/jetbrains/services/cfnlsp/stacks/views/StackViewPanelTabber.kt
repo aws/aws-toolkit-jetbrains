@@ -25,10 +25,10 @@ internal class StackViewPanelTabber(
     private val eventsPanel = StackEventsPanel(project, coordinator, stackArn, stackName)
 
     private val tabbedPane = JBTabbedPane().apply {
-        addTab("Overview", overviewPanel.component)
-        addTab("Resources", resourcesPanel.component)
-        addTab("Events", JBPanel<JBPanel<*>>().apply { add(JBLabel("Stack Events - Coming Soon")) })
-        addTab("Outputs", outputsPanel.component)
+        addTab("Overview", createOverviewPanel())
+        addTab("Events", createEventsPanel())
+        addTab("Resources", createResourcesPanel())
+        addTab("Outputs", createOutputsPanel())
         selectedIndex = 0
     }
 

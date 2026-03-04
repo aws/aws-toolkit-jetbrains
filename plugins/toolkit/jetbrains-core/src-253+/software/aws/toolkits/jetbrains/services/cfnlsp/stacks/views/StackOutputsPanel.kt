@@ -14,6 +14,7 @@ import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeStackPar
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.StackDetail
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.StackOutput
 import software.aws.toolkits.jetbrains.services.cfnlsp.ui.ConsoleUrlGenerator
+import software.aws.toolkits.jetbrains.services.cfnlsp.ui.IconUtils
 import javax.swing.JComponent
 
 internal class StackOutputsPanel(
@@ -33,12 +34,17 @@ internal class StackOutputsPanel(
     internal val outputCountLabel = JBLabel("0 outputs").apply {
         foreground = UIUtil.getContextHelpForeground()
     }
+    internal val consoleLink = IconUtils.createConsoleLinkIcon {
+        ConsoleUrlGenerator.generateStackOutputsUrl(stackArn)
+    }.apply {
+        isVisible = false // Start hidden until successful load
+    }
 
     val component: JComponent = StackPanelLayoutBuilder.createStackTablePanel(
         stackName,
-        { ConsoleUrlGenerator.generateStackOutputsUrl(stackArn) },
         outputTable,
-        outputCountLabel
+        outputCountLabel,
+        consoleLink
     )
 
     init {
@@ -55,8 +61,7 @@ internal class StackOutputsPanel(
             .whenComplete { result, error ->
                 ApplicationManager.getApplication().invokeLater {
                     if (error != null) {
-                        LOG.warn("Failed to load outputs for stack $stackName", error)
-                        renderError("Failed to load outputs: ${error.message}")
+                        handleError("Failed to load outputs for stack $stackName: ${error.message}")
                     } else {
                         result?.let { renderOutputs(it) } ?: renderEmpty()
                     }
@@ -66,6 +71,7 @@ internal class StackOutputsPanel(
 
     private fun renderOutputs(stack: StackDetail) {
         outputs = stack.outputs ?: emptyList()
+        consoleLink.isVisible = stack.stackId.isNotEmpty()
 
         StackPanelLayoutBuilder.updateOutputsTable(outputTable, outputs)
         updateOutputCount(outputs.size)
@@ -73,14 +79,17 @@ internal class StackOutputsPanel(
 
     private fun renderEmpty() {
         outputs = emptyList()
+        consoleLink.isVisible = false
         StackPanelLayoutBuilder.updateOutputsTable(outputTable, outputs)
         updateOutputCount(0)
     }
 
-    private fun renderError(message: String) {
+    private fun handleError(message: String) {
         outputs = emptyList()
+        consoleLink.isVisible = false
         StackPanelLayoutBuilder.updateOutputsTable(outputTable, emptyList(), message)
         updateOutputCount(0)
+        LOG.warn(message)
     }
 
     private fun updateOutputCount(count: Int) {

@@ -42,19 +42,20 @@ internal class ExpandableEventsTableModel : AbstractTableModel() {
     private var displayRows: MutableList<EventTableRow> = mutableListOf()
     val expandedGroups = mutableSetOf<String>() // Make public for renderer access
     private var hasHooks = false
-    private val columnNames = arrayOf("", "Operation", "Timestamp", "Status", "Status Reason", "Hook Invocation")
+    private val baseColumnNames = arrayOf("", "Operation ID", "Timestamp", "Status", "Status Reason")
+    private val hookColumnName = "Hook Invocation"
     private var currentPage = 0
     private val eventsPerPage = StackEventsTableComponents.EVENTS_PER_PAGE
 
-    fun setEvents(events: List<StackEvent>) {
+    fun setEvents(events: List<StackEvent>, errorMessage: String? = null) {
         allEvents = events
-        hasHooks = events.any { it.hookType != null }
+        hasHooks = false // Reset hook detection
 
         currentPage = 0 // Reset to first page
-        rebuildDisplayRows()
-        fireTableDataChanged()
+        rebuildDisplayRows(errorMessage)
 
         if (events.isEmpty()) {
+            fireTableStructureChanged()
             return
         }
 
@@ -66,18 +67,38 @@ internal class ExpandableEventsTableModel : AbstractTableModel() {
             val firstOperationId = grouped.keys.first()
             expandedGroups.add(firstOperationId)
             rebuildDisplayRows()
+        }
+
+        fireTableStructureChanged() // Use structure changed since column count may change
+    }
+
+    fun setCurrentPage(page: Int) {
+        val oldHasHooks = hasHooks
+        currentPage = page
+        rebuildDisplayRows()
+
+        // Fire structure changed if column count changed, otherwise just data changed
+        if (oldHasHooks != hasHooks) {
+            fireTableStructureChanged()
+        } else {
             fireTableDataChanged()
         }
     }
 
-    fun setCurrentPage(page: Int) {
-        currentPage = page
-        rebuildDisplayRows()
-        fireTableDataChanged()
-    }
-
-    private fun rebuildDisplayRows() {
+    private fun rebuildDisplayRows(errorMessage: String? = null) {
         displayRows.clear()
+
+        if (errorMessage != null) {
+            val errorEvent = StackEvent(
+                operationId = "",
+                resourceType = "",
+                resourceStatus = "",
+                timestamp = "",
+                resourceStatusReason = errorMessage
+            )
+            displayRows.add(EventTableRow(errorEvent, isParent = false))
+            return
+        }
 
         if (allEvents.isEmpty()) {
             return
@@ -87,6 +108,9 @@ internal class ExpandableEventsTableModel : AbstractTableModel() {
         val startIndex = currentPage * eventsPerPage
         val endIndex = minOf(startIndex + eventsPerPage, allEvents.size)
         val pageEvents = allEvents.subList(startIndex, endIndex)
+
+        // Check if current page has hooks
+        hasHooks = pageEvents.any { it.hookType != null }
 
         // Group events by Operation ID
         val grouped = pageEvents.groupBy { it.operationId ?: "No Operation" }
@@ -137,12 +161,17 @@ internal class ExpandableEventsTableModel : AbstractTableModel() {
         }
 
         rebuildDisplayRows()
-        fireTableDataChanged()
+        fireTableDataChanged() // Only data changes, not structure
     }
 
     override fun getRowCount(): Int = displayRows.count { it.isVisible }
-    override fun getColumnCount(): Int = columnNames.size
-    override fun getColumnName(column: Int): String = columnNames[column]
+    override fun getColumnCount(): Int = if (hasHooks) baseColumnNames.size + 1 else baseColumnNames.size
+    override fun getColumnName(column: Int): String =
+        if (column < baseColumnNames.size) {
+            baseColumnNames[column]
+        } else {
+            hookColumnName
+        }
 
     override fun getValueAt(rowIndex: Int, columnIndex: Int): Any {
         val visibleRows = displayRows.filter { it.isVisible }
@@ -166,10 +195,14 @@ internal class ExpandableEventsTableModel : AbstractTableModel() {
             StackEventsTableComponents.TIMESTAMP_COLUMN -> event.timestamp ?: ""
             StackEventsTableComponents.STATUS_COLUMN -> event.resourceStatus ?: ""
             StackEventsTableComponents.STATUS_REASON_COLUMN -> event.resourceStatusReason?.takeIf { it.isNotEmpty() } ?: "-"
-            StackEventsTableComponents.HOOK_COLUMN -> if (event.hookType != null) {
-                "${event.hookType} (${event.hookStatus ?: "Unknown"})"
+            baseColumnNames.size -> if (hasHooks) {
+                if (event.hookType != null) {
+                    "${event.hookType} (${event.hookStatus ?: "Unknown"})"
+                } else {
+                    "-"
+                }
             } else {
-                "-"
+                ""
             }
             else -> ""
         }
@@ -232,12 +265,12 @@ internal class EventsTableCellRenderer : DefaultTableCellRenderer() {
                 is Icon -> {
                     label.icon = value
                     label.text = null
-                    label.horizontalAlignment = JBLabel.CENTER
+                    label.horizontalAlignment = CENTER
                 }
                 is String -> {
                     label.text = value
                     label.icon = null
-                    label.horizontalAlignment = JBLabel.CENTER
+                    label.horizontalAlignment = CENTER
                 }
             }
             return label

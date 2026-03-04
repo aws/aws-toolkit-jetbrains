@@ -8,11 +8,13 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.table.JBTable
+import com.intellij.util.ui.UIUtil
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.cfnlsp.CfnClientService
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.GetStackResourcesParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.StackResourceSummary
 import software.aws.toolkits.jetbrains.services.cfnlsp.ui.ConsoleUrlGenerator
+import software.aws.toolkits.jetbrains.services.cfnlsp.ui.IconUtils
 import java.util.concurrent.CompletableFuture
 import javax.swing.JButton
 import javax.swing.JComponent
@@ -49,12 +51,20 @@ internal class StackResourcesPanel(
     internal val pageLabel = JBLabel("Page 1")
     internal val prevButton = JButton("Previous").apply { addActionListener { loadPrevPage() } }
     internal val nextButton = JButton("Next").apply { addActionListener { loadNextPage() } }
+    internal val resourceCountLabel = JBLabel("0 resources").apply {
+        foreground = UIUtil.getContextHelpForeground()
+    }
+    internal val consoleLink = IconUtils.createConsoleLinkIcon {
+        ConsoleUrlGenerator.generateStackResourcesUrl(stackArn)
+    }.apply {
+        isVisible = false // Start hidden until successful load
+    }
 
     val component: JComponent = StackPanelLayoutBuilder.createStackTablePanel(
         stackName,
-        { ConsoleUrlGenerator.generateStackResourcesUrl(stackArn) },
         resourceTable,
-        null,
+        resourceCountLabel,
+        consoleLink,
         PaginationControls(pageLabel, prevButton, nextButton)
     )
 
@@ -82,9 +92,10 @@ internal class StackResourcesPanel(
             ApplicationManager.getApplication().invokeLater {
                 isLoading = false
                 if (error != null) {
-                    LOG.warn("Failed to load stack resources", error)
+                    handleError("Failed to load resources: ${error.message}")
                 } else {
                     result?.let { response ->
+                        consoleLink.isVisible = true
                         if (tokenToUse == null) {
                             // Fresh load - replace all resources
                             allResources = response.resources
@@ -95,7 +106,9 @@ internal class StackResourcesPanel(
                         }
                         nextToken = response.nextToken
                         updateTable()
-                    } ?: LOG.warn("No result received from getStackResources")
+                    } ?: run {
+                        handleError("No stack data found")
+                    }
                 }
             }
         }.thenApply { null }
@@ -122,6 +135,10 @@ internal class StackResourcesPanel(
         pageLabel.text = "Page ${currentPage + 1}"
         prevButton.isEnabled = currentPage > 0 && !isLoading
         nextButton.isEnabled = hasMorePages() && !isLoading
+
+        // Update resource count
+        val hasMore = nextToken != null
+        resourceCountLabel.text = "${allResources.size} resource${if (allResources.size != 1) "s" else ""}${if (hasMore) " loaded" else ""}"
 
         // Update button text based on whether NEXT click will need to load more from server
         nextButton.text = if ((currentPage + 1) * resourcesPerPage >= allResources.size && nextToken != null) {
@@ -166,6 +183,23 @@ internal class StackResourcesPanel(
 
     private fun hasMorePages(): Boolean =
         (currentPage + 1) * resourcesPerPage < allResources.size || nextToken != null
+
+    private fun handleError(message: String) {
+        consoleLink.isVisible = false
+        allResources = emptyList()
+        currentPage = 0
+        nextToken = null
+
+        tableModel.rowCount = 0
+        tableModel.addRow(arrayOf(message, "", "", ""))
+
+        // Update pagination controls for error state
+        pageLabel.text = "Page 1"
+        prevButton.isEnabled = false
+        nextButton.isEnabled = false
+        resourceCountLabel.text = "0 resources"
+        LOG.warn(message)
+    }
 
     override fun dispose() {
         disposables.forEach { it.dispose() }

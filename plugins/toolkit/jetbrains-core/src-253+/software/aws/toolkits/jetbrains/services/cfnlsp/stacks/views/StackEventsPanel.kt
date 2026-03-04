@@ -16,6 +16,7 @@ import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.GetStackEventsPa
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.GetStackEventsResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.StackEvent
 import software.aws.toolkits.jetbrains.services.cfnlsp.ui.ConsoleUrlGenerator
+import software.aws.toolkits.jetbrains.services.cfnlsp.ui.IconUtils
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import java.util.concurrent.CompletableFuture
 import javax.swing.JButton
@@ -56,12 +57,17 @@ internal class StackEventsPanel(
         addActionListener { loadNextPage() }
         isEnabled = false
     }
+    internal val consoleLink = IconUtils.createConsoleLinkIcon {
+        ConsoleUrlGenerator.generateStackEventsUrl(stackArn)
+    }.apply {
+        isVisible = false // Start hidden until successful load
+    }
 
     val component: JComponent = StackPanelLayoutBuilder.createStackTablePanel(
         stackName,
-        { ConsoleUrlGenerator.generateStackEventsUrl(stackArn) },
         eventTable,
         eventCountLabel,
+        consoleLink,
         PaginationControls(pageLabel, prevButton, nextButton)
     )
 
@@ -88,7 +94,7 @@ internal class StackEventsPanel(
             .exceptionally { error: Throwable ->
                 ApplicationManager.getApplication().invokeLater {
                     isLoading = false
-                    renderError("Failed to load events: ${error.message}")
+                    handleError("Failed to load events: ${error.message}")
                 }
                 null
             }
@@ -104,7 +110,7 @@ internal class StackEventsPanel(
                 ApplicationManager.getApplication().invokeLater {
                     isLoading = false
                     if (error != null) {
-                        renderError("Failed to refresh events: ${error.message}")
+                        handleError("Failed to refresh events: ${error.message}")
                     } else {
                         result?.let { handleRefreshResult(it) }
                     }
@@ -113,10 +119,11 @@ internal class StackEventsPanel(
     }
 
     private fun handleLoadResult(result: GetStackEventsResult) {
-        if (nextToken == null) {
-            allEvents = result.events
+        consoleLink.isVisible = true
+        allEvents = if (nextToken == null) {
+            result.events
         } else {
-            allEvents = allEvents + result.events
+            allEvents + result.events
         }
         nextToken = result.nextToken
         renderEvents()
@@ -197,9 +204,10 @@ internal class StackEventsPanel(
         nextButton.isEnabled = (!isAtLastPage || hasMore) && !isLoading
     }
 
-    private fun renderError(message: String) {
+    private fun handleError(message: String) {
+        consoleLink.isVisible = false
         allEvents = emptyList()
-        StackPanelLayoutBuilder.updateEventsTable(eventTable, allEvents)
+        StackPanelLayoutBuilder.updateEventsTable(eventTable, allEvents, message)
         updateUIComponents()
         LOG.warn(message)
     }
