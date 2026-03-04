@@ -171,6 +171,17 @@ internal data class ResourceTargetDefinition(
     val afterValue: String? = null,
     @SerializedName("AttributeChangeType")
     val attributeChangeType: String? = null,
+    @SerializedName("Drift")
+    val drift: DriftInfo? = null,
+    @SerializedName("LiveResourceDrift")
+    val liveResourceDrift: DriftInfo? = null,
+)
+
+internal data class DriftInfo(
+    @SerializedName("PreviousValue")
+    val previousValue: String? = null,
+    @SerializedName("ActualValue")
+    val actualValue: String? = null,
 )
 
 internal data class DescribeChangeSetParams(

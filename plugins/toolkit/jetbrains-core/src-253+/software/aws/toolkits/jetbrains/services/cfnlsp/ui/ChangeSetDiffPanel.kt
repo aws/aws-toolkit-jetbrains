@@ -9,6 +9,7 @@ import com.intellij.diff.DiffContentFactory
 import com.intellij.diff.DiffManager
 import com.intellij.diff.requests.SimpleDiffRequest
 import com.intellij.icons.AllIcons
+import com.intellij.json.JsonFileType
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -17,6 +18,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.openapi.ui.Splitter
+import com.intellij.ui.JBColor
 import com.intellij.ui.PopupHandler
 import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBScrollPane
@@ -37,17 +39,21 @@ import java.awt.event.MouseEvent
 import javax.swing.ListSelectionModel
 import javax.swing.event.ListSelectionEvent
 import javax.swing.table.AbstractTableModel
+import javax.swing.table.DefaultTableCellRenderer
+
+private const val DRIFT_WARNING = "\u26A0\uFE0F"
 
 internal class ChangeSetDiffPanel(
     private val project: Project,
     private val stackName: String,
     private val changeSetName: String,
-    private val changes: List<StackChange>,
+    changes: List<StackChange>,
     private val enableDeploy: Boolean,
 ) : SimpleToolWindowPanel(false, true) {
 
     private val resourceChanges = changes.mapNotNull { it.resourceChange }
-    private val resourceTable = JBTable(ResourceTableModel(resourceChanges)).apply {
+    private val hasDrift = resourceChanges.any { it.hasDrift() }
+    private val resourceTable = JBTable(ResourceTableModel(resourceChanges, hasDrift)).apply {
         setSelectionMode(ListSelectionModel.SINGLE_SELECTION)
         setShowGrid(false)
         addMouseListener(object : MouseAdapter() {
@@ -60,12 +66,15 @@ internal class ChangeSetDiffPanel(
                 val row = rowAtPoint(Point(x, y))
                 if (row < 0) return
                 setRowSelectionInterval(row, row)
-                val rc = resourceChanges.getOrNull(row) ?: return
                 val menu = ActionManager.getInstance().createActionPopupMenu(
                     "ChangeSetDiffContext",
-                    DefaultActionGroup(object : AnAction("View Diff", null, AllIcons.Actions.Diff) {
-                        override fun actionPerformed(e: AnActionEvent) { showResourceDiff() }
-                    })
+                    DefaultActionGroup(
+                        object : AnAction("View Diff", null, AllIcons.Actions.Diff) {
+                            override fun actionPerformed(e: AnActionEvent) {
+                                showResourceDiff()
+                            }
+                        }
+                    )
                 )
                 menu.component.show(comp, x, y)
             }
@@ -77,6 +86,8 @@ internal class ChangeSetDiffPanel(
     private val detailPanel = JBPanel<JBPanel<*>>(BorderLayout())
 
     init {
+        if (hasDrift) applyDriftRenderer()
+
         resourceTable.selectionModel.addListSelectionListener { e: ListSelectionEvent ->
             if (!e.valueIsAdjusting) onResourceSelected()
         }
@@ -94,20 +105,34 @@ internal class ChangeSetDiffPanel(
         setContent(content)
     }
 
+    private fun applyDriftRenderer() {
+        val driftColIndex = resourceTable.columnCount - 1
+        resourceTable.columnModel.getColumn(driftColIndex).cellRenderer = WarningCellRenderer()
+    }
+
     private fun onResourceSelected() {
         if (!hasAnyDetails) return
         val row = resourceTable.selectedRow
         if (row < 0 || row >= resourceChanges.size) return
         val rc = resourceChanges[row]
         val details = rc.details
+        val hasDetailDrift = details?.any { it.target?.drift != null || it.target?.liveResourceDrift != null } == true
 
         detailPanel.removeAll()
         if (!details.isNullOrEmpty()) {
-            detailTable.model = DetailTableModel(details)
+            detailTable.model = DetailTableModel(details, hasDetailDrift)
+            if (hasDetailDrift) applyDetailDriftRenderer()
             detailPanel.add(JBScrollPane(detailTable), BorderLayout.CENTER)
         }
         detailPanel.revalidate()
         detailPanel.repaint()
+    }
+
+    private fun applyDetailDriftRenderer() {
+        val colCount = detailTable.columnCount
+        val renderer = WarningCellRenderer()
+        detailTable.columnModel.getColumn(colCount - 2).cellRenderer = renderer
+        detailTable.columnModel.getColumn(colCount - 1).cellRenderer = renderer
     }
 
     private fun showResourceDiff() {
@@ -118,13 +143,15 @@ internal class ChangeSetDiffPanel(
         val after = formatJson(rc.afterContext ?: "")
         if (before.isEmpty() && after.isEmpty()) return
 
+        val annotatedBefore = annotateDriftInJson(rc, before)
         val factory = DiffContentFactory.getInstance()
+        val title = "${rc.logicalResourceId ?: "Resource"} — $stackName"
         DiffManager.getInstance().showDiff(
             project,
             SimpleDiffRequest(
-                "${rc.logicalResourceId ?: "Resource"} — $stackName",
-                factory.create(before),
-                factory.create(after),
+                title,
+                factory.create(annotatedBefore, JsonFileType.INSTANCE),
+                factory.create(after, JsonFileType.INSTANCE),
                 "Before",
                 "After"
             )
@@ -144,19 +171,32 @@ internal class ChangeSetDiffPanel(
         "ChangeSetDiff",
         DefaultActionGroup().apply {
             if (enableDeploy) {
-                add(object : AnAction("Deploy", "Execute this change set", AllIcons.Actions.Execute) {
-                    override fun actionPerformed(e: AnActionEvent) {
-                        DeploymentWorkflow(project).deploy(stackName, changeSetName)
+                add(
+                    object : AnAction(
+                        "Execute Change Set",
+                        "Execute this change set",
+                        AllIcons.Actions.Execute,
+                    ) {
+                        override fun actionPerformed(e: AnActionEvent) {
+                            DeploymentWorkflow(project).deploy(stackName, changeSetName)
+                        }
                     }
-                })
+                )
             }
-            add(object : AnAction("Delete Change Set", "Delete this change set", AllIcons.Actions.GC) {
-                override fun actionPerformed(e: AnActionEvent) {
-                    if (Messages.showYesNoDialog(project, "Delete change set '$changeSetName'?", "Delete Change Set", null) == Messages.YES) {
-                        ChangeSetDeletionWorkflow(project).delete(stackName, changeSetName)
+            add(
+                object : AnAction(
+                    "Delete Change Set",
+                    "Delete this change set",
+                    AllIcons.Actions.GC,
+                ) {
+                    override fun actionPerformed(e: AnActionEvent) {
+                        val msg = "Delete change set '$changeSetName'?"
+                        if (Messages.showYesNoDialog(project, msg, "Delete Change Set", null) == Messages.YES) {
+                            ChangeSetDeletionWorkflow(project).delete(stackName, changeSetName)
+                        }
                     }
                 }
-            })
+            )
         },
         true
     ).apply {
@@ -176,7 +216,6 @@ internal class ChangeSetDiffPanel(
             var tabber = windowManager.getTabberByName(stackName)
 
             if (tabber == null) {
-                // Open the stack view first
                 try {
                     val stackResult = CfnClientService.getInstance(project)
                         .describeStack(DescribeStackParams(stackName)).get()
@@ -193,8 +232,63 @@ internal class ChangeSetDiffPanel(
     }
 }
 
-private class ResourceTableModel(private val resources: List<ResourceChange>) : AbstractTableModel() {
-    private val columns = arrayOf("Action", "Logical ID", "Physical ID", "Type", "Replacement")
+internal fun annotateDriftInJson(rc: ResourceChange, beforeJson: String): String {
+    val driftByPath = mutableMapOf<String, String>()
+
+    if (rc.resourceDriftStatus == "DELETED") return "// $DRIFT_WARNING Resource deleted out-of-band\n$beforeJson"
+
+    rc.details?.forEach { detail ->
+        val target = detail.target ?: return@forEach
+        val drift = target.drift ?: target.liveResourceDrift ?: return@forEach
+        val path = target.path ?: return@forEach
+        if (drift.actualValue == null) return@forEach
+        driftByPath[path] = drift.actualValue
+    }
+    if (driftByPath.isEmpty()) return beforeJson
+
+    val lines = beforeJson.lines().toMutableList()
+    for ((path, actualValue) in driftByPath) {
+        val lineIndex = findPropertyLine(lines, path)
+        if (lineIndex >= 0) {
+            lines[lineIndex] = "${lines[lineIndex]}  \u2190 $DRIFT_WARNING Drifted (Live AWS: $actualValue)"
+        }
+    }
+    return lines.joinToString("\n")
+}
+
+private fun findPropertyLine(lines: List<String>, path: String): Int {
+    val parts = path.split("/").filter { it.isNotEmpty() }
+    var currentLine = 0
+    for (part in parts) {
+        if (part.all { it.isDigit() }) continue
+        val found = (currentLine + 1 until lines.size).firstOrNull { lines[it].contains("\"$part\"") }
+        if (found == null) return -1
+        currentLine = found
+    }
+    return currentLine
+}
+
+private fun ResourceChange.hasDrift(): Boolean =
+    resourceDriftStatus != null ||
+        details?.any { it.target?.drift != null || it.target?.liveResourceDrift != null } == true
+
+internal fun ResourceChange.driftDisplay(): String {
+    if (resourceDriftStatus == "DELETED") return "$DRIFT_WARNING Deleted"
+    if (details?.any { it.target?.drift != null || it.target?.liveResourceDrift != null } == true) return "$DRIFT_WARNING Modified"
+    if (resourceDriftStatus != null && resourceDriftStatus != "IN_SYNC") return "$DRIFT_WARNING $resourceDriftStatus"
+    return "-"
+}
+
+private class ResourceTableModel(
+    private val resources: List<ResourceChange>,
+    private val showDrift: Boolean,
+) : AbstractTableModel() {
+
+    private val columns = if (showDrift) {
+        arrayOf("Action", "Logical ID", "Physical ID", "Type", "Replacement", "Drift Status")
+    } else {
+        arrayOf("Action", "Logical ID", "Physical ID", "Type", "Replacement")
+    }
 
     override fun getRowCount() = resources.size
     override fun getColumnCount() = columns.size
@@ -207,13 +301,29 @@ private class ResourceTableModel(private val resources: List<ResourceChange>) : 
             2 -> rc.physicalResourceId ?: ""
             3 -> rc.resourceType ?: ""
             4 -> rc.replacement ?: ""
+            5 -> if (showDrift) rc.driftDisplay() else ""
             else -> ""
         }
     }
 }
 
-private class DetailTableModel(private val details: List<ResourceChangeDetail>) : AbstractTableModel() {
-    private val columns = arrayOf("Attribute Change Type", "Name", "Requires Recreation", "Before Value", "After Value", "Change Source", "Causing Entity")
+private class DetailTableModel(
+    private val details: List<ResourceChangeDetail>,
+    private val showDrift: Boolean,
+) : AbstractTableModel() {
+
+    private val columns = if (showDrift) {
+        arrayOf(
+            "Attribute Change Type", "Name", "Requires Recreation",
+            "Before Value", "After Value", "Change Source", "Causing Entity",
+            "Drift: Previous", "Drift: Actual",
+        )
+    } else {
+        arrayOf(
+            "Attribute Change Type", "Name", "Requires Recreation",
+            "Before Value", "After Value", "Change Source", "Causing Entity",
+        )
+    }
 
     override fun getRowCount() = details.size
     override fun getColumnCount() = columns.size
@@ -221,6 +331,7 @@ private class DetailTableModel(private val details: List<ResourceChangeDetail>) 
     override fun getValueAt(row: Int, col: Int): Any {
         val d = details[row]
         val t = d.target
+        val drift = t?.drift ?: t?.liveResourceDrift
         return when (col) {
             0 -> t?.attributeChangeType ?: ""
             1 -> t?.name ?: t?.attribute ?: ""
@@ -229,7 +340,27 @@ private class DetailTableModel(private val details: List<ResourceChangeDetail>) 
             4 -> t?.afterValue ?: ""
             5 -> d.changeSource ?: ""
             6 -> d.causingEntity ?: ""
+            7 -> if (showDrift) drift?.previousValue ?: "-" else ""
+            8 -> if (showDrift) drift?.actualValue ?: "-" else ""
             else -> ""
         }
+    }
+}
+
+private class WarningCellRenderer : DefaultTableCellRenderer() {
+    override fun getTableCellRendererComponent(
+        table: javax.swing.JTable,
+        value: Any?,
+        isSelected: Boolean,
+        hasFocus: Boolean,
+        row: Int,
+        column: Int,
+    ): Component {
+        val comp = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column)
+        val text = value?.toString() ?: ""
+        if (text.isNotBlank() && text != "-") {
+            foreground = if (isSelected) table.selectionForeground else JBColor.YELLOW.darker()
+        }
+        return comp
     }
 }
