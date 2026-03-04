@@ -46,6 +46,17 @@ internal class StacksManager(private val project: Project) : Disposable {
         loadStacks(loadMore = false)
     }
 
+    fun reloadWithChangeSets() {
+        reload()
+        val changeSetsManager = ChangeSetsManager.getInstance(project)
+        stacks.forEach { stack ->
+            val stackName = stack.stackName ?: return@forEach
+            if (changeSetsManager.isLoaded(stackName)) {
+                changeSetsManager.refreshChangeSets(stackName)
+            }
+        }
+    }
+
     fun clear() {
         stacks = emptyList()
         nextToken = null

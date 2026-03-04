@@ -33,6 +33,12 @@ internal class ChangeSetsManager(private val project: Project) {
 
     fun isLoaded(stackName: String): Boolean = loadedStacks.contains(stackName)
 
+    fun refreshChangeSets(stackName: String) {
+        loadedStacks.remove(stackName)
+        stackChangeSets.remove(stackName)
+        fetchChangeSets(stackName)
+    }
+
     fun fetchChangeSets(stackName: String) {
         if (loadedStacks.contains(stackName)) return
 

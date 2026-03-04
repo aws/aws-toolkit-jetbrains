@@ -3,19 +3,13 @@
 
 package software.aws.toolkits.jetbrains.services.cfnlsp.explorer.actions
 
-import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import software.aws.toolkits.jetbrains.services.cfnlsp.stacks.StacksManager
-import software.aws.toolkits.resources.AwsToolkitBundle.message
 
-class RefreshStacksAction : AnAction(
-    message("cloudformation.explorer.stacks.refresh"),
-    null,
-    AllIcons.Actions.Refresh,
-) {
+class RefreshStacksAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
-        StacksManager.getInstance(project).reload()
+        StacksManager.getInstance(project).reloadWithChangeSets()
     }
 }

@@ -56,8 +56,11 @@ internal class CfnLspTestFixture(private val fixture: CodeInsightTestFixture) {
         val future = CompletableFuture<T>()
         runningServer().sendNotification { lsp ->
             block(lsp).whenComplete { result, error ->
-                if (error != null) future.completeExceptionally(error)
-                else future.complete(result)
+                if (error != null) {
+                    future.completeExceptionally(error)
+                } else {
+                    future.complete(result)
+                }
             }
         }
         return future.get(LSP_REQUEST_TIMEOUT_S, TimeUnit.SECONDS)

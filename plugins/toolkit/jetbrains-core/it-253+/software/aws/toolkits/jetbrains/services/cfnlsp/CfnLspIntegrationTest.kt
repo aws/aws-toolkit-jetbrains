@@ -34,7 +34,9 @@ class CfnLspIntegrationTest {
             if (exitCode == 0) {
                 val version = process.inputStream.bufferedReader().readText().trim()
                 version.removePrefix("v").split(".").firstOrNull()?.toIntOrNull()?.let { it >= 18 } ?: false
-            } else false
+            } else {
+                false
+            }
         } catch (_: Exception) { false }
 
         assertThat(nodeAvailable)
@@ -62,41 +64,80 @@ class CfnLspIntegrationTest {
 
     @Test
     fun `autocomplete provides resource types`() {
-        val file = lsp.openTemplate("resource-type.yaml",
-            "AWSTemplateFormatVersion: \"2010-09-09\"\nResources:\n  MyBucket:\n    Type: ")
+        val file = lsp.openTemplate(
+            "resource-type.yaml",
+            "AWSTemplateFormatVersion: \"2010-09-09\"\nResources:\n  MyBucket:\n    Type: "
+        )
         val labels = lspComplete(lsp.fileUri(file), Position(3, 10))
         assertThat(labels).anyMatch { it.startsWith("AWS::") }
     }
 
     @Test
     fun `autocomplete provides resource properties`() {
-        val file = lsp.openTemplate("resource-props.yaml",
-            "AWSTemplateFormatVersion: \"2010-09-09\"\nResources:\n  MyBucket:\n    Type: AWS::S3::Bucket\n    Properties:\n      ")
+        val file = lsp.openTemplate(
+            "resource-props.yaml",
+            "AWSTemplateFormatVersion: \"2010-09-09\"\nResources:\n  MyBucket:\n    Type: AWS::S3::Bucket\n    Properties:\n      "
+        )
         val labels = lspComplete(lsp.fileUri(file), Position(5, 6))
         assertThat(labels).anyMatch { it.contains("BucketName") }
     }
 
     @Test
     fun `hover provides documentation for resource types`() {
-        val file = lsp.openTemplate("hover-resource.yaml",
-            "AWSTemplateFormatVersion: \"2010-09-09\"\nResources:\n  MyBucket:\n    Type: AWS::S3::Bucket")
+        val file = lsp.openTemplate(
+            "hover-resource.yaml",
+            "AWSTemplateFormatVersion: \"2010-09-09\"\nResources:\n  MyBucket:\n    Type: AWS::S3::Bucket"
+        )
         val hover = lsp.request { it.textDocumentService.hover(HoverParams(TextDocumentIdentifier(lsp.fileUri(file)), Position(3, 15))) }
         assertThat(hover).isNotNull()
     }
 
     @Test
     fun `go-to-definition navigates to parameter from Ref`() {
-        val file = lsp.openTemplate("definition-param.yaml",
-            "AWSTemplateFormatVersion: \"2010-09-09\"\nParameters:\n  MyParam:\n    Type: String\nResources:\n  MyBucket:\n    Type: AWS::S3::Bucket\n    Properties:\n      BucketName: !Ref MyParam")
-        val definition = lsp.request { it.textDocumentService.definition(DefinitionParams(TextDocumentIdentifier(lsp.fileUri(file)), Position(8, 25))) }
+        val file = lsp.openTemplate(
+            "definition-param.yaml",
+            """
+                AWSTemplateFormatVersion: "2010-09-09"
+                Parameters:
+                  MyParam:
+                    Type: String
+                Resources:
+                  MyBucket:
+                    Type: AWS::S3::Bucket
+                    Properties:
+                      BucketName: !Ref MyParam
+            """.trimIndent()
+        )
+        val definition = lsp.request {
+            it.textDocumentService.definition(
+                DefinitionParams(TextDocumentIdentifier(lsp.fileUri(file)), Position(8, 25))
+            )
+        }
         assertThat(definition).isNotNull()
     }
 
     @Test
     fun `document symbols provides template outline`() {
-        val file = lsp.openTemplate("symbols.yaml",
-            "AWSTemplateFormatVersion: \"2010-09-09\"\nParameters:\n  MyParam:\n    Type: String\nResources:\n  MyBucket:\n    Type: AWS::S3::Bucket\nOutputs:\n  BucketName:\n    Value: !Ref MyBucket")
-        val symbols = lsp.request { it.textDocumentService.documentSymbol(DocumentSymbolParams(TextDocumentIdentifier(lsp.fileUri(file)))) }
+        val file = lsp.openTemplate(
+            "symbols.yaml",
+            """
+                AWSTemplateFormatVersion: "2010-09-09"
+                Parameters:
+                  MyParam:
+                    Type: String
+                Resources:
+                  MyBucket:
+                    Type: AWS::S3::Bucket
+                Outputs:
+                  BucketName:
+                    Value: !Ref MyBucket
+            """.trimIndent()
+        )
+        val symbols = lsp.request {
+            it.textDocumentService.documentSymbol(
+                DocumentSymbolParams(TextDocumentIdentifier(lsp.fileUri(file)))
+            )
+        }
         assertThat(symbols).isNotNull()
         assertThat(symbols).isNotEmpty()
     }

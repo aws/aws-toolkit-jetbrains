@@ -79,10 +79,49 @@
             <add-to-group group-id="EditorPopupMenu" anchor="last"/>
         </action>
 
+        <action id="aws.toolkit.cloudformation.changeset.view"
+                class="software.aws.toolkits.jetbrains.services.cfnlsp.explorer.actions.ViewChangeSetAction"
+                text="View Change Set"
+                icon="AllIcons.Actions.Diff"/>
+
+        <action id="aws.toolkit.cloudformation.changeset.delete"
+                class="software.aws.toolkits.jetbrains.services.cfnlsp.explorer.actions.DeleteChangeSetAction"
+                text="Delete Change Set"
+                icon="AllIcons.Actions.GC"/>
+
+        <action id="aws.toolkit.cloudformation.changeset.deploy"
+                class="software.aws.toolkits.jetbrains.services.cfnlsp.explorer.actions.DeployChangeSetAction"
+                text="Execute Change Set"
+                icon="AllIcons.Actions.Execute"/>
+
+        <action id="aws.toolkit.cloudformation.changesets.refresh"
+                class="software.aws.toolkits.jetbrains.services.cfnlsp.explorer.actions.RefreshChangeSetsAction"
+                text="Refresh Change Sets"
+                icon="AllIcons.Actions.Refresh"/>
+
+        <action id="aws.toolkit.cloudformation.rerunValidateAndDeploy"
+                class="software.aws.toolkits.jetbrains.services.cfnlsp.stacks.RerunValidateAndDeployAction"
+                text="Rerun Validate and Deploy"
+                description="Re-run the last validation with the same parameters"
+                icon="AllIcons.Actions.Restart"/>
+
         <!-- Right-click on individual Stack node -->
         <group id="aws.toolkit.cloudformation.stack.actions">
             <reference ref="aws.toolkit.cloudformation.validateAndDeploy"/>
             <reference ref="aws.toolkit.cloudformation.stack.view"/>
+        </group>
+
+        <!-- Right-click on change set node -->
+        <group id="aws.toolkit.cloudformation.changeset.actions">
+            <reference ref="aws.toolkit.cloudformation.changeset.view"/>
+            <reference ref="aws.toolkit.cloudformation.changeset.deploy"/>
+            <separator/>
+            <reference ref="aws.toolkit.cloudformation.changeset.delete"/>
+        </group>
+
+        <!-- Right-click on change sets container node -->
+        <group id="aws.toolkit.cloudformation.changesets.actions">
+            <reference ref="aws.toolkit.cloudformation.changesets.refresh"/>
         </group>
 
         <!-- Right-click on Stacks node (no more stacks to load) -->
@@ -122,6 +161,8 @@
         <!-- Toolbar above CloudFormation tree view -->
         <group id="aws.toolkit.cloudformation.toolbar">
             <reference ref="aws.toolkit.cloudformation.validateAndDeploy"/>
+            <reference ref="aws.toolkit.cloudformation.rerunValidateAndDeploy"/>
+            <separator/>
             <reference ref="aws.toolkit.cloudformation.resources.add_type"/>
             <reference ref="aws.toolkit.cloudformation.refresh_all"/>
         </group>
