@@ -33,6 +33,9 @@ internal class ViewChangeSetAction : AnAction() {
                         changeSetName = node.changeSetName,
                         changes = result.changes ?: emptyList(),
                         enableDeploy = result.status == "CREATE_COMPLETE",
+                        status = result.status,
+                        creationTime = result.creationTime,
+                        description = result.description,
                     )
                 }
             }

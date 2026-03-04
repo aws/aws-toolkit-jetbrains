@@ -36,13 +36,12 @@ internal class StackViewPanelTabber(
         get() = if (tabbedPane.tabCount > CHANGE_SET_TAB_INDEX) CHANGE_SET_TAB_INDEX else -1
 
     fun updateChangeSetTab(title: String, component: JComponent, tooltip: String? = null) {
-        val tabTitle = if (title.length > MAX_TAB_TITLE_LENGTH) title.take(MAX_TAB_TITLE_LENGTH) + "…" else title
         if (changeSetTabIndex >= 0) {
             tabbedPane.setComponentAt(CHANGE_SET_TAB_INDEX, component)
-            tabbedPane.setTitleAt(CHANGE_SET_TAB_INDEX, tabTitle)
+            tabbedPane.setTitleAt(CHANGE_SET_TAB_INDEX, title)
             tabbedPane.setToolTipTextAt(CHANGE_SET_TAB_INDEX, tooltip)
         } else {
-            tabbedPane.insertTab(tabTitle, null, component, tooltip, CHANGE_SET_TAB_INDEX)
+            tabbedPane.insertTab(title, null, component, tooltip, CHANGE_SET_TAB_INDEX)
         }
         tabbedPane.selectedIndex = CHANGE_SET_TAB_INDEX
     }
@@ -72,6 +71,5 @@ internal class StackViewPanelTabber(
 
     companion object {
         private const val CHANGE_SET_TAB_INDEX = 4
-        private const val MAX_TAB_TITLE_LENGTH = 30
     }
 }

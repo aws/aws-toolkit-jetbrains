@@ -7,7 +7,6 @@ import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
 import software.aws.toolkits.jetbrains.services.cfnlsp.CfnClientService
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.CreateValidationParams
-import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeChangeSetParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeValidationStatusResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.Identifiable
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.StackActionPhase
@@ -109,6 +108,9 @@ internal class ValidationWorkflow(
                                                         changeSetName = changeSetName,
                                                         changes = fullChanges,
                                                         enableDeploy = true,
+                                                        status = changeSetResult?.status,
+                                                        creationTime = changeSetResult?.creationTime,
+                                                        description = changeSetResult?.description,
                                                     )
                                                 }
                                             }

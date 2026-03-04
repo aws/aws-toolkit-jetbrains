@@ -20,9 +20,11 @@ import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.openapi.ui.Splitter
 import com.intellij.ui.JBColor
 import com.intellij.ui.PopupHandler
+import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.table.JBTable
+import com.intellij.util.ui.JBUI
 import software.aws.toolkits.jetbrains.services.cfnlsp.CfnClientService
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeStackParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ResourceChange
@@ -33,9 +35,11 @@ import software.aws.toolkits.jetbrains.services.cfnlsp.stacks.DeploymentWorkflow
 import software.aws.toolkits.jetbrains.services.cfnlsp.stacks.views.StackViewWindowManager
 import java.awt.BorderLayout
 import java.awt.Component
+import java.awt.Font
 import java.awt.Point
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
+import javax.swing.BoxLayout
 import javax.swing.ListSelectionModel
 import javax.swing.event.ListSelectionEvent
 import javax.swing.table.AbstractTableModel
@@ -49,6 +53,9 @@ internal class ChangeSetDiffPanel(
     private val changeSetName: String,
     changes: List<StackChange>,
     private val enableDeploy: Boolean,
+    private val status: String? = null,
+    private val creationTime: String? = null,
+    private val description: String? = null,
 ) : SimpleToolWindowPanel(false, true) {
 
     private val resourceChanges = changes.mapNotNull { it.resourceChange }
@@ -92,7 +99,9 @@ internal class ChangeSetDiffPanel(
             if (!e.valueIsAdjusting) onResourceSelected()
         }
 
-        val content = if (hasAnyDetails) {
+        val headerPanel = buildHeaderPanel()
+
+        val tableContent = if (hasAnyDetails) {
             Splitter(true, 0.55f).apply {
                 firstComponent = JBScrollPane(resourceTable)
                 secondComponent = detailPanel
@@ -101,8 +110,29 @@ internal class ChangeSetDiffPanel(
             JBScrollPane(resourceTable)
         }
 
+        val mainContent = JBPanel<JBPanel<*>>(BorderLayout()).apply {
+            add(headerPanel, BorderLayout.NORTH)
+            add(tableContent, BorderLayout.CENTER)
+        }
+
         toolbar = createToolbar()
-        setContent(content)
+        setContent(mainContent)
+    }
+
+    private fun buildHeaderPanel(): JBPanel<JBPanel<*>> = JBPanel<JBPanel<*>>().apply {
+        layout = BoxLayout(this, BoxLayout.Y_AXIS)
+        border = JBUI.Borders.empty(6, 8)
+
+        val parts = buildList {
+            add(changeSetName)
+            status?.let { add("Status: $it") }
+            creationTime?.let { add("Created: $it") }
+            description?.let { add(it) }
+        }
+        add(JBLabel(parts.joinToString("  |  ")).apply {
+            foreground = JBColor.GRAY
+        })
+        add(javax.swing.JSeparator().apply { border = JBUI.Borders.emptyTop(4) })
     }
 
     private fun applyDriftRenderer() {
@@ -116,12 +146,17 @@ internal class ChangeSetDiffPanel(
         if (row < 0 || row >= resourceChanges.size) return
         val rc = resourceChanges[row]
         val details = rc.details
-        val hasDetailDrift = details?.any { it.target?.drift != null || it.target?.liveResourceDrift != null } == true
 
         detailPanel.removeAll()
         if (!details.isNullOrEmpty()) {
+            val hasDetailDrift = details.any { it.target?.drift != null || it.target?.liveResourceDrift != null }
             detailTable.model = DetailTableModel(details, hasDetailDrift)
             if (hasDetailDrift) applyDetailDriftRenderer()
+            val title = JBLabel("Property-level changes").apply {
+                font = font.deriveFont(Font.BOLD)
+                border = JBUI.Borders.empty(4, 6)
+            }
+            detailPanel.add(title, BorderLayout.NORTH)
             detailPanel.add(JBScrollPane(detailTable), BorderLayout.CENTER)
         }
         detailPanel.revalidate()
@@ -167,6 +202,65 @@ internal class ChangeSetDiffPanel(
         }
     }
 
+    private fun showAllResourcesDiff() {
+        val beforeData = mutableMapOf<String, Any>()
+        val afterData = mutableMapOf<String, Any>()
+
+        for (rc in resourceChanges) {
+            val id = rc.logicalResourceId ?: continue
+
+            if (rc.action != "Add" || rc.resourceDriftStatus == "DELETED") {
+                beforeData[id] = parseJsonOrEmpty(rc.beforeContext)
+            }
+            if (rc.action != "Remove") {
+                afterData[id] = parseJsonOrEmpty(rc.afterContext)
+            }
+
+            if (rc.beforeContext == null && rc.afterContext == null) {
+                rc.details?.forEach { detail ->
+                    val target = detail.target ?: return@forEach
+                    val name = target.name ?: return@forEach
+                    if (rc.action != "Add") {
+                        @Suppress("UNCHECKED_CAST")
+                        (beforeData.getOrPut(id) { mutableMapOf<String, Any>() } as MutableMap<String, Any>)[name] =
+                            target.beforeValue ?: "<UnknownBefore>"
+                    }
+                    if (rc.action != "Remove") {
+                        @Suppress("UNCHECKED_CAST")
+                        (afterData.getOrPut(id) { mutableMapOf<String, Any>() } as MutableMap<String, Any>)[name] =
+                            target.afterValue ?: "<UnknownAfter>"
+                    }
+                }
+            }
+        }
+
+        val gson = GsonBuilder().setPrettyPrinting().create()
+        val beforeJson = gson.toJson(beforeData)
+        val afterJson = gson.toJson(afterData)
+
+        val annotatedBefore = annotateDriftInJsonAll(resourceChanges, beforeJson)
+        val factory = DiffContentFactory.getInstance()
+        DiffManager.getInstance().showDiff(
+            project,
+            SimpleDiffRequest(
+                "$stackName: Before \u2194 After",
+                factory.create(annotatedBefore, JsonFileType.INSTANCE),
+                factory.create(afterJson, JsonFileType.INSTANCE),
+                "Before",
+                "After"
+            )
+        )
+    }
+
+    private fun parseJsonOrEmpty(raw: String?): Any {
+        if (raw.isNullOrBlank()) return emptyMap<String, Any>()
+        return try {
+            GsonBuilder().create().fromJson(raw, Map::class.java) ?: emptyMap<String, Any>()
+        } catch (_: Exception) {
+            emptyMap<String, Any>()
+        }
+    }
+
     private fun createToolbar() = ActionManager.getInstance().createActionToolbar(
         "ChangeSetDiff",
         DefaultActionGroup().apply {
@@ -183,6 +277,17 @@ internal class ChangeSetDiffPanel(
                     }
                 )
             }
+            add(
+                object : AnAction(
+                    "View Diff",
+                    "View side-by-side diff of all changes",
+                    AllIcons.Actions.Diff,
+                ) {
+                    override fun actionPerformed(e: AnActionEvent) {
+                        showAllResourcesDiff()
+                    }
+                }
+            )
             add(
                 object : AnAction(
                     "Delete Change Set",
@@ -210,8 +315,14 @@ internal class ChangeSetDiffPanel(
             changeSetName: String,
             changes: List<StackChange>,
             enableDeploy: Boolean,
+            status: String? = null,
+            creationTime: String? = null,
+            description: String? = null,
         ) {
-            val panel = ChangeSetDiffPanel(project, stackName, changeSetName, changes, enableDeploy)
+            val panel = ChangeSetDiffPanel(
+                project, stackName, changeSetName, changes, enableDeploy,
+                status, creationTime, description,
+            )
             val windowManager = StackViewWindowManager.getInstance(project)
             var tabber = windowManager.getTabberByName(stackName)
 
@@ -227,7 +338,7 @@ internal class ChangeSetDiffPanel(
                 }
             }
 
-            tabber?.updateChangeSetTab("Change set: $changeSetName", panel, tooltip = changeSetName)
+            tabber?.updateChangeSetTab("Change set", panel, tooltip = changeSetName)
         }
     }
 }
@@ -256,9 +367,36 @@ internal fun annotateDriftInJson(rc: ResourceChange, beforeJson: String): String
     return lines.joinToString("\n")
 }
 
-private fun findPropertyLine(lines: List<String>, path: String): Int {
+private fun annotateDriftInJsonAll(resourceChanges: List<ResourceChange>, beforeJson: String): String {
+    val lines = beforeJson.lines().toMutableList()
+    for (rc in resourceChanges) {
+        rc.details?.forEach { detail ->
+            val target = detail.target ?: return@forEach
+            val drift = target.drift ?: target.liveResourceDrift ?: return@forEach
+            val path = target.path ?: return@forEach
+            if (drift.actualValue == null) return@forEach
+
+            val id = rc.logicalResourceId ?: return@forEach
+            val resourceLine = lines.indexOfFirst { it.contains("\"$id\"") }
+            if (resourceLine < 0) return@forEach
+
+            if (rc.resourceDriftStatus == "DELETED") {
+                lines[resourceLine] = "${lines[resourceLine]}  \u2190 $DRIFT_WARNING Resource deleted out-of-band"
+                return@forEach
+            }
+
+            val lineIndex = findPropertyLine(lines, path, startFrom = resourceLine)
+            if (lineIndex >= 0) {
+                lines[lineIndex] = "${lines[lineIndex]}  \u2190 $DRIFT_WARNING Drifted (Live AWS: ${drift.actualValue})"
+            }
+        }
+    }
+    return lines.joinToString("\n")
+}
+
+private fun findPropertyLine(lines: List<String>, path: String, startFrom: Int = 0): Int {
     val parts = path.split("/").filter { it.isNotEmpty() }
-    var currentLine = 0
+    var currentLine = startFrom
     for (part in parts) {
         if (part.all { it.isDigit() }) continue
         val found = (currentLine + 1 until lines.size).firstOrNull { lines[it].contains("\"$part\"") }

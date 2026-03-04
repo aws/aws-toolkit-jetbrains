@@ -107,6 +107,9 @@ internal class ChangeSetNode(
                             changeSetName = changeSetName,
                             changes = result.changes ?: emptyList(),
                             enableDeploy = result.status == "CREATE_COMPLETE",
+                            status = result.status,
+                            creationTime = result.creationTime,
+                            description = result.description,
                         )
                     }
                 }
