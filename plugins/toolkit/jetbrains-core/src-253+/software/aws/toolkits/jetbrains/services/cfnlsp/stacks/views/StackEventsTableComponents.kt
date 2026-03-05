@@ -22,7 +22,6 @@ internal object StackEventsTableComponents {
     const val TIMESTAMP_COLUMN = 2
     const val STATUS_COLUMN = 3
     const val STATUS_REASON_COLUMN = 4
-    const val HOOK_COLUMN = 5
 
     // Pagination constants
     const val EVENTS_PER_PAGE = 50
