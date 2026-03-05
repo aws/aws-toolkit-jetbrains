@@ -14,8 +14,8 @@ import javax.swing.JPanel
 
 internal class StackViewPanelTabber(
     project: Project,
-    private val stackName: String,
-    private val stackArn: String, // Use ARN as primary identifier
+    internal val stackName: String,
+    private val stackArn: String,
 ) : Disposable {
 
     private val coordinator = StackViewCoordinator.getInstance(project)
@@ -25,45 +25,34 @@ internal class StackViewPanelTabber(
     private val outputsPanel = StackOutputsPanel(project, coordinator, stackArn, stackName)
 
     private val tabbedPane = JBTabbedPane().apply {
-        addTab("Overview", createOverviewPanel())
-        addTab("Resources", createResourcesPanel())
-        addTab("Events", createEventsPanel())
-        addTab("Outputs", createOutputsPanel())
+        addTab("Overview", overviewPanel.component)
+        addTab("Resources", resourcesPanel.component)
+        addTab("Events", JBPanel<JBPanel<*>>().apply { add(JBLabel("Stack Events - Coming Soon")) })
+        addTab("Outputs", outputsPanel.component)
         selectedIndex = 0
     }
 
-    // Used for future change set functionality
-    fun addTab(title: String, component: JComponent, index: Int? = null) {
-        if (index != null) {
-            tabbedPane.insertTab(title, null, component, null, index)
+    private val changeSetTabIndex: Int
+        get() = if (tabbedPane.tabCount > CHANGE_SET_TAB_INDEX) CHANGE_SET_TAB_INDEX else -1
+
+    fun updateChangeSetTab(title: String, component: JComponent, tooltip: String? = null) {
+        if (changeSetTabIndex >= 0) {
+            tabbedPane.setComponentAt(CHANGE_SET_TAB_INDEX, component)
+            tabbedPane.setTitleAt(CHANGE_SET_TAB_INDEX, title)
+            tabbedPane.setToolTipTextAt(CHANGE_SET_TAB_INDEX, tooltip)
         } else {
-            tabbedPane.addTab(title, component)
+            tabbedPane.insertTab(title, null, component, tooltip, CHANGE_SET_TAB_INDEX)
         }
+        tabbedPane.selectedIndex = CHANGE_SET_TAB_INDEX
     }
 
-    // Used for future change set functionality
-    fun removeTab(title: String) {
-        for (i in 0 until tabbedPane.tabCount) {
-            if (tabbedPane.getTitleAt(i) == title) {
-                tabbedPane.removeTabAt(i)
-                break
-            }
-        }
+    fun removeChangeSetTab() {
+        if (changeSetTabIndex >= 0) tabbedPane.removeTabAt(CHANGE_SET_TAB_INDEX)
     }
 
     private val mainPanel = JBPanel<JBPanel<*>>(BorderLayout()).apply {
         add(tabbedPane, BorderLayout.CENTER)
     }
-
-    private fun createOverviewPanel(): JComponent = overviewPanel.component
-
-    private fun createResourcesPanel(): JComponent = resourcesPanel.component
-
-    private fun createEventsPanel(): JPanel = JBPanel<JBPanel<*>>().apply {
-        add(JBLabel("Stack Events - Coming Soon"))
-    }
-
-    private fun createOutputsPanel(): JComponent = outputsPanel.component
 
     fun start() {
         coordinator.setStack(stackArn, stackName)
@@ -78,5 +67,9 @@ internal class StackViewPanelTabber(
         resourcesPanel.dispose()
         outputsPanel.dispose()
         coordinator.removeStack(stackArn)
+    }
+
+    companion object {
+        private const val CHANGE_SET_TAB_INDEX = 4
     }
 }

@@ -14,13 +14,23 @@ import com.intellij.platform.lsp.api.LspServerManager
 import org.eclipse.lsp4j.DidChangeConfigurationParams
 import org.eclipse.lsp4j.DidOpenTextDocumentParams
 import org.eclipse.lsp4j.TextDocumentItem
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.CreateDeploymentParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.CreateStackActionResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.CreateValidationParams
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DeleteChangeSetParams
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeChangeSetParams
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeChangeSetResult
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeDeletionStatusResult
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeDeploymentStatusResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeStackParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeStackResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeValidationStatusResult
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.GetCapabilitiesResult
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.GetParametersResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.GetStackActionStatusResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.GetStackResourcesParams
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.GetTemplateArtifactsResult
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.GetTemplateResourcesResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.Identifiable
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ListChangeSetsParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ListChangeSetsResult
@@ -68,6 +78,42 @@ internal class CfnClientService(private val project: Project) {
     fun describeValidationStatus(params: Identifiable): CompletableFuture<DescribeValidationStatusResult?> =
         sendRequest { it.describeValidationStatus(params) }
 
+    fun describeChangeSet(params: DescribeChangeSetParams): CompletableFuture<DescribeChangeSetResult?> =
+        sendRequest { it.describeChangeSet(params) }
+
+    fun deleteChangeSet(params: DeleteChangeSetParams): CompletableFuture<CreateStackActionResult?> =
+        sendRequest { it.deleteChangeSet(params) }
+
+    fun getChangeSetDeletionStatus(params: Identifiable): CompletableFuture<GetStackActionStatusResult?> =
+        sendRequest { it.getChangeSetDeletionStatus(params) }
+
+    fun describeChangeSetDeletionStatus(params: Identifiable): CompletableFuture<DescribeDeletionStatusResult?> =
+        sendRequest { it.describeChangeSetDeletionStatus(params) }
+
+    fun createDeployment(params: CreateDeploymentParams): CompletableFuture<CreateStackActionResult?> =
+        sendRequest { it.createDeployment(params) }
+
+    fun getDeploymentStatus(params: Identifiable): CompletableFuture<GetStackActionStatusResult?> =
+        sendRequest { it.getDeploymentStatus(params) }
+
+    fun describeDeploymentStatus(params: Identifiable): CompletableFuture<DescribeDeploymentStatusResult?> =
+        sendRequest { it.describeDeploymentStatus(params) }
+
+    fun getParameters(uri: String): CompletableFuture<GetParametersResult?> =
+        sendRequest { it.getParameters(uri) }
+
+    fun getCapabilities(uri: String): CompletableFuture<GetCapabilitiesResult?> =
+        sendRequest { it.getCapabilities(uri) }
+
+    fun getTemplateResources(uri: String): CompletableFuture<GetTemplateResourcesResult?> =
+        sendRequest { it.getTemplateResources(uri) }
+
+    fun getTemplateArtifacts(uri: String): CompletableFuture<GetTemplateArtifactsResult?> =
+        sendRequest { it.getTemplateArtifacts(uri) }
+
+    fun describeStack(params: DescribeStackParams): CompletableFuture<DescribeStackResult?> =
+        sendRequest { it.describeStack(params) }
+
     fun listResourceTypes(): CompletableFuture<ResourceTypesResult?> =
         sendRequest { it.listResourceTypes() }
 
@@ -105,8 +151,6 @@ internal class CfnClientService(private val project: Project) {
             )
         }
     }
-    fun describeStack(params: DescribeStackParams): CompletableFuture<DescribeStackResult?> =
-        sendRequest { it.describeStack(params) }
 
     fun notifyConfigurationChanged() {
         lspServerProvider()?.sendNotification { lsp ->
@@ -114,11 +158,6 @@ internal class CfnClientService(private val project: Project) {
         }
     }
 
-    /**
-     * Sends a request to the LSP server and returns a future with the result.
-     * Uses sendNotification to safely access the server instance, then calls the
-     * protocol method which returns its own CompletableFuture.
-     */
     private fun <T> sendRequest(request: (CfnLspServerProtocol) -> CompletableFuture<T>): CompletableFuture<T?> {
         val future = CompletableFuture<T?>()
         val server = lspServerProvider()
