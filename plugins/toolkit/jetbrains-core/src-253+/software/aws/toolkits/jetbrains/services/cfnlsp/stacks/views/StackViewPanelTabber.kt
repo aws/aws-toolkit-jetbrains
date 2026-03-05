@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.services.cfnlsp.stacks.views
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
-import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBTabbedPane
 import java.awt.BorderLayout
@@ -23,12 +22,13 @@ internal class StackViewPanelTabber(
     private val overviewPanel = StackOverviewPanel(project, coordinator, stackArn, stackName)
     private val resourcesPanel = StackResourcesPanel(project, coordinator, stackArn, stackName)
     private val outputsPanel = StackOutputsPanel(project, coordinator, stackArn, stackName)
+    private val eventsPanel = StackEventsPanel(project, coordinator, stackArn, stackName)
 
     private val tabbedPane = JBTabbedPane().apply {
-        addTab("Overview", overviewPanel.component)
-        addTab("Resources", resourcesPanel.component)
-        addTab("Events", JBPanel<JBPanel<*>>().apply { add(JBLabel("Stack Events - Coming Soon")) })
-        addTab("Outputs", outputsPanel.component)
+        addTab("Overview", createOverviewPanel())
+        addTab("Events", createEventsPanel())
+        addTab("Resources", createResourcesPanel())
+        addTab("Outputs", createOutputsPanel())
         selectedIndex = 0
     }
 
@@ -54,6 +54,14 @@ internal class StackViewPanelTabber(
         add(tabbedPane, BorderLayout.CENTER)
     }
 
+    private fun createOverviewPanel(): JComponent = overviewPanel.component
+
+    private fun createResourcesPanel(): JComponent = resourcesPanel.component
+
+    private fun createEventsPanel(): JComponent = eventsPanel.component
+
+    private fun createOutputsPanel(): JComponent = outputsPanel.component
+
     fun start() {
         coordinator.setStack(stackArn, stackName)
         poller.setViewVisible(true)
@@ -66,6 +74,7 @@ internal class StackViewPanelTabber(
         overviewPanel.dispose()
         resourcesPanel.dispose()
         outputsPanel.dispose()
+        eventsPanel.dispose()
         coordinator.removeStack(stackArn)
     }
 
