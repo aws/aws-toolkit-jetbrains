@@ -20,6 +20,8 @@ import software.aws.toolkits.jetbrains.services.cfnlsp.CfnClientService
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ListStackResourcesResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.StackResourceSummary
 import java.util.concurrent.CompletableFuture
+import javax.swing.JScrollPane
+import javax.swing.JTable
 
 class StackResourcesPanelTest {
 
@@ -80,6 +82,8 @@ class StackResourcesPanelTest {
 
         try {
             assertThat(panel.component).isNotNull()
+            assertThat(panel.consoleLink.isVisible).isTrue()
+            assertThat(panel.resourceCountLabel.text).isEqualTo("2 resources")
             // Resources should be loaded and displayed in the table
         } finally {
             panel.dispose()
@@ -104,6 +108,7 @@ class StackResourcesPanelTest {
         try {
             assertThat(panel.nextButton.isEnabled).isTrue()
             assertThat(panel.nextButton.text).isEqualTo("Next") // First page shows "Next", not "Load More"
+            assertThat(panel.resourceCountLabel.text).isEqualTo("100 resources loaded")
         } finally {
             panel.dispose()
         }
@@ -127,6 +132,7 @@ class StackResourcesPanelTest {
         try {
             assertThat(panel.nextButton.isEnabled).isTrue()
             assertThat(panel.nextButton.text).isEqualTo("Load More") // Exactly 50 resources + nextToken = "Load More"
+            assertThat(panel.resourceCountLabel.text).isEqualTo("50 resources loaded")
         } finally {
             panel.dispose()
         }
@@ -243,6 +249,36 @@ class StackResourcesPanelTest {
 
         try {
             verify { mockCfnClient.getStackResources(match { it.nextToken == "token1" }) }
+        } finally {
+            panel.dispose()
+        }
+    }
+
+    @Test
+    fun `handles API error correctly`() {
+        val futureResult = CompletableFuture<ListStackResourcesResult?>()
+        every { mockCfnClient.getStackResources(any()) } returns futureResult
+
+        val panel = StackResourcesPanel(projectRule.project, mockCoordinator, testStackArn, "test-stack")
+
+        futureResult.completeExceptionally(RuntimeException("API error"))
+
+        runInEdtAndWait {
+            PlatformTestUtil.dispatchAllEventsInIdeEventQueue()
+        }
+
+        try {
+            assertThat(panel.consoleLink.isVisible).isFalse()
+            assertThat(panel.prevButton.isEnabled).isFalse()
+            assertThat(panel.nextButton.isEnabled).isFalse()
+            assertThat(panel.pageLabel.text).isEqualTo("Page 1")
+            assertThat(panel.resourceCountLabel.text).isEqualTo("0 resources")
+            // Verify error message is displayed in table
+            val tableModel = panel.component.components
+                .filterIsInstance<JScrollPane>()
+                .first().viewport.view as JTable
+            assertThat(tableModel.getValueAt(0, 0)).asString().contains("Failed to load resources:")
+            assertThat(tableModel.getValueAt(0, 0)).asString().contains("API error")
         } finally {
             panel.dispose()
         }

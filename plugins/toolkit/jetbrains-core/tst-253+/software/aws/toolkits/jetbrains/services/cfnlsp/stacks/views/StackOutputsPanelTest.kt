@@ -204,7 +204,7 @@ class StackOutputsPanelTest {
 
         assertThat(panel.outputCountLabel.text).isEqualTo("0 outputs")
         assertThat(panel.consoleLink.isVisible).isFalse()
-        assertThat(panel.outputTable.getValueAt(0, 0)).asString().contains("Failed to load outputs:")
+        assertThat(panel.outputTable.getValueAt(0, 0)).asString().contains("Failed to load outputs for stack error-stack")
         assertThat(panel.outputTable.getValueAt(0, 0)).asString().contains("Test error")
     }
 
@@ -250,7 +250,7 @@ class StackOutputsPanelTest {
         }
 
         assertThat(panel.outputCountLabel.text).isEqualTo("0 outputs")
-        assertThat(panel.consoleLink.isVisible).isTrue()
+        assertThat(panel.consoleLink.isVisible).isTrue() // as long as an error isn't thrown we should show console link
         assertThat(panel.outputTable.rowCount).isEqualTo(1)
         assertThat(panel.outputTable.getValueAt(0, 0)).isEqualTo("No outputs found")
     }
