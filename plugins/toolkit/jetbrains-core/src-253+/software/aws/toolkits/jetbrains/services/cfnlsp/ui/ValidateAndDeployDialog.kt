@@ -18,6 +18,7 @@ import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.dsl.builder.Align
+import com.intellij.ui.dsl.builder.AlignX
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.table.JBTable
 import com.intellij.util.ui.JBUI
@@ -207,6 +208,11 @@ private class ConfigurationStep(
             selectedFile?.let { addFileToDropdown(it.path) }
         }
         toolTipText = "Browse for CloudFormation template"
+        margin = JBUI.emptyInsets()
+        val iconSize = icon.iconWidth + 24
+        preferredSize = JBUI.size(iconSize, preferredSize.height)
+        minimumSize = JBUI.size(iconSize, minimumSize.height)
+        maximumSize = JBUI.size(iconSize, maximumSize.height)
     }
 
     private val stackNameField = JBTextField().apply {
@@ -319,8 +325,8 @@ private class ConfigurationStep(
     private val component = panel {
         group("Template & Stack") {
             row(message("cloudformation.deploy.dialog.template.label")) {
-                cell(templateDropdown).align(Align.FILL)
-                cell(browseButton)
+                cell(templateDropdown).align(Align.FILL).resizableColumn()
+                cell(browseButton).align(AlignX.LEFT)
             }
             row(message("cloudformation.deploy.dialog.stack_name.label")) {
                 cell(stackNameField).align(Align.FILL)

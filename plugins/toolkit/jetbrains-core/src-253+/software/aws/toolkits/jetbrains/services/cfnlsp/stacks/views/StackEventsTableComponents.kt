@@ -230,7 +230,7 @@ internal class OperationCellRenderer : DefaultTableCellRenderer() {
 
         if (tableRow?.isParent == true) {
             val operationId = tableRow.event.operationId ?: ""
-            text = "<html><a href=\"#\">$operationId</a> <span style=\"color:gray;\">(${tableRow.childCount} events)</span></html>"
+            text = "<html><a href=\"#\">$operationId</a></html>"
             font = font.deriveFont(Font.BOLD)
 
             // Remove click handler since table handles it
