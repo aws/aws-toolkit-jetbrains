@@ -27,45 +27,6 @@ object IdeVersions {
 
     private val ideProfiles = listOf(
         Profile(
-            name = "2024.3",
-            community = ProductProfile(
-                sdkVersion = "2024.3",
-                bundledPlugins = commonPlugins + listOf(
-                    "com.intellij.java",
-                    "com.intellij.gradle",
-                    "org.jetbrains.idea.maven",
-                ),
-                marketplacePlugins = listOf(
-                    "org.toml.lang:243.21565.122",
-                    "PythonCore:243.21565.211",
-                    "Docker:243.21565.204",
-                    "com.intellij.modules.json:243.26574.91"
-                )
-            ),
-            ultimate = ProductProfile(
-                sdkVersion = "2024.3",
-                bundledPlugins = commonPlugins + listOf(
-                    "JavaScript",
-                    "JavaScriptDebugger",
-                    "com.intellij.database",
-                    "com.jetbrains.codeWithMe",
-                ),
-                marketplacePlugins = listOf(
-                    "org.toml.lang:243.21565.122",
-                    "Pythonid:243.21565.211",
-                    "org.jetbrains.plugins.go:243.21565.211",
-                    "com.intellij.modules.json:243.26574.91"
-                )
-            ),
-            rider = RiderProfile(
-                sdkVersion = "2024.3",
-                bundledPlugins = commonPlugins,
-                netFrameworkTarget = "net472",
-                rdGenVersion = "2024.3.0",
-                nugetVersion = " 2024.3.0"
-            )
-        ),
-        Profile(
             name = "2025.1",
             community = ProductProfile(
                 sdkVersion = "2025.1",
@@ -109,10 +70,6 @@ object IdeVersions {
         ),
         Profile(
             name = "2025.2",
-            gateway = ProductProfile(
-                sdkVersion = "2025.2",
-                bundledPlugins = listOf("org.jetbrains.plugins.terminal")
-            ),
             community = ProductProfile(
                 sdkVersion = "2025.2",
                 bundledPlugins = commonPlugins + listOf(
