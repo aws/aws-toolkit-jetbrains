@@ -5,8 +5,8 @@ package software.aws.toolkits.jetbrains.services.cfnlsp
 
 import org.eclipse.lsp4j.jsonrpc.services.JsonRequest
 import org.eclipse.lsp4j.services.LanguageServer
-import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.CreateDeploymentParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ClearStackEventsParams
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.CreateDeploymentParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.CreateStackActionResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.CreateValidationParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DeleteChangeSetParams
