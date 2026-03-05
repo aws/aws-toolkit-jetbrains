@@ -106,3 +106,57 @@ internal data class ListStackResourcesResult(
     val resources: List<StackResourceSummary>,
     val nextToken: String? = null,
 )
+
+// Stack Events Protocol
+internal data class GetStackEventsParams(
+    val stackName: String,
+    val nextToken: String? = null,
+    val refresh: Boolean? = null,
+)
+
+internal data class GetStackEventsResult(
+    val events: List<StackEvent>,
+    val nextToken: String? = null,
+    val gapDetected: Boolean? = null,
+)
+
+internal data class StackEvent(
+    @SerializedName("StackId")
+    val stackId: String? = null,
+    @SerializedName("EventId")
+    val eventId: String? = null,
+    @SerializedName("StackName")
+    val stackName: String? = null,
+    @SerializedName("LogicalResourceId")
+    val logicalResourceId: String? = null,
+    @SerializedName("PhysicalResourceId")
+    val physicalResourceId: String? = null,
+    @SerializedName("ResourceType")
+    val resourceType: String? = null,
+    @SerializedName("Timestamp")
+    val timestamp: String? = null,
+    @SerializedName("ResourceStatus")
+    val resourceStatus: String? = null,
+    @SerializedName("ResourceStatusReason")
+    val resourceStatusReason: String? = null,
+    @SerializedName("ResourceProperties")
+    val resourceProperties: String? = null,
+    @SerializedName("ClientRequestToken")
+    val clientRequestToken: String? = null,
+    @SerializedName("OperationId")
+    val operationId: String? = null,
+    @SerializedName("HookType")
+    val hookType: String? = null,
+    @SerializedName("HookStatus")
+    val hookStatus: String? = null,
+    @SerializedName("HookStatusReason")
+    val hookStatusReason: String? = null,
+    @SerializedName("HookInvocationPoint")
+    val hookInvocationPoint: String? = null,
+    @SerializedName("HookFailureMode")
+    val hookFailureMode: String? = null,
+)
+
+internal data class ClearStackEventsParams(
+    val stackName: String,
+)
