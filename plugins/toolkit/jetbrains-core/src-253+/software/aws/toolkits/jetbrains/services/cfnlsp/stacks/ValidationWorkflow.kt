@@ -37,6 +37,8 @@ internal class ValidationWorkflow(
 ) {
     fun validate(params: CreateValidationParams): CompletableFuture<ValidationResult> {
         LastValidationService.getInstance(project).lastParams = params
+        val statusHandle = CfnOperationStatusService.getInstance(project)
+            .acquire(params.stackName, OperationType.VALIDATION)
 
         notifyInfo(
             title = message("cloudformation.validation.title"),
@@ -51,11 +53,13 @@ internal class ValidationWorkflow(
                     content = message("cloudformation.validation.failed", params.stackName, "Failed to start validation"),
                     project = project
                 )
+                statusHandle.update(StackActionPhase.VALIDATION_FAILED)
+                statusHandle.release()
                 CompletableFuture.completedFuture(ValidationResult.Failed("Failed to start validation"))
             } else {
                 StacksManager.getInstance(project).reload()
                 ChangeSetsManager.getInstance(project).refreshChangeSets(params.stackName)
-                pollForCompletion(result.id, result.changeSetName, params.stackName)
+                pollForCompletion(result.id, result.changeSetName, params.stackName, statusHandle)
             }
         }.exceptionally { error ->
             notifyError(
@@ -63,6 +67,8 @@ internal class ValidationWorkflow(
                 content = message("cloudformation.validation.failed", params.stackName, error.cause?.message ?: error.message ?: "Unknown error"),
                 project = project
             )
+            statusHandle.update(StackActionPhase.VALIDATION_FAILED)
+            statusHandle.release()
             ValidationResult.Failed(error.message)
         }
     }
@@ -71,8 +77,17 @@ internal class ValidationWorkflow(
         id: String,
         changeSetName: String,
         stackName: String,
+        statusHandle: StatusBarHandle,
     ): CompletableFuture<ValidationResult> {
         val future = CompletableFuture<ValidationResult>()
+        future.whenComplete { result, _ ->
+            val phase = when (result) {
+                is ValidationResult.Success -> StackActionPhase.VALIDATION_COMPLETE
+                else -> StackActionPhase.VALIDATION_FAILED
+            }
+            statusHandle.update(phase)
+            statusHandle.release()
+        }
         val scheduler = Executors.newSingleThreadScheduledExecutor()
 
         scheduler.scheduleWithFixedDelay(

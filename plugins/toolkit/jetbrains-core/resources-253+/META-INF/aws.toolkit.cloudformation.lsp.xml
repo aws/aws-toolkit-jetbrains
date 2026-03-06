@@ -167,4 +167,10 @@
             <reference ref="aws.toolkit.cloudformation.refresh_all"/>
         </group>
     </actions>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <statusBarWidgetFactory
+            id="aws.toolkit.cloudformation.operation.status"
+            implementation="software.aws.toolkits.jetbrains.services.cfnlsp.stacks.CfnStatusBarWidgetFactory"/>
+    </extensions>
 </idea-plugin>
