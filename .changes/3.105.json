@@ -1,0 +1,8 @@
+{
+  "date" : "2026-03-06",
+  "version" : "3.105",
+  "entries" : [ {
+    "type" : "removal",
+    "description" : "Removed support for 2024.3.x IDEs and Gateway 2025.2"
+  } ]
+}
