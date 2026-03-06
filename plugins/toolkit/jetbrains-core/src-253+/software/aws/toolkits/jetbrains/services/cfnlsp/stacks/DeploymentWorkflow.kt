@@ -63,14 +63,25 @@ internal class DeploymentWorkflow(
     fun deploy(stackName: String, changeSetName: String): CompletableFuture<PollResult<Boolean>> {
         this.stackName = stackName
         val id = UUID.randomUUID().toString()
+        val statusHandle = CfnOperationStatusService.getInstance(project)
+            .acquire(stackName, OperationType.DEPLOYMENT, changeSetName)
 
         return clientService.createDeployment(CreateDeploymentParams(id, changeSetName, stackName)).thenCompose { result ->
             if (result == null) {
                 notifyError(operationTitle, message("cloudformation.deployment.failed", stackName, "Failed to start deployment"), project = project)
+                statusHandle.update(StackActionPhase.DEPLOYMENT_FAILED)
+                statusHandle.release()
                 CompletableFuture.completedFuture(PollResult.Failed("Failed to start deployment"))
             } else {
                 notifyInfo(operationTitle, message("cloudformation.deployment.started", stackName), project = project)
-                poll(id)
+                poll<Boolean>(id).whenComplete { pollResult, _ ->
+                    val phase = when (pollResult) {
+                        is PollResult.Success -> StackActionPhase.DEPLOYMENT_COMPLETE
+                        else -> StackActionPhase.DEPLOYMENT_FAILED
+                    }
+                    statusHandle.update(phase)
+                    statusHandle.release()
+                }
             }
         }
     }
