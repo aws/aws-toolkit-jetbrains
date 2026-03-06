@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.cfnlsp.server
 
 import com.intellij.execution.configurations.GeneralCommandLine
+import com.intellij.ide.BrowserUtil
 import com.intellij.notification.NotificationAction
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
@@ -119,6 +120,9 @@ class CfnLspServerDescriptor private constructor(project: Project) :
             content = message("cloudformation.lsp.error.node_not_found"),
             project = project,
             notificationActions = listOf(
+                NotificationAction.createSimple("Download Node.js") {
+                    BrowserUtil.browse("https://nodejs.org/en/download")
+                },
                 NotificationAction.createSimple(message("cloudformation.lsp.action.configure_node")) {
                     ShowSettingsUtil.getInstance().showSettingsDialog(project, message("aws.settings.title"))
                 }
