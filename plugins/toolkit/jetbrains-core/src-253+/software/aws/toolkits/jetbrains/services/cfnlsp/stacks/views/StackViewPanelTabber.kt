@@ -11,6 +11,14 @@ import java.awt.BorderLayout
 import javax.swing.JComponent
 import javax.swing.JPanel
 
+enum class StackViewTab(val index: Int, val title: String) {
+    OVERVIEW(0, "Overview"),
+    EVENTS(1, "Events"),
+    RESOURCES(2, "Resources"),
+    OUTPUTS(3, "Outputs"),
+    CHANGE_SET(4, "Change Set"),
+}
+
 internal class StackViewPanelTabber(
     project: Project,
     internal val stackName: String,
@@ -25,29 +33,37 @@ internal class StackViewPanelTabber(
     private val eventsPanel = StackEventsPanel(project, coordinator, stackArn, stackName)
 
     private val tabbedPane = JBTabbedPane().apply {
-        addTab("Overview", createOverviewPanel())
-        addTab("Events", createEventsPanel())
-        addTab("Resources", createResourcesPanel())
-        addTab("Outputs", createOutputsPanel())
-        selectedIndex = 0
+        addTab(StackViewTab.OVERVIEW.title, createOverviewPanel())
+        addTab(StackViewTab.EVENTS.title, createEventsPanel())
+        addTab(StackViewTab.RESOURCES.title, createResourcesPanel())
+        addTab(StackViewTab.OUTPUTS.title, createOutputsPanel())
+        selectedIndex = StackViewTab.OVERVIEW.index
     }
 
     private val changeSetTabIndex: Int
-        get() = if (tabbedPane.tabCount > CHANGE_SET_TAB_INDEX) CHANGE_SET_TAB_INDEX else -1
+        get() = if (tabbedPane.tabCount > StackViewTab.CHANGE_SET.index) StackViewTab.CHANGE_SET.index else -1
 
     fun updateChangeSetTab(title: String, component: JComponent, tooltip: String? = null) {
         if (changeSetTabIndex >= 0) {
-            tabbedPane.setComponentAt(CHANGE_SET_TAB_INDEX, component)
-            tabbedPane.setTitleAt(CHANGE_SET_TAB_INDEX, title)
-            tabbedPane.setToolTipTextAt(CHANGE_SET_TAB_INDEX, tooltip)
+            tabbedPane.setComponentAt(StackViewTab.CHANGE_SET.index, component)
+            tabbedPane.setTitleAt(StackViewTab.CHANGE_SET.index, title)
+            tabbedPane.setToolTipTextAt(StackViewTab.CHANGE_SET.index, tooltip)
         } else {
-            tabbedPane.insertTab(title, null, component, tooltip, CHANGE_SET_TAB_INDEX)
+            tabbedPane.insertTab(title, null, component, tooltip, StackViewTab.CHANGE_SET.index)
         }
-        tabbedPane.selectedIndex = CHANGE_SET_TAB_INDEX
+        tabbedPane.selectedIndex = StackViewTab.CHANGE_SET.index
     }
 
     fun removeChangeSetTab() {
-        if (changeSetTabIndex >= 0) tabbedPane.removeTabAt(CHANGE_SET_TAB_INDEX)
+        if (changeSetTabIndex >= 0) tabbedPane.removeTabAt(StackViewTab.CHANGE_SET.index)
+    }
+
+    fun switchToTab(tab: StackViewTab) {
+        tabbedPane.selectedIndex = tab.index
+    }
+
+    fun restartStatusPolling() {
+        poller.start()
     }
 
     private val mainPanel = JBPanel<JBPanel<*>>(BorderLayout()).apply {
@@ -76,9 +92,5 @@ internal class StackViewPanelTabber(
         outputsPanel.dispose()
         eventsPanel.dispose()
         coordinator.removeStack(stackArn)
-    }
-
-    companion object {
-        private const val CHANGE_SET_TAB_INDEX = 4
     }
 }

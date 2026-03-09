@@ -4,12 +4,15 @@
 package software.aws.toolkits.jetbrains.services.cfnlsp.stacks
 
 import com.intellij.openapi.project.Project
+import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.cfnlsp.CfnClientService
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.CreateDeploymentParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.GetStackActionStatusResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.Identifiable
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.StackActionPhase
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.StackActionState
+import software.aws.toolkits.jetbrains.services.cfnlsp.stacks.views.StackViewTab
+import software.aws.toolkits.jetbrains.services.cfnlsp.stacks.views.StackViewWindowManager
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.AwsToolkitBundle.message
@@ -19,6 +22,7 @@ import java.util.concurrent.CompletableFuture
 internal class DeploymentWorkflow(
     project: Project,
     private val clientService: CfnClientService = CfnClientService.getInstance(project),
+    private val windowManager: StackViewWindowManager = StackViewWindowManager.getInstance(project),
 ) : PollingWorkflow(project) {
 
     override val operationTitle = message("cloudformation.deployment.title")
@@ -66,6 +70,16 @@ internal class DeploymentWorkflow(
         val statusHandle = CfnOperationStatusService.getInstance(project)
             .acquire(stackName, OperationType.DEPLOYMENT, changeSetName)
 
+        // Open stack view BEFORE starting deployment to avoid EDT blocking during deployment
+        val tabber = try {
+            windowManager.getOrOpenTabber(stackName)
+        } catch (e: Exception) {
+            LOG.error("Failed to open stack view for $stackName before deployment", e)
+            null
+        }
+
+        tabber?.switchToTab(StackViewTab.EVENTS)
+
         return clientService.createDeployment(CreateDeploymentParams(id, changeSetName, stackName)).thenCompose { result ->
             if (result == null) {
                 notifyError(operationTitle, message("cloudformation.deployment.failed", stackName, "Failed to start deployment"), project = project)
@@ -74,6 +88,9 @@ internal class DeploymentWorkflow(
                 CompletableFuture.completedFuture(PollResult.Failed("Failed to start deployment"))
             } else {
                 notifyInfo(operationTitle, message("cloudformation.deployment.started", stackName), project = project)
+
+                tabber?.restartStatusPolling()
+
                 poll<Boolean>(id).whenComplete { pollResult, _ ->
                     val phase = when (pollResult) {
                         is PollResult.Success -> StackActionPhase.DEPLOYMENT_COMPLETE
@@ -84,5 +101,9 @@ internal class DeploymentWorkflow(
                 }
             }
         }
+    }
+
+    companion object {
+        private val LOG = getLogger<DeploymentWorkflow>()
     }
 }

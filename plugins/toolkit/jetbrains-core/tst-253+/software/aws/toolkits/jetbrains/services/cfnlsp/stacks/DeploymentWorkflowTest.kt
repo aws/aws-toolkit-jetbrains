@@ -10,6 +10,8 @@ import org.junit.Rule
 import org.junit.Test
 import org.mockito.Mockito.mock
 import org.mockito.kotlin.any
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import software.aws.toolkits.jetbrains.services.cfnlsp.CfnClientService
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.CreateStackActionResult
@@ -17,6 +19,9 @@ import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeDeployme
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.GetStackActionStatusResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.StackActionPhase
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.StackActionState
+import software.aws.toolkits.jetbrains.services.cfnlsp.stacks.views.StackViewPanelTabber
+import software.aws.toolkits.jetbrains.services.cfnlsp.stacks.views.StackViewTab
+import software.aws.toolkits.jetbrains.services.cfnlsp.stacks.views.StackViewWindowManager
 import java.util.concurrent.CompletableFuture
 
 class DeploymentWorkflowTest {
@@ -26,12 +31,16 @@ class DeploymentWorkflowTest {
     val projectRule = ProjectRule()
 
     private lateinit var mockClientService: CfnClientService
+    private lateinit var mockWindowManager: StackViewWindowManager
+    private lateinit var mockTabber: StackViewPanelTabber
     private lateinit var workflow: DeploymentWorkflow
 
     @Before
     fun setUp() {
         mockClientService = mock()
-        workflow = DeploymentWorkflow(projectRule.project, mockClientService)
+        mockWindowManager = mock()
+        mockTabber = mock()
+        workflow = DeploymentWorkflow(projectRule.project, mockClientService, mockWindowManager)
     }
 
     @Test
@@ -39,10 +48,13 @@ class DeploymentWorkflowTest {
         whenever(mockClientService.createDeployment(any())).thenReturn(
             CompletableFuture.completedFuture(null)
         )
+        whenever(mockWindowManager.getOrOpenTabber("test-stack")).thenReturn(mockTabber)
 
         val result = workflow.deploy("test-stack", "changeset-1").get()
 
         assertThat(result).isInstanceOf(PollResult.Failed::class.java)
+        verify(mockTabber).switchToTab(StackViewTab.EVENTS)
+        verify(mockTabber, never()).restartStatusPolling()
     }
 
     @Test
@@ -55,10 +67,13 @@ class DeploymentWorkflowTest {
                 GetStackActionStatusResult("id-1", StackActionPhase.DEPLOYMENT_COMPLETE, StackActionState.SUCCESSFUL)
             )
         )
+        whenever(mockWindowManager.getOrOpenTabber("test-stack")).thenReturn(mockTabber)
 
         val result = workflow.deploy("test-stack", "changeset-1").get()
 
         assertThat(result).isInstanceOf(PollResult.Success::class.java)
+        verify(mockTabber).switchToTab(StackViewTab.EVENTS)
+        verify(mockTabber).restartStatusPolling()
     }
 
     @Test

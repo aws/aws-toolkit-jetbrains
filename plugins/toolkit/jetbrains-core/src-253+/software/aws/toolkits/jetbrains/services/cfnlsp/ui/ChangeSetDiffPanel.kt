@@ -25,15 +25,13 @@ import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.table.JBTable
 import com.intellij.util.ui.JBUI
-import software.aws.toolkits.jetbrains.services.cfnlsp.CfnClientService
-import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeStackParams
+import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ResourceChange
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ResourceChangeDetail
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.StackChange
 import software.aws.toolkits.jetbrains.services.cfnlsp.stacks.ChangeSetDeletionWorkflow
 import software.aws.toolkits.jetbrains.services.cfnlsp.stacks.DeploymentWorkflow
 import software.aws.toolkits.jetbrains.services.cfnlsp.stacks.views.StackViewWindowManager
-import software.aws.toolkits.jetbrains.utils.notifyError
 import java.awt.BorderLayout
 import java.awt.Component
 import java.awt.Font
@@ -311,6 +309,8 @@ internal class ChangeSetDiffPanel(
     }.component
 
     companion object {
+        private val LOG = getLogger<ChangeSetDiffPanel>()
+
         fun show(
             project: Project,
             stackName: String,
@@ -331,26 +331,17 @@ internal class ChangeSetDiffPanel(
                 creationTime,
                 description,
             )
-            val windowManager = StackViewWindowManager.getInstance(project)
-            var tabber = windowManager.getTabberByName(stackName)
 
-            if (tabber == null) {
-                try {
-                    val stackResult = CfnClientService.getInstance(project)
-                        .describeStack(DescribeStackParams(stackName)).get()
-                    val stackId = stackResult?.stack?.stackId ?: run {
-                        notifyError("CloudFormation", "Could not open stack view for '$stackName'", project = project)
-                        return
-                    }
-                    windowManager.openStack(stackName, stackId)
-                    tabber = windowManager.getTabberByName(stackName)
-                } catch (e: Exception) {
-                    notifyError("CloudFormation", "Failed to open stack view: ${e.message}", project = project)
-                    return
+            try {
+                val tabber = StackViewWindowManager.getInstance(project).getOrOpenTabber(stackName)
+                if (tabber != null) {
+                    tabber.updateChangeSetTab("Change set", panel, tooltip = changeSetName)
+                } else {
+                    LOG.error("Failed to get tabber for stack: $stackName")
                 }
+            } catch (e: Exception) {
+                LOG.error("Exception while getting or opening stack view for $stackName", e)
             }
-
-            tabber?.updateChangeSetTab("Change set", panel, tooltip = changeSetName)
         }
     }
 }

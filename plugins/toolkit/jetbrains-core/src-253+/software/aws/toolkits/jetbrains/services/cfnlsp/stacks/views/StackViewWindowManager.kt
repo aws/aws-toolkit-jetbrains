@@ -15,6 +15,8 @@ import com.intellij.ui.content.ContentManager
 import com.intellij.ui.content.ContentManagerEvent
 import com.intellij.ui.content.ContentManagerListener
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.jetbrains.services.cfnlsp.CfnClientService
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeStackParams
 import java.util.concurrent.ConcurrentHashMap
 
 @Service(Service.Level.PROJECT)
@@ -26,7 +28,32 @@ internal class StackViewWindowManager(private val project: Project) {
     fun getTabberByName(stackName: String): StackViewPanelTabber? =
         activeStacks.values.firstOrNull { it.stackName == stackName }
 
+    fun getOrOpenTabber(stackName: String): StackViewPanelTabber? {
+        var tabber = getTabberByName(stackName)
+        if (tabber == null) {
+            try {
+                val stackResult = CfnClientService.getInstance(project)
+                    .describeStack(DescribeStackParams(stackName)).get()
+                val stackId = stackResult?.stack?.stackId
+
+                if (stackId == null) {
+                    LOG.error("Failed to get stackId for stack: $stackName")
+                    return null
+                }
+
+                openStack(stackName, stackId)
+                tabber = getTabberByName(stackName)
+            } catch (e: Exception) {
+                LOG.error("Failed to ensure stack view is open for $stackName", e)
+                return null
+            }
+        }
+        return tabber
+    }
+
     fun openStack(stackName: String, stackId: String) {
+        LOG.info("openStack called for stackName: $stackName, stackId: $stackId")
+
         val toolWindowManager = ToolWindowManager.getInstance(project)
         val toolWindow = toolWindowManager.getToolWindow(TOOL_WINDOW_ID)
 
