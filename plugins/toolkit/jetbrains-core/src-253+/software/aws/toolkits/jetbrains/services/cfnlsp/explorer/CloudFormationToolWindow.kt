@@ -9,7 +9,6 @@ import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import com.intellij.platform.lsp.api.LspServerManager
 import software.aws.toolkits.jetbrains.ToolkitPlaces
 import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
@@ -18,8 +17,6 @@ import software.aws.toolkits.jetbrains.core.explorer.AbstractExplorerTreeToolWin
 import software.aws.toolkits.jetbrains.core.gettingstarted.requestCredentialsForExplorer
 import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourceLoader
 import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourceTypesManager
-import software.aws.toolkits.jetbrains.services.cfnlsp.server.CfnLspServerDescriptor
-import software.aws.toolkits.jetbrains.services.cfnlsp.server.CfnLspServerSupportProvider
 import software.aws.toolkits.jetbrains.services.cfnlsp.stacks.ChangeSetsManager
 import software.aws.toolkits.jetbrains.services.cfnlsp.stacks.StacksManager
 import software.aws.toolkits.jetbrains.ui.CenteredInfoPanel
@@ -52,7 +49,6 @@ internal class CloudFormationToolWindow(private val project: Project) : Abstract
         }
         subscribeToConnectionChanges()
         updateContent()
-        ensureLspServerStarted()
     }
 
     private fun subscribeToConnectionChanges() {
@@ -79,13 +75,6 @@ internal class CloudFormationToolWindow(private val project: Project) : Abstract
         } else {
             setContent(this.tree)
         }
-    }
-
-    private fun ensureLspServerStarted() {
-        LspServerManager.getInstance(project).ensureServerStarted(
-            CfnLspServerSupportProvider::class.java,
-            CfnLspServerDescriptor.getInstance(project)
-        )
     }
 
     companion object {
