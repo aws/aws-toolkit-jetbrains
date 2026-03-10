@@ -17,10 +17,16 @@ import software.aws.toolkits.jetbrains.services.lambda.SdkBasedRuntimeGroup
 
 class NodeJsRuntimeGroup : SdkBasedRuntimeGroup() {
     override val id: String = BuiltInRuntimeGroups.NodeJs
-    override val languageIds: Set<String> = setOf(
-        JavascriptLanguage.id,
-        JavaScriptSupportLoader.ECMA_SCRIPT_6.id
-    )
+    override val languageIds: Set<String> by lazy {
+        try {
+            setOf(
+                JavascriptLanguage.id,
+                JavaScriptSupportLoader.ECMA_SCRIPT_6.id
+            )
+        } catch (e: Throwable) {
+            emptySet()
+        }
+    }
     override val supportsPathMappings: Boolean = true
 
     override val supportedRuntimes = listOf(
