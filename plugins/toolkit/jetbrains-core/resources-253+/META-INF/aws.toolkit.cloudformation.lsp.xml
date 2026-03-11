@@ -9,6 +9,10 @@
         <toolWindow id="cloudformation.lsp.stack.view" anchor="bottom" doNotActivateOnStart="true" canCloseContents="true"
                     factoryClass="software.aws.toolkits.jetbrains.services.cfnlsp.stacks.views.StackViewToolWindowFactory"
                     icon="AwsIcons.Logos.CLOUD_FORMATION_TOOL"/>
+
+        <notificationGroup id="CloudFormation LSP Introduction" displayType="BALLOON"/>
+        
+        <postStartupActivity implementation="software.aws.toolkits.jetbrains.services.cfnlsp.CfnLspIntroPrompter"/>
     </extensions>
 
     <extensions defaultExtensionNs="aws.toolkit">
