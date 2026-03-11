@@ -290,6 +290,7 @@
         <notificationGroup id="aws.cfn.telemetry" displayType="STICKY_BALLOON" key="cloudformation.telemetry.prompt.title"/>
 
         <postStartupActivity implementation="software.aws.toolkits.jetbrains.services.cfnlsp.CfnTelemetryPrompter"/>
+        <postStartupActivity implementation="software.aws.toolkits.jetbrains.services.cfnlsp.CfnLspStartupActivity"/>
 
         <!--Sticky notifications -->
         <notificationGroup id="aws.toolkit_sticky" displayType="STICKY_BALLOON" key="aws.settings.title"/>
