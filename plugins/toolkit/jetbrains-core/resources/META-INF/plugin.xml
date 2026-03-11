@@ -35,6 +35,9 @@
         <b>Resource Explorer</b> - View and manage AWS resources
     </li>
     <li>
+        <b>CloudFormation Support</b> - Author templates with hover, code completion, and cfn-lint support, validate and deploy templates to stacks, and view stack information such as events and resources
+    </li>
+    <li>
         <b>Run/Debug Local Lambda Functions</b> - Locally test and step-through debug functions in a Lambda-like execution environment provided by the AWS SAM CLI. Supports Java, Python, Node.js, and .NET.
     </li>
     <li>
