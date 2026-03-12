@@ -37,7 +37,7 @@ internal class ResourceLoader(
     }
 
     fun getResourceIdentifiers(resourceType: String): List<String> =
-        cache.get(resourceType)?.resourceIdentifiers ?: emptyList()
+        cache.get(resourceType)?.resourceIdentifiers.orEmpty()
 
     fun getCachedResources(resourceType: String): List<String>? =
         cache.get(resourceType)?.resourceIdentifiers
@@ -71,7 +71,7 @@ internal class ResourceLoader(
 
                     if (result.resource != null) {
                         val currentData = cache.get(resourceType)
-                        val existingResources = currentData?.resourceIdentifiers ?: emptyList()
+                        val existingResources = currentData?.resourceIdentifiers.orEmpty()
 
                         if (!existingResources.contains(identifier)) {
                             val updatedResources = existingResources + identifier

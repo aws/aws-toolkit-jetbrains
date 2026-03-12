@@ -88,7 +88,7 @@ internal class ChangeSetsManager(private val project: Project) {
     }
 
     fun get(stackName: String): List<ChangeSetInfo> =
-        stackChangeSets[stackName]?.changeSets ?: emptyList()
+        stackChangeSets[stackName]?.changeSets.orEmpty()
 
     fun hasMore(stackName: String): Boolean =
         stackChangeSets[stackName]?.nextToken != null

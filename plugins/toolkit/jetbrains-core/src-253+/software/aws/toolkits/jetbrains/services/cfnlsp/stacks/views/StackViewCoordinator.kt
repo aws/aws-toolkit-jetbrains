@@ -8,6 +8,7 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.warn
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
@@ -47,7 +48,7 @@ internal class StackViewCoordinator : Disposable {
             }
             // Always notify polling listeners regardless of status change
             notifyPollingListeners(stackArn)
-        } ?: LOG.warn("Stack not found for status update: $stackArn")
+        } ?: LOG.warn { "Stack not found for status update: $stackArn" }
     }
 
     fun getStackState(stackArn: String): StackState? = stackStates[stackArn]

@@ -14,7 +14,9 @@ import com.intellij.ui.content.ContentFactory
 import com.intellij.ui.content.ContentManager
 import com.intellij.ui.content.ContentManagerEvent
 import com.intellij.ui.content.ContentManagerListener
+import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.services.cfnlsp.CfnClientService
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeStackParams
 import java.util.concurrent.ConcurrentHashMap
@@ -37,14 +39,14 @@ internal class StackViewWindowManager(private val project: Project) {
                 val stackId = stackResult?.stack?.stackId
 
                 if (stackId == null) {
-                    LOG.error("Failed to get stackId for stack: $stackName")
+                    LOG.error { "Failed to get stackId for stack: $stackName" }
                     return null
                 }
 
                 openStack(stackName, stackId)
                 tabber = getTabberByName(stackName)
             } catch (e: Exception) {
-                LOG.error("Failed to ensure stack view is open for $stackName", e)
+                LOG.error(e) { "Failed to ensure stack view is open for $stackName" }
                 return null
             }
         }
@@ -52,13 +54,13 @@ internal class StackViewWindowManager(private val project: Project) {
     }
 
     fun openStack(stackName: String, stackId: String) {
-        LOG.info("openStack called for stackName: $stackName, stackId: $stackId")
+        LOG.info { "openStack called for stackName: $stackName, stackId: $stackId" }
 
         val toolWindowManager = ToolWindowManager.getInstance(project)
         val toolWindow = toolWindowManager.getToolWindow(TOOL_WINDOW_ID)
 
         if (toolWindow == null) {
-            LOG.error("Tool window '$TOOL_WINDOW_ID' not found")
+            LOG.error { "Tool window '$TOOL_WINDOW_ID' not found" }
             return
         }
 
@@ -91,7 +93,7 @@ internal class StackViewWindowManager(private val project: Project) {
         val stackView = try {
             StackViewPanelTabber(project, stackName, stackId)
         } catch (e: Exception) {
-            LOG.error("Failed to create StackDetailView", e)
+            LOG.error(e) { "Failed to create StackDetailView" }
             return
         }
 
@@ -126,7 +128,7 @@ internal class StackViewWindowManager(private val project: Project) {
                     val removedContent = event.content
                     val stackArn = removedContent.getUserData(STACK_ARN_KEY)
                     if (stackArn != null) {
-                        LOG.info("Tab closed by user, disposing resources for stack: $stackArn")
+                        LOG.info { "Tab closed by user, disposing resources for stack: $stackArn" }
                         activeStacks[stackArn]?.dispose()
                         activeStacks.remove(stackArn)
                     }
@@ -144,7 +146,7 @@ internal class StackViewWindowManager(private val project: Project) {
                 override fun onStackStatusUpdated() {
                     val stackState = coordinator.getStackState(stackId)
                     val status = stackState?.status
-                    LOG.info("Updating tab title for stack: $stackId, status: $status")
+                    LOG.info { "Updating tab title for stack: $stackId, status: $status" }
                     runInEdt {
                         val displayName = if (status != null) {
                             "$stackName [$status]"

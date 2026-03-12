@@ -109,7 +109,7 @@ class UtilsTest {
 
             // Should format to d/M/yyyy, h:mm:ss a pattern (timezone-dependent)
             assertThat(result).isNotNull()
-            assertThat(result!!).contains("15/1/2024")
+            assertThat(checkNotNull(result)).contains("15/1/2024")
             assertThat(result).satisfiesAnyOf(
                 { assertThat(it).contains("AM") },
                 { assertThat(it).contains("PM") }
@@ -123,7 +123,7 @@ class UtilsTest {
             val result = StackDateFormatter.formatDate(isoDate)
 
             assertThat(result).isNotNull()
-            assertThat(result!!).contains("25/12/2024")
+            assertThat(checkNotNull(result)).contains("25/12/2024")
             assertThat(result).satisfiesAnyOf(
                 { assertThat(it).contains("AM") },
                 { assertThat(it).contains("PM") }

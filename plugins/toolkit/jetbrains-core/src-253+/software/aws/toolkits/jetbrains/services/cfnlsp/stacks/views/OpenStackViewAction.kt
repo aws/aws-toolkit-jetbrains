@@ -7,6 +7,7 @@ import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.DumbAware
+import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerTreeToolWindowDataKeys
 import software.aws.toolkits.jetbrains.services.cfnlsp.explorer.nodes.StackNode
@@ -27,11 +28,11 @@ internal class OpenStackViewAction : AnAction(), DumbAware {
         val stackNode = getStackNode(e) ?: return
 
         if (stackNode.stack.stackName == null) {
-            LOG.error("Stack name is null for stack node")
+            LOG.error { "Stack name is null for stack node" }
             return
         }
         if (stackNode.stack.stackId == null) {
-            LOG.error("Stack ID is null for stack node")
+            LOG.error { "Stack ID is null for stack node" }
             return
         }
         val stackName = stackNode.stack.stackName

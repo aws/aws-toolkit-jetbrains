@@ -116,7 +116,7 @@ internal class ValidationWorkflow(
                                             clientService.describeChangeSet(
                                                 DescribeChangeSetParams(changeSetName, stackName)
                                             ).thenAccept { changeSetResult ->
-                                                val fullChanges = changeSetResult?.changes ?: status.changes ?: emptyList()
+                                                val fullChanges = changeSetResult?.changes ?: status.changes.orEmpty()
                                                 runInEdt {
                                                     ChangeSetDiffPanel.show(
                                                         project = project,
@@ -132,7 +132,7 @@ internal class ValidationWorkflow(
                                             }
                                             future.complete(
                                                 ValidationResult.Success(
-                                                    changes = status.changes ?: emptyList(),
+                                                    changes = status.changes.orEmpty(),
                                                     changeSetName = changeSetName,
                                                     details = details
                                                 )
