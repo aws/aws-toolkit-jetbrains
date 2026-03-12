@@ -14,7 +14,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.platform.lsp.api.LspServerManager
+
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
 import com.intellij.testFramework.ApplicationRule
@@ -76,8 +76,11 @@ open class CodeInsightTestFixtureRule(protected val testDescription: LightProjec
                 // Shutdown LSP servers to prevent thread leaks
                 try {
                     val cfnLspProviderClass = Class.forName(CFN_LSP_PROVIDER_CLASS)
-                    @Suppress("UNCHECKED_CAST")
-                    LspServerManager.getInstance(fixture.project).stopServers(cfnLspProviderClass as Class<out com.intellij.platform.lsp.api.LspServerSupportProvider>)
+                    val lspServerManagerClass = Class.forName("com.intellij.platform.lsp.api.LspServerManager")
+                    val getInstance = lspServerManagerClass.getMethod("getInstance", Project::class.java)
+                    val lspServerManager = getInstance.invoke(null, fixture.project)
+                    val stopServers = lspServerManagerClass.getMethod("stopServers", Class::class.java)
+                    stopServers.invoke(lspServerManager, cfnLspProviderClass)
                     LOG.info { "Successfully stopped CFN LSP servers" }
                 } catch (_: ClassNotFoundException) {
                     LOG.info { "CFN LSP not available - skipping server shutdown" }

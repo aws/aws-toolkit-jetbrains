@@ -184,8 +184,7 @@
 
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.EcsExecCommandSettings"/>
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.SamDisplayDevModeWarningSettings"/>
-        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.CfnLspSettings"/>
-        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.services.cfnlsp.CfnTelemetryPromptState"/>
+
 
         <applicationService serviceInterface="software.aws.toolkits.jetbrains.settings.DynamicResourcesSettings"
                             serviceImplementation="software.aws.toolkits.jetbrains.settings.DefaultDynamicResourcesSettings"/>
@@ -269,13 +268,7 @@
             key="aws.settings.dynamic_resources_configurable.title"
             instance="software.aws.toolkits.jetbrains.settings.DynamicResourcesConfigurable"
         />
-        <applicationConfigurable
-            parentId="aws.toolkit"
-            id="aws.cloudformation"
-            bundle="software.aws.toolkits.resources.MessagesBundle"
-            key="cloudformation.settings.title"
-            instance="software.aws.toolkits.jetbrains.settings.CfnLspSettingsConfigurable"
-        />
+
 
         <programRunner implementation="software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamInvokeRunner"/>
         <programRunner implementation="software.aws.toolkits.jetbrains.services.lambda.execution.remote.RemoteLambdaRunner"/>
@@ -292,7 +285,7 @@
         <notificationGroup id="aws.toolkit_telemetry" displayType="STICKY_BALLOON" key="aws.settings.telemetry.prompt.title"/>
         <notificationGroup id="aws.cfn.telemetry" displayType="STICKY_BALLOON" key="cloudformation.telemetry.prompt.title"/>
 
-        <postStartupActivity implementation="software.aws.toolkits.jetbrains.services.cfnlsp.CfnTelemetryPrompter"/>
+
 
         <!--Sticky notifications -->
         <notificationGroup id="aws.toolkit_sticky" displayType="STICKY_BALLOON" key="aws.settings.title"/>

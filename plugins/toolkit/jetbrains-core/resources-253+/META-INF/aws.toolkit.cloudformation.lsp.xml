@@ -3,7 +3,11 @@
 
 <idea-plugin>
     <extensions defaultExtensionNs="com.intellij">
+        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.CfnLspSettings"/>
+        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.services.cfnlsp.CfnTelemetryPromptState"/>
+
         <postStartupActivity implementation="software.aws.toolkits.jetbrains.services.cfnlsp.CfnLspStartupActivity"/>
+        <postStartupActivity implementation="software.aws.toolkits.jetbrains.services.cfnlsp.CfnTelemetryPrompter"/>
         
         <platform.lsp.serverSupportProvider
             implementation="software.aws.toolkits.jetbrains.services.cfnlsp.server.CfnLspServerSupportProvider"/>
@@ -11,6 +15,18 @@
         <toolWindow id="cloudformation.lsp.stack.view" anchor="bottom" doNotActivateOnStart="true" canCloseContents="true"
                     factoryClass="software.aws.toolkits.jetbrains.services.cfnlsp.stacks.views.StackViewToolWindowFactory"
                     icon="AwsIcons.Logos.CLOUD_FORMATION_TOOL"/>
+
+        <applicationConfigurable
+            parentId="aws.toolkit"
+            id="aws.cloudformation"
+            bundle="software.aws.toolkits.resources.MessagesBundle"
+            key="cloudformation.settings.title"
+            instance="software.aws.toolkits.jetbrains.settings.CfnLspSettingsConfigurable"
+        />
+
+        <statusBarWidgetFactory
+            id="aws.toolkit.cloudformation.operation.status"
+            implementation="software.aws.toolkits.jetbrains.services.cfnlsp.stacks.CfnStatusBarWidgetFactory"/>
     </extensions>
 
     <extensions defaultExtensionNs="aws.toolkit">
@@ -170,9 +186,5 @@
         </group>
     </actions>
 
-    <extensions defaultExtensionNs="com.intellij">
-        <statusBarWidgetFactory
-            id="aws.toolkit.cloudformation.operation.status"
-            implementation="software.aws.toolkits.jetbrains.services.cfnlsp.stacks.CfnStatusBarWidgetFactory"/>
-    </extensions>
+
 </idea-plugin>
