@@ -60,7 +60,7 @@ dependencies {
                 } else {
                     IdeFlavor.IC  // Use Community for older versions
                 }
-                ideFlavor.convention(IdeFlavor.values().firstOrNull { it.name == runIdeVariant.orNull } ?: defaultFlavor)
+                ideFlavor.set(IdeFlavor.values().firstOrNull { it.name == runIdeVariant.orNull } ?: defaultFlavor)
             }
             val (type, version) = if (runIdeVariant.isPresent) {
                 val type = toolkitIntelliJ.ideFlavor.map { IntelliJPlatformType.fromCode(it.toString()) }

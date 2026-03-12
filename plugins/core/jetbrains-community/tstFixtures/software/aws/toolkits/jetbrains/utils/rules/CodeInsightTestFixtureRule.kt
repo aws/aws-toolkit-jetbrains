@@ -30,6 +30,7 @@ import com.intellij.testFramework.writeChild
 import org.junit.runner.Description
 import org.mockito.Mockito
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import java.nio.file.Paths
 
@@ -71,6 +72,20 @@ open class CodeInsightTestFixtureRule(protected val testDescription: LightProjec
 
         lazyFixture.ifSet {
             try {
+                // Shutdown LSP servers to prevent thread leaks
+                try {
+                    val cfnLspProviderClass = Class.forName(CFN_LSP_PROVIDER_CLASS)
+                    val lspServerManagerClass = Class.forName("com.intellij.platform.lsp.api.LspServerManager")
+                    val getInstance = lspServerManagerClass.getMethod("getInstance", Project::class.java)
+                    val lspServerManager = getInstance.invoke(null, fixture.project)
+                    val stopServers = lspServerManagerClass.getMethod("stopServers", Class::class.java)
+                    stopServers.invoke(lspServerManager, cfnLspProviderClass)
+                    LOG.info { "Successfully stopped CFN LSP servers" }
+                } catch (_: ClassNotFoundException) {
+                    LOG.info { "CFN LSP not available - skipping server shutdown" }
+                } catch (e: Exception) {
+                    LOG.warn(e) { "Failed to stop CFN LSP servers" }
+                }
                 fixture.tearDown()
             } catch (e: Exception) {
                 LOG.warn(e) { "Exception during tear-down" }
@@ -99,6 +114,9 @@ open class CodeInsightTestFixtureRule(protected val testDescription: LightProjec
 
     private companion object {
         val LOG = getLogger<CodeInsightTestFixtureRule>()
+
+        // CfnLspServerSupportProvider must not be moved/renamed since we are hard-coding its class name
+        private const val CFN_LSP_PROVIDER_CLASS = "software.aws.toolkits.jetbrains.services.cfnlsp.server.CfnLspServerSupportProvider"
     }
 }
 
