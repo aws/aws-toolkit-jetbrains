@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.cfnlsp
 
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.fileEditor.FileDocumentManager
@@ -14,6 +15,8 @@ import com.intellij.platform.lsp.api.LspServerManager
 import org.eclipse.lsp4j.DidChangeConfigurationParams
 import org.eclipse.lsp4j.DidOpenTextDocumentParams
 import org.eclipse.lsp4j.TextDocumentItem
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ClearStackEventsParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.CreateDeploymentParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.CreateStackActionResult
@@ -56,7 +59,7 @@ import software.aws.toolkits.jetbrains.services.cfnlsp.server.CfnLspServerSuppor
 import java.util.concurrent.CompletableFuture
 
 @Service(Service.Level.PROJECT)
-internal class CfnClientService(private val project: Project) {
+internal class CfnClientService(private val project: Project) : Disposable {
     private val lspServerProvider: () -> LspServer? = {
         LspServerManager.getInstance(project)
             .getServersForProvider(CfnLspServerSupportProvider::class.java)
@@ -191,7 +194,17 @@ internal class CfnClientService(private val project: Project) {
     fun clearStackEvents(params: ClearStackEventsParams): CompletableFuture<Unit?> =
         sendRequest { it.clearStackEvents(params) }
 
+    override fun dispose() {
+        try {
+            LspServerManager.getInstance(project).stopServers(CfnLspServerSupportProvider::class.java)
+        } catch (e: Exception) {
+            LOG.warn(e) { "Failed to stop CFN LSP servers during disposal" }
+        }
+    }
+
     companion object {
+        private val LOG = getLogger<CfnClientService>()
+
         fun getInstance(project: Project): CfnClientService = project.service()
     }
 }

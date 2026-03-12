@@ -36,6 +36,7 @@ internal val CFN_SUPPORTED_EXTENSIONS = setOf("yaml", "yml", "json", "template",
 private fun VirtualFile.isCfnTemplate(): Boolean =
     extension?.lowercase() in CFN_SUPPORTED_EXTENSIONS
 
+// CfnLspServerSupportProvider must not be moved/renamed since we are hard-coding its class name
 internal class CfnLspServerSupportProvider : LspServerSupportProvider {
     override fun fileOpened(
         project: Project,
