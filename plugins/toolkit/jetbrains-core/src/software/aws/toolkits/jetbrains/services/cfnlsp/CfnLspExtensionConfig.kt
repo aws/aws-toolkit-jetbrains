@@ -11,4 +11,5 @@ object CfnLspExtensionConfig {
     val EXTENSION_VERSION: String = AwsToolkit.PLUGINS_INFO[AwsPlugin.TOOLKIT]?.version ?: "unknown"
     const val ENCRYPTION_MODE = "JWT"
     const val TELEMETRY_NOTIFICATION_GROUP_ID = "aws.cfn.telemetry"
+    const val INTRO_NOTIFICATION_GROUP_ID = "CloudFormation LSP Introduction"
 }
