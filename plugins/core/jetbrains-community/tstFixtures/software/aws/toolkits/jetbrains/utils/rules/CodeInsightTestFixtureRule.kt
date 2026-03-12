@@ -14,6 +14,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.platform.lsp.api.LspServerManager
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
 import com.intellij.testFramework.ApplicationRule
@@ -30,6 +31,7 @@ import com.intellij.testFramework.writeChild
 import org.junit.runner.Description
 import org.mockito.Mockito
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import java.nio.file.Paths
 
@@ -73,10 +75,14 @@ open class CodeInsightTestFixtureRule(protected val testDescription: LightProjec
             try {
                 // Shutdown LSP servers to prevent thread leaks
                 try {
-                    val cfnClientService = fixture.project.getService(Class.forName("software.aws.toolkits.jetbrains.services.cfnlsp.CfnClientService"))
-                    cfnClientService?.javaClass?.getMethod("shutdown")?.invoke(cfnClientService)
-                } catch (_: Exception) {
-                    // CFN LSP not available, ignore
+                    val cfnLspProviderClass = Class.forName(CFN_LSP_PROVIDER_CLASS)
+                    @Suppress("UNCHECKED_CAST")
+                    LspServerManager.getInstance(fixture.project).stopServers(cfnLspProviderClass as Class<out com.intellij.platform.lsp.api.LspServerSupportProvider>)
+                    LOG.info { "Successfully stopped CFN LSP servers" }
+                } catch (_: ClassNotFoundException) {
+                    LOG.info { "CFN LSP not available - skipping server shutdown" }
+                } catch (e: Exception) {
+                    LOG.warn(e) { "Failed to stop CFN LSP servers" }
                 }
                 fixture.tearDown()
             } catch (e: Exception) {
@@ -106,6 +112,9 @@ open class CodeInsightTestFixtureRule(protected val testDescription: LightProjec
 
     private companion object {
         val LOG = getLogger<CodeInsightTestFixtureRule>()
+        
+        // TODO: Replace with proper service registry - this will break if CfnLspServerSupportProvider is moved/renamed
+        private const val CFN_LSP_PROVIDER_CLASS = "software.aws.toolkits.jetbrains.services.cfnlsp.server.CfnLspServerSupportProvider"
     }
 }
 

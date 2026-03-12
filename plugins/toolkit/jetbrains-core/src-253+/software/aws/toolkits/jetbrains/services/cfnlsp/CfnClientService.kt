@@ -191,10 +191,6 @@ internal class CfnClientService(private val project: Project) {
     fun clearStackEvents(params: ClearStackEventsParams): CompletableFuture<Unit?> =
         sendRequest { it.clearStackEvents(params) }
 
-    fun shutdown() {
-        LspServerManager.getInstance(project).stopServers(CfnLspServerSupportProvider::class.java)
-    }
-
     companion object {
         fun getInstance(project: Project): CfnClientService = project.service()
     }
