@@ -146,6 +146,6 @@ class CfnLspIntegrationTest {
         val result = lsp.request { it.textDocumentService.completion(CompletionParams(TextDocumentIdentifier(uri), position)) }
             ?: return emptyList()
         val items = if (result.isLeft) result.left else result.right?.items
-        return items?.map { it.label } ?: emptyList()
+        return items?.map { it.label }.orEmpty()
     }
 }

@@ -62,6 +62,9 @@ class ValidationWorkflowTest {
                 DescribeValidationStatusResult("id-1", StackActionPhase.VALIDATION_COMPLETE, StackActionState.SUCCESSFUL)
             )
         )
+        whenever(mockClientService.describeChangeSet(any())).thenReturn(
+            CompletableFuture.completedFuture(null)
+        )
 
         val result = workflow.validate(createParams()).get()
 
