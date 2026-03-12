@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.cfnlsp.stacks
 
 import com.intellij.openapi.project.Project
+import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.cfnlsp.CfnClientService
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.CreateDeploymentParams
@@ -74,7 +75,7 @@ internal class DeploymentWorkflow(
         val tabber = try {
             windowManager.getOrOpenTabber(stackName)
         } catch (e: Exception) {
-            LOG.error("Failed to open stack view for $stackName before deployment", e)
+            LOG.error(e) { "Failed to open stack view for $stackName before deployment" }
             null
         }
 

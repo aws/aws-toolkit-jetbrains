@@ -7,6 +7,8 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.info
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.cfnlsp.CfnClientService
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeStackParams
 import java.util.Timer
@@ -59,16 +61,16 @@ internal class StackStatusPoller(
                 // Ensure coordinator updates happen on EDT
                 ApplicationManager.getApplication().invokeLater {
                     if (error != null) {
-                        LOG.warn("Error fetching stack data for $stackName: ${error.message}")
+                        LOG.warn { "Error fetching stack data for $stackName: ${error.message}" }
                     } else if (result?.stack == null) {
-                        LOG.warn("No stack data received for $stackName")
+                        LOG.warn { "No stack data received for $stackName" }
                     } else {
                         val stack = result.stack
                         coordinator.updateStackStatus(stackArn, stack.stackStatus)
 
                         // Stop polling if stack reaches terminal state
                         if (!StackStatusUtils.isInTransientState(stack.stackStatus)) {
-                            LOG.info("Stack $stackName reached terminal state: ${stack.stackStatus}, stopping polling")
+                            LOG.info { "Stack $stackName reached terminal state: ${stack.stackStatus}, stopping polling" }
                             stop()
                         }
                     }

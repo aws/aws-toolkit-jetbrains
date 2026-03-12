@@ -38,7 +38,7 @@ internal data class EventTableRow(
 
 internal class ExpandableEventsTableModel : AbstractTableModel() {
     private var allEvents: List<StackEvent> = emptyList()
-    private var displayRows: MutableList<EventTableRow> = mutableListOf()
+    private val displayRows: MutableList<EventTableRow> = mutableListOf()
     val expandedGroups = mutableSetOf<String>() // Make public for renderer access
     private var hasHooks = false
     private val baseColumnNames = arrayOf("", "Operation ID", "Timestamp", "Status", "Status Reason")
@@ -181,7 +181,7 @@ internal class ExpandableEventsTableModel : AbstractTableModel() {
 
         return when (columnIndex) {
             StackEventsTableComponents.ARROW_COLUMN -> if (row.isParent) {
-                val isExpanded = (row.event.operationId ?: "") in expandedGroups
+                val isExpanded = (row.event.operationId.orEmpty()) in expandedGroups
                 if (isExpanded) AllIcons.General.ArrowDown else AllIcons.General.ArrowRight
             } else {
                 ""
@@ -191,8 +191,8 @@ internal class ExpandableEventsTableModel : AbstractTableModel() {
             } else {
                 "  ${row.event.operationId ?: "-"}" // Indent child rows
             }
-            StackEventsTableComponents.TIMESTAMP_COLUMN -> event.timestamp ?: ""
-            StackEventsTableComponents.STATUS_COLUMN -> event.resourceStatus ?: ""
+            StackEventsTableComponents.TIMESTAMP_COLUMN -> event.timestamp.orEmpty()
+            StackEventsTableComponents.STATUS_COLUMN -> event.resourceStatus.orEmpty()
             StackEventsTableComponents.STATUS_REASON_COLUMN -> event.resourceStatusReason?.takeIf { it.isNotEmpty() } ?: "-"
             baseColumnNames.size -> if (hasHooks) {
                 if (event.hookType != null) {
@@ -229,7 +229,7 @@ internal class OperationCellRenderer : DefaultTableCellRenderer() {
         val component = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column)
 
         if (tableRow?.isParent == true) {
-            val operationId = tableRow.event.operationId ?: ""
+            val operationId = tableRow.event.operationId.orEmpty()
             text = "<html><a href=\"#\">$operationId</a></html>"
             font = font.deriveFont(Font.BOLD)
 
@@ -276,7 +276,7 @@ internal class EventsTableCellRenderer : DefaultTableCellRenderer() {
         }
 
         if (!isSelected && column == StackEventsTableComponents.STATUS_COLUMN) { // Status column
-            val status = value?.toString() ?: ""
+            val status = value?.toString().orEmpty()
             foreground = when {
                 status.contains("COMPLETE") && !status.contains("ROLLBACK") -> JBColor.GREEN
                 status.contains("FAILED") || status.contains("ROLLBACK") -> JBColor.RED

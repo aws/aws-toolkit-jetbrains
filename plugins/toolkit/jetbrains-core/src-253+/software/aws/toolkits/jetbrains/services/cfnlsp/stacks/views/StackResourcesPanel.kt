@@ -10,6 +10,7 @@ import com.intellij.ui.components.JBLabel
 import com.intellij.ui.table.JBTable
 import com.intellij.util.ui.UIUtil
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.cfnlsp.CfnClientService
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.GetStackResourcesParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.StackResourceSummary
@@ -81,7 +82,7 @@ internal class StackResourcesPanel(
         loadResources()
     }
 
-    private fun loadResources(): CompletableFuture<Void> {
+    private fun loadResources(): CompletableFuture<Unit> {
         if (isLoading) return CompletableFuture.completedFuture(null)
         isLoading = true
 
@@ -198,7 +199,7 @@ internal class StackResourcesPanel(
         prevButton.isEnabled = false
         nextButton.isEnabled = false
         resourceCountLabel.text = "0 resources"
-        LOG.warn(message)
+        LOG.warn { message }
     }
 
     override fun dispose() {

@@ -142,8 +142,8 @@ internal object StackPanelLayoutBuilder {
                 arrayOf(
                     output.outputKey,
                     output.outputValue,
-                    output.description ?: "",
-                    output.exportName ?: ""
+                    output.description.orEmpty(),
+                    output.exportName.orEmpty()
                 )
             }.toTypedArray()
         }

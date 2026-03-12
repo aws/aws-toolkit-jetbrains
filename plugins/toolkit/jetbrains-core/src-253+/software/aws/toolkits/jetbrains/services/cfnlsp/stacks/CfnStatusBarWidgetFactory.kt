@@ -75,7 +75,7 @@ private class CfnStatusBarWidget(
                         else -> AllIcons.General.InspectionsOK
                     }
                     val elapsed = formatElapsed(op.startTime)
-                    val changeSetInfo = op.changeSetName?.let { " • $it" } ?: ""
+                    val changeSetInfo = op.changeSetName?.let { " • $it" }.orEmpty()
                     label.text = "${op.stackName} — ${op.type.name.lowercase().replaceFirstChar { it.uppercase() }}$changeSetInfo ($elapsed)"
                 }
             )

@@ -105,7 +105,7 @@ internal class ChangeSetNode(
                             project = project,
                             stackName = stackName,
                             changeSetName = changeSetName,
-                            changes = result.changes ?: emptyList(),
+                            changes = result.changes.orEmpty(),
                             enableDeploy = result.status == "CREATE_COMPLETE",
                             status = result.status,
                             creationTime = result.creationTime,

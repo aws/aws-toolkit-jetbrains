@@ -205,7 +205,7 @@ private class ConfigurationStep(
         icon = AllIcons.General.OpenDisk
         addActionListener {
             val selectedFile = FileChooser.chooseFile(descriptor, project, null)
-            selectedFile?.let { addFileToDropdown(it.path) }
+            selectedFile?.let { file -> addFileToDropdown(file.path) }
         }
         toolTipText = "Browse for CloudFormation template"
         margin = JBUI.emptyInsets()
@@ -216,12 +216,12 @@ private class ConfigurationStep(
     }
 
     private val stackNameField = JBTextField().apply {
-        text = prefilledStackName ?: savedState.lastStackName ?: ""
+        text = prefilledStackName ?: savedState.lastStackName.orEmpty()
         emptyText.text = message("cloudformation.deploy.dialog.stack_name.placeholder")
     }
 
     private val s3BucketField = JBTextField().apply {
-        text = savedState.s3Bucket ?: ""
+        text = savedState.s3Bucket.orEmpty()
         emptyText.text = "S3 bucket name (optional)"
     }
 
@@ -232,13 +232,13 @@ private class ConfigurationStep(
         } else {
             null
         }
-        text = savedState.s3Key ?: ""
+        text = savedState.s3Key.orEmpty()
         emptyText.text = defaultKey ?: "S3 object key (optional)"
     }
 
     private val parameterFields = templateParameters.map { param ->
         val prefill = existingParameters?.find { it.parameterKey == param.name }?.parameterValue
-            ?: param.default?.toString() ?: ""
+            ?: param.default?.toString().orEmpty()
         param to JBTextField().apply {
             text = prefill
             emptyText.text = param.description ?: param.type ?: "String"
@@ -257,7 +257,7 @@ private class ConfigurationStep(
 
     private val tagsField = JBTextField().apply {
         val existingTagStr = existingTags?.joinToString(",") { "${it.key}=${it.value}" }
-        text = existingTagStr ?: savedState.tags ?: ""
+        text = existingTagStr ?: savedState.tags.orEmpty()
         emptyText.text = "key1=value1,key2=value2 (optional)"
     }
 
@@ -412,7 +412,7 @@ private class ConfigurationStep(
     }
 
     private fun validateParameter(value: String, param: TemplateParameter): String? {
-        val actual = value.ifBlank { param.default?.toString() ?: "" }
+        val actual = value.ifBlank { param.default?.toString().orEmpty() }
         if (actual.isBlank()) return "${param.name}: Value is required"
         if (param.allowedValues != null && actual !in param.allowedValues.map { it.toString() }) {
             return "${param.name}: Must be one of: ${param.allowedValues.joinToString(", ")}"
@@ -450,7 +450,7 @@ private class ConfigurationStep(
 
     fun getTemplatePath(): String {
         val selectedItem = templateDropdown.selectedItem as? TemplateItem
-        return selectedItem?.uri?.let { URI(it).path } ?: ""
+        return selectedItem?.uri?.let { URI(it).path }.orEmpty()
     }
 
     fun getStackName(): String = stackNameField.text.trim()
@@ -469,7 +469,7 @@ private class ConfigurationStep(
         }
     }
     fun getParameters(): List<Parameter> = parameterFields.map { (param, field) ->
-        Parameter(param.name, field.text.trim().ifBlank { param.default?.toString() ?: "" })
+        Parameter(param.name, field.text.trim().ifBlank { param.default?.toString().orEmpty() })
     }
     fun getCapabilities(): List<String> = mutableListOf<String>().apply {
         if (capabilityIam.isSelected) add("CAPABILITY_IAM")
@@ -584,7 +584,7 @@ private class IdentifierTableModel : AbstractTableModel() {
             val keys = resource.primaryIdentifierKeys ?: continue
             for (key in keys) {
                 val prefilledValue = resource.primaryIdentifier?.get(key)
-                rows.add(IdentifierRow(resource.logicalId, resource.type, key, prefilledValue ?: "", prefilledValue != null))
+                rows.add(IdentifierRow(resource.logicalId, resource.type, key, prefilledValue.orEmpty(), prefilledValue != null))
             }
         }
         fireTableDataChanged()
@@ -616,7 +616,7 @@ private class IdentifierTableModel : AbstractTableModel() {
     }
     override fun setValueAt(value: Any?, row: Int, col: Int) {
         if (col == 3) {
-            rows[row].value = value?.toString() ?: ""
+            rows[row].value = value?.toString().orEmpty()
             fireTableCellUpdated(row, col)
         }
     }

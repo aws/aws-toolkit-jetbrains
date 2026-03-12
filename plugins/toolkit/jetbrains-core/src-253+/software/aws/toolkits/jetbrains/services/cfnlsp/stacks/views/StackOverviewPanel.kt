@@ -12,6 +12,7 @@ import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBTextArea
 import com.intellij.util.ui.JBUI
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.cfnlsp.CfnClientService
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeStackParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.StackDetail
@@ -79,13 +80,13 @@ internal class StackOverviewPanel(
                 // LSP callbacks run on background threads, must switch to EDT for UI updates
                 ApplicationManager.getApplication().invokeLater {
                     if (error != null) {
-                        LOG.warn("Failed to load stack details for $stackName: ${error.message}")
+                        LOG.warn { "Failed to load stack details for $stackName: ${error.message}" }
                         renderError("Failed to load stack: ${error.message}")
                     } else {
                         result?.let {
                             renderStack(it)
                         } ?: run {
-                            LOG.warn("No stack data received for $stackName")
+                            LOG.warn { "No stack data received for $stackName" }
                             renderEmpty()
                         }
                     }

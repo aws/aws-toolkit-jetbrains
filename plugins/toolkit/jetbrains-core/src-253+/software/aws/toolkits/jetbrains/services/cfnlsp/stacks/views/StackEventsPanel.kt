@@ -10,6 +10,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.ui.components.JBLabel
 import com.intellij.util.ui.UIUtil
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.cfnlsp.CfnClientService
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ClearStackEventsParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.GetStackEventsParams
@@ -80,12 +81,12 @@ internal class StackEventsPanel(
         refresh()
     }
 
-    private fun loadEvents(): CompletableFuture<Void?> {
+    private fun loadEvents(): CompletableFuture<Unit?> {
         if (isLoading) return CompletableFuture.completedFuture(null)
         isLoading = true
 
         return cfnClientService.getStackEvents(GetStackEventsParams(stackName, nextToken))
-            .thenAccept { result: GetStackEventsResult? ->
+            .thenApply { result: GetStackEventsResult? ->
                 ApplicationManager.getApplication().invokeLater {
                     isLoading = false
                     result?.let { handleLoadResult(it) }
@@ -96,7 +97,6 @@ internal class StackEventsPanel(
                     isLoading = false
                     handleError("Failed to load events: ${error.message}")
                 }
-                null
             }
     }
 
@@ -209,7 +209,7 @@ internal class StackEventsPanel(
         allEvents = emptyList()
         StackPanelLayoutBuilder.updateEventsTable(eventTable, allEvents, message)
         updateUIComponents()
-        LOG.warn(message)
+        LOG.warn { message }
     }
 
     override fun dispose() {
