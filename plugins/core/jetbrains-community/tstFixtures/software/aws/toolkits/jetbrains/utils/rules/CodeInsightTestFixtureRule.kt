@@ -113,7 +113,7 @@ open class CodeInsightTestFixtureRule(protected val testDescription: LightProjec
     private companion object {
         val LOG = getLogger<CodeInsightTestFixtureRule>()
         
-        // TODO: Replace with proper service registry - this will break if CfnLspServerSupportProvider is moved/renamed
+        // CfnLspServerSupportProvider must not be moved/renamed since we are hard-coding its class name
         private const val CFN_LSP_PROVIDER_CLASS = "software.aws.toolkits.jetbrains.services.cfnlsp.server.CfnLspServerSupportProvider"
     }
 }
