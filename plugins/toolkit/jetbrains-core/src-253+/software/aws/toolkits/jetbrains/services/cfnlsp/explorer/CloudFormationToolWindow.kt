@@ -9,8 +9,8 @@ import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.ToolkitPlaces
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsStateChangeNotifier
@@ -77,14 +77,14 @@ internal class CloudFormationToolWindow(private val project: Project) :
     }
 
     private fun updateContent() {
-        LOG.info { "CloudFormationToolWindow updateContent() called" }
+        LOG.debug { "CloudFormationToolWindow updateContent() called" }
         val connectionManager = AwsConnectionManager.getInstance(project)
         when (val connectionState = connectionManager.connectionState) {
             is ConnectionState.ValidConnection -> {
                 redrawContent()
             }
             is ConnectionState.ValidatingConnection -> {
-                LOG.info { "Validating connection, showing validation message" }
+                LOG.debug { "Validating connection, showing validation message" }
                 setContent(
                     CenteredInfoPanel().apply {
                         addLine("Validating connection to AWS...")
@@ -92,7 +92,7 @@ internal class CloudFormationToolWindow(private val project: Project) :
                 )
             }
             else -> {
-                LOG.info { "No valid connection found (state: $connectionState), showing sign-in panel" }
+                LOG.debug { "No valid connection found (state: $connectionState), showing sign-in panel" }
                 setContent(
                     CenteredInfoPanel().apply {
                         addLine(message("cloudformation.explorer.sign_in"))

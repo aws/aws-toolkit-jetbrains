@@ -3,9 +3,9 @@
 
 package software.aws.toolkits.jetbrains.services.cfnlsp
 
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
-import com.intellij.openapi.Disposable
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
@@ -15,6 +15,8 @@ import com.intellij.platform.lsp.api.LspServerManager
 import org.eclipse.lsp4j.DidChangeConfigurationParams
 import org.eclipse.lsp4j.DidOpenTextDocumentParams
 import org.eclipse.lsp4j.TextDocumentItem
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ClearStackEventsParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.CreateDeploymentParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.CreateStackActionResult
@@ -196,11 +198,13 @@ internal class CfnClientService(private val project: Project) : Disposable {
         try {
             LspServerManager.getInstance(project).stopServers(CfnLspServerSupportProvider::class.java)
         } catch (e: Exception) {
-            // Log but don't fail - disposal should be robust
+            LOG.warn(e) { "Failed to stop CFN LSP servers during disposal" }
         }
     }
 
     companion object {
+        private val LOG = getLogger<CfnClientService>()
+
         fun getInstance(project: Project): CfnClientService = project.service()
     }
 }
