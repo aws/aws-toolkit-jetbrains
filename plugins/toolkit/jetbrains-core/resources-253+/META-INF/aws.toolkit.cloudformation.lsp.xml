@@ -24,6 +24,8 @@
             instance="software.aws.toolkits.jetbrains.settings.CfnLspSettingsConfigurable"
         />
 
+        <notificationGroup id="aws.cfn.telemetry" displayType="STICKY_BALLOON" key="cloudformation.telemetry.prompt.title"/>
+
         <statusBarWidgetFactory
             id="aws.toolkit.cloudformation.operation.status"
             implementation="software.aws.toolkits.jetbrains.services.cfnlsp.stacks.CfnStatusBarWidgetFactory"/>
