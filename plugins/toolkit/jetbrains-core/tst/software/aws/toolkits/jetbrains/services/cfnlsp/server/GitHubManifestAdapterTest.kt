@@ -266,9 +266,9 @@ class GitHubManifestAdapterTest {
         val mapper = jacksonObjectMapper()
         val versionObjects = versions.map { (v, latest, delisted) ->
             mapOf(
-                "server_version" to v,
+                "serverVersion" to v,
                 "latest" to latest,
-                "is_delisted" to delisted,
+                "isDelisted" to delisted,
                 "targets" to listOf(currentPlatformTarget(v))
             )
         }

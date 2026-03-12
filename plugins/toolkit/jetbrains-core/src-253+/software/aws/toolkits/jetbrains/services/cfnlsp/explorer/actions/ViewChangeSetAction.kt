@@ -31,7 +31,7 @@ internal class ViewChangeSetAction : AnAction() {
                         project = project,
                         stackName = node.stackName,
                         changeSetName = node.changeSetName,
-                        changes = result.changes ?: emptyList(),
+                        changes = result.changes.orEmpty(),
                         enableDeploy = result.status == "CREATE_COMPLETE",
                         status = result.status,
                         creationTime = result.creationTime,

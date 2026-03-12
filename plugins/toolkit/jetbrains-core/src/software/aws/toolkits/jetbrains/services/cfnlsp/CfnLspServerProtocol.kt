@@ -74,7 +74,7 @@ internal interface CfnLspServerProtocol : LanguageServer {
     fun refreshResources(params: RefreshResourcesParams): CompletableFuture<RefreshResourcesResult>
 
     @JsonRequest("aws/cfn/resources/list/remove")
-    fun removeResourceType(resourceType: String): CompletableFuture<Void>
+    fun removeResourceType(resourceType: String): CompletableFuture<Unit>
 
     @JsonRequest("aws/cfn/stack/validation/create")
     fun createValidation(params: CreateValidationParams): CompletableFuture<CreateStackActionResult>
@@ -128,5 +128,5 @@ internal interface CfnLspServerProtocol : LanguageServer {
     fun getStackEvents(params: GetStackEventsParams): CompletableFuture<GetStackEventsResult>
 
     @JsonRequest("aws/cfn/stack/events/clear")
-    fun clearStackEvents(params: ClearStackEventsParams): CompletableFuture<Void>
+    fun clearStackEvents(params: ClearStackEventsParams): CompletableFuture<Unit>
 }

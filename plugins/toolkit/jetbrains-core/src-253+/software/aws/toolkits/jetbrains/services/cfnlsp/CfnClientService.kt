@@ -120,7 +120,7 @@ internal class CfnClientService(private val project: Project) {
     fun listResourceTypes(): CompletableFuture<ResourceTypesResult?> =
         sendRequest { it.listResourceTypes() }
 
-    fun removeResourceType(resourceType: String): CompletableFuture<Void?> =
+    fun removeResourceType(resourceType: String): CompletableFuture<Unit?> =
         sendRequest { it.removeResourceType(resourceType) }
 
     fun searchResource(params: SearchResourceParams): CompletableFuture<SearchResourceResult?> =
@@ -188,7 +188,7 @@ internal class CfnClientService(private val project: Project) {
     fun getStackEvents(params: GetStackEventsParams): CompletableFuture<GetStackEventsResult?> =
         sendRequest { it.getStackEvents(params) }
 
-    fun clearStackEvents(params: ClearStackEventsParams): CompletableFuture<Void?> =
+    fun clearStackEvents(params: ClearStackEventsParams): CompletableFuture<Unit?> =
         sendRequest { it.clearStackEvents(params) }
 
     companion object {

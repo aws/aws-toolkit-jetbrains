@@ -3,6 +3,8 @@
 
 <idea-plugin>
     <extensions defaultExtensionNs="com.intellij">
+        <postStartupActivity implementation="software.aws.toolkits.jetbrains.services.cfnlsp.CfnLspStartupActivity"/>
+        
         <platform.lsp.serverSupportProvider
             implementation="software.aws.toolkits.jetbrains.services.cfnlsp.server.CfnLspServerSupportProvider"/>
         

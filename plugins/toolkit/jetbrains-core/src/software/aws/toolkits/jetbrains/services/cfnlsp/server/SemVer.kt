@@ -55,7 +55,7 @@ internal data class SemVer(
             val major = parts[0].toIntOrNull() ?: return null
             val minor = parts[1].toIntOrNull() ?: return null
             val patch = parts[2].toIntOrNull() ?: return null
-            val prerelease = prePart?.split('-') ?: emptyList()
+            val prerelease = prePart?.split('-').orEmpty()
 
             return SemVer(major, minor, patch, prerelease)
         }

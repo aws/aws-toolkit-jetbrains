@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.cfnlsp.stacks.views
 
 import com.intellij.ui.JBColor
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.warn
 import java.awt.Color
 import java.time.Instant
 import java.time.ZoneId
@@ -32,7 +33,7 @@ internal object StackDateFormatter {
         val instant = Instant.parse(dateString)
         instant.atZone(ZoneId.systemDefault()).format(dateFormatter)
     } catch (e: Exception) {
-        LOG.warn("Failed to parse date string: $dateString", e)
+        LOG.warn(e) { "Failed to parse date string: $dateString" }
         null
     }
 }

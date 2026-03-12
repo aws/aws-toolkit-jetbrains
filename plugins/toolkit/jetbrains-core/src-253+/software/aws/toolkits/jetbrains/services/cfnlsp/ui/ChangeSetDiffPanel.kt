@@ -25,6 +25,7 @@ import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.table.JBTable
 import com.intellij.util.ui.JBUI
+import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ResourceChange
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ResourceChangeDetail
@@ -174,8 +175,8 @@ internal class ChangeSetDiffPanel(
         val row = resourceTable.selectedRow
         if (row < 0 || row >= resourceChanges.size) return
         val rc = resourceChanges[row]
-        val before = formatJson(rc.beforeContext ?: "")
-        val after = formatJson(rc.afterContext ?: "")
+        val before = formatJson(rc.beforeContext.orEmpty())
+        val after = formatJson(rc.afterContext.orEmpty())
         if (before.isEmpty() && after.isEmpty()) return
 
         val annotatedBefore = annotateDriftInJson(rc, before)
@@ -337,10 +338,10 @@ internal class ChangeSetDiffPanel(
                 if (tabber != null) {
                     tabber.updateChangeSetTab("Change set", panel, tooltip = changeSetName)
                 } else {
-                    LOG.error("Failed to get tabber for stack: $stackName")
+                    LOG.error { "Failed to get tabber for stack: $stackName" }
                 }
             } catch (e: Exception) {
-                LOG.error("Exception while getting or opening stack view for $stackName", e)
+                LOG.error(e) { "Exception while getting or opening stack view for $stackName" }
             }
         }
     }
@@ -450,11 +451,11 @@ private class ResourceTableModel(
     override fun getValueAt(row: Int, col: Int): Any {
         val rc = resources[row]
         return when (col) {
-            0 -> rc.action ?: ""
-            1 -> rc.logicalResourceId ?: ""
-            2 -> rc.physicalResourceId ?: ""
-            3 -> rc.resourceType ?: ""
-            4 -> rc.replacement ?: ""
+            0 -> rc.action.orEmpty()
+            1 -> rc.logicalResourceId.orEmpty()
+            2 -> rc.physicalResourceId.orEmpty()
+            3 -> rc.resourceType.orEmpty()
+            4 -> rc.replacement.orEmpty()
             5 -> if (showDrift) rc.driftDisplay() else ""
             else -> ""
         }
@@ -498,13 +499,13 @@ private class DetailTableModel(
         val t = d.target
         val drift = t?.drift ?: t?.liveResourceDrift
         return when (col) {
-            0 -> t?.attributeChangeType ?: ""
-            1 -> t?.name ?: t?.attribute ?: ""
-            2 -> t?.requiresRecreation ?: ""
-            3 -> t?.beforeValue ?: ""
-            4 -> t?.afterValue ?: ""
-            5 -> d.changeSource ?: ""
-            6 -> d.causingEntity ?: ""
+            0 -> t?.attributeChangeType.orEmpty()
+            1 -> t?.name ?: t?.attribute.orEmpty()
+            2 -> t?.requiresRecreation.orEmpty()
+            3 -> t?.beforeValue.orEmpty()
+            4 -> t?.afterValue.orEmpty()
+            5 -> d.changeSource.orEmpty()
+            6 -> d.causingEntity.orEmpty()
             7 -> if (showDrift) drift?.previousValue ?: "-" else ""
             8 -> if (showDrift) drift?.actualValue ?: "-" else ""
             else -> ""
@@ -522,7 +523,7 @@ private class WarningCellRenderer : DefaultTableCellRenderer() {
         column: Int,
     ): Component {
         val comp = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column)
-        val text = value?.toString() ?: ""
+        val text = value?.toString().orEmpty()
         if (text.isNotBlank() && text != "-") {
             foreground = if (isSelected) table.selectionForeground else JBColor.YELLOW.darker()
         }

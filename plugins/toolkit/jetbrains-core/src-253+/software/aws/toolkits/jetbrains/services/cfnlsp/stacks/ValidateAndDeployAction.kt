@@ -65,14 +65,14 @@ internal class ValidateAndDeployAction : AnAction() {
 
                     indicator.text = "Fetching template parameters..."
                     try {
-                        templateParams = clientService.getParameters(uri).get(LSP_TIMEOUT_SECONDS, TimeUnit.SECONDS)?.parameters ?: emptyList()
+                        templateParams = clientService.getParameters(uri).get(LSP_TIMEOUT_SECONDS, TimeUnit.SECONDS)?.parameters.orEmpty()
                     } catch (ex: Exception) {
                         LOG.warn(ex) { "Failed to fetch template parameters" }
                     }
 
                     indicator.text = "Analyzing capabilities..."
                     try {
-                        detectedCaps = clientService.getCapabilities(uri).get(LSP_TIMEOUT_SECONDS, TimeUnit.SECONDS)?.capabilities ?: emptyList()
+                        detectedCaps = clientService.getCapabilities(uri).get(LSP_TIMEOUT_SECONDS, TimeUnit.SECONDS)?.capabilities.orEmpty()
                     } catch (ex: Exception) {
                         LOG.warn(ex) { "Failed to fetch capabilities" }
                     }
@@ -80,9 +80,9 @@ internal class ValidateAndDeployAction : AnAction() {
                     indicator.text = "Checking artifacts..."
                     try {
                         val artifactsResult = clientService.getTemplateArtifacts(uri).get(LSP_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-                        val artifacts = artifactsResult?.artifacts ?: emptyList()
+                        val artifacts = artifactsResult?.artifacts.orEmpty()
                         hasArtifacts = artifacts.isNotEmpty()
-                        val templateDir = templateFile.parent?.path ?: ""
+                        val templateDir = templateFile.parent?.path.orEmpty()
                         for (artifact in artifacts) {
                             val artifactPath = if (artifact.filePath.startsWith("/")) {
                                 artifact.filePath
@@ -100,7 +100,7 @@ internal class ValidateAndDeployAction : AnAction() {
 
                     indicator.text = "Fetching template resources..."
                     try {
-                        templateResources = clientService.getTemplateResources(uri).get(LSP_TIMEOUT_SECONDS, TimeUnit.SECONDS)?.resources ?: emptyList()
+                        templateResources = clientService.getTemplateResources(uri).get(LSP_TIMEOUT_SECONDS, TimeUnit.SECONDS)?.resources.orEmpty()
                     } catch (ex: Exception) {
                         LOG.warn(ex) { "Failed to fetch template resources" }
                     }

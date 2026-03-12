@@ -9,6 +9,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.ui.components.JBLabel
 import com.intellij.util.ui.UIUtil
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.cfnlsp.CfnClientService
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeStackParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.StackDetail
@@ -70,7 +71,7 @@ internal class StackOutputsPanel(
     }
 
     private fun renderOutputs(stack: StackDetail) {
-        outputs = stack.outputs ?: emptyList()
+        outputs = stack.outputs.orEmpty()
         consoleLink.isVisible = stack.stackId.isNotEmpty()
 
         StackPanelLayoutBuilder.updateOutputsTable(outputTable, outputs)
@@ -89,7 +90,7 @@ internal class StackOutputsPanel(
         consoleLink.isVisible = false
         StackPanelLayoutBuilder.updateOutputsTable(outputTable, emptyList(), message)
         updateOutputCount(0)
-        LOG.warn(message)
+        LOG.warn { message }
     }
 
     private fun updateOutputCount(count: Int) {
