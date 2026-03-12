@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.cfnlsp
 
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
@@ -56,7 +57,7 @@ import software.aws.toolkits.jetbrains.services.cfnlsp.server.CfnLspServerSuppor
 import java.util.concurrent.CompletableFuture
 
 @Service(Service.Level.PROJECT)
-internal class CfnClientService(private val project: Project) {
+internal class CfnClientService(private val project: Project) : Disposable {
     private val lspServerProvider: () -> LspServer? = {
         LspServerManager.getInstance(project)
             .getServersForProvider(CfnLspServerSupportProvider::class.java)
@@ -190,6 +191,14 @@ internal class CfnClientService(private val project: Project) {
 
     fun clearStackEvents(params: ClearStackEventsParams): CompletableFuture<Unit?> =
         sendRequest { it.clearStackEvents(params) }
+
+    override fun dispose() {
+        try {
+            LspServerManager.getInstance(project).stopServers(CfnLspServerSupportProvider::class.java)
+        } catch (e: Exception) {
+            // Log but don't fail - disposal should be robust
+        }
+    }
 
     companion object {
         fun getInstance(project: Project): CfnClientService = project.service()
