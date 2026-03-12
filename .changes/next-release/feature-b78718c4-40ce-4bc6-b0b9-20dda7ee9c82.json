@@ -1,4 +1,0 @@
-{
-  "type" : "feature",
-  "description" : "Add change set diff views to CloudFormation tool window, deploy workflow, and actions to toolbar"
-}

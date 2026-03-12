@@ -1,4 +1,0 @@
-{
-  "type" : "feature",
-  "description" : "Add the stack outputs panel to the CloudFormation tool window. This allows the user to view the key, value, description, and export name for all of the outputs in their stack"
-}
