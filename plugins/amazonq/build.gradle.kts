@@ -126,6 +126,15 @@ val prepareBundledFlare by tasks.registering(Copy::class) {
                 from(zipTree(it)) {
                     include("*.js")
                     include("*.txt")
+                    // Include stripped indexing folder for @file, @folder, @code support
+                    include("indexing/lspServer.js")
+                    include("indexing/dist/extension.js")
+                    include("indexing/dist/tree-sitter.wasm")
+                    include("indexing/dist/tree-sitter-wasms/**")
+                    // Exclude heavy platform-specific native binaries and models
+                    exclude("indexing/dist/bin/**")
+                    exclude("indexing/dist/build/**")
+                    exclude("indexing/models/**")
                 }
             }
         }
