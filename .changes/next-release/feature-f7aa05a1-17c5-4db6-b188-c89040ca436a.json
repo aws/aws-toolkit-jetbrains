@@ -1,4 +1,0 @@
-{
-  "type" : "feature",
-  "description" : "Add temporary status bar showing in-flight CloudFormation deployment operations"
-}
