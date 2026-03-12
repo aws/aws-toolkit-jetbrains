@@ -35,7 +35,7 @@ internal class CfnLspTestFixture(private val fixture: CodeInsightTestFixture) {
     fun openTemplate(name: String, content: String): VirtualFile {
         var file: VirtualFile? = null
         runWriteActionAndWait { file = fixture.tempDirFixture.createFile(name, content) }
-        val vf = file!!
+        val vf = file ?: error("Failed to create test file")
         runInEdtAndWait { fixture.openFileInEditor(vf) }
         ensureRunning()
         ensureSchemasLoaded()

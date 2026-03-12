@@ -71,6 +71,13 @@ open class CodeInsightTestFixtureRule(protected val testDescription: LightProjec
 
         lazyFixture.ifSet {
             try {
+                // Shutdown LSP servers to prevent thread leaks
+                try {
+                    val cfnClientService = fixture.project.getService(Class.forName("software.aws.toolkits.jetbrains.services.cfnlsp.CfnClientService"))
+                    cfnClientService?.javaClass?.getMethod("shutdown")?.invoke(cfnClientService)
+                } catch (_: Exception) {
+                    // CFN LSP not available, ignore
+                }
                 fixture.tearDown()
             } catch (e: Exception) {
                 LOG.warn(e) { "Exception during tear-down" }
