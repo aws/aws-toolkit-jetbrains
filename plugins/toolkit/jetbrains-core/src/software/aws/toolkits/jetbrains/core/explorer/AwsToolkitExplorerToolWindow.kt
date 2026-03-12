@@ -50,6 +50,11 @@ class AwsToolkitExplorerToolWindow(
     private val tabComponents = buildMap<String, () -> Component> {
         put(EXPLORER_TAB_ID, { ExplorerToolWindow.getInstance(project) })
         put(DEVTOOLS_TAB_ID, { DevToolsToolWindow.getInstance(project) })
+        ToolkitToolWindowTab.EP_NAME.extensionList
+            .filter { it.enabled() }
+            .forEach { tab ->
+                put(tab.tabId, { tab.createContent(project) })
+            }
     }
 
     init {
