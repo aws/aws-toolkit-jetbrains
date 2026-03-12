@@ -56,10 +56,28 @@ resource types supported by the plugin.
 * **Authentication** - Connect to AWS using static credentials, credential process, AWS Builder ID or AWS SSO. [Learn more about
 authentication options](https://docs.aws.amazon.com/console/toolkit-for-jetbrains/credentials)
 
+### ![CloudFormation][cloudformation-icon] AWS CloudFormation
+
+Powered by the [CloudFormation Language Server](https://github.com/aws-cloudformation/cloudformation-languageserver), the toolkit provides rich CloudFormation 
+template authoring, stack and resource management capabilities.
+
+**Template Authoring**
+* **Language Support** - Syntax validation, auto-completion, hover documentation, and go-to-definition for CloudFormation YAML/JSON templates
+* **Static Validation** - Real-time diagnostics and error highlighting powered by [cfn-lint](https://github.com/aws-cloudformation/cfn-lint) and [CloudFormation Guard](https://github.com/aws-cloudformation/cloudformation-guard)
+
+**Stack Management**
+* **CloudFormation Explorer** - Browse stacks, resources, and change sets in a dedicated tool window
+* **Stack View** - Inspect stack details across Overview, Resources, Events, and Outputs tabs
+* **Resource Explorer** - Search, add, and browse live resource types and their properties
+
+**Validate and Deploy**
+* **Early Validation** - Create a change set to validate template for deployment readiness and receive diagnostics
+* **Change Set Diff View** - Review resource-level and property-level changes before deploying, with side-by-side JSON diff
+* **Live-Aware Drift Detection** - Inline drift annotations highlight resources that have changed outside of CloudFormation
+* **Execute and Delete Change Sets** - Deploy or clean up change sets directly from the diff view or explorer tree
+
 ### Services
 
-#### ![CloudFormation][cloudformation-icon] AWS CloudFormation
-* View events, resources, and outputs for your CloudFormation stacks
 #### ![CloudWatch Logs][cloudwatch-logs-icon] CloudWatch Logs 
 * View and search your CloudWatch log streams
 #### ![AWS Lambda][lambda-icon] AWS Lambda
