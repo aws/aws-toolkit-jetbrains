@@ -1,0 +1,14 @@
+{
+  "date" : "2026-03-13",
+  "version" : "3.106",
+  "entries" : [ {
+    "type" : "feature",
+    "description" : "Added support for validating and deploying CloudFormation templates to new or existing stacks"
+  }, {
+    "type" : "feature",
+    "description" : "Added intelligent authoring support for CloudFormation templates."
+  }, {
+    "type" : "feature",
+    "description" : "Added support for viewing CloudFormation stack details such as resources and events"
+  } ]
+}
