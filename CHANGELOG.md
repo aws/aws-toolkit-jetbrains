@@ -1,3 +1,8 @@
+# _3.106_ (2026-03-13)
+- **(Feature)** Added support for validating and deploying CloudFormation templates to new or existing stacks
+- **(Feature)** Added intelligent authoring support for CloudFormation templates.
+- **(Feature)** Added support for viewing CloudFormation stack details such as resources and events
+
 # _3.105_ (2026-03-06)
 - **(Removal)** Removed support for 2024.3.x IDEs and Gateway 2025.2
 

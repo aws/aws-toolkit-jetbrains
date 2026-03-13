@@ -1,4 +1,0 @@
-{
-  "type" : "feature",
-  "description" : "Added support for viewing CloudFormation stack details such as resources and events"
-}
