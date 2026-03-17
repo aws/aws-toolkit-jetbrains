@@ -211,7 +211,7 @@ internal class CfnLspInstaller(
         private val LOG = getLogger<CfnLspInstaller>()
         private const val MANIFEST_CACHE_KEY = "aws.cloudformation.lsp.manifest"
 
-        fun defaultStorageDir(): Path = getToolkitsCacheRoot().resolve("cloudformation-lsp")
+        fun defaultStorageDir(): Path = getToolkitsCacheRoot().resolve("language-servers").resolve("cloudformation-languageserver")
 
         internal fun parseHashString(hashString: String): Pair<String, String>? {
             // Format: "sha256:abc123..." or "sha384:abc123..."
