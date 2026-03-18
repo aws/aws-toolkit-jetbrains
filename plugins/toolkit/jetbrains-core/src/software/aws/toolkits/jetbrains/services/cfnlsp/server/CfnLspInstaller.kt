@@ -50,6 +50,8 @@ internal class CfnLspInstaller(
         val versionDir = storageDir.resolve(release.version)
         val serverPath = versionDir.resolve(CfnLspServerConfig.SERVER_FILE)
 
+        cleanupLegacyStorageDir()
+
         return if (Files.exists(serverPath)) {
             LOG.info { "Using cached CloudFormation LSP ${release.version}" }
             serverPath
@@ -141,6 +143,17 @@ internal class CfnLspInstaller(
                 message("cloudformation.lsp.error.hash_mismatch"),
                 CfnLspException.ErrorCode.HASH_VERIFICATION_FAILED
             )
+        }
+    }
+
+    private fun cleanupLegacyStorageDir() {
+        val legacyDir = getToolkitsCacheRoot().resolve("cloudformation-lsp")
+        if (!Files.exists(legacyDir)) return
+        try {
+            legacyDir.toFile().deleteRecursively()
+            LOG.info { "Removed legacy LSP directory: $legacyDir" }
+        } catch (e: Exception) {
+            LOG.warn(e) { "Failed to remove legacy LSP directory" }
         }
     }
 
