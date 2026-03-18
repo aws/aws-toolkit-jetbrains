@@ -1,3 +1,5 @@
+# _3.107_ (2026-03-18)
+
 # _3.106_ (2026-03-13)
 - **(Feature)** Added support for validating and deploying CloudFormation templates to new or existing stacks
 - **(Feature)** Added intelligent authoring support for CloudFormation templates.
