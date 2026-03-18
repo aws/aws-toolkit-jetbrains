@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.cfnlsp
 
+import com.intellij.ide.BrowserUtil
 import com.intellij.notification.Notification
 import com.intellij.notification.NotificationAction
 import com.intellij.notification.NotificationType
@@ -11,6 +12,8 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.ProjectActivity
 import software.aws.toolkits.jetbrains.core.explorer.AwsToolkitExplorerToolWindow
 import software.aws.toolkits.resources.AwsToolkitBundle.message
+
+private const val LANGUAGE_SERVER_DOCS_URL = "https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/ide-extension.html"
 
 internal class CfnLspIntroPrompter : ProjectActivity {
     override suspend fun execute(project: Project) {
@@ -32,6 +35,12 @@ internal class CfnLspIntroPrompter : ProjectActivity {
                 openCloudFormationTab(project)
                 applyChoice()
                 notification.expire()
+            }
+        })
+
+        notification.addAction(object : NotificationAction(message("cloudformation.lsp.intro.prompt.action.learn_more")) {
+            override fun actionPerformed(e: AnActionEvent, notification: Notification) {
+                BrowserUtil.browse(LANGUAGE_SERVER_DOCS_URL)
             }
         })
 
