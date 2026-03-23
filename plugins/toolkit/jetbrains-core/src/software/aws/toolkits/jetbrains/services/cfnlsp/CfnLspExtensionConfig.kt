@@ -3,8 +3,8 @@
 
 package software.aws.toolkits.jetbrains.services.cfnlsp
 
-import software.aws.toolkits.jetbrains.AwsPlugin
-import software.aws.toolkits.jetbrains.AwsToolkit
+import software.aws.toolkit.jetbrains.AwsPlugin
+import software.aws.toolkit.jetbrains.AwsToolkit
 
 object CfnLspExtensionConfig {
     const val EXTENSION_NAME: String = AwsToolkit.TOOLKIT_PLUGIN_ID

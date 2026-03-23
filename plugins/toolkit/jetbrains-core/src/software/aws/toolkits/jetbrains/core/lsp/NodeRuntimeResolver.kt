@@ -6,8 +6,8 @@ package software.aws.toolkits.jetbrains.core.lsp
 import com.intellij.execution.configurations.PathEnvironmentVariableUtil
 import com.intellij.execution.util.ExecUtil
 import com.intellij.openapi.util.SystemInfo
-import software.aws.toolkits.core.utils.debug
-import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkit.core.utils.debug
+import software.aws.toolkit.core.utils.getLogger
 import java.nio.file.Files
 import java.nio.file.Path
 

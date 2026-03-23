@@ -29,9 +29,9 @@ import com.intellij.testFramework.runInEdtAndWait
 import com.intellij.testFramework.writeChild
 import org.junit.runner.Description
 import org.mockito.Mockito
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.info
-import software.aws.toolkits.core.utils.warn
+import software.aws.toolkit.core.utils.getLogger
+import software.aws.toolkit.core.utils.info
+import software.aws.toolkit.core.utils.warn
 import java.nio.file.Paths
 
 /**
