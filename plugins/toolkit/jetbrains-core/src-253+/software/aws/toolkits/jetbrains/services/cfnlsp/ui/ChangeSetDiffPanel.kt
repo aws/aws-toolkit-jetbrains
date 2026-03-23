@@ -25,8 +25,8 @@ import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.table.JBTable
 import com.intellij.util.ui.JBUI
-import software.aws.toolkits.core.utils.error
-import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkit.core.utils.error
+import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ResourceChange
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ResourceChangeDetail
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.StackChange

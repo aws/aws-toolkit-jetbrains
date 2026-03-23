@@ -15,7 +15,7 @@ import org.eclipse.lsp4j.DocumentSymbolParams
 import org.eclipse.lsp4j.TextDocumentIdentifier
 import org.eclipse.lsp4j.TextDocumentItem
 import org.eclipse.lsp4j.services.LanguageServer
-import software.aws.toolkits.core.utils.Waiters
+import software.aws.toolkit.core.utils.Waiters
 import software.aws.toolkits.jetbrains.services.cfnlsp.server.CfnLspServerDescriptor
 import java.time.Duration
 import java.util.concurrent.CompletableFuture

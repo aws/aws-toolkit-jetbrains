@@ -4,8 +4,8 @@
 package software.aws.toolkits.jetbrains.services.cfnlsp.stacks.views
 
 import com.intellij.ui.JBColor
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.warn
+import software.aws.toolkit.core.utils.getLogger
+import software.aws.toolkit.core.utils.warn
 import java.awt.Color
 import java.time.Instant
 import java.time.ZoneId

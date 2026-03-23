@@ -4,8 +4,8 @@
 package software.aws.toolkits.jetbrains.services.cfnlsp.stacks
 
 import com.intellij.openapi.project.Project
-import software.aws.toolkits.core.utils.error
-import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkit.core.utils.error
+import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.cfnlsp.CfnClientService
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.CreateDeploymentParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.GetStackActionStatusResult
