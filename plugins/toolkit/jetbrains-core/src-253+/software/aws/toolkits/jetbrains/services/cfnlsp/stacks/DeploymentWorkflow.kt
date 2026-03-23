@@ -6,6 +6,8 @@ package software.aws.toolkits.jetbrains.services.cfnlsp.stacks
 import com.intellij.openapi.project.Project
 import software.aws.toolkit.core.utils.error
 import software.aws.toolkit.core.utils.getLogger
+import software.aws.toolkit.jetbrains.utils.notifyError
+import software.aws.toolkit.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.services.cfnlsp.CfnClientService
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.CreateDeploymentParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.GetStackActionStatusResult
@@ -14,8 +16,6 @@ import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.StackActionPhase
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.StackActionState
 import software.aws.toolkits.jetbrains.services.cfnlsp.stacks.views.StackViewTab
 import software.aws.toolkits.jetbrains.services.cfnlsp.stacks.views.StackViewWindowManager
-import software.aws.toolkits.jetbrains.utils.notifyError
-import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.AwsToolkitBundle.message
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
