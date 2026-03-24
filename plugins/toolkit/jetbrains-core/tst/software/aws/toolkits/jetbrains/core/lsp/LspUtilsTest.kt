@@ -40,9 +40,8 @@ class LspUtilsTest {
         val arch = getCurrentArchitecture()
 
         when (CpuArch.CURRENT) {
-            CpuArch.X86_64 -> assertThat(arch).isEqualTo("x64")
-            CpuArch.ARM64 -> assertThat(arch).isEqualTo("arm64")
-            else -> assertThat(arch).isEqualTo("unknown")
+            CpuArch.ARM32, CpuArch.ARM64 -> assertThat(arch).isEqualTo("arm64")
+            else -> assertThat(arch).isEqualTo("x64")
         }
     }
 }
