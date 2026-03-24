@@ -11,7 +11,7 @@ import software.aws.toolkit.core.utils.error
 import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerTreeToolWindowDataKeys
 import software.aws.toolkits.jetbrains.services.cfnlsp.explorer.nodes.StackNode
-import software.aws.toolkits.resources.message
+import software.aws.toolkits.resources.AwsToolkitBundle.message
 
 internal class OpenStackViewAction : AnAction(), DumbAware {
 
