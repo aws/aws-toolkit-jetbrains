@@ -70,7 +70,7 @@ internal class GitHubManifestAdapter(
         var versions: List<ManifestVersion> = mapper.readValue(root.get(envKey).toString())
 
         if (SystemInfo.isLinux && legacyLinuxDetector.useLegacyLinux()) {
-            LOG.info { "Legacy Linux environment detected, remapping to linuxglib2.28" }
+            LOG.info { "Legacy Linux environment detected, using $LEGACY_LINUX_PLATFORM builds" }
             versions = remapLegacyLinux(versions)
         }
 
@@ -82,7 +82,7 @@ internal class GitHubManifestAdapter(
 
         val version = latestCompatibleVersion(versions)
 
-        val platform = getEffectivePlatform()
+        val platform = getCurrentOS()
         val arch = getCurrentArchitecture()
 
         val target = version.targets.firstOrNull { it.platform == platform && it.arch == arch }
@@ -139,13 +139,6 @@ internal class GitHubManifestAdapter(
     }
 
     fun getCachedManifest(): String? = cachedManifestJson
-
-    private fun getEffectivePlatform(): String {
-        if (SystemInfo.isLinux && legacyLinuxDetector.useLegacyLinux()) {
-            return LEGACY_LINUX_PLATFORM
-        }
-        return getCurrentOS()
-    }
 
     companion object {
         private val LOG = getLogger<GitHubManifestAdapter>()
