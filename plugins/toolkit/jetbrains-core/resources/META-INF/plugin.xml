@@ -12,9 +12,6 @@
     </xi:include>
 
     <description><![CDATA[
-<h3><a href="https://aws.amazon.com/q">Amazon Q and CodeWhisperer</a></h3>
-<p>CodeWhisperer is now part of Amazon Q. <a href="https://plugins.jetbrains.com/plugin/24267-amazon-q/">Try the Amazon Q extension.</a></p>
-
 <h3><a href="https://codecatalyst.aws/explore">Amazon CodeCatalyst</a></h3>
 <p>Unified software development service to quickly build and deliver applications on AWS.</p>
 
@@ -25,6 +22,17 @@
 </ul>
 </p>
 
+<h3><a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/ide-extension.html">AWS CloudFormation Language Server</a></h3>
+
+<ul>
+    <li>
+        Author templates with documentation on hover, code completion, and diagnostics from <a href="https://github.com/aws-cloudformation/cfn-lint">cfn-lint</a> and <a href="https://docs.aws.amazon.com/cfn-guard/latest/ug/what-is-guard.html">CloudFormation Guard</a>
+    </li>
+    <li>
+        Validate and deploy stacks with confidence using the change set diff view of resource and property-level modifications, view stack details such as events and resources, and explore resources in the new CloudFormation tool window
+    </li>
+</ul>
+
 <h3>View, modify, and deploy AWS resources</h3>
 
 <ul>
@@ -33,9 +41,6 @@
     </li>
     <li>
         <b>Resource Explorer</b> - View and manage AWS resources
-    </li>
-    <li>
-        <b>CloudFormation Support</b> - Author templates with hover, code completion, and cfn-lint support, validate and deploy templates to stacks, and view stack information such as events and resources
     </li>
     <li>
         <b>Run/Debug Local Lambda Functions</b> - Locally test and step-through debug functions in a Lambda-like execution environment provided by the AWS SAM CLI. Supports Java, Python, Node.js, and .NET.
