@@ -5,6 +5,8 @@ package software.aws.toolkits.jetbrains.services.cfnlsp.stacks
 
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
+import software.aws.toolkit.jetbrains.utils.notifyError
+import software.aws.toolkit.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.services.cfnlsp.CfnClientService
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.CreateValidationParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeChangeSetParams
@@ -14,8 +16,6 @@ import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.StackActionPhase
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.StackActionState
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.StackChange
 import software.aws.toolkits.jetbrains.services.cfnlsp.ui.ChangeSetDiffPanel
-import software.aws.toolkits.jetbrains.utils.notifyError
-import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.AwsToolkitBundle.message
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors

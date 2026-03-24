@@ -6,12 +6,12 @@ package software.aws.toolkits.jetbrains.services.cfnlsp.explorer.actions
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.runInEdt
+import software.aws.toolkit.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerTreeToolWindowDataKeys
 import software.aws.toolkits.jetbrains.services.cfnlsp.CfnClientService
 import software.aws.toolkits.jetbrains.services.cfnlsp.explorer.nodes.ChangeSetNode
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.DescribeChangeSetParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.ui.ChangeSetDiffPanel
-import software.aws.toolkits.jetbrains.utils.notifyError
 
 internal class ViewChangeSetAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {

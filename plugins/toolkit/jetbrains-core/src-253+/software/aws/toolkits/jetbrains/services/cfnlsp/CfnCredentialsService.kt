@@ -23,11 +23,11 @@ import software.amazon.awssdk.auth.credentials.AwsSessionCredentials
 import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkit.core.utils.info
 import software.aws.toolkit.core.utils.warn
-import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsStateChangeNotifier
-import software.aws.toolkits.jetbrains.core.credentials.ConnectionState
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
+import software.aws.toolkit.jetbrains.core.credentials.AwsConnectionManager
+import software.aws.toolkit.jetbrains.core.credentials.ConnectionSettingsStateChangeNotifier
+import software.aws.toolkit.jetbrains.core.credentials.ConnectionState
+import software.aws.toolkit.jetbrains.core.credentials.ToolkitConnection
+import software.aws.toolkit.jetbrains.core.credentials.ToolkitConnectionManagerListener
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.UpdateCredentialsParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourceLoader
 import software.aws.toolkits.jetbrains.services.cfnlsp.stacks.StacksManager

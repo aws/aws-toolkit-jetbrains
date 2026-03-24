@@ -13,6 +13,7 @@ import com.intellij.openapi.progress.Task
 import com.intellij.openapi.vfs.VfsUtil
 import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkit.core.utils.warn
+import software.aws.toolkit.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerTreeToolWindowDataKeys
 import software.aws.toolkits.jetbrains.services.cfnlsp.CfnClientService
 import software.aws.toolkits.jetbrains.services.cfnlsp.documents.CfnDocumentManager
@@ -26,7 +27,6 @@ import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.TemplateResource
 import software.aws.toolkits.jetbrains.services.cfnlsp.server.CFN_SUPPORTED_EXTENSIONS
 import software.aws.toolkits.jetbrains.services.cfnlsp.server.CfnLspServerDescriptor
 import software.aws.toolkits.jetbrains.services.cfnlsp.ui.ValidateAndDeployWizard
-import software.aws.toolkits.jetbrains.utils.notifyError
 import java.io.File
 import java.util.UUID
 import java.util.concurrent.TimeUnit

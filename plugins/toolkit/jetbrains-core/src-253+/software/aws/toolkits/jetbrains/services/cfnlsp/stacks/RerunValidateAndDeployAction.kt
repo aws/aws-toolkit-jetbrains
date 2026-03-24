@@ -6,7 +6,7 @@ package software.aws.toolkits.jetbrains.services.cfnlsp.stacks
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
-import software.aws.toolkits.jetbrains.utils.notifyError
+import software.aws.toolkit.jetbrains.utils.notifyError
 import java.util.UUID
 
 internal class RerunValidateAndDeployAction : AnAction() {

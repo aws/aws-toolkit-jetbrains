@@ -19,10 +19,10 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import software.aws.toolkit.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.services.cfnlsp.CfnClientService
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.GetStackEventsResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.StackEvent
-import software.aws.toolkits.jetbrains.utils.notifyInfo
 import java.util.concurrent.CompletableFuture
 import javax.swing.JScrollPane
 import javax.swing.JTable
@@ -41,7 +41,7 @@ class StackEventsPanelTest {
         mockCfnClient = mockk()
         mockCoordinator = mockk()
         mockkObject(CfnClientService)
-        mockkStatic("software.aws.toolkits.jetbrains.utils.NotificationUtilsKt")
+        mockkStatic("software.aws.toolkit.jetbrains.utils.NotificationUtilsKt")
         every { CfnClientService.getInstance(projectRule.project) } returns mockCfnClient
         every { mockCoordinator.addPollingListener(any(), any()) } returns mockk(relaxed = true)
         every { mockCfnClient.clearStackEvents(any()) } returns CompletableFuture.completedFuture(null)
@@ -51,7 +51,7 @@ class StackEventsPanelTest {
     @After
     fun tearDown() {
         unmockkObject(CfnClientService)
-        unmockkStatic("software.aws.toolkits.jetbrains.utils.NotificationUtilsKt")
+        unmockkStatic("software.aws.toolkit.jetbrains.utils.NotificationUtilsKt")
         runInEdtAndWait {
             PlatformTestUtil.dispatchAllEventsInIdeEventQueue()
         }

@@ -4,8 +4,8 @@
 package software.aws.toolkits.jetbrains.services.cfnlsp.stacks
 
 import com.intellij.openapi.project.Project
+import software.aws.toolkit.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.GetStackActionStatusResult
-import software.aws.toolkits.jetbrains.utils.notifyError
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit

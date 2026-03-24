@@ -11,6 +11,7 @@ import com.intellij.ui.components.JBLabel
 import com.intellij.util.ui.UIUtil
 import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkit.core.utils.warn
+import software.aws.toolkit.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.services.cfnlsp.CfnClientService
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ClearStackEventsParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.GetStackEventsParams
@@ -18,7 +19,6 @@ import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.GetStackEventsRe
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.StackEvent
 import software.aws.toolkits.jetbrains.services.cfnlsp.ui.ConsoleUrlGenerator
 import software.aws.toolkits.jetbrains.services.cfnlsp.ui.IconUtils
-import software.aws.toolkits.jetbrains.utils.notifyInfo
 import java.util.concurrent.CompletableFuture
 import javax.swing.JButton
 import javax.swing.JComponent
