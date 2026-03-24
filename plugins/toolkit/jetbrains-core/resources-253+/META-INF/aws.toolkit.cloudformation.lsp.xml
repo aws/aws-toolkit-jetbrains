@@ -5,6 +5,7 @@
     <extensions defaultExtensionNs="com.intellij">
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.CfnLspSettings"/>
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.services.cfnlsp.CfnTelemetryPromptState"/>
+        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.services.cfnlsp.CfnNodePromptState"/>
 
         <postStartupActivity implementation="software.aws.toolkits.jetbrains.services.cfnlsp.CfnLspStartupActivity"/>
         <postStartupActivity implementation="software.aws.toolkits.jetbrains.services.cfnlsp.CfnTelemetryPrompter"/>
@@ -25,6 +26,7 @@
         />
 
         <notificationGroup id="aws.cfn.telemetry" displayType="STICKY_BALLOON" key="cloudformation.telemetry.prompt.title"/>
+        <notificationGroup id="aws.cfn.node" displayType="STICKY_BALLOON" key="cloudformation.lsp.error.title"/>
 
         <statusBarWidgetFactory
             id="aws.toolkit.cloudformation.operation.status"
