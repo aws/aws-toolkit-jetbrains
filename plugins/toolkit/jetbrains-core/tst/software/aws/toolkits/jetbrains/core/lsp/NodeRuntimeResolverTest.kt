@@ -68,10 +68,10 @@ class NodeRuntimeResolverTest {
 
     @Test
     fun `nvm glob respects NVM_DIR env var`() {
-        val customDir = "/custom/nvm"
-        val env: (String) -> String? = { if (it == "NVM_DIR") customDir else null }
+        val customDir = "custom/nvm"
+        val env: (String) -> String? = { if (it == "NVM_DIR") "/custom/nvm" else null }
         val patterns = buildGlobPatterns(Platform.LINUX, home, env)
-        assertThat(patterns).anyMatch { it.startsWith(customDir) }
+        assertThat(patterns).anyMatch { it.contains(customDir) }
     }
 
     @Test

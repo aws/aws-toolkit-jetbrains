@@ -79,15 +79,11 @@ class CfnLspServerDescriptor private constructor(project: Project) :
         } catch (e: Exception) {
             LOG.warn(e) { "Failed to resolve Node.js runtime" }
             notifyNodeError()
-            throw if (e is CfnLspException) {
+            throw (e as? CfnLspException) ?: CfnLspException(
+                message("cloudformation.lsp.error.node_not_found"),
+                CfnLspException.ErrorCode.NODE_NOT_FOUND,
                 e
-            } else {
-                CfnLspException(
-                    message("cloudformation.lsp.error.node_not_found"),
-                    CfnLspException.ErrorCode.NODE_NOT_FOUND,
-                    e
-                )
-            }
+            )
         }
 
         LOG.info { "Starting CloudFormation LSP: node=$nodePath, server=$serverPath" }
