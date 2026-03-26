@@ -30,6 +30,7 @@ import software.aws.toolkit.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkit.jetbrains.core.credentials.ToolkitConnectionManagerListener
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.UpdateCredentialsParams
 import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourceLoader
+import software.aws.toolkits.jetbrains.services.cfnlsp.server.CfnLspServerSupportProvider
 import software.aws.toolkits.jetbrains.services.cfnlsp.stacks.StacksManager
 import software.aws.toolkits.jetbrains.settings.CfnLspSettingsChangeListener
 import java.security.SecureRandom
@@ -110,11 +111,13 @@ internal class CfnCredentialsService(private val project: Project) : Disposable 
         )
     }
 
+    @Suppress("UnstableApiUsage")
     private fun subscribeToSettingsChanges(appBus: com.intellij.util.messages.MessageBusConnection) {
         appBus.subscribe(
             CfnLspSettingsChangeListener.TOPIC,
             CfnLspSettingsChangeListener {
                 notifyConfigurationChanged()
+                LspServerManager.getInstance(project).stopAndRestartIfNeeded(CfnLspServerSupportProvider::class.java)
             }
         )
     }

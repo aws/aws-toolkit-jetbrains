@@ -5,7 +5,9 @@ package software.aws.toolkits.jetbrains.services.cfnlsp.server
 
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.ide.BrowserUtil
+import com.intellij.notification.Notification
 import com.intellij.notification.NotificationAction
+import com.intellij.notification.NotificationType
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
@@ -27,8 +29,11 @@ import software.aws.toolkits.jetbrains.core.lsp.NodeRuntimeResolver
 import software.aws.toolkits.jetbrains.services.cfnlsp.CfnCredentialsService
 import software.aws.toolkits.jetbrains.services.cfnlsp.CfnLspExtensionConfig
 import software.aws.toolkits.jetbrains.services.cfnlsp.CfnLspServerProtocol
+import software.aws.toolkits.jetbrains.services.cfnlsp.CfnNodePromptState
+import software.aws.toolkits.jetbrains.settings.AwsSettings
 import software.aws.toolkits.jetbrains.settings.CfnLspSettings
 import software.aws.toolkits.resources.AwsToolkitBundle.message
+import java.nio.file.Files
 import java.nio.file.Path
 
 internal val CFN_SUPPORTED_EXTENSIONS = setOf("yaml", "yml", "json", "template", "cfn", "txt")
@@ -72,10 +77,14 @@ class CfnLspServerDescriptor private constructor(project: Project) :
 
         val nodePath = try {
             resolveNodeRuntime()
-        } catch (e: CfnLspException) {
+        } catch (e: Exception) {
             LOG.warn(e) { "Failed to resolve Node.js runtime" }
             notifyNodeError()
-            throw e
+            throw (e as? CfnLspException) ?: CfnLspException(
+                message("cloudformation.lsp.error.node_not_found"),
+                CfnLspException.ErrorCode.NODE_NOT_FOUND,
+                e
+            )
         }
 
         LOG.info { "Starting CloudFormation LSP: node=$nodePath, server=$serverPath" }
@@ -88,7 +97,9 @@ class CfnLspServerDescriptor private constructor(project: Project) :
         val settings = CfnLspSettings.getInstance()
 
         if (settings.nodeRuntimePath.isNotBlank()) {
-            return Path.of(settings.nodeRuntimePath)
+            val configured = Path.of(settings.nodeRuntimePath)
+            if (Files.isExecutable(configured)) return configured
+            LOG.warn { "Configured Node.js path is not executable: $configured, falling back to auto-detection" }
         }
 
         return NodeRuntimeResolver.resolve()
@@ -116,19 +127,37 @@ class CfnLspServerDescriptor private constructor(project: Project) :
     }
 
     private fun notifyNodeError() {
-        notifyError(
-            title = message("cloudformation.lsp.error.title"),
-            content = message("cloudformation.lsp.error.node_not_found"),
-            project = project,
-            notificationActions = listOf(
-                NotificationAction.createSimple("Download Node.js") {
-                    BrowserUtil.browse("https://nodejs.org/en/download")
-                },
-                NotificationAction.createSimple(message("cloudformation.lsp.action.configure_node")) {
-                    ShowSettingsUtil.getInstance().showSettingsDialog(project, message("aws.settings.title"))
-                }
-            )
+        val promptState = CfnNodePromptState.getInstance()
+        if (!promptState.shouldPrompt()) return
+
+        var actionTaken = false
+
+        val notification = Notification(
+            "aws.cfn.node",
+            message("cloudformation.lsp.error.title"),
+            message("cloudformation.lsp.error.node_not_found"),
+            NotificationType.WARNING
         )
+
+        notification.addAction(
+            NotificationAction.createSimple(message("cloudformation.lsp.action.download_node")) {
+                BrowserUtil.browse("https://nodejs.org/en/download")
+                actionTaken = true
+            }
+        )
+
+        notification.addAction(
+            NotificationAction.createSimple(message("cloudformation.lsp.action.configure_node")) {
+                ShowSettingsUtil.getInstance().showSettingsDialog(project, "aws.cloudformation")
+                actionTaken = true
+            }
+        )
+
+        notification.whenExpired {
+            if (!actionTaken) promptState.dismissTemporarily()
+        }
+
+        notification.notify(project)
     }
 
     override fun createInitializationOptions(): Any {
