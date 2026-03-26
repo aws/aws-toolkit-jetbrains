@@ -11,6 +11,7 @@ import software.aws.toolkits.jetbrains.services.cfnlsp.server.CfnLspServerSuppor
 
 internal class CfnLspStartupActivity : StartupActivity {
     override fun runActivity(project: Project) {
+        CfnCredentialsService.getInstance(project) // eagerly initialize to register settings change listener
         LspServerManager.getInstance(project).ensureServerStarted(
             CfnLspServerSupportProvider::class.java,
             CfnLspServerDescriptor.getInstance(project)
