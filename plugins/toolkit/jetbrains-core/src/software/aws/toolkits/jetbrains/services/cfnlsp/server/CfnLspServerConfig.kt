@@ -13,5 +13,14 @@ internal object CfnLspServerConfig {
 }
 
 internal enum class CfnLspEnvironment {
-    ALPHA, BETA, PROD
+    ALPHA, BETA, PROD;
+
+    companion object {
+        fun fromEnvironment(): CfnLspEnvironment =
+            if (System.getenv("AWS_TOOLKIT_AUTOMATION")?.equals("true", ignoreCase = true) == true) {
+                BETA
+            } else {
+                PROD
+            }
+    }
 }
