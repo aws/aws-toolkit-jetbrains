@@ -23,7 +23,7 @@ import kotlin.io.path.isDirectory
 
 internal class CfnLspInstaller(
     private val storageDir: Path = defaultStorageDir(),
-    private val manifestAdapter: GitHubManifestAdapter = GitHubManifestAdapter(CfnLspEnvironment.PROD),
+    private val manifestAdapter: GitHubManifestAdapter = GitHubManifestAdapter(CfnLspEnvironment.fromEnvironment()),
 ) {
     private val httpClient = HttpClient.newBuilder()
         .followRedirects(HttpClient.Redirect.NORMAL)
