@@ -32,7 +32,11 @@
             <action class="software.aws.toolkits.jetbrains.services.amazonq.GetAmazonQLogsAction" id="q.getLogs"/>
         </group>
         <!-- TODO: q.openchat will eventually be in amazonq, aws.toolkit.q.sign.in will eventually be in core. -->
-        <action id="q.openchat" class="software.aws.toolkits.jetbrains.services.amazonq.QOpenPanelAction"/>
+        <action id="q.openchat" class="software.aws.toolkits.jetbrains.services.amazonq.QOpenPanelAction">
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="control alt Q"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control alt Q"/>
+            <keyboard-shortcut keymap="$default" first-keystroke="control alt Q" />
+        </action>
 
         <group id="aws.toolkit.q.sign.in">
             <action id="q.sign.in" class="software.aws.toolkits.jetbrains.services.amazonq.explorerActions.SignInToQAction"/>
@@ -51,32 +55,44 @@
 
             <action id="aws.toolkit.jetbrains.core.services.cwc.commands.ExplainCodeAction"
                     class="software.aws.toolkits.jetbrains.services.cwc.commands.ExplainCodeAction">
-                <keyboard-shortcut keymap="$default" first-keystroke="meta alt E" />
+                <keyboard-shortcut keymap="Mac OS X" first-keystroke="control alt E"/>
+                <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control alt E"/>
+                <keyboard-shortcut keymap="$default" first-keystroke="control alt E" />
             </action>
 
             <action id="aws.toolkit.jetbrains.core.services.cwc.commands.RefactorCodeAction"
                     class="software.aws.toolkits.jetbrains.services.cwc.commands.RefactorCodeAction">
-                <keyboard-shortcut keymap="$default" first-keystroke="meta alt U" />
+                <keyboard-shortcut keymap="Mac OS X" first-keystroke="control alt U"/>
+                <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control alt U"/>
+                <keyboard-shortcut keymap="$default" first-keystroke="control alt U" />
             </action>
 
             <action id="aws.toolkit.jetbrains.core.services.cwc.commands.FixCodeAction"
                     class="software.aws.toolkits.jetbrains.services.cwc.commands.FixCodeAction">
-                <keyboard-shortcut keymap="$default" first-keystroke="meta alt Y" />
+                <keyboard-shortcut keymap="Mac OS X" first-keystroke="control alt Y"/>
+                <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control alt Y"/>
+                <keyboard-shortcut keymap="$default" first-keystroke="control alt Y" />
             </action>
 
             <action id="aws.toolkit.jetbrains.core.services.cwc.commands.OptimizeCodeAction"
                     class="software.aws.toolkits.jetbrains.services.cwc.commands.OptimizeCodeAction">
-                <keyboard-shortcut keymap="$default" first-keystroke="meta alt A" />
+                <keyboard-shortcut keymap="Mac OS X" first-keystroke="control alt A" />
+                <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control alt A"/>
+                <keyboard-shortcut keymap="$default" first-keystroke="control alt A" />
             </action>
 
             <action id="aws.toolkit.jetbrains.core.services.cwc.commands.GenerateUnitTestsAction"
                     class="software.aws.toolkits.jetbrains.services.cwc.commands.GenerateUnitTestsAction">
-                <keyboard-shortcut keymap="$default" first-keystroke="meta alt T" />
+                <keyboard-shortcut keymap="Mac OS X" first-keystroke="control alt T"/>
+                <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control alt T"/>
+                <keyboard-shortcut keymap="$default" first-keystroke="control alt T" />
             </action>
 
             <action id="aws.toolkit.jetbrains.core.services.cwc.commands.SendToPromptAction"
                     class="software.aws.toolkits.jetbrains.services.cwc.commands.SendToPromptAction">
-                <keyboard-shortcut keymap="$default" first-keystroke="meta alt S" />
+                <keyboard-shortcut keymap="Mac OS X" first-keystroke="control alt S"/>
+                <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control alt S"/>
+                <keyboard-shortcut keymap="$default" first-keystroke="control alt S" />
             </action>
 
             <action id="aws.toolkit.jetbrains.core.services.cwc.inline.openChat"
