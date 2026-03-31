@@ -75,10 +75,21 @@ class QRegionProfileDialog(
 
             combo.proposeModelUpdate { model ->
                 try {
-                    QRegionProfileManager.getInstance().listRegionProfiles(project)?.forEach {
-                        model.addElement(it)
-                    } ?: error("Attempted to fetch profiles while there does not exist")
-
+                    val profiles = QRegionProfileManager.getInstance().listRegionProfiles(project)
+                    // Handle empty/null profiles gracefully instead of throwing
+                    if (profiles.isNullOrEmpty()) {
+                        val conn = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance()) as? AwsBearerTokenConnection
+                        Telemetry.amazonq.didSelectProfile.use { span ->
+                            span.source(QProfileSwitchIntent.User.value)
+                                .amazonQProfileRegion("not-set")
+                                .ssoRegion(conn?.region)
+                                .credentialStartUrl(conn?.startUrl)
+                                .result(MetricResult.Failed)
+                                .reason("No profiles available")
+                        }
+                        return@proposeModelUpdate
+                    }
+                    profiles.forEach { model.addElement(it) }
                     model.selectedItem = selectedProfile
                 } catch (e: Exception) {
                     val conn = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance()) as? AwsBearerTokenConnection
