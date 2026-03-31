@@ -4,6 +4,7 @@
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import software.aws.toolkits.gradle.findFolders
 import software.aws.toolkits.gradle.intellij.IdeVersions
+import software.aws.toolkits.gradle.intellij.isUnifiedIde
 
 plugins {
     id("toolkit-kotlin-conventions")
@@ -61,7 +62,7 @@ dependencies {
     intellijPlatform {
         val version = ideProfile.community.sdkVersion
         // Use unified IntelliJ IDEA for 2025.3+, Community for older versions
-        if (version.startsWith("2025.3")) {
+        if (isUnifiedIde(version)) {
             intellijIdeaUltimate(version, !version.contains("SNAPSHOT"))
         } else {
             intellijIdeaCommunity(version, !version.contains("SNAPSHOT"))
