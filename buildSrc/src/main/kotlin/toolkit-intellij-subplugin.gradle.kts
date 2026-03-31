@@ -7,6 +7,7 @@ import org.jetbrains.intellij.platform.gradle.tasks.PrepareSandboxTask
 import software.aws.toolkits.gradle.findFolders
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.IdeVersions
+import software.aws.toolkits.gradle.intellij.isUnifiedIde
 import software.aws.toolkits.gradle.intellij.toolkitIntelliJ
 
 val ideProfile = IdeVersions.ideProfile(project)
@@ -100,7 +101,7 @@ dependencies {
         if (!project.name.contains("jetbrains-gateway")) {
             val type = toolkitIntelliJ.ideFlavor.map { flavor ->
                 // Starting with 2025.3, IntelliJ IDEA is unified (no separate Community edition)
-                if (version.get().startsWith("2025.3") && flavor == IdeFlavor.IC) {
+                if (isUnifiedIde(version.get()) && flavor == IdeFlavor.IC) {
                     IntelliJPlatformType.IntellijIdeaUltimate
                 } else {
                     IntelliJPlatformType.fromCode(flavor.toString())
@@ -115,9 +116,9 @@ dependencies {
         bundledPlugins(toolkitIntelliJ.productProfile().map { it.bundledPlugins })
         plugins(toolkitIntelliJ.productProfile().map { it.marketplacePlugins })
 
-        // OAuth modules split in 2025.3 (253) - must be explicitly bundled
+        // OAuth modules split in 2025.3+ - must be explicitly bundled
         val versionStr = version.get()
-        if (versionStr.contains("253")) {
+        if (isUnifiedIde(versionStr)) {
             bundledModule("intellij.platform.collaborationTools")
             bundledModule("intellij.platform.collaborationTools.auth.base")
             bundledModule("intellij.platform.collaborationTools.auth")

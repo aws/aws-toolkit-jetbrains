@@ -8,7 +8,6 @@ import io.gitlab.arturbosch.detekt.Detekt
 import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import org.jetbrains.intellij.platform.gradle.tasks.PrepareSandboxTask
-import org.jetbrains.kotlin.com.intellij.openapi.util.SystemInfo
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.IdeVersions
 import java.nio.file.Path
@@ -45,10 +44,17 @@ intellijToolkit {
 sourceSets {
     main {
         java.srcDirs(layout.buildDirectory.dir("generated-src"))
+        kotlin.srcDirs("protocol/model")
     }
 }
 
-if (providers.gradleProperty("ideProfileName").get() == "2025.3") {
+val riderTestFrameworkVersions = mapOf(
+    "2025.3" to "253.28294.334",
+    "2026.1" to "261.22158.335",
+)
+
+val currentProfile = providers.gradleProperty("ideProfileName").get()
+riderTestFrameworkVersions[currentProfile]?.let { testFrameworkVersion ->
     configurations.all {
         resolutionStrategy.dependencySubstitution {
             listOf(
@@ -57,8 +63,8 @@ if (providers.gradleProperty("ideProfileName").get() == "2025.3") {
                 "com.jetbrains.intellij.platform:test-framework-junit5"
             ).forEach {
                 substitute(module(it))
-                    .using(module("$it:253.28294.334"))
-                    .because("Rider 2025.3.0 requires a newer version of test-framework")
+                    .using(module("$it:$testFrameworkVersion"))
+                    .because("Rider requires a newer version of test-framework")
             }
         }
     }
@@ -137,13 +143,11 @@ val rdModelJarFile: File by lazy {
 
 configure<RdGenExtension> {
     verbose = true
-    hashFolder = rdgenDir.toString()
 
     classpath({
         rdModelJarFile
     })
 
-    sources(projectDir.resolve("protocol/model"))
     packages = "model"
 }
 
@@ -357,7 +361,7 @@ tasks.integrationTest {
 
 tasks.test {
     enabled = false
-    if (SystemInfo.isWindows) {
+    if (System.getProperty("os.name").lowercase().contains("win")) {
         // extremely flaky
         filter.excludeTestsMatching("software.aws.toolkits.jetbrains.services.lambda.dotnet.LambdaGutterMarkHighlightingTest*")
     }

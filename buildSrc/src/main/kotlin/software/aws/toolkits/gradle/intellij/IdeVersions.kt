@@ -149,6 +149,49 @@ object IdeVersions {
                 rdGenVersion = "2025.3.1",
                 nugetVersion = "2025.3.0"
             )
+        ),
+        Profile(
+            name = "2026.1",
+            gateway = ProductProfile(
+                sdkVersion = "2026.1",
+                bundledPlugins = listOf("org.jetbrains.plugins.terminal")
+            ),
+            community = ProductProfile(
+                sdkVersion = "2026.1",
+                bundledPlugins = commonPlugins + listOf(
+                    "com.intellij.java",
+                    "com.intellij.gradle",
+                    "org.jetbrains.idea.maven",
+                    "com.intellij.properties"
+                ),
+                marketplacePlugins = listOf(
+                    "org.toml.lang:261.22158.185",
+                    "PythonCore:261.22158.277",
+                    "Docker:261.22158.299",
+                    "com.intellij.modules.json:261.22158.182"
+                )
+            ),
+            ultimate = ProductProfile(
+                sdkVersion = "2026.1",
+                bundledPlugins = commonPlugins + listOf(
+                    "JavaScript",
+                    "JavaScriptDebugger",
+                    "com.intellij.database",
+                    "com.jetbrains.remoteDevelopment"
+                ),
+                marketplacePlugins = listOf(
+                    "Pythonid:261.22158.277",
+                    "org.jetbrains.plugins.go:261.22158.277",
+                    "com.intellij.modules.json:261.22158.182"
+                )
+            ),
+            rider = RiderProfile(
+                sdkVersion = "2026.1",
+                bundledPlugins = commonPlugins,
+                netFrameworkTarget = "net472",
+                rdGenVersion = "2026.1.3",
+                nugetVersion = "2026.1.0"
+            )
         )
     ).associateBy { it.name }
 
@@ -190,4 +233,11 @@ class Profile(
 private fun shortenedIdeProfileName(sdkName: String): String {
     val parts = sdkName.trim().split(".")
     return parts[0].substring(2) + parts[1]
+}
+
+/** Starting with 2025.3, IntelliJ IDEA is unified (no separate Community edition). */
+fun isUnifiedIde(version: String): Boolean {
+    val match = "(\\d{4}\\.\\d+)".toRegex().find(version) ?: return false
+    val shortVersion = shortenedIdeProfileName(match.groupValues[1])
+    return shortVersion.toIntOrNull()?.let { it >= 253 } ?: false
 }

@@ -5,6 +5,7 @@ import io.gitlab.arturbosch.detekt.Detekt
 import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.IdeVersions
+import software.aws.toolkits.gradle.intellij.isUnifiedIde
 import software.aws.toolkits.telemetry.generator.gradle.GenerateTelemetry
 
 plugins {
@@ -84,7 +85,7 @@ dependencies {
     intellijPlatform {
         // Required for collaboration auth credentials in 2025.3+
         val version = IdeVersions.ideProfile(project).ultimate.sdkVersion
-        if (version.startsWith("2025.3")) {
+        if (isUnifiedIde(version)) {
             bundledModule("intellij.platform.collaborationTools.auth.base")
             bundledModule("intellij.platform.collaborationTools.auth")
         }

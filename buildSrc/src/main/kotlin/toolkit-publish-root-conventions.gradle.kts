@@ -5,6 +5,7 @@ import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
 import org.jetbrains.intellij.platform.gradle.tasks.PatchPluginXmlTask
 import org.jetbrains.intellij.platform.gradle.tasks.aware.SplitModeAware
 import software.aws.toolkits.gradle.intellij.IdeFlavor
+import software.aws.toolkits.gradle.intellij.isUnifiedIde
 import software.aws.toolkits.gradle.intellij.toolkitIntelliJ
 
 // publish-root should imply publishing-conventions, but we keep separate so that gateway always has the GW flavor
@@ -26,7 +27,7 @@ intellijPlatform {
             // recommended() appears to resolve latest EAP for a product?
             // Starting with 2025.3, IntelliJ IDEA is unified (no separate Community edition)
             val version = toolkitIntelliJ.version().get()
-            if (version.startsWith("2025.3")) {
+            if (isUnifiedIde(version)) {
                 ide(provider { IntelliJPlatformType.IntellijIdeaUltimate }, toolkitIntelliJ.version())
             } else {
                 ide(provider { IntelliJPlatformType.IntellijIdeaCommunity }, toolkitIntelliJ.version())
@@ -55,7 +56,7 @@ dependencies {
 
             // prefer versions declared in IdeVersions
             toolkitIntelliJ.apply {
-                val defaultFlavor = if (version().get().startsWith("2025.3")) {
+                val defaultFlavor = if (isUnifiedIde(version().get())) {
                     IdeFlavor.IU  // Use unified IntelliJ IDEA for 2025.3+
                 } else {
                     IdeFlavor.IC  // Use Community for older versions
@@ -68,7 +69,7 @@ dependencies {
 
                 type to version
             } else {
-                val defaultType = if (toolkitIntelliJ.version().get().startsWith("2025.3")) {
+                val defaultType = if (isUnifiedIde(toolkitIntelliJ.version().get())) {
                     provider { IntelliJPlatformType.IntellijIdeaUltimate }
                 } else {
                     provider { IntelliJPlatformType.IntellijIdeaCommunity }
