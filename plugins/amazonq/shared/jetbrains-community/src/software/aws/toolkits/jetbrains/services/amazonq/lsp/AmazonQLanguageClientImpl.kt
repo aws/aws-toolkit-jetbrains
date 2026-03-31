@@ -382,7 +382,8 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                                         indexWorkerThreads = qSettings.getProjectContextIndexThreadCount(),
                                         enableGpuAcceleration = qSettings.isProjectContextGpu(),
                                         localIndexing = LocalIndexingConfiguration(
-                                            maxIndexSizeMB = qSettings.getProjectContextIndexMaxSize()
+                                            maxIndexSizeMB = qSettings.getProjectContextIndexMaxSize(),
+                                            indexCacheDirPath = qSettings.getProjectContextCacheDir()
                                         )
                                     )
                                 )

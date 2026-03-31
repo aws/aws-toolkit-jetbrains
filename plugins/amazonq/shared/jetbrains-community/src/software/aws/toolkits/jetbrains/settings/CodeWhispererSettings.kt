@@ -94,6 +94,15 @@ class CodeWhispererSettings : PersistentStateComponent<CodeWhispererConfiguratio
         state.value[CodeWhispererConfigurationType.IsProjectContextGpu] = value
     }
 
+    fun getProjectContextCacheDir(): String = state.stringValue.getOrDefault(
+        CodeWhispererStringConfigurationType.ProjectContextCacheDir,
+        ""
+    )
+
+    fun setProjectContextCacheDir(value: String) {
+        state.stringValue[CodeWhispererStringConfigurationType.ProjectContextCacheDir] = value
+    }
+
     fun getProjectContextIndexThreadCount(): Int = state.intValue.getOrDefault(
         CodeWhispererIntConfigurationType.ProjectContextIndexThreadCount,
         0
@@ -196,6 +205,7 @@ enum class CodeWhispererConfigurationType {
 
 enum class CodeWhispererStringConfigurationType {
     IgnoredCodeReviewIssues,
+    ProjectContextCacheDir,
 }
 
 enum class CodeWhispererIntConfigurationType {
