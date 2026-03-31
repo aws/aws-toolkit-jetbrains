@@ -374,12 +374,16 @@ class TextDocumentServiceHandlerTest {
             return uri
         }
 
-        if (uri.startsWith("file://C:/")) {
-            val path = uri.substringAfter("file://C:/")
-            return "file:///C:/$path"
+        if (uri.startsWith("file://$windowsDrive:/")) {
+            val path = uri.substringAfter("file://$windowsDrive:/")
+            return "file:///$windowsDrive:/$path"
         }
 
         val path = uri.substringAfter("file:///")
-        return "file:///C:/$path"
+        return "file:///$windowsDrive:/$path"
     }
+
+    private val windowsDrive: String
+        get() = java.nio.file.Paths.get("").toAbsolutePath().root
+            ?.toString()?.firstOrNull()?.uppercaseChar()?.toString() ?: "C"
 }
