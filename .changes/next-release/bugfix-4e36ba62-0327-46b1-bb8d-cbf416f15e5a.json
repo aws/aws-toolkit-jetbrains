@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Amazon Q: Add auto-scroll to chat when new messages arrive"
+}
