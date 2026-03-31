@@ -30,7 +30,6 @@ import software.aws.toolkits.jetbrains.services.cfnlsp.CfnCredentialsService
 import software.aws.toolkits.jetbrains.services.cfnlsp.CfnLspExtensionConfig
 import software.aws.toolkits.jetbrains.services.cfnlsp.CfnLspServerProtocol
 import software.aws.toolkits.jetbrains.services.cfnlsp.CfnNodePromptState
-import software.aws.toolkits.jetbrains.settings.AwsSettings
 import software.aws.toolkits.jetbrains.settings.CfnLspSettings
 import software.aws.toolkits.resources.AwsToolkitBundle.message
 import java.nio.file.Files
