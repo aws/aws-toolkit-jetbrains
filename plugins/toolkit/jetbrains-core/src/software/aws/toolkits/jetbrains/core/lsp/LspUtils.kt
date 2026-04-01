@@ -21,7 +21,8 @@ internal fun getCurrentOS(): String = when {
 }
 
 internal fun getCurrentArchitecture(): String = when (CpuArch.CURRENT) {
-    CpuArch.X86_64 -> "x64"
-    CpuArch.ARM64 -> "arm64"
-    else -> "unknown"
+    CpuArch.ARM32,
+    CpuArch.ARM64,
+    -> "arm64"
+    else -> "x64"
 }

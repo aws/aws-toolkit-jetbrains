@@ -23,7 +23,7 @@ import kotlin.io.path.isDirectory
 
 internal class CfnLspInstaller(
     private val storageDir: Path = defaultStorageDir(),
-    private val manifestAdapter: GitHubManifestAdapter = GitHubManifestAdapter(CfnLspEnvironment.PROD),
+    private val manifestAdapter: GitHubManifestAdapter = GitHubManifestAdapter(CfnLspEnvironment.fromEnvironment()),
 ) {
     private val httpClient = HttpClient.newBuilder()
         .followRedirects(HttpClient.Redirect.NORMAL)
@@ -49,6 +49,8 @@ internal class CfnLspInstaller(
 
         val versionDir = storageDir.resolve(release.version)
         val serverPath = versionDir.resolve(CfnLspServerConfig.SERVER_FILE)
+
+        cleanupLegacyStorageDir()
 
         return if (Files.exists(serverPath)) {
             LOG.info { "Using cached CloudFormation LSP ${release.version}" }
@@ -144,6 +146,17 @@ internal class CfnLspInstaller(
         }
     }
 
+    private fun cleanupLegacyStorageDir() {
+        val legacyDir = getToolkitsCacheRoot().resolve("cloudformation-lsp")
+        if (!Files.exists(legacyDir)) return
+        try {
+            legacyDir.toFile().deleteRecursively()
+            LOG.info { "Removed legacy LSP directory: $legacyDir" }
+        } catch (e: Exception) {
+            LOG.warn(e) { "Failed to remove legacy LSP directory" }
+        }
+    }
+
     /**
      * Removes old versions, keeping the current version and one compatible fallback.
      */
@@ -211,7 +224,7 @@ internal class CfnLspInstaller(
         private val LOG = getLogger<CfnLspInstaller>()
         private const val MANIFEST_CACHE_KEY = "aws.cloudformation.lsp.manifest"
 
-        fun defaultStorageDir(): Path = getToolkitsCacheRoot().resolve("cloudformation-lsp")
+        fun defaultStorageDir(): Path = getToolkitsCacheRoot().resolve("language-servers").resolve("cloudformation-languageserver")
 
         internal fun parseHashString(hashString: String): Pair<String, String>? {
             // Format: "sha256:abc123..." or "sha384:abc123..."
