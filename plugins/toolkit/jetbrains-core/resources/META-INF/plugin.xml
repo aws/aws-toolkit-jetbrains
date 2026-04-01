@@ -370,6 +370,10 @@
         <!-- Min Version Notice -->
         <postStartupActivity implementation="software.aws.toolkits.jetbrains.core.notification.MinimumVersionChange"/>
         <notificationGroup id="aws.toolkit_deprecation" displayType="STICKY_BALLOON" key="aws.toolkit_deprecation.title"/>
+
+        <!-- AWS Core Plugin Notice -->
+        <postStartupActivity implementation="software.aws.toolkits.jetbrains.core.notification.AwsCorePluginNotice"/>
+        <notificationGroup id="aws.toolkit_core_notice" displayType="STICKY_BALLOON" key="aws.toolkit_core_notice.title"/>
         <notificationGroup id="aws.toolkit_telemetry" displayType="STICKY_BALLOON" key="aws.settings.telemetry.prompt.title"/>
 
 
