@@ -52,16 +52,14 @@ def write_config(mv: str, ide: IdeVariant, plugin: PluginVariant):
         f.write(TEMPLATE.format(plugin = plugin, variant = ide, major_version = mv))
 
 if __name__ == '__main__':
-    mvs = ["2025.1", "2025.2", "2025.3"]
+    mvs = ["2025.1", "2025.2", "2025.3", "2026.1"]
     ides = [
         IdeVariant("Community", "IC"),
         IdeVariant("Rider", "RD"),
         IdeVariant("Ultimate", "IU"),
     ]
     plugins = [
-        PluginVariant("Amazon Q", "amazonq", ":plugin-amazonq"),
         PluginVariant("AWS Toolkit", "toolkit/intellij-standalone", ":plugin-toolkit:intellij-standalone"),
-        PluginVariant("All", "sandbox-all", ":sandbox-all"),
     ]
 
 
