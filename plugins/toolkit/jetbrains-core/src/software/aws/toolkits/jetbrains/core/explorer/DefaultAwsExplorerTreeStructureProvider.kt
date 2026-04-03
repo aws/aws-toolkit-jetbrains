@@ -6,7 +6,14 @@ package software.aws.toolkits.jetbrains.core.explorer
 import com.intellij.ide.util.treeView.AbstractTreeNode
 
 class DefaultAwsExplorerTreeStructureProvider : AwsExplorerTreeStructureProvider() {
-    // By default sort the children in alphabetical order
     override fun modify(parent: AbstractTreeNode<*>, children: MutableCollection<AbstractTreeNode<*>>): MutableCollection<AbstractTreeNode<*>> =
-        children.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.toString() }).toMutableList()
+        children.sortedWith(
+            compareBy<AbstractTreeNode<*>> { it !is PinnedFirstNode }
+                .thenComparing(compareBy(String.CASE_INSENSITIVE_ORDER) { it.toString() })
+        ).toMutableList()
 }
+
+/**
+ * Marker interface for nodes that should always appear first in alphabetically sorted lists.
+ */
+interface PinnedFirstNode
