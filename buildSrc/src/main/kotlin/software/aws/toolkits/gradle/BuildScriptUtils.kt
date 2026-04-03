@@ -28,7 +28,7 @@ fun Project.jvmTarget(): Provider<JavaVersion> = withCurrentProfileName {
 // https://plugins.jetbrains.com/docs/intellij/using-kotlin.html#stdlib-miscellaneous
 fun Project.kotlinTarget(): Provider<String> = withCurrentProfileName {
     when (it) {
-        "2025.1", "2025.2", "2025.3" -> KotlinVersionEnum.KOTLIN_2_1
+        "2025.1", "2025.2", "2025.3", "2026.1" -> KotlinVersionEnum.KOTLIN_2_1
         else -> error("not set")
     }.version
 }

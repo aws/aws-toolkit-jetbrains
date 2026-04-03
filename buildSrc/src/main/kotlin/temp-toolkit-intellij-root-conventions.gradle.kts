@@ -83,8 +83,10 @@ dependencies {
         gatewayResources(project(":plugin-toolkit:jetbrains-gateway", configuration = "gatewayResources"))
     }
 
-    implementation(project(":plugin-toolkit:jetbrains-rider"))
-    resharperDlls(project(":plugin-toolkit:jetbrains-rider", configuration = "resharperDlls"))
+    project.findProject(":plugin-toolkit:jetbrains-rider")?.let {
+        implementation(it)
+        resharperDlls(project(":plugin-toolkit:jetbrains-rider", configuration = "resharperDlls"))
+    }
 }
 
 tasks.withType<TestIdeUiTask>().configureEach {

@@ -8,7 +8,6 @@ import io.gitlab.arturbosch.detekt.Detekt
 import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import org.jetbrains.intellij.platform.gradle.tasks.PrepareSandboxTask
-import org.jetbrains.kotlin.com.intellij.openapi.util.SystemInfo
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.IdeVersions
 import java.nio.file.Path
@@ -136,13 +135,6 @@ val rdModelJarFile: File by lazy {
 
 configure<RdGenExtension> {
     verbose = true
-    hashFolder = rdgenDir.toString()
-
-    classpath({
-        rdModelJarFile
-    })
-
-    sources(projectDir.resolve("protocol/model"))
     packages = "model"
 }
 
@@ -150,6 +142,10 @@ configure<RdGenExtension> {
 val generateModels = tasks.named<JavaExec>("generateModels") {
     group = protocolGroup
     description = "Generates protocol models"
+
+    // rd-gen 2026.1+ only adds rd-* jars to classpath, missing kotlin-stdlib
+    classpath(project.buildscript.configurations.getByName("classpath"))
+    classpath(rdModelJarFile)
 
     inputs.dir(file("protocol/model"))
 
@@ -356,7 +352,7 @@ tasks.integrationTest {
 
 tasks.test {
     enabled = false
-    if (SystemInfo.isWindows) {
+    if (System.getProperty("os.name").lowercase().contains("win")) {
         // extremely flaky
         filter.excludeTestsMatching("software.aws.toolkits.jetbrains.services.lambda.dotnet.LambdaGutterMarkHighlightingTest*")
     }
