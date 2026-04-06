@@ -136,6 +136,42 @@ val rdModelJarFile: File by lazy {
 configure<RdGenExtension> {
     verbose = true
     packages = "model"
+
+    if (!ideProfile.name.startsWith("2026")) {
+        // rd-gen pre-2026 compiles sources internally and requires these extension properties
+        javaClass.getMethod("setHashFolder", String::class.java).invoke(this, rdgenDir.toString())
+        javaClass.getMethod("classpath", Array<Any>::class.java).invoke(this, arrayOf<Any>({ rdModelJarFile }))
+        javaClass.getMethod("sources", Array<Any>::class.java).invoke(this, arrayOf<Any>(projectDir.resolve("protocol/model")))
+    }
+}
+
+// Pre-compile model sources for rd-gen 2026.1+ which no longer has built-in Kotlin compilation
+val compiledModelsDir = File("$nonLazyBuildDir/rdgen/compiled-models")
+val compileModelSources = if (ideProfile.name.startsWith("2026")) {
+    val kotlinCompilerConfig = configurations.detachedConfiguration(
+        dependencies.create("org.jetbrains.kotlin:kotlin-compiler-embeddable:${libs.versions.kotlin.get()}")
+    )
+
+    tasks.register<JavaExec>("compileModelSources") {
+        group = protocolGroup
+        description = "Compiles RD model sources for rd-gen 2026.1+"
+
+        mainClass.set("org.jetbrains.kotlin.cli.jvm.K2JVMCompiler")
+        classpath(kotlinCompilerConfig)
+
+        val rdGenClasspath = project.buildscript.configurations.getByName("classpath")
+        args(
+            "-cp", (rdGenClasspath.files + rdModelJarFile).joinToString(File.pathSeparator),
+            "-d", compiledModelsDir.absolutePath,
+            "-jvm-target", "21",
+            modelDir.absolutePath
+        )
+
+        inputs.dir(modelDir)
+        outputs.dir(compiledModelsDir)
+    }
+} else {
+    null
 }
 
 // TODO: migrate to official rdgen gradle plugin https://www.jetbrains.com/help/resharper/sdk/Rider.html#plugin-project-jvm
@@ -143,9 +179,13 @@ val generateModels = tasks.named<JavaExec>("generateModels") {
     group = protocolGroup
     description = "Generates protocol models"
 
-    // rd-gen 2026.1+ only adds rd-* jars to classpath, missing kotlin-stdlib
-    classpath(project.buildscript.configurations.getByName("classpath"))
-    classpath(rdModelJarFile)
+    if (ideProfile.name.startsWith("2026")) {
+        // rd-gen 2026.1+ only adds rd-* jars to classpath, missing kotlin-stdlib
+        compileModelSources?.let { dependsOn(it) }
+        classpath(project.buildscript.configurations.getByName("classpath"))
+        classpath(rdModelJarFile)
+        classpath(File("$nonLazyBuildDir/rdgen/compiled-models"))
+    }
 
     inputs.dir(file("protocol/model"))
 
