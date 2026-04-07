@@ -161,9 +161,12 @@ val compileModelSources = if (ideProfile.name.startsWith("2026")) {
 
         val rdGenClasspath = project.buildscript.configurations.getByName("classpath")
         args(
-            "-cp", (rdGenClasspath.files + rdModelJarFile).joinToString(File.pathSeparator),
-            "-d", compiledModelsDir.absolutePath,
-            "-jvm-target", "21",
+            "-cp",
+            (rdGenClasspath.files + rdModelJarFile).joinToString(File.pathSeparator),
+            "-d",
+            compiledModelsDir.absolutePath,
+            "-jvm-target",
+            "21",
             modelDir.absolutePath
         )
 
