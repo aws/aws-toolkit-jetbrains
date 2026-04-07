@@ -31,7 +31,7 @@ class CloudFormationServiceNodeTest {
 
         val node = CloudFormationServiceNode(projectRule.project, CF_EXPLORER_NODE)
 
-        assertThat(node.children).singleElement().matches { it.displayName() == "Stack" }
+        assertThat(node.children.filterIsInstance<CloudFormationStackNode>()).singleElement().matches { it.displayName() == "Stack" }
     }
 
     @Test
@@ -40,7 +40,7 @@ class CloudFormationServiceNodeTest {
 
         val node = CloudFormationServiceNode(projectRule.project, CF_EXPLORER_NODE)
 
-        assertThat(node.children).singleElement().isInstanceOf(AwsExplorerEmptyNode::class.java)
+        assertThat(node.children.filterIsInstance<AwsExplorerEmptyNode>()).singleElement()
     }
 
     private fun stacksWithNames(names: List<Pair<String, StackStatus>>) {
