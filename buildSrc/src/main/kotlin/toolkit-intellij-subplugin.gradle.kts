@@ -110,6 +110,17 @@ dependencies {
             create(type, version, useInstaller = false)
         } else {
             create(IntelliJPlatformType.Gateway, version)
+
+            // Gateway 2026.1 product-info.json has layout entries without "classPath".
+            // intellij-plugin-structure crashes on these (ProductModuleV2.classPath is non-null).
+            // Bug exists on master: https://github.com/JetBrains/intellij-plugin-verifier
+            // Force-resolve IDE, patch product-info.json, then let bundledPlugins proceed.
+            afterEvaluate {
+                configurations.findByName("intellijPlatformDependency")?.resolve()
+                software.aws.toolkits.gradle.intellij.ProductInfoPatcher.patchGatewayProductInfo(
+                    gradle.gradleUserHomeDir
+                )
+            }
         }
 
         bundledPlugins(toolkitIntelliJ.productProfile().map { it.bundledPlugins })
