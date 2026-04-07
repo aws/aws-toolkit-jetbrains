@@ -14,7 +14,9 @@
     <incompatible-with>com.intellij.modules.python</incompatible-with>
     <incompatible-with>com.intellij.java</incompatible-with>
 
-    <xi:include href="/META-INF/module-core.xml" />
+    <xi:include href="/META-INF/module-core.xml">
+        <xi:fallback/>
+    </xi:include>
 
     <extensions defaultExtensionNs="com.intellij">
         <applicationService serviceInterface="software.aws.toolkit.jetbrains.core.credentials.ToolkitConnectionManager"
