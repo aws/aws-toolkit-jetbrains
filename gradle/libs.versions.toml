@@ -4,7 +4,7 @@ apache-commons-io = "2.16.1"
 apache-commons-text = "1.12.0"
 assertJ = "3.26.3"
 # match with <root>/settings.gradle.kts
-awsSdk = "2.26.25"
+awsSdk = "2.33.7"
 commonmark = "0.22.0"
 detekt = "1.23.8"
 diff-util = "4.12"
