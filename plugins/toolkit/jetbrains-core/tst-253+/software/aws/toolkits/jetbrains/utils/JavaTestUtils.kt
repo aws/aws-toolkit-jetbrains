@@ -227,6 +227,7 @@ private fun findGradlew(): Path {
     throw IllegalStateException("Failed to locate gradlew")
 }
 
+@Suppress("RedundantSuspendModifier") // suspend kept for backward compatibility with callers using runBlocking
 internal suspend fun HeavyJavaCodeInsightTestFixtureRule.setUpMavenProject(): PsiClass {
     val fixture = this.fixture
     val pomFile = fixture.addFileToModule(

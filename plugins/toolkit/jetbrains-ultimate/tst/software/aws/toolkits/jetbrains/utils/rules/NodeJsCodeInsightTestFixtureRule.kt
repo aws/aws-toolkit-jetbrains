@@ -36,13 +36,18 @@ import software.aws.toolkit.jetbrains.utils.rules.CodeInsightTestFixtureRule
  * If you wish to have just a [Project], you may use Intellij's [com.intellij.testFramework.ProjectRule]
  */
 class NodeJsCodeInsightTestFixtureRule : CodeInsightTestFixtureRule(NodeJsLightProjectDescriptor()) {
-    override fun createTestFixture(): CodeInsightTestFixture {
-        val codeInsightFixture = super.createTestFixture()
+    override fun before(description: org.junit.runner.Description) {
+        super.before(description)
         // JavaScript plugin services may not be available in newer IDE test environments (2026.1+)
+        // Check before fixture creation to avoid teardown issues with orphaned projects
         Assume.assumeTrue(
             "NodeJs plugin services not available in test environment",
             ApplicationManager.getApplication().getServiceIfCreated(NodeJsLocalInterpreterManager::class.java) != null
         )
+    }
+
+    override fun createTestFixture(): CodeInsightTestFixture {
+        val codeInsightFixture = super.createTestFixture()
         PsiTestUtil.addContentRoot(codeInsightFixture.module, codeInsightFixture.tempDirFixture.getFile(".")!!)
         codeInsightFixture.project.setNodeJsInterpreterVersion(SemVer("v8.10.10", 8, 10, 10))
         // JSRootConfiguration may not be available in newer IDE test environments (2026.1+)
@@ -99,6 +104,14 @@ class MockNodeJsInterpreter(private var version: SemVer) : NodeJsLocalInterprete
 }
 
 class HeavyNodeJsCodeInsightTestFixtureRule : CodeInsightTestFixtureRule() {
+    override fun before(description: org.junit.runner.Description) {
+        super.before(description)
+        Assume.assumeTrue(
+            "NodeJs plugin services not available in test environment",
+            ApplicationManager.getApplication().getServiceIfCreated(NodeJsLocalInterpreterManager::class.java) != null
+        )
+    }
+
     override fun createTestFixture(): CodeInsightTestFixture {
         val fixtureFactory = IdeaTestFixtureFactory.getFixtureFactory()
         val projectFixture = fixtureFactory.createFixtureBuilder(testName)
