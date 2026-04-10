@@ -1,3 +1,6 @@
+# _4.0_ (2026-04-10)
+- **(Feature)** Removed dependency on the AWS Core plugin. AWS Toolkit no longer requires AWS Core to be installed.
+
 # _3.108_ (2026-03-26)
 
 # _3.107_ (2026-03-18)
