@@ -55,6 +55,7 @@ configurations {
             exclude(group = "org.jetbrains.kotlinx", "kotlinx-coroutines-core")
         }
 
+        val configName = name
         resolutionStrategy.eachDependency {
             if (requested.group == "org.jetbrains.kotlinx" && requested.name.startsWith("kotlinx-coroutines")) {
                 useVersion(versionCatalog.findVersion("kotlinCoroutines").get().toString())
@@ -62,8 +63,24 @@ configurations {
             }
 
             if (requested.group == "org.jetbrains.kotlin" && requested.name.startsWith("kotlin")) {
-                useVersion(versionCatalog.findVersion("kotlin").get().toString())
-                because("resolve kotlin version conflicts in favor of local version catalog")
+                // Only stdlib-like artifacts on runtime/test configurations should use the IDE-bundled version,
+                // and only when the IDE bundles a NEWER version than the KGP compiler.
+                // Compiler plugins (kotlin-scripting-*, kotlin-build-tools-*, etc.) must stay at KGP version.
+                val kgpVersion = versionCatalog.findVersion("kotlin").get().toString()
+                val ideStdlibVersion = versionCatalog.findVersion("kotlinStdlib").get().toString()
+                val isRuntimeOrTest = configName.contains("ompileClasspath") ||
+                    configName.contains("untimeClasspath") ||
+                    configName.contains("estFixtures")
+                val isStdlibLike = requested.name.startsWith("kotlin-stdlib") ||
+                    requested.name == "kotlin-reflect" ||
+                    requested.name.startsWith("kotlin-test")
+                val version = if (isRuntimeOrTest && isStdlibLike && ideStdlibVersion > kgpVersion) {
+                    ideStdlibVersion
+                } else {
+                    kgpVersion
+                }
+                useVersion(version)
+                because("resolve kotlin version conflicts: use IDE-bundled version when newer, otherwise KGP version")
             }
 
             // https://nvd.nist.gov/vuln/detail/cve-2022-25647
