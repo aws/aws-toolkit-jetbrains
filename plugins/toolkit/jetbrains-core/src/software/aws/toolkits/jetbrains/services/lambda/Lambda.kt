@@ -68,6 +68,7 @@ object Lambda {
     private fun findSamBuildContents(project: Project): Collection<VirtualFile> =
         ModuleManager.getInstance(project).modules.flatMap { findSamBuildContents(it) }
 
+    @Suppress("UnusedPrivateMember") // called by findSamBuildContents(Project); detekt false positive with overloaded functions
     private fun findSamBuildContents(module: Module): Collection<VirtualFile> =
         ModuleRootManager.getInstance(module).contentRoots.mapNotNull {
             it.findChild(SamCommon.SAM_BUILD_DIR)
