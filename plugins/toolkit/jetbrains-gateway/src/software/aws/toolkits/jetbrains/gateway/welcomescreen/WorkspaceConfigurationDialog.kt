@@ -120,6 +120,7 @@ class WorkspaceConfigurationDialog private constructor(cawsClient: CodeCatalystC
                 okAction.apply {
                     setText(text)
                     // forces text to be applied to action
+                    @Suppress("UnsafeCast") // okAction is always OkActionDescriptor at runtime; getAction() lives on BuiltinAction
                     (this as DialogBuilder.OkActionDescriptor).getAction(dialogWrapper)
                 }
             }
