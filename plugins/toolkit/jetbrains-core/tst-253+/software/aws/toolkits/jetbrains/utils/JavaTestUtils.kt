@@ -265,7 +265,13 @@ internal suspend fun HeavyJavaCodeInsightTestFixtureRule.setUpMavenProject(): Ps
         RunAll.runAll(
             { runWriteActionAndWait { JavaAwareProjectJdkTableImpl.removeInternalJdkInTests() } },
             // unsure why we can't let connectors be closed automatically during disposer cleanup
-            { Disposer.dispose(MavenServerManager.getInstance()) }
+            // MavenServerManager service may not be available in newer IDE versions (2026.1+)
+            {
+                try {
+                    Disposer.dispose(MavenServerManager.getInstance())
+                } catch (_: Exception) {
+                }
+            }
         )
     }
 
