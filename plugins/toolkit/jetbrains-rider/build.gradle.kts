@@ -85,6 +85,9 @@ dependencies {
 
     testImplementation(project(path = ":plugin-toolkit:jetbrains-core", configuration = "testArtifacts"))
     testImplementation(testFixtures(project(":plugin-core:jetbrains-community")))
+
+    // TestNG was bundled in Rider SDK lib-backend.jar until 2025.3; must be explicit for 2026.1+
+    testImplementation("org.testng:testng:7.10.2")
 }
 
 /**
