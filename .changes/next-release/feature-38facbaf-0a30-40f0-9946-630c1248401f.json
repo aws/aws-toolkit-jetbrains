@@ -1,4 +1,0 @@
-{
-  "type" : "feature",
-  "description" : "Removed dependency on the AWS Core plugin. AWS Toolkit no longer requires AWS Core to be installed."
-}

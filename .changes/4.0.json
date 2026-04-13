@@ -1,0 +1,8 @@
+{
+  "date" : "2026-04-10",
+  "version" : "4.0",
+  "entries" : [ {
+    "type" : "feature",
+    "description" : "Removed dependency on the AWS Core plugin. AWS Toolkit no longer requires AWS Core to be installed."
+  } ]
+}
