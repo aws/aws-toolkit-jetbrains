@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.cfnlsp
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.ProjectActivity
 import com.intellij.platform.lsp.api.LspServerManager
@@ -11,6 +12,8 @@ import software.aws.toolkits.jetbrains.services.cfnlsp.server.CfnLspServerSuppor
 
 internal class CfnLspStartupActivity : ProjectActivity {
     override suspend fun execute(project: Project) {
+        if (ApplicationManager.getApplication().isUnitTestMode) return
+
         CfnCredentialsService.getInstance(project) // eagerly initialize to register settings change listener
         LspServerManager.getInstance(project).ensureServerStarted(
             CfnLspServerSupportProvider::class.java,

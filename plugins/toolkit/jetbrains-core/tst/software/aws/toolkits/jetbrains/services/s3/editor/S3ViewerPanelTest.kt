@@ -16,7 +16,9 @@ import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.mock
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response
 import software.aws.toolkit.core.utils.test.aString
+import software.aws.toolkit.jetbrains.utils.spinUntil
 import software.aws.toolkits.jetbrains.utils.rules.EdtDisposableRule
+import java.time.Duration
 
 class S3ViewerPanelTest {
     @Rule
@@ -50,6 +52,10 @@ class S3ViewerPanelTest {
 
     @Test
     fun `data provider selected nodes key returns table selected values`() {
+        spinUntil(Duration.ofSeconds(5)) {
+            sut.treeTable.table.rowCount > 0
+        }
+
         runInEdtAndWait {
             sut.treeTable.table.clearSelection()
             assertThat(DataManager.getInstance().getDataContext(sut.component).getData(S3EditorDataKeys.SELECTED_NODES)).isEmpty()
