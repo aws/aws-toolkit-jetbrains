@@ -4,6 +4,7 @@
 package software.aws.toolkit.jetbrains.core.gettingstarted
 
 import com.intellij.openapi.components.service
+import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.ui.TestDialog
 import com.intellij.openapi.ui.TestDialogManager
 import com.intellij.testFramework.HeavyPlatformTestCase
@@ -13,7 +14,6 @@ import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.verify
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.any
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.whenever
@@ -264,7 +264,6 @@ class SetupAuthenticationDialogTest : HeavyPlatformTestCase() {
         }
     }
 
-    // TODO: Fix StsClient mock exception throwing in 2025.3 migration - this test expects an exception but mock doesn't throw
     fun `test validate IAM tab fails if credentials are invalid`() {
         val state = SetupAuthenticationDialogState().apply {
             selectedTab.set(SetupAuthenticationTabs.IAM_LONG_LIVED)
@@ -282,6 +281,12 @@ class SetupAuthenticationDialogTest : HeavyPlatformTestCase() {
             whenever(it.getCallerIdentity(any<GetCallerIdentityRequest>())).thenThrow(StsException.builder().message("Some service exception message").build())
         }
 
+        var errorDialogMessage: String? = null
+        TestDialogManager.setTestDialog { message ->
+            errorDialogMessage = message
+            Messages.OK
+        }
+
         runInEdtAndWait {
             val sut = SetupAuthenticationDialog(
                 project,
@@ -289,9 +294,10 @@ class SetupAuthenticationDialogTest : HeavyPlatformTestCase() {
                 sourceOfEntry = SourceOfEntry.UNKNOWN,
                 featureId = FeatureId.Unknown
             )
-            val exception = assertThrows<Exception> { sut.doOKAction() }
-            assertThat(exception.message).isEqualTo(AwsCoreBundle.message("gettingstarted.setup.iam.profile.invalid_credentials"))
+            sut.doOKAction()
         }
+
+        assertThat(errorDialogMessage).isEqualTo(AwsCoreBundle.message("gettingstarted.setup.iam.profile.invalid_credentials"))
     }
 
     fun `test validate IAM tab succeeds if credentials are invalid`() {
