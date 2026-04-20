@@ -79,8 +79,10 @@ class CfnCredentialsServiceTest {
 
         // Verify the encrypted payload is sent
         assertThat(capturedParams).isNotNull()
-        assertThat(capturedParams!!.encrypted).isTrue()
-        assertThat(capturedParams!!.data).isNotEmpty()
+        capturedParams?.let {
+            assertThat(it.encrypted).isTrue()
+            assertThat(it.data).isNotEmpty()
+        }
 
         // Use reflection to verify the mapper excludes null sessionToken
         val mapperField = CfnCredentialsService::class.java.getDeclaredField("MAPPER")
@@ -114,8 +116,10 @@ class CfnCredentialsServiceTest {
 
         // Verify the encrypted payload is sent
         assertThat(capturedParams).isNotNull()
-        assertThat(capturedParams!!.encrypted).isTrue()
-        assertThat(capturedParams!!.data).isNotEmpty()
+        capturedParams?.let {
+            assertThat(it.encrypted).isTrue()
+            assertThat(it.data).isNotEmpty()
+        }
 
         // Use reflection to verify the mapper includes non-null sessionToken
         val mapperField = CfnCredentialsService::class.java.getDeclaredField("MAPPER")
