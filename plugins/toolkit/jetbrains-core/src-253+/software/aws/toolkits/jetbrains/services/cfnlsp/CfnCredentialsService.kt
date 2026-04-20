@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.cfnlsp
 
+import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
@@ -161,7 +162,7 @@ internal class CfnCredentialsService(private val project: Project) : Disposable 
     }
 
     private fun encrypt(credentials: IamCredentials): String {
-        val payload = """{"data":${jacksonObjectMapper().writeValueAsString(credentials)}}"""
+        val payload = """{"data":${MAPPER.writeValueAsString(credentials)}}"""
         val jwe = JWEObject(
             JWEHeader(JWEAlgorithm.DIR, EncryptionMethod.A256GCM),
             Payload(payload)
@@ -174,6 +175,10 @@ internal class CfnCredentialsService(private val project: Project) : Disposable 
 
     companion object {
         private val LOG = getLogger<CfnCredentialsService>()
+
+        private val MAPPER = jacksonObjectMapper().apply {
+            setSerializationInclusion(JsonInclude.Include.NON_NULL)
+        }
 
         fun getInstance(project: Project): CfnCredentialsService = project.service()
 
