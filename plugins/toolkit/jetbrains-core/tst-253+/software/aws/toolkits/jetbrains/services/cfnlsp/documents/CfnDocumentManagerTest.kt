@@ -66,7 +66,48 @@ class CfnDocumentManagerTest {
         assertThat(validTemplates.map { it.fileName }).containsExactly("new1.yaml", "new2.yaml")
     }
 
-    private fun createDocument(fileName: String, cfnType: String, languageId: String) = DocumentMetadata(
+    @Test
+    fun `requiresS3Upload returns false for small template below size limit`() {
+        documentManager.updateDocuments(listOf(createDocument("small.yaml", "template", "yaml", sizeBytes = 1_024)))
+
+        assertThat(documentManager.requiresS3Upload("file:///path/to/small.yaml")).isFalse()
+    }
+
+    @Test
+    fun `requiresS3Upload returns false for template exactly at size limit`() {
+        documentManager.updateDocuments(listOf(createDocument("edge.yaml", "template", "yaml", sizeBytes = 51_200)))
+
+        assertThat(documentManager.requiresS3Upload("file:///path/to/edge.yaml")).isFalse()
+    }
+
+    @Test
+    fun `requiresS3Upload returns true for template above size limit`() {
+        documentManager.updateDocuments(listOf(createDocument("large.yaml", "template", "yaml", sizeBytes = 51_201)))
+
+        assertThat(documentManager.requiresS3Upload("file:///path/to/large.yaml")).isTrue()
+    }
+
+    @Test
+    fun `requiresS3Upload returns false when document metadata is not found`() {
+        documentManager.updateDocuments(listOf(createDocument("other.yaml", "template", "yaml", sizeBytes = 60_000)))
+
+        assertThat(documentManager.requiresS3Upload("file:///path/to/missing.yaml")).isFalse()
+    }
+
+    @Test
+    fun `requiresS3Upload returns false when no documents have been received`() {
+        assertThat(documentManager.requiresS3Upload("file:///path/to/anything.yaml")).isFalse()
+    }
+
+    @Test
+    fun `requiresS3Upload defaults sizeBytes to 0 for backwards compatibility with old servers`() {
+        // Simulates an older LSP server that doesn't send sizeBytes — Kotlin default of 0 applies
+        documentManager.updateDocuments(listOf(createDocument("legacy.yaml", "template", "yaml")))
+
+        assertThat(documentManager.requiresS3Upload("file:///path/to/legacy.yaml")).isFalse()
+    }
+
+    private fun createDocument(fileName: String, cfnType: String, languageId: String, sizeBytes: Int = 0) = DocumentMetadata(
         uri = "file:///path/to/$fileName",
         fileName = fileName,
         ext = fileName.substringAfterLast('.'),
@@ -74,6 +115,7 @@ class CfnDocumentManagerTest {
         cfnType = cfnType,
         languageId = languageId,
         version = 1,
-        lineCount = 10
+        lineCount = 10,
+        sizeBytes = sizeBytes
     )
 }

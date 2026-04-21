@@ -125,6 +125,10 @@ internal class ValidateAndDeployAction : AnAction() {
                     return
                 }
 
+                val requiresS3Upload = prefilledTemplate?.let {
+                    documentManager.requiresS3Upload(File(it).toPath().toUri().toString())
+                } ?: false
+
                 val wizard = ValidateAndDeployWizard(
                     project = project,
                     documentManager = documentManager,
@@ -135,6 +139,7 @@ internal class ValidateAndDeployAction : AnAction() {
                     existingParameters = existingParams,
                     existingTags = existingTags,
                     hasArtifacts = hasArtifacts,
+                    requiresS3Upload = requiresS3Upload,
                     templateResources = templateResources,
                     isExistingStack = isExistingStack,
                 )

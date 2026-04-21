@@ -71,6 +71,7 @@ internal class ValidateAndDeployWizard(
     existingParameters: List<Parameter>? = null,
     existingTags: List<Tag>? = null,
     hasArtifacts: Boolean = false,
+    requiresS3Upload: Boolean = false,
     templateResources: List<TemplateResource> = emptyList(),
     isExistingStack: Boolean = false,
 ) : AbstractWizard<StepAdapter>(message("cloudformation.deploy.dialog.title"), project) {
@@ -78,7 +79,7 @@ internal class ValidateAndDeployWizard(
     private val configStep = ConfigurationStep(
         project, documentManager, prefilledTemplatePath, prefilledStackName,
         templateParameters, detectedCapabilities, existingParameters, existingTags,
-        hasArtifacts, templateResources, isExistingStack,
+        hasArtifacts, requiresS3Upload, templateResources, isExistingStack,
     )
     private val importStep = ImportResourcesStep(templateResources)
 
@@ -182,6 +183,7 @@ private class ConfigurationStep(
     existingParameters: List<Parameter>?,
     existingTags: List<Tag>?,
     private val hasArtifacts: Boolean,
+    private val requiresS3Upload: Boolean,
     templateResources: List<TemplateResource>,
     private val isExistingStack: Boolean,
 ) : StepAdapter() {
@@ -220,9 +222,15 @@ private class ConfigurationStep(
         emptyText.text = message("cloudformation.deploy.dialog.stack_name.placeholder")
     }
 
+    private val forceS3 = hasArtifacts || requiresS3Upload
+
     private val s3BucketField = JBTextField().apply {
         text = savedState.s3Bucket.orEmpty()
-        emptyText.text = "S3 bucket name (optional)"
+        emptyText.text = if (forceS3) {
+            message("cloudformation.deploy.dialog.s3.bucket.placeholder.required")
+        } else {
+            message("cloudformation.deploy.dialog.s3.bucket.placeholder")
+        }
     }
 
     private val s3KeyField = JBTextField().apply {
@@ -233,7 +241,11 @@ private class ConfigurationStep(
             null
         }
         text = savedState.s3Key.orEmpty()
-        emptyText.text = defaultKey ?: "S3 object key (optional)"
+        emptyText.text = defaultKey ?: if (requiresS3Upload) {
+            message("cloudformation.deploy.dialog.s3.key.placeholder.required")
+        } else {
+            message("cloudformation.deploy.dialog.s3.key.placeholder")
+        }
     }
 
     private val parameterFields = templateParameters.map { param ->
@@ -306,7 +318,7 @@ private class ConfigurationStep(
         val file = File(filePath)
         if (!file.exists() || !file.isFile) return
 
-        val fileUri = "file://$filePath"
+        val fileUri = file.toPath().toUri().toString()
 
         val existingItem = (0 until templateDropdown.itemCount)
             .map { templateDropdown.getItemAt(it) }
@@ -332,13 +344,19 @@ private class ConfigurationStep(
                 cell(stackNameField).align(Align.FILL)
             }
         }
-        if (hasArtifacts || s3BucketField.text.isNotBlank()) {
-            group("S3 Upload") {
+        if (forceS3 || s3BucketField.text.isNotBlank()) {
+            group(
+                when {
+                    requiresS3Upload -> message("cloudformation.deploy.dialog.s3.group.title.required")
+                    hasArtifacts -> message("cloudformation.deploy.dialog.s3.group.title.artifacts")
+                    else -> message("cloudformation.deploy.dialog.s3.group.title")
+                }
+            ) {
                 row("Bucket:") { cell(s3BucketField).align(Align.FILL) }
                 row("Key:") { cell(s3KeyField).align(Align.FILL) }
             }
         } else {
-            collapsibleGroup("S3 Upload") {
+            collapsibleGroup(message("cloudformation.deploy.dialog.s3.group.title")) {
                 row("Bucket:") { cell(s3BucketField).align(Align.FILL) }
                 row("Key:") { cell(s3KeyField).align(Align.FILL) }
             }
@@ -400,7 +418,17 @@ private class ConfigurationStep(
         if (name.length > 128) return message("cloudformation.deploy.dialog.stack_name.too_long")
         if (!STACK_NAME_PATTERN.matches(name)) return message("cloudformation.deploy.dialog.stack_name.invalid")
 
-        if (hasArtifacts && s3BucketField.text.isBlank()) return "S3 bucket is required because template contains artifacts"
+        if (forceS3 && s3BucketField.text.isBlank()) {
+            return if (requiresS3Upload) {
+                message("cloudformation.deploy.dialog.s3.bucket.required.size")
+            } else {
+                message("cloudformation.deploy.dialog.s3.bucket.required.artifacts")
+            }
+        }
+
+        if (requiresS3Upload && s3KeyField.text.isBlank()) {
+            return message("cloudformation.deploy.dialog.s3.key.required.size")
+        }
 
         val tags = tagsField.text.trim()
         if (tags.isNotBlank() && !TAGS_PATTERN.matches(tags)) return "Tags format: key1=value1,key2=value2"
