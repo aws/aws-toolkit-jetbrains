@@ -26,4 +26,16 @@ class NodeJsHandlerCompletionProviderTest {
         val provider = HandlerCompletionProvider(projectRule.project, LambdaRuntime.NODEJS18_X)
         assertThat(provider.isCompletionSupported).isFalse()
     }
+
+    @Test
+    fun completionIsNotSupportedNodeJs20X() {
+        val provider = HandlerCompletionProvider(projectRule.project, LambdaRuntime.NODEJS20_X)
+        assertThat(provider.isCompletionSupported).isFalse()
+    }
+
+    @Test
+    fun completionIsNotSupportedNodeJs22X() {
+        val provider = HandlerCompletionProvider(projectRule.project, LambdaRuntime.NODEJS22_X)
+        assertThat(provider.isCompletionSupported).isFalse()
+    }
 }

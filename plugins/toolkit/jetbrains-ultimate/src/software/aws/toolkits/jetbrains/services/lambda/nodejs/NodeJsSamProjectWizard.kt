@@ -26,6 +26,7 @@ private val nodeJsTemplateRuntimes = setOf(
     LambdaRuntime.NODEJS16_X,
     LambdaRuntime.NODEJS18_X,
     LambdaRuntime.NODEJS20_X,
+    LambdaRuntime.NODEJS22_X,
 )
 
 class NodeJsSamProjectWizard : SamProjectWizard {
