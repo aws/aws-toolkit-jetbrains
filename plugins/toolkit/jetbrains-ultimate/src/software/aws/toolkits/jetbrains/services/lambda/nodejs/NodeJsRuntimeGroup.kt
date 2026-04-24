@@ -33,6 +33,7 @@ class NodeJsRuntimeGroup : SdkBasedRuntimeGroup() {
         LambdaRuntime.NODEJS16_X,
         LambdaRuntime.NODEJS18_X,
         LambdaRuntime.NODEJS20_X,
+        LambdaRuntime.NODEJS22_X,
     )
 
     override fun determineRuntime(module: Module): LambdaRuntime? = determineRuntime(module.project)
@@ -43,6 +44,7 @@ class NodeJsRuntimeGroup : SdkBasedRuntimeGroup() {
                 it.major <= 16 -> LambdaRuntime.NODEJS16_X
                 it.major <= 18 -> LambdaRuntime.NODEJS18_X
                 it.major <= 20 -> LambdaRuntime.NODEJS20_X
+                it.major <= 22 -> LambdaRuntime.NODEJS22_X
                 else -> null
             }
         }

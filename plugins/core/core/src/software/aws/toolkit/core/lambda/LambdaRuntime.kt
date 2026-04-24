@@ -21,6 +21,7 @@ enum class LambdaRuntime(
     NODEJS16_X(Runtime.NODEJS16_X, minSamDebugging = "1.49.0", minSamInit = "1.49.0", architectures = LambdaArchitecture.Companion.ARM_COMPATIBLE),
     NODEJS18_X(Runtime.NODEJS18_X, minSamDebugging = "1.65.0", minSamInit = "1.65.0", architectures = LambdaArchitecture.Companion.ARM_COMPATIBLE),
     NODEJS20_X(Runtime.NODEJS20_X, minSamDebugging = "1.102.0", minSamInit = "1.102.0", architectures = LambdaArchitecture.Companion.ARM_COMPATIBLE),
+    NODEJS22_X(null, minSamDebugging = "1.127.0", minSamInit = "1.127.0", architectures = LambdaArchitecture.Companion.ARM_COMPATIBLE, runtimeOverride = "nodejs22.x"),
     JAVA8_AL2(Runtime.JAVA8_AL2, minSamDebugging = "1.2.0", architectures = LambdaArchitecture.Companion.ARM_COMPATIBLE),
     JAVA11(Runtime.JAVA11, architectures = LambdaArchitecture.Companion.ARM_COMPATIBLE),
     JAVA17(Runtime.JAVA17, minSamDebugging = "1.81.0", minSamInit = "1.81.0", architectures = LambdaArchitecture.Companion.ARM_COMPATIBLE),
