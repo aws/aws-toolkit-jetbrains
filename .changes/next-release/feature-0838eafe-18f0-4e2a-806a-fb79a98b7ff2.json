@@ -1,4 +1,0 @@
-{
-  "type" : "feature",
-  "description" : "CloudFormation language server validate and deploy now enforces large templates over 51kb and templates containing local artifacts to be uploaded to s3."
-}

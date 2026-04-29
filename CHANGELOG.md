@@ -1,3 +1,7 @@
+# _4.2_ (2026-04-29)
+- **(Feature)** CloudFormation language server validate and deploy now enforces large templates over 51kb and templates containing local artifacts to be uploaded to s3.
+- **(Feature)** Support nodejs22 for local Lambda invoke
+
 # _4.1_ (2026-04-23)
 
 # _4.0_ (2026-04-10)

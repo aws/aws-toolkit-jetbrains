@@ -1,4 +1,0 @@
-{
-  "type" : "feature",
-  "description" : "Support nodejs22 for local Lambda invoke"
-}
