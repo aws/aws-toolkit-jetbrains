@@ -170,7 +170,7 @@ file("plugins").listFiles()?.forEach root@ {
             if (it.name == "jetbrains-gateway") {
                 when (providers.gradleProperty("ideProfileName").get()) {
                     // buildSrc is evaluated after settings so we can't key off of IdeVersions.kt
-                    "2025.1", "2025.2" -> {
+                    "2025.1", "2025.2", "2025.3", "2026.1" -> {
                         return@forEach
                     }
                 }

@@ -44,7 +44,7 @@ class RawSettings(private val project: Project) {
 
     private fun createUIComponents() {
         runtimeModel = SortedComboBoxModel(compareBy(Comparator.naturalOrder()) { it.toString() })
-        architectureModel = CollectionComboBoxModel(LambdaArchitecture.values().toList())
+        architectureModel = CollectionComboBoxModel(LambdaArchitecture.values().toMutableList())
         runtime = ComboBox(runtimeModel)
         architecture = ComboBox(architectureModel)
         handlerPanel = HandlerPanel(project)
