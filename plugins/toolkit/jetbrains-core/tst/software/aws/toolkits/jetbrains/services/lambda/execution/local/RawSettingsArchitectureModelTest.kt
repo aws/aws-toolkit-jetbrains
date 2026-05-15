@@ -10,15 +10,11 @@ import org.junit.Test
 import software.aws.toolkit.core.lambda.LambdaArchitecture
 
 /**
- * Regression test for https://github.com/aws/aws-toolkit-jetbrains/issues/6363
- *
  * On IntelliJ Platform 2026.x, [CollectionComboBoxModel.replaceAll] internally calls
  * [java.util.AbstractList.clear] on the backing list. If the model was constructed
  * with an immutable list (e.g. the result of `Array.toList()`), this throws
  * [UnsupportedOperationException] and the entire local Lambda run configuration
  * editor fails to open.
- *
- * The fix is to construct [CollectionComboBoxModel] with a mutable list.
  */
 class RawSettingsArchitectureModelTest {
 
