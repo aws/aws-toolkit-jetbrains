@@ -63,6 +63,7 @@ internal data class SearchResourceParams(
 internal data class SearchResourceResult(
     val found: Boolean,
     val resource: ResourceSummary? = null,
+    val error: String? = null,
 )
 
 internal data class RefreshResourcesParams(

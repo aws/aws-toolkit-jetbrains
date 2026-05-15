@@ -16,6 +16,7 @@ import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.RefreshResources
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ResourceRequest
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ResourceSummary
 import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.SearchResourceParams
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.SearchResourceResult
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
@@ -60,7 +61,7 @@ internal class ResourceLoader(
         loadResources(resourceType, loadMore = true)
     }
 
-    fun searchResource(resourceType: String, identifier: String): CompletableFuture<Boolean> {
+    fun searchResource(resourceType: String, identifier: String): CompletableFuture<SearchResourceResult?> {
         LOG.info { "Searching for resource $identifier in type $resourceType" }
 
         val params = SearchResourceParams(resourceType, identifier)
@@ -90,15 +91,14 @@ internal class ResourceLoader(
                             refreshResources(resourceType)
                         }
                     }
-                    true
                 } else {
                     LOG.info { "Resource $identifier not found in $resourceType" }
-                    false
                 }
+                result
             }
             .exceptionally { error ->
                 LOG.warn(error) { "Failed to search for resource $identifier in $resourceType" }
-                false
+                null
             }
     }
 

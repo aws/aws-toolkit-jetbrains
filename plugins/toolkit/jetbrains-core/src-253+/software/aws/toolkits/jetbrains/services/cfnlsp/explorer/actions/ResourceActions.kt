@@ -14,6 +14,7 @@ import com.intellij.openapi.ui.Messages
 import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkit.core.utils.info
 import software.aws.toolkit.core.utils.warn
+import software.aws.toolkit.jetbrains.utils.notifyWarn
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerTreeToolWindowDataKeys
 import software.aws.toolkits.jetbrains.services.cfnlsp.explorer.nodes.ResourceNode
 import software.aws.toolkits.jetbrains.services.cfnlsp.explorer.nodes.ResourceTypeNode
@@ -169,6 +170,21 @@ class SearchResourceAction : AnAction(
 
         // Search for the resource
         resourceLoader.searchResource(resourceTypeNode.resourceType, identifier.trim())
+            .thenAccept { result ->
+                if (result == null || !result.found) {
+                    val content = if (result?.error != null) {
+                        message(
+                            "cloudformation.explorer.resources.search.not_found_with_detail",
+                            identifier.trim(),
+                            resourceTypeNode.resourceType,
+                            result.error
+                        )
+                    } else {
+                        message("cloudformation.explorer.resources.search.not_found", identifier.trim(), resourceTypeNode.resourceType)
+                    }
+                    notifyWarn(message("cloudformation.explorer.resources.search.title"), content, project)
+                }
+            }
     }
 }
 
