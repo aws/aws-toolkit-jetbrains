@@ -13,6 +13,7 @@ Build/
 venv/
 guitest.log
 stale_outputs_checked
+.classpath
 # sam build directory
 .aws-sam/
 
@@ -36,3 +37,6 @@ ui-tests/bin
 #CodeWhispererChat
 node_modules
 !mynah-ui/package-lock.json
+
+# Eclipse
+**/org.eclipse.buildship.core.prefs

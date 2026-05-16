@@ -162,28 +162,101 @@ class CfnLspInstallerTest {
 
     @Test
     fun `parseHashString extracts algorithm and hash`() {
-        assertThat(CfnLspInstaller.parseHashString("sha256:abc123def456"))
+        assertThat(HashUtils.parseHashString("sha256:abc123def456"))
             .isEqualTo("sha256" to "abc123def456")
     }
 
     @Test
     fun `parseHashString returns null for invalid format`() {
-        assertThat(CfnLspInstaller.parseHashString("invalidhash")).isNull()
+        assertThat(HashUtils.parseHashString("invalidhash")).isNull()
     }
 
     @Test
     fun `computeHash calculates sha256 correctly`() {
-        val hash = CfnLspInstaller.computeHash("test data".toByteArray(), "sha256")
+        val hash = HashUtils.computeHash("test data".toByteArray(), "sha256")
         assertThat(hash).isEqualTo("916f0027a575074ce72a331777c3478d6513f786a591bd892da1a577bf2335f9")
     }
 
     @Test
     fun `computeHash calculates sha384 correctly`() {
-        val hash = CfnLspInstaller.computeHash("test data".toByteArray(), "sha384")
+        val hash = HashUtils.computeHash("test data".toByteArray(), "sha384")
         assertThat(hash).hasSize(96) // SHA-384 produces 96 hex characters
     }
 
+    // --- new behavior: server file inside extraction subdir ---
+
+    @Test
+    fun `findCachedServer locates server file nested in extraction subdirectory`() {
+        val storageDir = tempFolder.newFolder("lsp-storage").toPath()
+        val versionDir = storageDir.resolve("1.4.0")
+        val extractedDir = versionDir.resolve("cloudformation-language-server")
+        Files.createDirectories(extractedDir)
+        Files.createFile(extractedDir.resolve(CfnLspServerConfig.SERVER_FILE))
+
+        val result = CfnLspInstaller(storageDir).findCachedServerForTest()
+
+        assertThat(result).isEqualTo(extractedDir.resolve(CfnLspServerConfig.SERVER_FILE))
+    }
+
+    @Test
+    fun `findCachedServer excludes partial tmp extraction directories`() {
+        val storageDir = tempFolder.newFolder("lsp-storage").toPath()
+        createServerVersion(storageDir, "1.4.0")
+        // Simulate a crashed concurrent extraction — must not be picked up as a version
+        val tmpDir = storageDir.resolve("1.5.0.tmp.99999")
+        Files.createDirectories(tmpDir)
+        Files.createFile(tmpDir.resolve(CfnLspServerConfig.SERVER_FILE))
+
+        val result = CfnLspInstaller(storageDir).findCachedServerForTest()
+
+        assertThat(result?.parent?.fileName.toString()).isEqualTo("1.4.0")
+    }
+
+    // --- new behavior: tmp sweeping and in-use protection during cleanup ---
+
+    @Test
+    fun `cleanupOldVersions removes stale tmp dirs from crashed processes`() {
+        val storageDir = tempFolder.newFolder("lsp-storage").toPath()
+        createServerVersion(storageDir, "1.4.0")
+        val staleTmp = storageDir.resolve("1.5.0.tmp.$deadPid")
+        Files.createDirectories(staleTmp)
+
+        CfnLspInstaller(storageDir).cleanupOldVersionsForTest("1.4.0")
+
+        assertThat(Files.exists(staleTmp)).isFalse()
+    }
+
+    @Test
+    fun `cleanupOldVersions preserves tmp dirs belonging to live processes`() {
+        val storageDir = tempFolder.newFolder("lsp-storage").toPath()
+        createServerVersion(storageDir, "1.4.0")
+        val livePid = ProcessHandle.current().pid()
+        val liveTmp = storageDir.resolve("1.5.0.tmp.$livePid")
+        Files.createDirectories(liveTmp)
+
+        CfnLspInstaller(storageDir).cleanupOldVersionsForTest("1.4.0")
+
+        assertThat(Files.exists(liveTmp)).isTrue()
+    }
+
+    @Test
+    fun `cleanupOldVersions skips deletion of versions marked in-use`() {
+        val storageDir = tempFolder.newFolder("lsp-storage").toPath()
+        createServerVersion(storageDir, "1.0.0") // would normally be deleted (not current, not fallback)
+        createServerVersion(storageDir, "1.3.0") // fallback
+        createServerVersion(storageDir, "1.4.0") // current
+        InUseTracker().writeMarker(storageDir.resolve("1.0.0"), "other-ide")
+
+        CfnLspInstaller(storageDir).cleanupOldVersionsForTest("1.4.0")
+
+        assertThat(Files.exists(storageDir.resolve("1.0.0"))).isTrue()
+        assertThat(Files.exists(storageDir.resolve("1.3.0"))).isTrue()
+        assertThat(Files.exists(storageDir.resolve("1.4.0"))).isTrue()
+    }
+
     // --- helpers ---
+
+    private val deadPid = 2_147_483_646L
 
     private fun createServerVersion(storageDir: Path, version: String) {
         val dir = storageDir.resolve(version)

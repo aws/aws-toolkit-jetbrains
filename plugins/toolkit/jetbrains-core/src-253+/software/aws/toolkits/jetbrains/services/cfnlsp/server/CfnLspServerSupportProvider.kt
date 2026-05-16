@@ -67,9 +67,30 @@ class CfnLspServerDescriptor private constructor(project: Project) :
     override fun createLsp4jClient(handler: LspServerNotificationsHandler): Lsp4jClient =
         CfnLspClient(CfnLspNotificationsHandler(handler), project)
 
+    private val registeredMarkerDirs = java.util.concurrent.ConcurrentHashMap.newKeySet<Path>()
+    private val shutdownHookInstalled = java.util.concurrent.atomic.AtomicBoolean(false)
+
+    private fun registerMarkerCleanup(versionDir: Path) {
+        registeredMarkerDirs.add(versionDir)
+        if (shutdownHookInstalled.compareAndSet(false, true)) {
+            Runtime.getRuntime().addShutdownHook(
+                Thread {
+                    registeredMarkerDirs.forEach { installer.inUseTracker.removeMarker(it) }
+                }
+            )
+        }
+    }
+
     override fun createCommandLine(): GeneralCommandLine {
         val serverPath = try {
-            installer.getServerPath()
+            installer.getServerPath().also {
+                val versionDir = installer.resolvedVersionDir
+                if (versionDir != null) {
+                    installer.inUseTracker.writeMarker(versionDir, "aws-toolkit-jetbrains")
+                    registerMarkerCleanup(versionDir)
+                }
+                installer.cleanupAfterResolve()
+            }
         } catch (e: CfnLspException) {
             LOG.warn(e) { "Failed to get CloudFormation LSP server" }
             notifyLspError(e)
