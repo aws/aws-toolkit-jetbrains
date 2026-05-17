@@ -13,7 +13,7 @@ import software.aws.toolkits.jetbrains.core.experiments.ToolkitExperimentStateCh
 import software.aws.toolkits.jetbrains.core.experiments.suggest
 import software.aws.toolkits.resources.message
 
-object JsonResourceModificationExperiment : ToolkitExperiment(
+class JsonResourceModificationExperiment : ToolkitExperiment(
     "jsonResourceModification",
     { message("dynamic_resources.experiment.title") },
     { message("dynamic_resources.experiment.description") }
@@ -22,7 +22,7 @@ object JsonResourceModificationExperiment : ToolkitExperiment(
 class SuggestEditExperimentListener : FileEditorManagerListener {
     override fun fileOpened(source: FileEditorManager, file: VirtualFile) {
         if (file is DynamicResourceVirtualFile) {
-            JsonResourceModificationExperiment.suggest()
+            JsonResourceModificationExperiment().suggest()
         }
     }
 }

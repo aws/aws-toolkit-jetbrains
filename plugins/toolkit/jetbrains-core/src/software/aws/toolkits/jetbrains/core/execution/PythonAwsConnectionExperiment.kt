@@ -6,7 +6,7 @@ package software.aws.toolkits.jetbrains.core.execution
 import software.aws.toolkits.jetbrains.core.experiments.ToolkitExperiment
 import software.aws.toolkits.resources.message
 
-object PythonAwsConnectionExperiment : ToolkitExperiment(
+class PythonAwsConnectionExperiment : ToolkitExperiment(
     "pythonRunConfigurationExtension",
     { message("run_configuration_extension.feature.python.title") },
     { message("run_configuration_extension.feature.python.description") },
