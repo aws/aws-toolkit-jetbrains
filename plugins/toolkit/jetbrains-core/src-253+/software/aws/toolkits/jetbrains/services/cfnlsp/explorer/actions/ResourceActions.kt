@@ -18,6 +18,7 @@ import software.aws.toolkit.jetbrains.utils.notifyWarn
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerTreeToolWindowDataKeys
 import software.aws.toolkits.jetbrains.services.cfnlsp.explorer.nodes.ResourceNode
 import software.aws.toolkits.jetbrains.services.cfnlsp.explorer.nodes.ResourceTypeNode
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.SearchResourceResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourceLoader
 import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourceStateService
 import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourceTypesManager
@@ -171,20 +172,26 @@ class SearchResourceAction : AnAction(
         // Search for the resource
         resourceLoader.searchResource(resourceTypeNode.resourceType, identifier.trim())
             .thenAccept { result ->
-                if (result == null || !result.found) {
-                    val content = if (result?.error != null) {
-                        message(
-                            "cloudformation.explorer.resources.search.not_found_with_detail",
-                            identifier.trim(),
-                            resourceTypeNode.resourceType,
-                            result.error
-                        )
-                    } else {
-                        message("cloudformation.explorer.resources.search.not_found", identifier.trim(), resourceTypeNode.resourceType)
-                    }
-                    notifyWarn(message("cloudformation.explorer.resources.search.title"), content, project)
-                }
+                handleSearchResult(result, identifier.trim(), resourceTypeNode.resourceType, project)
             }
+    }
+
+    internal companion object {
+        fun handleSearchResult(result: SearchResourceResult?, identifier: String, resourceType: String, project: Project) {
+            if (result == null || !result.found) {
+                val content = if (result?.error != null) {
+                    message(
+                        "cloudformation.explorer.resources.search.not_found_with_detail",
+                        identifier,
+                        resourceType,
+                        result.error
+                    )
+                } else {
+                    message("cloudformation.explorer.resources.search.not_found", identifier, resourceType)
+                }
+                notifyWarn(message("cloudformation.explorer.resources.search.title"), content, project)
+            }
+        }
     }
 }
 
