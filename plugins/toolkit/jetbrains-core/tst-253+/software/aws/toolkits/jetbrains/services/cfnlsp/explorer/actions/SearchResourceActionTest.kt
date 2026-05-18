@@ -39,7 +39,7 @@ class SearchResourceActionTest {
 
     @Test
     fun `handleSearchResult shows notification when result is null`() {
-        SearchResourceAction.handleSearchResult(null, "asdf", "AWS::IAM::Role", projectRule.project)
+        handleSearchResult(null, "asdf", "AWS::IAM::Role", projectRule.project)
 
         assertThat(notifications).hasSize(1)
         assertThat(notifications[0].content).contains("asdf")
@@ -50,7 +50,7 @@ class SearchResourceActionTest {
     fun `handleSearchResult shows notification with error detail when not found`() {
         val result = SearchResourceResult(found = false, resource = null, error = "Resource not found")
 
-        SearchResourceAction.handleSearchResult(result, "asdf", "AWS::IAM::Role", projectRule.project)
+        handleSearchResult(result, "asdf", "AWS::IAM::Role", projectRule.project)
 
         assertThat(notifications).hasSize(1)
         assertThat(notifications[0].content).contains("asdf")
@@ -61,7 +61,7 @@ class SearchResourceActionTest {
     fun `handleSearchResult shows generic notification when not found without error`() {
         val result = SearchResourceResult(found = false, resource = null)
 
-        SearchResourceAction.handleSearchResult(result, "asdf", "AWS::IAM::Role", projectRule.project)
+        handleSearchResult(result, "asdf", "AWS::IAM::Role", projectRule.project)
 
         assertThat(notifications).hasSize(1)
         assertThat(notifications[0].content).contains("asdf")
@@ -72,7 +72,7 @@ class SearchResourceActionTest {
     fun `handleSearchResult does not show notification when resource found`() {
         val result = SearchResourceResult(found = true, resource = null)
 
-        SearchResourceAction.handleSearchResult(result, "my-role", "AWS::IAM::Role", projectRule.project)
+        handleSearchResult(result, "my-role", "AWS::IAM::Role", projectRule.project)
 
         assertThat(notifications).isEmpty()
     }

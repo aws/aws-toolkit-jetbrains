@@ -175,23 +175,21 @@ class SearchResourceAction : AnAction(
                 handleSearchResult(result, identifier.trim(), resourceTypeNode.resourceType, project)
             }
     }
+}
 
-    internal companion object {
-        fun handleSearchResult(result: SearchResourceResult?, identifier: String, resourceType: String, project: Project) {
-            if (result == null || !result.found) {
-                val content = if (result?.error != null) {
-                    message(
-                        "cloudformation.explorer.resources.search.not_found_with_detail",
-                        identifier,
-                        resourceType,
-                        result.error
-                    )
-                } else {
-                    message("cloudformation.explorer.resources.search.not_found", identifier, resourceType)
-                }
-                notifyWarn(message("cloudformation.explorer.resources.search.title"), content, project)
-            }
+internal fun handleSearchResult(result: SearchResourceResult?, identifier: String, resourceType: String, project: Project) {
+    if (result == null || !result.found) {
+        val content = if (result?.error != null) {
+            message(
+                "cloudformation.explorer.resources.search.not_found_with_detail",
+                identifier,
+                resourceType,
+                result.error
+            )
+        } else {
+            message("cloudformation.explorer.resources.search.not_found", identifier, resourceType)
         }
+        notifyWarn(message("cloudformation.explorer.resources.search.title"), content, project)
     }
 }
 
