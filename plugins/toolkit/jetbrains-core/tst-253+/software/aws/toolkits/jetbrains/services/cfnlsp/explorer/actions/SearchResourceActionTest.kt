@@ -38,12 +38,13 @@ class SearchResourceActionTest {
     }
 
     @Test
-    fun `handleSearchResult shows notification when result is null`() {
+    fun `handleSearchResult shows error notification when result is null`() {
         handleSearchResult(null, "asdf", "AWS::IAM::Role", projectRule.project)
 
         assertThat(notifications).hasSize(1)
         assertThat(notifications[0].content).contains("asdf")
         assertThat(notifications[0].content).contains("AWS::IAM::Role")
+        assertThat(notifications[0].content).contains("Search failed")
     }
 
     @Test

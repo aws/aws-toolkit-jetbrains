@@ -178,14 +178,15 @@ class SearchResourceAction : AnAction(
 }
 
 internal fun handleSearchResult(result: SearchResourceResult?, identifier: String, resourceType: String, project: Project) {
-    if (result == null || !result.found) {
-        val content = if (result?.error != null) {
-            message(
-                "cloudformation.explorer.resources.search.not_found_with_detail",
-                identifier,
-                resourceType,
-                result.error
-            )
+    if (result == null) {
+        notifyWarn(
+            message("cloudformation.explorer.resources.search.title"),
+            message("cloudformation.explorer.resources.search.error", identifier, resourceType),
+            project
+        )
+    } else if (!result.found) {
+        val content = if (result.error != null) {
+            message("cloudformation.explorer.resources.search.not_found_with_detail", identifier, resourceType, result.error)
         } else {
             message("cloudformation.explorer.resources.search.not_found", identifier, resourceType)
         }
