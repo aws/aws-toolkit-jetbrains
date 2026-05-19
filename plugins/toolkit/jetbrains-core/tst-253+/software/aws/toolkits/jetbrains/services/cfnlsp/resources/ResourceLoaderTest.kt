@@ -75,7 +75,7 @@ class ResourceLoaderTest {
         assertThat(loader.getCachedResources("AWS::EC2::Instance")).isNull()
 
         val result = loader.searchResource("AWS::EC2::Instance", "test-instance")
-        assertThat(result.get()).isTrue()
+        assertThat(result.get()?.found).isTrue()
 
         val paramsCaptor = argumentCaptor<SearchResourceParams>()
         verify(mockClientService).searchResource(paramsCaptor.capture())
@@ -100,7 +100,7 @@ class ResourceLoaderTest {
 
         val result = loader.searchResource("AWS::EC2::Instance", "test-instance")
 
-        assertThat(result.get()).isFalse()
+        assertThat(result.get()?.found).isFalse()
 
         val paramsCaptor = argumentCaptor<SearchResourceParams>()
         verify(mockClientService).searchResource(paramsCaptor.capture())
@@ -119,7 +119,35 @@ class ResourceLoaderTest {
 
         val result = loader.searchResource("AWS::EC2::Instance", "test-instance")
 
-        assertThat(result.get()).isFalse()
+        assertThat(result.get()).isNull()
+    }
+
+    @Test
+    fun `searchResource returns null when server is not available`() {
+        val mockClientService = mock<CfnClientService>()
+        val loader = ResourceLoader(projectRule.project)
+
+        whenever(mockClientService.searchResource(any())).thenReturn(CompletableFuture.completedFuture(null))
+        loader.clientServiceProvider = { mockClientService }
+
+        val result = loader.searchResource("AWS::EC2::Instance", "test-instance")
+
+        assertThat(result.get()).isNull()
+    }
+
+    @Test
+    fun `searchResource returns error message when resource not found`() {
+        val mockClientService = mock<CfnClientService>()
+        val loader = ResourceLoader(projectRule.project)
+
+        val mockResult = SearchResourceResult(found = false, resource = null, error = "Resource of type 'AWS::IAM::Role' with identifier 'asdf' was not found.")
+        whenever(mockClientService.searchResource(any())).thenReturn(CompletableFuture.completedFuture(mockResult))
+        loader.clientServiceProvider = { mockClientService }
+
+        val result = loader.searchResource("AWS::IAM::Role", "asdf")
+
+        assertThat(result.get()?.found).isFalse()
+        assertThat(result.get()?.error).isEqualTo("Resource of type 'AWS::IAM::Role' with identifier 'asdf' was not found.")
     }
 
     @Test

@@ -14,9 +14,11 @@ import com.intellij.openapi.ui.Messages
 import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkit.core.utils.info
 import software.aws.toolkit.core.utils.warn
+import software.aws.toolkit.jetbrains.utils.notifyWarn
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerTreeToolWindowDataKeys
 import software.aws.toolkits.jetbrains.services.cfnlsp.explorer.nodes.ResourceNode
 import software.aws.toolkits.jetbrains.services.cfnlsp.explorer.nodes.ResourceTypeNode
+import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.SearchResourceResult
 import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourceLoader
 import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourceStateService
 import software.aws.toolkits.jetbrains.services.cfnlsp.resources.ResourceTypesManager
@@ -169,6 +171,26 @@ class SearchResourceAction : AnAction(
 
         // Search for the resource
         resourceLoader.searchResource(resourceTypeNode.resourceType, identifier.trim())
+            .thenAccept { result ->
+                handleSearchResult(result, identifier.trim(), resourceTypeNode.resourceType, project)
+            }
+    }
+}
+
+internal fun handleSearchResult(result: SearchResourceResult?, identifier: String, resourceType: String, project: Project) {
+    if (result == null) {
+        notifyWarn(
+            message("cloudformation.explorer.resources.search.title"),
+            message("cloudformation.explorer.resources.search.error", identifier, resourceType),
+            project
+        )
+    } else if (!result.found) {
+        val content = if (result.error != null) {
+            message("cloudformation.explorer.resources.search.not_found_with_detail", identifier, resourceType, result.error)
+        } else {
+            message("cloudformation.explorer.resources.search.not_found", identifier, resourceType)
+        }
+        notifyWarn(message("cloudformation.explorer.resources.search.title"), content, project)
     }
 }
 
