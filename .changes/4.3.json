@@ -1,0 +1,8 @@
+{
+  "date" : "2026-05-20",
+  "version" : "4.3",
+  "entries" : [ {
+    "type" : "bugfix",
+    "description" : "Added popup notification when users search for a resource and the CloudFormation language server returns an error such as resource not found"
+  } ]
+}

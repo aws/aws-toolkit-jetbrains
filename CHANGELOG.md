@@ -1,3 +1,6 @@
+# _4.3_ (2026-05-20)
+- **(Bug Fix)** Added popup notification when users search for a resource and the CloudFormation language server returns an error such as resource not found
+
 # _4.2_ (2026-04-29)
 - **(Feature)** CloudFormation language server validate and deploy now enforces large templates over 51kb and templates containing local artifacts to be uploaded to s3.
 - **(Feature)** Support nodejs22 for local Lambda invoke
