@@ -25,6 +25,7 @@ import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkit.core.utils.info
 import software.aws.toolkit.core.utils.warn
 import software.aws.toolkit.jetbrains.settings.AwsSettings
+import software.aws.toolkit.jetbrains.settings.DefaultAwsSettings
 import software.aws.toolkit.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.core.lsp.NodeRuntimeResolver
 import software.aws.toolkits.jetbrains.services.cfnlsp.CfnCredentialsService
@@ -165,16 +166,23 @@ class CfnLspServerDescriptor private constructor(project: Project) :
         val settings = CfnLspSettings.getInstance()
         val credentialsService = CfnCredentialsService.getInstance(project)
 
+        val clientId = AwsSettings.getInstance().clientId
+        val clientInfo = mutableMapOf(
+            "extension" to mapOf(
+                "name" to "toolkit-jetbrains",
+                "version" to CfnLspExtensionConfig.EXTENSION_VERSION
+            )
+        )
+
+        // Only forward real clientIds, otherwise let server handle it
+        if (!DefaultAwsSettings.isAnonymousClientId(clientId)) {
+            clientInfo.put("clientId", clientId.toString())
+        }
+
         return mapOf(
             "handledSchemaProtocols" to listOf("file"),
             "aws" to mapOf(
-                "clientInfo" to mapOf(
-                    "extension" to mapOf(
-                        "name" to CfnLspExtensionConfig.EXTENSION_NAME,
-                        "version" to CfnLspExtensionConfig.EXTENSION_VERSION
-                    ),
-                    "clientId" to AwsSettings.getInstance().clientId.toString()
-                ),
+                "clientInfo" to clientInfo.toMap(),
                 "telemetryEnabled" to settings.isTelemetryEnabled,
                 "encryption" to mapOf(
                     "key" to credentialsService.encryptionKeyBase64,

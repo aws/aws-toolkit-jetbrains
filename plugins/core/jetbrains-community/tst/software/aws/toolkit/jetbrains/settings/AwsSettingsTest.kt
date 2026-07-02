@@ -21,6 +21,7 @@ import software.aws.toolkit.core.telemetry.TelemetryBatcher
 import software.aws.toolkit.core.telemetry.TelemetryPublisher
 import software.aws.toolkit.jetbrains.services.telemetry.NoOpPublisher
 import software.aws.toolkit.jetbrains.services.telemetry.TelemetryService
+import java.util.UUID
 
 @ExtendWith(ApplicationExtension::class)
 class AwsSettingsTest {
@@ -71,5 +72,20 @@ class AwsSettingsTest {
         assertThat(changeCaptor.firstValue).isEqualTo(value)
         inOrder.verify(batcher).onTelemetryEnabledChanged(value, onChangeEventCaptor.firstValue)
         inOrder.verify(awsConfiguration).isTelemetryEnabled = value
+    }
+
+    @Test
+    fun `isAnonymousClientId is true for the test sentinel`() {
+        assertThat(DefaultAwsSettings.isAnonymousClientId(UUID.fromString(DefaultAwsSettings.TEST_CLIENT_ID))).isTrue()
+    }
+
+    @Test
+    fun `isAnonymousClientId is true for the telemetry-disabled sentinel`() {
+        assertThat(DefaultAwsSettings.isAnonymousClientId(UUID.fromString(DefaultAwsSettings.TELEMETRY_DISABLED_CLIENT_ID))).isTrue()
+    }
+
+    @Test
+    fun `isAnonymousClientId is false for a real client id`() {
+        assertThat(DefaultAwsSettings.isAnonymousClientId(UUID.randomUUID())).isFalse()
     }
 }
