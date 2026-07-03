@@ -167,7 +167,7 @@ class CfnLspServerDescriptor private constructor(project: Project) :
         val credentialsService = CfnCredentialsService.getInstance(project)
 
         val clientId = AwsSettings.getInstance().clientId
-        val clientInfo = mutableMapOf(
+        val clientInfo = mutableMapOf<String, Any>(
             "extension" to mapOf(
                 "name" to "toolkit-jetbrains",
                 "version" to CfnLspExtensionConfig.EXTENSION_VERSION
@@ -176,7 +176,7 @@ class CfnLspServerDescriptor private constructor(project: Project) :
 
         // Only forward real clientIds, otherwise let server handle it
         if (!DefaultAwsSettings.isAnonymousClientId(clientId)) {
-            clientInfo.put("clientId", clientId.toString())
+            clientInfo["clientId"] = clientId.toString()
         }
 
         return mapOf(
