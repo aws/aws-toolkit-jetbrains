@@ -117,8 +117,8 @@ class DefaultAwsSettings : PersistentStateComponent<AwsConfiguration>, AwsSettin
     override val clientId: UUID
         @Synchronized get() {
             val id = when {
-                ApplicationManager.getApplication().isUnitTestMode || System.getProperty("robot-server.port") != null -> "ffffffff-ffff-ffff-ffff-ffffffffffff"
-                isTelemetryEnabled == false -> "11111111-1111-1111-1111-111111111111"
+                ApplicationManager.getApplication().isUnitTestMode || System.getProperty("robot-server.port") != null -> TEST_CLIENT_ID
+                isTelemetryEnabled == false -> TELEMETRY_DISABLED_CLIENT_ID
                 else -> {
                     preferences.get(CLIENT_ID_KEY, UUID.randomUUID().toString()).also {
                         preferences.put(CLIENT_ID_KEY, it.toString())
@@ -133,6 +133,12 @@ class DefaultAwsSettings : PersistentStateComponent<AwsConfiguration>, AwsSettin
         const val CLIENT_ID_KEY = "CLIENT_ID"
         private const val ID_AUTO_UPDATE = "autoUpdate"
         private const val ID_AUTO_UPDATE_NOTIFY = "autoUpdateNotification"
+
+        const val TEST_CLIENT_ID = "ffffffff-ffff-ffff-ffff-ffffffffffff" // unit-test/robot environments
+        const val TELEMETRY_DISABLED_CLIENT_ID = "11111111-1111-1111-1111-111111111111"
+        private val ANONYMOUS_IDS = listOf(TEST_CLIENT_ID, TELEMETRY_DISABLED_CLIENT_ID).map { UUID.fromString(it) }.toSet()
+
+        fun isAnonymousClientId(clientId: UUID): Boolean = clientId in ANONYMOUS_IDS
     }
 }
 
