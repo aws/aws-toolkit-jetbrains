@@ -8,6 +8,7 @@ codewhisperer/ @aws/codewhisperer-team
 mynah-ui/ @aws/flare
 mynah-ui/package.json @aws/flare @aws/elastic-gumby @aws/earlybird @aws/codewhisperer-team
 mynah-ui/package-lock.json @aws/flare @aws/elastic-gumby @aws/earlybird @aws/codewhisperer-team
+plugins/toolkit/jetbrains-core/src-253+/software/aws/toolkits/jetbrains/services/cfnlsp/ @aws-cloudformation/cfn-dev-productivity
 
 # nested within chat/, so needs to be after to take precedence
 amazonqFeatureDev/ @aws/earlybird
