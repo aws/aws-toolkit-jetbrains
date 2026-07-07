@@ -1,0 +1,4 @@
+{
+    "type": "bugfix",
+    "description": "CloudFormation: Display the AWS error message when importing or cloning resource state fails, instead of only a failure count."
+}

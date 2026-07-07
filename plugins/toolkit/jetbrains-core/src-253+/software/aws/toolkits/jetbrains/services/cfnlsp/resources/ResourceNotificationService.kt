@@ -16,11 +16,17 @@ import software.aws.toolkits.resources.message
 import java.awt.datatransfer.StringSelection
 
 internal class ResourceNotificationService(private val project: Project) {
-    fun showResultNotification(successCount: Int, failureCount: Int, purpose: ResourceStatePurpose) {
+    fun showResultNotification(
+        successCount: Int,
+        failureCount: Int,
+        purpose: ResourceStatePurpose,
+        failureReasons: Map<String, Map<String, String>>? = null,
+    ) {
         val actionKey = purpose.name.lowercase()
         val titleKey = "cloudformation.explorer.resources.$actionKey"
         val title = message(titleKey).removeSuffix(" Resource State")
         val resourcePlural = if (successCount == 1 || failureCount == 1) "" else "s"
+        val reasonsSuffix = formatFailureReasons(failureReasons)
 
         when {
             successCount > 0 && failureCount == 0 -> {
@@ -32,18 +38,20 @@ internal class ResourceNotificationService(private val project: Project) {
             }
             successCount > 0 && failureCount > 0 -> {
                 val successPlural = if (successCount == 1) "" else "s"
-                notifyWarn(
-                    title,
-                    message("cloudformation.explorer.resources.$actionKey.partial", successCount, successPlural, failureCount),
-                    project
-                )
+                val content = if (reasonsSuffix.isNotEmpty()) {
+                    message("cloudformation.explorer.resources.$actionKey.partial.with_reasons", successCount, successPlural, failureCount, reasonsSuffix)
+                } else {
+                    message("cloudformation.explorer.resources.$actionKey.partial", successCount, successPlural, failureCount)
+                }
+                notifyWarn(title, content, project)
             }
             failureCount > 0 -> {
-                notifyError(
-                    title,
-                    message("cloudformation.explorer.resources.$actionKey.failed", failureCount, resourcePlural),
-                    project
-                )
+                val content = if (reasonsSuffix.isNotEmpty()) {
+                    message("cloudformation.explorer.resources.$actionKey.failed.with_reasons", failureCount, resourcePlural, reasonsSuffix)
+                } else {
+                    message("cloudformation.explorer.resources.$actionKey.failed", failureCount, resourcePlural)
+                }
+                notifyError(title, content, project)
             }
             else -> {
                 notifyInfo(
@@ -53,6 +61,16 @@ internal class ResourceNotificationService(private val project: Project) {
                 )
             }
         }
+    }
+
+    internal fun formatFailureReasons(failureReasons: Map<String, Map<String, String>>?): String {
+        if (failureReasons.isNullOrEmpty()) {
+            return ""
+        }
+        val reasons = failureReasons.values
+            .flatMap { it.entries }
+            .map { (id, reason) -> "[$id: $reason]" }
+        return if (reasons.isEmpty()) "" else ": ${reasons.joinToString(", ")}"
     }
 
     fun showStackManagementInfo(result: ResourceStackManagementResult) {

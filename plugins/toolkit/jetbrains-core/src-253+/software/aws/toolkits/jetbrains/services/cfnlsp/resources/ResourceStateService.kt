@@ -8,6 +8,7 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import org.eclipse.lsp4j.TextDocumentIdentifier
+import org.jetbrains.annotations.VisibleForTesting
 import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkit.core.utils.info
 import software.aws.toolkit.core.utils.warn
@@ -23,9 +24,14 @@ import software.aws.toolkits.resources.message
 internal class ResourceStateService(
     private val project: Project,
 ) {
+    @VisibleForTesting
     internal var clientServiceProvider: () -> CfnClientService = { CfnClientService.getInstance(project) }
+
+    @VisibleForTesting
     internal var editor = ResourceStateEditor.getInstance(project)
-    private val notificationService = ResourceNotificationService(project)
+
+    @VisibleForTesting
+    internal var notificationService = ResourceNotificationService(project)
 
     fun importResourceState(resourceNodes: List<ResourceNode>) {
         executeResourceStateOperation(resourceNodes, ResourceStatePurpose.IMPORT)
@@ -117,7 +123,7 @@ internal class ResourceStateService(
                     val failureCount = result.failedImports.values.sumOf { it.size }
 
                     ApplicationManager.getApplication().invokeLater {
-                        notificationService.showResultNotification(successCount, failureCount, purpose)
+                        notificationService.showResultNotification(successCount, failureCount, purpose, result.failureReasons)
                     }
 
                     if (result.successfulImports.isNotEmpty()) {
