@@ -10,37 +10,34 @@ plugins {
 
 val downloadGitSecrets = tasks.register<Download>("downloadGitSecrets") {
     src("https://raw.githubusercontent.com/awslabs/git-secrets/master/git-secrets")
-    dest("$buildDir/git-secrets")
+    dest(layout.buildDirectory.file("git-secrets"))
     onlyIfModified(true)
     useETag(true)
+}
+
+val gitSecretsRegister = tasks.register<Exec>("gitSecretsRegister") {
+    dependsOn(downloadGitSecrets)
+    workingDir(rootDir)
+    val path = "${layout.buildDirectory.get().asFile}${File.pathSeparator}"
+    environment = environment.apply { replace("PATH", path + getOrDefault("PATH", "")) }
+    commandLine("/bin/sh", "${layout.buildDirectory.get().asFile}/git-secrets", "--register-aws")
+}
+
+val gitSecretsAllowDummy = tasks.register<Exec>("gitSecretsAllowDummy") {
+    dependsOn(gitSecretsRegister)
+    workingDir(rootDir)
+    commandLine("git", "config", "--add", "secrets.allowed", "123456789012")
 }
 
 val gitSecrets = tasks.register<Exec>("gitSecrets") {
     onlyIf {
         !DefaultNativePlatform.getCurrentOperatingSystem().isWindows
     }
-
-    dependsOn(downloadGitSecrets)
-    workingDir(project.rootDir)
-    val path = "$buildDir${File.pathSeparator}"
-    val patchendEnv = environment.apply { replace("PATH", path + getOrDefault("PATH", "")) }
-    environment = patchendEnv
-
-    commandLine("/bin/sh", "$buildDir/git-secrets", "--register-aws")
-
-    // cleaner than having multiple separate exec tasks
-    doLast {
-        exec {
-            workingDir(project.rootDir)
-            commandLine("git", "config", "--add", "secrets.allowed", "123456789012")
-        }
-
-        exec {
-            workingDir(project.rootDir)
-            environment = patchendEnv
-            commandLine("/bin/sh", "$buildDir/git-secrets", "--scan")
-        }
-    }
+    dependsOn(gitSecretsAllowDummy)
+    workingDir(rootDir)
+    val path = "${layout.buildDirectory.get().asFile}${File.pathSeparator}"
+    environment = environment.apply { replace("PATH", path + getOrDefault("PATH", "")) }
+    commandLine("/bin/sh", "${layout.buildDirectory.get().asFile}/git-secrets", "--scan")
 }
 
 tasks.findByName("check")?.let {
