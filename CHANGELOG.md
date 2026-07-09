@@ -1,3 +1,6 @@
+# _4.4_ (2026-07-08)
+- **(Feature)** Auto generate client id for cloudformation lsp if an telemetry is enabled and an anonymous client id is cached
+
 # _4.3_ (2026-05-20)
 - **(Bug Fix)** Added popup notification when users search for a resource and the CloudFormation language server returns an error such as resource not found
 
