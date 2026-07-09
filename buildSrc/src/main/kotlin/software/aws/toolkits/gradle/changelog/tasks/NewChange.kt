@@ -19,7 +19,7 @@ open class NewChange : ChangeLogTask() {
     @TaskAction
     fun create() {
         val changeType = if (project.hasProperty("changeType")) {
-            (project.property("changeType") as? String?)?.toUpperCase()?.let { ChangeType.valueOf(it) }
+            (project.property("changeType") as? String?)?.uppercase()?.let { ChangeType.valueOf(it) }
         } else defaultChangeType
         val description = if (project.hasProperty("description")) {
             project.property("description") as? String?

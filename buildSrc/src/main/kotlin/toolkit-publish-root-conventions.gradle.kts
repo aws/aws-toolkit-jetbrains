@@ -23,14 +23,13 @@ intellijPlatform {
 
     pluginVerification {
         ides {
-            // recommended() appears to resolve latest EAP for a product?
             // Starting with 2025.3, IntelliJ IDEA is unified (no separate Community edition)
             val version = toolkitIntelliJ.version().get()
             if (version.startsWith("2025.3")) {
-                ide(provider { IntelliJPlatformType.IntellijIdeaUltimate }, toolkitIntelliJ.version())
+                create(IntelliJPlatformType.IntellijIdeaUltimate, toolkitIntelliJ.version().get())
             } else {
-                ide(provider { IntelliJPlatformType.IntellijIdeaCommunity }, toolkitIntelliJ.version())
-                ide(provider { IntelliJPlatformType.IntellijIdeaUltimate }, toolkitIntelliJ.version())
+                create(IntelliJPlatformType.IntellijIdeaCommunity, toolkitIntelliJ.version().get())
+                create(IntelliJPlatformType.IntellijIdeaUltimate, toolkitIntelliJ.version().get())
             }
         }
     }
@@ -76,7 +75,9 @@ dependencies {
                 defaultType to toolkitIntelliJ.version()
             }
 
-            create(type, version, useInstaller = false)
+            create(type, version) {
+                useInstaller = false
+            }
             jetbrainsRuntime()
         }
     }

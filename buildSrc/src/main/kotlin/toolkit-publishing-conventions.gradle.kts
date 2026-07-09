@@ -39,10 +39,10 @@ intellijPlatform {
         channels.set(publishChannel.split(",").map { it.trim() })
     }
 
-    verifyPlugin {
-        subsystemsToCheck.set(VerifyPluginTask.Subsystems.WITHOUT_ANDROID)
+    pluginVerification {
+        subsystemsToCheck = VerifyPluginTask.Subsystems.WITHOUT_ANDROID
         // need to tune this
-        failureLevel.set(listOf(VerifyPluginTask.FailureLevel.INVALID_PLUGIN))
+        failureLevel = listOf(VerifyPluginTask.FailureLevel.INVALID_PLUGIN)
     }
 }
 
@@ -60,8 +60,8 @@ configurations {
     }
 }
 
-// not run as part of check because of memory pressue issues
-tasks.verifyPlugin {
+// not run as part of check because of memory pressure issues
+tasks.named<VerifyPluginTask>("verifyPlugin") {
     isEnabled = true
     // give each instance its own home dir
     systemProperty("plugin.verifier.home.dir", temporaryDir)

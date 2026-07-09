@@ -59,8 +59,14 @@ phases:
 
         function copyArtifacts($root) {
             copyFolder $root "build/reports/" $script:TEST_ARTIFACTS
-            copyFolder $root "build/idea-sandbox/system-test/log/" $script:TEST_ARTIFACTS
             copyFolder $root "build/test-results/test/" $script:TEST_REPORTS
+        }
+
+        # Copy sandbox logs separately (new location after IntelliJ Platform Gradle Plugin 2.12+)
+        Get-ChildItem -Path ".intellijPlatform/sandbox" -Recurse -Directory -Filter "log" -ErrorAction SilentlyContinue | ForEach-Object {
+            $relativePath = $_.FullName.Substring((Get-Location).Path.Length + 1)
+            $dest = Join-Path $script:TEST_ARTIFACTS $relativePath
+            Copy-Item $_.FullName $dest -Recurse -Force -ErrorAction SilentlyContinue
         }
 
         copyArtifacts "."

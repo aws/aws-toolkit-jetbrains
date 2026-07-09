@@ -3,7 +3,10 @@
 
 package software.aws.toolkits.jetbrains.services.dynamic.explorer
 
+import com.intellij.openapi.application.PathManager
 import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.vfs.newvfs.impl.VfsRootAccess
+import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.ProjectRule
 import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
@@ -41,6 +44,10 @@ class CreateResourceFileStatusHandlerTest {
     @Rule
     val mockClientManager = MockClientManagerRule()
 
+    @JvmField
+    @Rule
+    val disposableRule = DisposableRule()
+
     private lateinit var cloudControlClient: CloudControlClient
     private lateinit var createResourceHandler: CreateResourceFileStatusHandler
     private lateinit var connectionSettings: ConnectionSettings
@@ -49,6 +56,7 @@ class CreateResourceFileStatusHandlerTest {
 
     @Before
     fun setup() {
+        VfsRootAccess.allowRootAccess(disposableRule.disposable, PathManager.getPluginsPath())
         fileEditorManager = FileEditorManager.getInstance(projectRule.project)
         connectionSettings = ConnectionSettings(aToolkitCredentialsProvider(), anAwsRegion())
         cloudControlClient = mockClientManager.create(connectionSettings.region, connectionSettings.credentials)

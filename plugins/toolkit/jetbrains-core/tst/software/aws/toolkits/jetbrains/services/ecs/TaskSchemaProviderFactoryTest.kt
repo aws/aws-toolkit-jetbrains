@@ -30,6 +30,7 @@ class TaskSchemaProviderFactoryTest {
     @Test
     fun testSchemaIsApplied() {
         VfsRootAccess.allowRootAccess(disposableRule.disposable, PathManager.getSystemPath())
+        VfsRootAccess.allowRootAccess(disposableRule.disposable, PathManager.getPluginsPath())
 
         val fixture = projectRule.fixture
 

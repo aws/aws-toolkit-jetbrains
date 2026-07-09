@@ -124,7 +124,9 @@ dependencies {
                 }
             }
 
-            create(type, version, useInstaller = false)
+            create(type, version) {
+                useInstaller = false
+            }
         } else {
             create(IntelliJPlatformType.Gateway, version)
 

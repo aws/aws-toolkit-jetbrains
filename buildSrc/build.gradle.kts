@@ -3,7 +3,7 @@
 
 buildscript {
     // This has to be here otherwise properties are not loaded and nothing works
-    val props = `java.util`.Properties()
+    val props = java.util.Properties()
     file("${project.projectDir.parent}/gradle.properties").inputStream().use { props.load(it) }
     props.entries.forEach { project.extensions.add(it.key.toString(), it.value) }
 }

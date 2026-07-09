@@ -8,6 +8,11 @@ class PluginVariant:
     name: str
     path: str
     gradle_project: str
+    sandbox_name: str = field(init=False)
+
+    def __post_init__(self):
+        # sandbox directory name matches the Gradle project directory name (last segment of path)
+        self.sandbox_name = self.path.rsplit('/', 1)[-1]
 
 @dataclass
 class IdeVariant:
@@ -23,7 +28,7 @@ class IdeVariant:
 
 TEMPLATE = '''<component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Run {plugin.name} - {variant.pretty} [{major_version}]" type="GradleRunConfiguration" factoryName="Gradle" folderName="{major_version}">
-    <log_file alias="idea.log" path="$PROJECT_DIR$/plugins/{plugin.path}/build/idea-sandbox/{variant.short}-{major_version}/log/idea.log" />
+    <log_file alias="idea.log" path="$PROJECT_DIR$/.intellijPlatform/sandbox/{plugin.sandbox_name}/{variant.short}-{major_version}/log/idea.log" />
     <ExternalSystemSettings>
       <option name="executionName" />
       <option name="externalProjectPath" value="$PROJECT_DIR$" />

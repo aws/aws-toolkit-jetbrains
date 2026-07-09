@@ -55,7 +55,7 @@ phases:
           }
         }
 
-        copyArtifacts "*\build\idea-sandbox\*\log*" $script:TEST_ARTIFACTS
+        copyArtifacts "*\.intellijPlatform\sandbox\*\log*" $script:TEST_ARTIFACTS
         copyArtifacts "*\build\reports" $script:TEST_ARTIFACTS
 
         copyArtifacts "*\test-results" $script:TEST_REPORTS
