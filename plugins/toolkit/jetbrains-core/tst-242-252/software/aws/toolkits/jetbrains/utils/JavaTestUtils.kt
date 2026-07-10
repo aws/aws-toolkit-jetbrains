@@ -79,10 +79,19 @@ fun HeavyJavaCodeInsightTestFixtureRule.setUpGradleProject(compatibility: String
                 id 'java'
             }
 
-            sourceCompatibility = '$compatibility'
-            targetCompatibility = '$compatibility'
+            java {
+                sourceCompatibility = JavaVersion.toVersion('$compatibility')
+                targetCompatibility = JavaVersion.toVersion('$compatibility')
+            }
         """.trimIndent()
     ).virtualFile
+
+    // Gradle 9+ requires a settings file (and removed the -b flag for specifying build files directly)
+    fixture.addFileToModule(
+        this.module,
+        "settings.gradle",
+        ""
+    )
 
     // Use our project's own Gradle version
     this.copyGradleFiles()
@@ -115,7 +124,7 @@ fun HeavyJavaCodeInsightTestFixtureRule.setUpGradleProject(compatibility: String
 
     val gradleProjectSettings = GradleProjectSettings().apply {
         withQualifiedModuleNames()
-        externalProjectPath = buildFile.path
+        externalProjectPath = buildFile.parent.path
     }
 
     val externalSystemSettings = ExternalSystemApiUtil.getSettings(project, GradleConstants.SYSTEM_ID)
