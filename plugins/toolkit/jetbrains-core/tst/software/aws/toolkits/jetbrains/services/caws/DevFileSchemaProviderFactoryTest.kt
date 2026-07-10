@@ -29,7 +29,7 @@ class DevFileSchemaProviderFactoryTest {
 
     @Test
     fun testSchemaIsApplied() {
-        VfsRootAccess.allowRootAccess(disposableRule.disposable, PathManager.getSystemPath())
+        VfsRootAccess.allowRootAccess(disposableRule.disposable, PathManager.getSystemPath(), PathManager.getPluginsPath())
         val yamlJsonSchemaHighlightingInspection = YamlJsonSchemaHighlightingInspection()
         val fixture = projectRule.fixture
 

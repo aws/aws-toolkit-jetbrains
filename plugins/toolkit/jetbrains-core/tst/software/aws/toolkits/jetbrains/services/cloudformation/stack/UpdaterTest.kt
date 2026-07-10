@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 package software.aws.toolkits.jetbrains.services.cloudformation.stack
 
+import com.intellij.openapi.util.Disposer
+import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.ProjectRule
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
@@ -49,6 +51,10 @@ class UpdaterTest {
     @JvmField
     @Rule
     val mockClientManagerRule = MockClientManagerRule()
+
+    @JvmField
+    @Rule
+    val disposableRule = DisposableRule()
 
     private val treeView = mock<TreeView>()
     private val eventsTable = mock<EventsTable>()
@@ -98,7 +104,7 @@ class UpdaterTest {
                 whenever(mock.describeStackResources(any<DescribeStackResourcesRequest>()))
                     .thenReturn(DescribeStackResourcesResponse.builder().stackResources(resources).build())
             }
-            Updater(
+            val updater = Updater(
                 treeView = treeView,
                 eventsTable = eventsTable,
                 outputsTable = outputTable,
@@ -109,7 +115,9 @@ class UpdaterTest {
                 client = client,
                 setPagesAvailable = { p -> availablePages = p },
                 stackId = "1234"
-            ).start()
+            )
+            Disposer.register(disposableRule.disposable, updater)
+            updater.start()
         }
 
         arrayOf(setStackStatus, fillResources, insertEvents).forEach { it.waitFor() }
@@ -161,7 +169,9 @@ class UpdaterTest {
             client = client,
             setPagesAvailable = { },
             stackId = "1234"
-        ).applyFilter { it.logicalResourceId() == "L1" }
+        ).also {
+            Disposer.register(disposableRule.disposable, it)
+        }.applyFilter { it.logicalResourceId() == "L1" }
 
         fillResources.waitFor()
 

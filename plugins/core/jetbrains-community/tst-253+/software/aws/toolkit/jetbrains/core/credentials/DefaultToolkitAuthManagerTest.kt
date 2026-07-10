@@ -75,6 +75,12 @@ class DefaultToolkitAuthManagerTest : HeavyPlatformTestCase() {
 
     override fun tearDown() {
         try {
+            // Dispose all managed connections to unsubscribe their BearerTokenProviders from the
+            // application message bus BEFORE Mockito clears inline mocks. Otherwise, async bus
+            // delivery to cleared mocks causes DisabledMockException on CI.
+            sut.listConnections().filterIsInstance<ManagedBearerSsoConnection>().forEach {
+                try { com.intellij.openapi.util.Disposer.dispose(it) } catch (_: Exception) {}
+            }
             telemetryService.dispose()
             AwsSettings.getInstance().isTelemetryEnabled = isTelemetryEnabledDefault
         } finally {

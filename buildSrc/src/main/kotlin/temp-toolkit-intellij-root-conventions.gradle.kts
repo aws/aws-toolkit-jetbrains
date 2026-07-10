@@ -7,8 +7,6 @@ import org.gradle.kotlin.dsl.invoke
 import org.gradle.kotlin.dsl.project
 import org.gradle.kotlin.dsl.provideDelegate
 import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
-import org.jetbrains.intellij.platform.gradle.extensions.IntelliJPlatformExtension
-import org.jetbrains.intellij.platform.gradle.plugins.project.DownloadRobotServerPluginTask
 import org.jetbrains.intellij.platform.gradle.tasks.TestIdeUiTask
 import software.aws.toolkits.gradle.ciOnly
 import software.aws.toolkits.gradle.intellij.IdeFlavor
@@ -72,13 +70,12 @@ dependencies {
 //        val type = toolkitIntelliJ.ideFlavor.map { IntelliJPlatformType.fromCode(it.toString()) }
 //        val version = toolkitIntelliJ.version()
 //
-//        create(type, version, useInstaller = false)
+//        create(type, version) { useInstaller = false }
 //    }
 
     implementation(project(":plugin-toolkit:jetbrains-core"))
     implementation(project(":plugin-toolkit:jetbrains-ultimate"))
     project.findProject(":plugin-toolkit:jetbrains-gateway")?.let {
-        // does this need to be the instrumented variant?
         implementation(it)
         gatewayResources(project(":plugin-toolkit:jetbrains-gateway", configuration = "gatewayResources"))
     }

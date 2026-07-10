@@ -34,6 +34,10 @@ class ProcessNotificationsBaseTest {
         sut = spyk<ProcessNotificationsBase>(
             objToCopy = ProcessNotificationsBase(project)
         )
+
+        // Stub processNotification to prevent real notification side effects (Notifications.Bus.notify
+        // delivers async via message bus; after unmockkAll the bus hits the cleared spy → DisabledMockException)
+        every { sut.processNotification(any(), any()) } returns Unit
     }
 
     @Test
