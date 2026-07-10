@@ -97,6 +97,29 @@ tasks.processResources {
     duplicatesStrategy = DuplicatesStrategy.WARN
 }
 
+// IntelliJ Platform Gradle Plugin 2.8+ strictly resolves bundled plugin artifacts.
+// The community profile (IC) declares bundled plugins like com.intellij.java, com.intellij.gradle, etc.
+// When a non-IC module (IU, RD, GW) depends transitively on an IC module, those bundled plugin
+// coordinates leak into the non-IC module's test classpath with IC-xxx coordinates that can't
+// resolve against the non-IC SDK. Exclude them for any module whose flavor differs from IC.
+afterEvaluate {
+    val flavor = toolkitIntelliJ.ideFlavor.get()
+    if (flavor != IdeFlavor.IC) {
+        val communityBundledPlugins = listOf(
+            "com.intellij.java",
+            "com.intellij.gradle",
+            "org.jetbrains.idea.maven",
+            "com.intellij.properties",
+            "org.jetbrains.idea.reposearch",
+        )
+        configurations.matching { it.name == "testCompileClasspath" || it.name == "testRuntimeClasspath" }.configureEach {
+            communityBundledPlugins.forEach { pluginId ->
+                exclude(group = "bundledPlugin", module = pluginId)
+            }
+        }
+    }
+}
+
 tasks.processTestResources {
     // TODO how can we remove this
     duplicatesStrategy = DuplicatesStrategy.WARN
