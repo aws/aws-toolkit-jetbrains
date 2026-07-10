@@ -5,6 +5,7 @@
 import net.bytebuddy.utility.RandomString
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import org.jetbrains.intellij.platform.gradle.tasks.PrepareSandboxTask
+import org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask
 import org.jetbrains.kotlin.gradle.internal.ensureParentDirsCreated
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import kotlin.io.encoding.Base64
@@ -176,7 +177,7 @@ tasks.integrationTest {
     environment("CWM_HOST_STATUS_OVER_HTTP_TOKEN", testToken)
 }
 
-tasks.verifyPlugin {
+tasks.named<VerifyPluginTask>("verifyPlugin") {
     doFirst {
         ides.forEach { ide ->
             val productInfo = ide.resolve("product-info.json")

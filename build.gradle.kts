@@ -69,6 +69,13 @@ tasks.coverageReport {
     mustRunAfter(rootProject.subprojects.map { it.tasks.withType<AbstractTestTask>() })
 }
 
+// With IntelliJ Platform Gradle Plugin 2.12+, the IDE sandbox moved from build/idea-sandbox
+// to .intellijPlatform/sandbox/ which is outside the build/ directory. Hook into `clean` so
+// that `./gradlew clean` restores the previous behavior of removing all generated artifacts.
+tasks.named<Delete>("clean") {
+    delete(rootProject.file(".intellijPlatform/sandbox"))
+}
+
 allprojects {
     tasks.configureEach {
         if (this is JavaForkOptions) {

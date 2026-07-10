@@ -27,10 +27,10 @@ intellijPlatform {
             // Starting with 2025.3, IntelliJ IDEA is unified (no separate Community edition)
             val version = toolkitIntelliJ.version().get()
             if (version.startsWith("2025.3")) {
-                ide(provider { IntelliJPlatformType.IntellijIdeaUltimate }, toolkitIntelliJ.version())
+                create(IntelliJPlatformType.IntellijIdeaUltimate, version)
             } else {
-                ide(provider { IntelliJPlatformType.IntellijIdeaCommunity }, toolkitIntelliJ.version())
-                ide(provider { IntelliJPlatformType.IntellijIdeaUltimate }, toolkitIntelliJ.version())
+                create(IntelliJPlatformType.IntellijIdeaCommunity, version)
+                create(IntelliJPlatformType.IntellijIdeaUltimate, version)
             }
         }
     }
@@ -76,7 +76,7 @@ dependencies {
                 defaultType to toolkitIntelliJ.version()
             }
 
-            create(type, version, useInstaller = false)
+            create(type, version) { useInstaller = false }
             jetbrainsRuntime()
         }
     }

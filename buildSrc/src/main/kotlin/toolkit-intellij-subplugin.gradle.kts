@@ -147,7 +147,7 @@ dependencies {
                 }
             }
 
-            create(type, version, useInstaller = false)
+            create(type, version) { useInstaller = false }
         } else {
             create(IntelliJPlatformType.Gateway, version)
 
@@ -203,6 +203,31 @@ tasks.withType<Test>().configureEach {
     val jetbrainsCoreTestResources = project(":plugin-toolkit:jetbrains-core").projectDir.resolve("tst-resources")
     systemProperty("idea.log.config.properties.file", jetbrainsCoreTestResources.resolve("toolkit-test-log.properties"))
     systemProperty("org.gradle.project.ideProfileName", ideProfile.name)
+
+    // Multiple projects write into the shared sandbox directory (.intellijPlatform/sandbox/{TYPE-VER}/plugins-test/).
+    // Gradle 9 promotes implicit task dependency detection from warning to error — if a Test task reads
+    // from an output directory that another project's prepareTestSandbox wrote to without a declared
+    // dependency, the build fails.
+    //
+    // We use mustRunAfter (NOT dependsOn) because:
+    // - dependsOn forces ALL producers to execute, contaminating the shared sandbox with every module's
+    //   plugins — this causes test failures when unrelated plugins load into the test classpath
+    // - mustRunAfter only declares ordering: "if both tasks are already in the graph, run the producer
+    //   first" — it satisfies Gradle 9 validation without pulling in unrelated modules
+    val sharedSandboxProducers = listOf(
+        ":plugin-toolkit:intellij-standalone",
+        ":plugin-toolkit:jetbrains-core",
+        ":plugin-toolkit:jetbrains-ultimate",
+        ":plugin-core:jetbrains-community",
+        ":plugin-core:jetbrains-ultimate",
+        ":sandbox-all",
+    )
+    sharedSandboxProducers.forEach { projectPath ->
+        val resolved = project.rootProject.findProject(projectPath)
+        if (resolved != null && resolved != project) {
+            mustRunAfter("$projectPath:prepareTestSandbox")
+        }
+    }
 }
 
 tasks.withType<JavaExec>().configureEach {

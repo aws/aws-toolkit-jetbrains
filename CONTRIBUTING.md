@@ -158,10 +158,10 @@ If the tests run too quickly, you can tell the UI tests to wait for the debugger
 
 - Log messages (`LOG.info`, `LOG.error()`, …) by default are written to:
   ```
-  plugins/toolkit/intellij/build/idea-sandbox/system/log/idea.log
-  plugins/toolkit/intellij/build/idea-sandbox/system-test/logs/idea.log  # Tests
+  .intellijPlatform/sandbox/intellij-standalone/IC-{version}/log/idea.log
+  .intellijPlatform/sandbox/intellij-standalone/IC-{version}-test/logs/idea.log  # Tests
 
-  plugins/toolkit/jetbrains-gateway/build/idea-sandbox/system/logs/idea.log  # Gateway
+  .intellijPlatform/sandbox/jetbrains-gateway/GW-{version}/logs/idea.log  # Gateway
   ```
 - DEBUG-level log messages are skipped by default. To enable them, add the
   following line to the _Help_ \> _Debug Log Settings_ dialog in the IDE

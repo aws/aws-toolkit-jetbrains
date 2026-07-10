@@ -8,6 +8,7 @@ class PluginVariant:
     name: str
     path: str
     gradle_project: str
+    sandbox_name: str  # Gradle project name used in .intellijPlatform/sandbox/{sandbox_name}/
 
 @dataclass
 class IdeVariant:
@@ -23,7 +24,7 @@ class IdeVariant:
 
 TEMPLATE = '''<component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Run {plugin.name} - {variant.pretty} [{major_version}]" type="GradleRunConfiguration" factoryName="Gradle" folderName="{major_version}">
-    <log_file alias="idea.log" path="$PROJECT_DIR$/plugins/{plugin.path}/build/idea-sandbox/{variant.short}-{major_version}/log/idea.log" />
+    <log_file alias="idea.log" path="$PROJECT_DIR$/.intellijPlatform/sandbox/{plugin.sandbox_name}/{variant.short}-{major_version}/log/idea.log" />
     <ExternalSystemSettings>
       <option name="executionName" />
       <option name="externalProjectPath" value="$PROJECT_DIR$" />
@@ -59,7 +60,7 @@ if __name__ == '__main__':
         IdeVariant("Ultimate", "IU"),
     ]
     plugins = [
-        PluginVariant("AWS Toolkit", "toolkit/intellij-standalone", ":plugin-toolkit:intellij-standalone"),
+        PluginVariant("AWS Toolkit", "toolkit/intellij-standalone", ":plugin-toolkit:intellij-standalone", "intellij-standalone"),
     ]
 
 
@@ -71,4 +72,4 @@ if __name__ == '__main__':
 
     # gateway only supported from last 'stable' version onwards
     for mv in mvs[2:]:
-        write_config(mv, IdeVariant("Gateway", "GW"), PluginVariant("AWS Toolkit", "toolkit/jetbrains-gateway", ":plugin-toolkit:jetbrains-gateway"))
+        write_config(mv, IdeVariant("Gateway", "GW"), PluginVariant("AWS Toolkit", "toolkit/jetbrains-gateway", ":plugin-toolkit:jetbrains-gateway", "jetbrains-gateway"))

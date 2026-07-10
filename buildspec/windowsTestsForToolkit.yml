@@ -59,7 +59,7 @@ phases:
 
         function copyArtifacts($root) {
             copyFolder $root "build/reports/" $script:TEST_ARTIFACTS
-            copyFolder $root "build/idea-sandbox/system-test/log/" $script:TEST_ARTIFACTS
+            copyFolder $root ".intellijPlatform/sandbox/" $script:TEST_ARTIFACTS
             copyFolder $root "build/test-results/test/" $script:TEST_REPORTS
         }
 

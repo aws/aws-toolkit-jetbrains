@@ -3,6 +3,9 @@
 
 package software.aws.toolkits.jetbrains.services.dynamic.explorer
 
+import com.intellij.openapi.application.PathManager
+import com.intellij.openapi.vfs.newvfs.impl.VfsRootAccess
+import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.LightVirtualFile
 import com.intellij.testFramework.RuleChain
 import com.intellij.testFramework.runInEdtAndWait
@@ -34,6 +37,10 @@ class ResourceSchemaProviderFactoryTest {
 
     @Rule
     @JvmField
+    val disposableRule = DisposableRule()
+
+    @Rule
+    @JvmField
     val ruleChain = RuleChain(
         projectRule,
         resourceCache
@@ -41,6 +48,7 @@ class ResourceSchemaProviderFactoryTest {
 
     @Before
     fun setup() {
+        VfsRootAccess.allowRootAccess(disposableRule.disposable, PathManager.getPluginsPath())
         val schema = "{\n" +
             "  \"properties\": {\n" +
             "    \"RetentionInDays\": {\n" +
