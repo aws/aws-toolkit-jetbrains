@@ -59,7 +59,7 @@ class ResourceNotificationServiceTest {
     @Test
     fun `formatFailureReasons formats single reason`() {
         val reasons = mapOf("AWS::S3::Bucket" to mapOf("my-bucket" to "ResourceNotFoundException: bucket not found"))
-        assertThat(service().formatFailureReasons(reasons)).isEqualTo(": [ResourceNotFoundException: bucket not found]")
+        assertThat(service().formatFailureReasons(reasons)).isEqualTo("[ResourceNotFoundException: bucket not found]")
     }
 
     @Test
@@ -71,7 +71,7 @@ class ResourceNotificationServiceTest {
             )
         )
         assertThat(service().formatFailureReasons(reasons))
-            .isEqualTo(": [ResourceNotFoundException: bucket-1 not found], [AccessDeniedException: bucket-2 not authorized]")
+            .isEqualTo("[ResourceNotFoundException: bucket-1 not found], [AccessDeniedException: bucket-2 not authorized]")
     }
 
     @Test
@@ -80,7 +80,7 @@ class ResourceNotificationServiceTest {
         val reasons = linkedMapOf("AWS::S3::Bucket" to identifiers)
         val result = service().formatFailureReasons(reasons)
         // only the first 2 shown, remaining 3 summarized
-        assertThat(result).startsWith(": [ResourceNotFoundException: bucket-1 not found], [ResourceNotFoundException: bucket-2 not found]")
+        assertThat(result).startsWith("[ResourceNotFoundException: bucket-1 not found], [ResourceNotFoundException: bucket-2 not found]")
         assertThat(result).doesNotContain("bucket-3 not found")
         assertThat(result).endsWith("and 3 more")
     }
@@ -95,7 +95,7 @@ class ResourceNotificationServiceTest {
             "AWS::Lambda::Function" to mapOf("f1" to "AccessDeniedException: f1 not authorized")
         )
         val result = service().formatFailureReasons(reasons)
-        assertThat(result).startsWith(": [ResourceNotFoundException: b1 not found], [ResourceNotFoundException: b2 not found]")
+        assertThat(result).startsWith("[ResourceNotFoundException: b1 not found], [ResourceNotFoundException: b2 not found]")
         assertThat(result).endsWith("and 1 more")
     }
 

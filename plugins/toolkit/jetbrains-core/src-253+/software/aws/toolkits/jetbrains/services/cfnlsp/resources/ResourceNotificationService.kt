@@ -81,10 +81,10 @@ internal class ResourceNotificationService(private val project: Project) {
     }
 
     /**
-     * Formats up to [MAX_DISPLAYED_FAILURE_REASONS] failure reasons into a suffix string, e.g.
-     * `: [ResourceNotFoundException: ... not found], [AccessDeniedException: ... not authorized]`. Any beyond the
-     * limit are summarized as "and N more"; the complete set of reasons is written to the IDE log (see the
-     * "view log" action on the notification). Returns an empty string when there are no reasons.
+     * Formats up to [MAX_DISPLAYED_FAILURE_REASONS] failure reasons into a list, e.g.
+     * `[ResourceNotFoundException: ... not found], [AccessDeniedException: ... not authorized]`. Any beyond the
+     * limit are summarized as "and N more"; the complete set is available via the "view all failures" action on
+     * the notification and in the IDE log. Returns an empty string when there are no reasons.
      */
     internal fun formatFailureReasons(failureReasons: Map<String, Map<String, String>>?): String {
         if (failureReasons.isNullOrEmpty()) {
@@ -99,9 +99,9 @@ internal class ResourceNotificationService(private val project: Project) {
         val remaining = reasons.size - displayed.size
         val joined = displayed.joinToString(", ") { "[$it]" }
         return if (remaining > 0) {
-            ": $joined, ${message("cloudformation.explorer.resources.failure_reasons.more", remaining)}"
+            "$joined, ${message("cloudformation.explorer.resources.failure_reasons.more", remaining)}"
         } else {
-            ": $joined"
+            joined
         }
     }
 
