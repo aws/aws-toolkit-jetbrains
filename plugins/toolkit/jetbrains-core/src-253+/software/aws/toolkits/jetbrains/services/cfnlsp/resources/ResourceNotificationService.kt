@@ -7,6 +7,7 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.openapi.project.Project
+import software.aws.toolkit.jetbrains.utils.createShowMoreInfoDialogAction
 import software.aws.toolkit.jetbrains.utils.notifyError
 import software.aws.toolkit.jetbrains.utils.notifyInfo
 import software.aws.toolkit.jetbrains.utils.notifyWarn
@@ -38,20 +39,36 @@ internal class ResourceNotificationService(private val project: Project) {
             }
             successCount > 0 && failureCount > 0 -> {
                 val successPlural = if (successCount == 1) "" else "s"
-                val content = if (reasonsSuffix.isNotEmpty()) {
-                    message("cloudformation.explorer.resources.$actionKey.partial.with_reasons", successCount, successPlural, failureCount, reasonsSuffix)
+                if (reasonsSuffix.isNotEmpty()) {
+                    notifyWarn(
+                        title,
+                        message("cloudformation.explorer.resources.$actionKey.partial.with_reasons", successCount, successPlural, failureCount, reasonsSuffix),
+                        project,
+                        listOf(viewDetailsAction(failureReasons))
+                    )
                 } else {
-                    message("cloudformation.explorer.resources.$actionKey.partial", successCount, successPlural, failureCount)
+                    notifyWarn(
+                        title,
+                        message("cloudformation.explorer.resources.$actionKey.partial", successCount, successPlural, failureCount),
+                        project
+                    )
                 }
-                notifyWarn(title, content, project)
             }
             failureCount > 0 -> {
-                val content = if (reasonsSuffix.isNotEmpty()) {
-                    message("cloudformation.explorer.resources.$actionKey.failed.with_reasons", failureCount, resourcePlural, reasonsSuffix)
+                if (reasonsSuffix.isNotEmpty()) {
+                    notifyError(
+                        title,
+                        message("cloudformation.explorer.resources.$actionKey.failed.with_reasons", failureCount, resourcePlural, reasonsSuffix),
+                        project,
+                        listOf(viewDetailsAction(failureReasons))
+                    )
                 } else {
-                    message("cloudformation.explorer.resources.$actionKey.failed", failureCount, resourcePlural)
+                    notifyError(
+                        title,
+                        message("cloudformation.explorer.resources.$actionKey.failed", failureCount, resourcePlural),
+                        project
+                    )
                 }
-                notifyError(title, content, project)
             }
             else -> {
                 notifyInfo(
@@ -63,15 +80,53 @@ internal class ResourceNotificationService(private val project: Project) {
         }
     }
 
+    /**
+     * Formats up to [MAX_DISPLAYED_FAILURE_REASONS] failure reasons into a suffix string, e.g.
+     * `: [ResourceNotFoundException: ... not found], [AccessDeniedException: ... not authorized]`. Any beyond the
+     * limit are summarized as "and N more"; the complete set of reasons is written to the IDE log (see the
+     * "view log" action on the notification). Returns an empty string when there are no reasons.
+     */
     internal fun formatFailureReasons(failureReasons: Map<String, Map<String, String>>?): String {
         if (failureReasons.isNullOrEmpty()) {
             return ""
         }
-        val reasons = failureReasons.values
-            .flatMap { it.entries }
-            .map { (id, reason) -> "[$id: $reason]" }
-        return if (reasons.isEmpty()) "" else ": ${reasons.joinToString(", ")}"
+        val reasons = failureReasons.values.flatMap { it.values }
+        if (reasons.isEmpty()) {
+            return ""
+        }
+
+        val displayed = reasons.take(MAX_DISPLAYED_FAILURE_REASONS)
+        val remaining = reasons.size - displayed.size
+        val joined = displayed.joinToString(", ") { "[$it]" }
+        return if (remaining > 0) {
+            ": $joined, ${message("cloudformation.explorer.resources.failure_reasons.more", remaining)}"
+        } else {
+            ": $joined"
+        }
     }
+
+    /**
+     * Notification action that opens a scrollable dialog listing every failure reason (not just the truncated set
+     * shown in the balloon). The full set is also written to the IDE log.
+     */
+    private fun viewDetailsAction(failureReasons: Map<String, Map<String, String>>?): AnAction =
+        createShowMoreInfoDialogAction(
+            message("cloudformation.explorer.resources.failure_reasons.view_details"),
+            message("cloudformation.explorer.resources.failure_reasons.view_details.title"),
+            message("cloudformation.explorer.resources.failure_reasons.view_details.message"),
+            formatAllFailureReasons(failureReasons)
+        )
+
+    /**
+     * Builds the complete list of failures (`<identifier>: <reason>`) for the details dialog, separated by a blank
+     * line so long, wrapped entries remain readable.
+     */
+    private fun formatAllFailureReasons(failureReasons: Map<String, Map<String, String>>?): String =
+        failureReasons
+            ?.values
+            ?.flatMap { identifiers -> identifiers.entries.map { (id, reason) -> "$id: $reason" } }
+            ?.joinToString(System.lineSeparator() + System.lineSeparator())
+            .orEmpty()
 
     fun showStackManagementInfo(result: ResourceStackManagementResult) {
         val messageText = if (result.managedByStack == true) {
@@ -104,5 +159,9 @@ internal class ResourceNotificationService(private val project: Project) {
             project,
             actions
         )
+    }
+
+    private companion object {
+        const val MAX_DISPLAYED_FAILURE_REASONS = 2
     }
 }

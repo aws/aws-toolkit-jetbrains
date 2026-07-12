@@ -130,7 +130,7 @@ internal class ResourceStateService(
                         LOG.info { "Successfully processed: ${result.successfulImports}" }
                     }
                     if (result.failedImports.isNotEmpty()) {
-                        LOG.warn { "Failed to process: ${result.failedImports}" }
+                        LOG.warn { "Failed to process: ${result.failedImports}. Reasons: ${result.failureReasons}" }
                     }
                 }
             }
