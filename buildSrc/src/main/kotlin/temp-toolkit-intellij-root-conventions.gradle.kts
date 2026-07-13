@@ -7,8 +7,6 @@ import org.gradle.kotlin.dsl.invoke
 import org.gradle.kotlin.dsl.project
 import org.gradle.kotlin.dsl.provideDelegate
 import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
-import org.jetbrains.intellij.platform.gradle.extensions.IntelliJPlatformExtension
-import org.jetbrains.intellij.platform.gradle.plugins.project.DownloadRobotServerPluginTask
 import org.jetbrains.intellij.platform.gradle.tasks.TestIdeUiTask
 import software.aws.toolkits.gradle.ciOnly
 import software.aws.toolkits.gradle.intellij.IdeFlavor
