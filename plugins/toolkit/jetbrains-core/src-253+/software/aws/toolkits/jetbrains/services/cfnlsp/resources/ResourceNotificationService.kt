@@ -86,7 +86,7 @@ internal class ResourceNotificationService(private val project: Project) {
      * limit are summarized as "and N more"; the complete set is available via the "view all failures" action on
      * the notification and in the IDE log. Returns an empty string when there are no reasons.
      */
-    internal fun formatFailureReasons(failureReasons: Map<String, Map<String, String>>?): String {
+    private fun formatFailureReasons(failureReasons: Map<String, Map<String, String>>?): String {
         if (failureReasons.isNullOrEmpty()) {
             return ""
         }

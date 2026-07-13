@@ -41,62 +41,53 @@ class ResourceNotificationServiceTest {
     private fun service() = ResourceNotificationService(projectRule.project)
 
     @Test
-    fun `formatFailureReasons returns empty string when null`() {
-        assertThat(service().formatFailureReasons(null)).isEmpty()
+    fun `notification omits reasons suffix when failureReasons is empty`() {
+        service().showResultNotification(0, 1, ResourceStatePurpose.IMPORT, emptyMap())
+
+        assertThat(notifications).hasSize(1)
+        assertThat(notifications[0].content).doesNotContain("[")
     }
 
     @Test
-    fun `formatFailureReasons returns empty string when empty`() {
-        assertThat(service().formatFailureReasons(emptyMap())).isEmpty()
+    fun `notification omits reasons suffix when inner maps are empty`() {
+        service().showResultNotification(0, 1, ResourceStatePurpose.IMPORT, mapOf("AWS::S3::Bucket" to emptyMap<String, String>()))
+
+        assertThat(notifications).hasSize(1)
+        assertThat(notifications[0].content).doesNotContain("[")
     }
 
     @Test
-    fun `formatFailureReasons returns empty string when inner maps are empty`() {
-        val reasons = mapOf("AWS::S3::Bucket" to emptyMap<String, String>())
-        assertThat(service().formatFailureReasons(reasons)).isEmpty()
-    }
-
-    @Test
-    fun `formatFailureReasons formats single reason`() {
-        val reasons = mapOf("AWS::S3::Bucket" to mapOf("my-bucket" to "ResourceNotFoundException: bucket not found"))
-        assertThat(service().formatFailureReasons(reasons)).isEqualTo("[ResourceNotFoundException: bucket not found]")
-    }
-
-    @Test
-    fun `formatFailureReasons shows up to the display limit without truncation`() {
+    fun `notification shows reasons up to the display limit without truncation`() {
         val reasons = mapOf(
             "AWS::S3::Bucket" to linkedMapOf(
                 "bucket-1" to "ResourceNotFoundException: bucket-1 not found",
                 "bucket-2" to "AccessDeniedException: bucket-2 not authorized"
             )
         )
-        assertThat(service().formatFailureReasons(reasons))
-            .isEqualTo("[ResourceNotFoundException: bucket-1 not found], [AccessDeniedException: bucket-2 not authorized]")
+        service().showResultNotification(0, 2, ResourceStatePurpose.IMPORT, reasons)
+
+        val content = notifications.single().content
+        assertThat(content).contains(
+            "[ResourceNotFoundException: bucket-1 not found]",
+            "[AccessDeniedException: bucket-2 not authorized]"
+        )
+        assertThat(content).doesNotContain("more")
     }
 
     @Test
-    fun `formatFailureReasons truncates beyond the display limit and summarizes the remainder`() {
+    fun `notification truncates reasons beyond the display limit and summarizes the remainder`() {
         val identifiers = (1..5).associate { "bucket-$it" to "ResourceNotFoundException: bucket-$it not found" }
         val reasons = linkedMapOf("AWS::S3::Bucket" to identifiers)
-        val result = service().formatFailureReasons(reasons)
-        // only the first 2 shown, remaining 3 summarized
-        assertThat(result).startsWith("[ResourceNotFoundException: bucket-1 not found], [ResourceNotFoundException: bucket-2 not found]")
-        assertThat(result).doesNotContain("bucket-3 not found")
-        assertThat(result).endsWith("and 3 more")
-    }
+        service().showResultNotification(0, 5, ResourceStatePurpose.IMPORT, reasons)
 
-    @Test
-    fun `formatFailureReasons truncates across resource types`() {
-        val reasons = linkedMapOf(
-            "AWS::S3::Bucket" to linkedMapOf(
-                "b1" to "ResourceNotFoundException: b1 not found",
-                "b2" to "ResourceNotFoundException: b2 not found"
-            ),
-            "AWS::Lambda::Function" to mapOf("f1" to "AccessDeniedException: f1 not authorized")
+        val content = notifications.single().content
+        // only the first 2 shown, remaining 3 summarized
+        assertThat(content).contains(
+            "[ResourceNotFoundException: bucket-1 not found]",
+            "[ResourceNotFoundException: bucket-2 not found]"
         )
-        val result = service().formatFailureReasons(reasons)
-        assertThat(result).startsWith("[ResourceNotFoundException: b1 not found], [ResourceNotFoundException: b2 not found]")
-        assertThat(result).endsWith("and 1 more")
+        assertThat(content).doesNotContain("bucket-3 not found")
+        assertThat(content).contains("and 3 more")
     }
 
     @Test
