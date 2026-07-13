@@ -7,8 +7,8 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import com.intellij.serviceContainer.NonInjectable
 import org.eclipse.lsp4j.TextDocumentIdentifier
-import org.jetbrains.annotations.VisibleForTesting
 import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkit.core.utils.info
 import software.aws.toolkit.core.utils.warn
@@ -21,17 +21,19 @@ import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ResourceStatePur
 import software.aws.toolkits.resources.message
 
 @Service(Service.Level.PROJECT)
-internal class ResourceStateService(
+internal class ResourceStateService @NonInjectable constructor(
     private val project: Project,
+    private val clientServiceProvider: () -> CfnClientService,
+    private val editor: ResourceStateEditor,
+    private val notificationService: ResourceNotificationService,
 ) {
-    @VisibleForTesting
-    internal var clientServiceProvider: () -> CfnClientService = { CfnClientService.getInstance(project) }
-
-    @VisibleForTesting
-    internal var editor = ResourceStateEditor.getInstance(project)
-
-    @VisibleForTesting
-    internal var notificationService = ResourceNotificationService(project)
+    @Suppress("unused")
+    constructor(project: Project) : this(
+        project,
+        { CfnClientService.getInstance(project) },
+        ResourceStateEditor.getInstance(project),
+        ResourceNotificationService(project),
+    )
 
     fun importResourceState(resourceNodes: List<ResourceNode>) {
         executeResourceStateOperation(resourceNodes, ResourceStatePurpose.IMPORT)
