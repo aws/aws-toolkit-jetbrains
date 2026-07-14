@@ -46,6 +46,9 @@ val gatewayResources = configurations.register("gatewayResources") {
 intellijPlatform {
     projectName = "aws-toolkit-jetbrains"
     instrumentCode = false
+    // Override sandbox into build/ so runIde uses build/idea-sandbox/{projectName}/{TYPE-VER}/
+    // instead of the 2.13+ default .intellijPlatform/sandbox/ at repo root (plugin 2.13+).
+    sandboxContainer.set(layout.buildDirectory.dir("idea-sandbox"))
 }
 
 tasks.prepareSandbox {
@@ -72,6 +75,13 @@ dependencies {
 //
 //        create(type, version, useInstaller = false)
 //    }
+
+    intellijPlatform {
+        // jetbrains-core contains META-INF/plugin.xml — must be composed into the top-level jar
+        // so IntelliJ discovers the plugin descriptor. Without this, jars land under lib/modules/
+        // and IntelliJ ignores the plugin entirely (no descriptor in the aggregate jar). (plugin 2.13+)
+        pluginComposedModule(project(":plugin-toolkit:jetbrains-core"))
+    }
 
     implementation(project(":plugin-toolkit:jetbrains-core"))
     implementation(project(":plugin-toolkit:jetbrains-ultimate"))
