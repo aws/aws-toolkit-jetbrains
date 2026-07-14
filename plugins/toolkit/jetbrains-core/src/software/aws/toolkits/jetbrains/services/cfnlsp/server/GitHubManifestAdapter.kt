@@ -67,7 +67,12 @@ internal class GitHubManifestAdapter(
     internal fun parseManifest(json: String): ServerRelease {
         val root = mapper.readTree(json)
         val envKey = environment.name.lowercase()
-        var versions: List<ManifestVersion> = mapper.readValue(root.get(envKey).toString())
+        val envNode = root.get(envKey)
+            ?: error("No versions in manifest for environment '$envKey'")
+        var versions: List<ManifestVersion> = mapper.readValue(envNode.toString())
+        if (versions.isEmpty()) {
+            error("Empty version list in manifest for environment '$envKey'")
+        }
 
         if (SystemInfo.isLinux && legacyLinuxDetector.useLegacyLinux()) {
             LOG.info { "Legacy Linux environment detected, using $LEGACY_LINUX_PLATFORM builds" }

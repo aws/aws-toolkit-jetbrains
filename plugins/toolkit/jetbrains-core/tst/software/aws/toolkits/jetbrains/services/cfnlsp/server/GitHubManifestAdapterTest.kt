@@ -254,6 +254,33 @@ class GitHubManifestAdapterTest {
         assertThat(result.version).isEqualTo("10.0.0")
     }
 
+    @Test
+    fun `parseManifest errors when environment key is missing from manifest`() {
+        val adapter = GitHubManifestAdapter(
+            environment = CfnLspEnvironment.BETA,
+            versionRange = SemVerRange.parse("<2.0.0"),
+        )
+
+        // manifest only has "prod", adapter expects "beta"
+        val manifest = buildManifestJson("prod", listOf("1.4.0"))
+
+        assertThatThrownBy { adapter.parseManifest(manifest) }
+            .hasMessageContaining("beta")
+    }
+
+    @Test
+    fun `parseManifest errors when environment version list is empty`() {
+        val adapter = GitHubManifestAdapter(
+            environment = CfnLspEnvironment.PROD,
+            versionRange = SemVerRange.parse("<2.0.0"),
+        )
+
+        val manifest = jacksonObjectMapper().writeValueAsString(mapOf("prod" to emptyList<Any>()))
+
+        assertThatThrownBy { adapter.parseManifest(manifest) }
+            .hasMessageContaining("Empty version list")
+    }
+
     // --- helpers ---
 
     private fun buildManifestJson(env: String, versions: List<String>): String =

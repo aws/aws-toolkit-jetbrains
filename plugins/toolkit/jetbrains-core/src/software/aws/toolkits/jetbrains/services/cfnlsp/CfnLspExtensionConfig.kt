@@ -7,7 +7,7 @@ import software.aws.toolkit.jetbrains.AwsPlugin
 import software.aws.toolkit.jetbrains.AwsToolkit
 
 object CfnLspExtensionConfig {
-    const val EXTENSION_NAME: String = AwsToolkit.TOOLKIT_PLUGIN_ID
+    const val EXTENSION_NAME: String = "aws.toolkit.jetbrains"
     val EXTENSION_VERSION: String = AwsToolkit.PLUGINS_INFO[AwsPlugin.TOOLKIT]?.version ?: "unknown"
     const val ENCRYPTION_MODE = "JWT"
     const val TELEMETRY_NOTIFICATION_GROUP_ID = "aws.cfn.telemetry"
