@@ -3,12 +3,14 @@
 
 package software.aws.toolkits.jetbrains.services.cfnlsp.resources
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.testFramework.ProjectRule
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -28,8 +30,10 @@ class ResourceStateServiceTest {
     @Test
     fun `importResourceState calls LSP client with correct params`() {
         val mockClientService = mock<CfnClientService>()
-        val stateService = ResourceStateService(projectRule.project)
-        stateService.clientServiceProvider = { mockClientService }
+        val mockEditor = mock<ResourceStateEditor>()
+        whenever(mockEditor.getActiveEditor()).thenReturn(mock())
+        whenever(mockEditor.getActiveDocumentUri()).thenReturn("file:///test.yaml")
+        val stateService = ResourceStateService(projectRule.project, { mockClientService }, mockEditor, mock())
 
         val mockResult = ResourceStateResult(
             successfulImports = mapOf("AWS::EC2::Instance" to listOf("test-ec2")),
@@ -38,12 +42,6 @@ class ResourceStateServiceTest {
             warning = null
         )
         whenever(mockClientService.getResourceState(any())).thenReturn(CompletableFuture.completedFuture(mockResult))
-
-        // Mock the editor to return valid values
-        val mockEditor = mock<ResourceStateEditor>()
-        whenever(mockEditor.getActiveEditor()).thenReturn(mock())
-        whenever(mockEditor.getActiveDocumentUri()).thenReturn("file:///test.yaml")
-        stateService.editor = mockEditor
 
         val resourceNode = mock<ResourceNode>()
         whenever(resourceNode.resourceType).thenReturn("AWS::EC2::Instance")
@@ -63,8 +61,10 @@ class ResourceStateServiceTest {
     @Test
     fun `cloneResourceState calls LSP client with correct params`() {
         val mockClientService = mock<CfnClientService>()
-        val stateService = ResourceStateService(projectRule.project)
-        stateService.clientServiceProvider = { mockClientService }
+        val mockEditor = mock<ResourceStateEditor>()
+        whenever(mockEditor.getActiveEditor()).thenReturn(mock())
+        whenever(mockEditor.getActiveDocumentUri()).thenReturn("file:///test.yaml")
+        val stateService = ResourceStateService(projectRule.project, { mockClientService }, mockEditor, mock())
 
         val mockResult = ResourceStateResult(
             successfulImports = mapOf("AWS::S3::Bucket" to listOf("test-bucket")),
@@ -73,12 +73,6 @@ class ResourceStateServiceTest {
             warning = null
         )
         whenever(mockClientService.getResourceState(any())).thenReturn(CompletableFuture.completedFuture(mockResult))
-
-        // Mock the editor to return valid values
-        val mockEditor = mock<ResourceStateEditor>()
-        whenever(mockEditor.getActiveEditor()).thenReturn(mock())
-        whenever(mockEditor.getActiveDocumentUri()).thenReturn("file:///test.yaml")
-        stateService.editor = mockEditor
 
         val resourceNode = mock<ResourceNode>()
         whenever(resourceNode.resourceType).thenReturn("AWS::S3::Bucket")
@@ -93,10 +87,46 @@ class ResourceStateServiceTest {
     }
 
     @Test
+    fun `importResourceState passes failureReasons to notification service`() {
+        val mockClientService = mock<CfnClientService>()
+        val mockEditor = mock<ResourceStateEditor>()
+        whenever(mockEditor.getActiveEditor()).thenReturn(mock())
+        whenever(mockEditor.getActiveDocumentUri()).thenReturn("file:///test.yaml")
+        val mockNotificationService = mock<ResourceNotificationService>()
+        val stateService = ResourceStateService(projectRule.project, { mockClientService }, mockEditor, mockNotificationService)
+
+        val failureReasons = mapOf("AWS::S3::Bucket" to mapOf("my-bucket" to "Access denied"))
+        val mockResult = ResourceStateResult(
+            successfulImports = emptyMap(),
+            failedImports = mapOf("AWS::S3::Bucket" to listOf("my-bucket")),
+            failureReasons = failureReasons,
+            completionItem = null,
+            warning = null
+        )
+        whenever(mockClientService.getResourceState(any())).thenReturn(CompletableFuture.completedFuture(mockResult))
+
+        val resourceNode = mock<ResourceNode>()
+        whenever(resourceNode.resourceType).thenReturn("AWS::S3::Bucket")
+        whenever(resourceNode.resourceIdentifier).thenReturn("my-bucket")
+
+        stateService.importResourceState(listOf(resourceNode))
+
+        ApplicationManager.getApplication().invokeAndWait { }
+
+        val reasonsCaptor = argumentCaptor<Map<String, Map<String, String>>>()
+        verify(mockNotificationService).showResultNotification(
+            eq(0),
+            eq(1),
+            eq(ResourceStatePurpose.IMPORT),
+            reasonsCaptor.capture()
+        )
+        assertThat(reasonsCaptor.firstValue).isEqualTo(failureReasons)
+    }
+
+    @Test
     fun `getStackManagementInfo calls LSP client`() {
         val mockClientService = mock<CfnClientService>()
-        val stateService = ResourceStateService(projectRule.project)
-        stateService.clientServiceProvider = { mockClientService }
+        val stateService = ResourceStateService(projectRule.project, { mockClientService }, mock(), mock())
 
         val mockResult = ResourceStackManagementResult(
             physicalResourceId = "test-ec2",

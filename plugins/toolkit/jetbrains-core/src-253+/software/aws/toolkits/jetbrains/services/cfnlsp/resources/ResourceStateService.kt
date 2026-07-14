@@ -7,6 +7,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import com.intellij.serviceContainer.NonInjectable
 import org.eclipse.lsp4j.TextDocumentIdentifier
 import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkit.core.utils.info
@@ -20,12 +21,19 @@ import software.aws.toolkits.jetbrains.services.cfnlsp.protocol.ResourceStatePur
 import software.aws.toolkits.resources.message
 
 @Service(Service.Level.PROJECT)
-internal class ResourceStateService(
+internal class ResourceStateService @NonInjectable constructor(
     private val project: Project,
+    private val clientServiceProvider: () -> CfnClientService,
+    private val editor: ResourceStateEditor,
+    private val notificationService: ResourceNotificationService,
 ) {
-    internal var clientServiceProvider: () -> CfnClientService = { CfnClientService.getInstance(project) }
-    internal var editor = ResourceStateEditor.getInstance(project)
-    private val notificationService = ResourceNotificationService(project)
+    @Suppress("unused")
+    constructor(project: Project) : this(
+        project,
+        { CfnClientService.getInstance(project) },
+        ResourceStateEditor.getInstance(project),
+        ResourceNotificationService(project),
+    )
 
     fun importResourceState(resourceNodes: List<ResourceNode>) {
         executeResourceStateOperation(resourceNodes, ResourceStatePurpose.IMPORT)
@@ -117,14 +125,14 @@ internal class ResourceStateService(
                     val failureCount = result.failedImports.values.sumOf { it.size }
 
                     ApplicationManager.getApplication().invokeLater {
-                        notificationService.showResultNotification(successCount, failureCount, purpose)
+                        notificationService.showResultNotification(successCount, failureCount, purpose, result.failureReasons)
                     }
 
                     if (result.successfulImports.isNotEmpty()) {
                         LOG.info { "Successfully processed: ${result.successfulImports}" }
                     }
                     if (result.failedImports.isNotEmpty()) {
-                        LOG.warn { "Failed to process: ${result.failedImports}" }
+                        LOG.warn { "Failed to process: ${result.failedImports}. Reasons: ${result.failureReasons}" }
                     }
                 }
             }

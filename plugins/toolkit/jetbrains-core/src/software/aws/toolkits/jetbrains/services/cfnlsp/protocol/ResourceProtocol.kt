@@ -52,6 +52,7 @@ internal data class ResourceStateResult(
     val completionItem: CompletionItem? = null,
     val successfulImports: Map<String, List<String>>,
     val failedImports: Map<String, List<String>>,
+    val failureReasons: Map<String, Map<String, String>>? = null,
     val warning: String? = null,
 )
 
