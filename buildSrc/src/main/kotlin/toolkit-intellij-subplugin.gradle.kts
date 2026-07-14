@@ -130,10 +130,6 @@ intellijPlatform {
     // find the name of first subproject depth, or root if not applied to a subproject hierarchy
     projectName.convention(generateSequence(project) { it.parent }.first { it.depth <= 1 }.name)
     instrumentCode = true
-    // Keep per-project sandbox isolation. Plugin 2.12+ defaults to a shared
-    // .intellijPlatform/sandbox/ directory which causes Gradle 9 implicit dependency errors
-    // and sandbox contamination between modules. Per-project sandbox eliminates both issues.
-    sandboxContainer.set(layout.buildDirectory.dir("idea-sandbox"))
 }
 
 dependencies {
