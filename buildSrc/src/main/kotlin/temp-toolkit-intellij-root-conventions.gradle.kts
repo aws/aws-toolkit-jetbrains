@@ -46,6 +46,9 @@ val gatewayResources = configurations.register("gatewayResources") {
 intellijPlatform {
     projectName = "aws-toolkit-jetbrains"
     instrumentCode = false
+    // Override sandbox into build/ so runIde uses build/idea-sandbox/{projectName}/{TYPE-VER}/
+    // instead of the 2.12+ default .intellijPlatform/sandbox/ at repo root.
+    sandboxContainer.set(layout.buildDirectory.dir("idea-sandbox"))
 }
 
 tasks.prepareSandbox {
