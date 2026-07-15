@@ -55,7 +55,6 @@ configurations {
             exclude(group = "org.jetbrains.kotlinx", "kotlinx-coroutines-core")
         }
 
-        val configName = name
         resolutionStrategy.eachDependency {
             if (requested.group == "org.jetbrains.kotlinx" && requested.name.startsWith("kotlinx-coroutines")) {
                 useVersion(versionCatalog.findVersion("kotlinCoroutines").get().toString())
@@ -63,24 +62,8 @@ configurations {
             }
 
             if (requested.group == "org.jetbrains.kotlin" && requested.name.startsWith("kotlin")) {
-                // Only stdlib-like artifacts on runtime/test configurations should use the IDE-bundled version,
-                // and only when the IDE bundles a NEWER version than the KGP compiler.
-                // Compiler plugins (kotlin-scripting-*, kotlin-build-tools-*, etc.) must stay at KGP version.
-                val kgpVersion = versionCatalog.findVersion("kotlin").get().toString()
-                val ideStdlibVersion = versionCatalog.findVersion("kotlinStdlib").get().toString()
-                val isRuntimeOrTest = configName.contains("ompileClasspath") ||
-                    configName.contains("untimeClasspath") ||
-                    configName.contains("estFixtures")
-                val isStdlibLike = requested.name.startsWith("kotlin-stdlib") ||
-                    requested.name == "kotlin-reflect" ||
-                    requested.name.startsWith("kotlin-test")
-                val version = if (isRuntimeOrTest && isStdlibLike && ideStdlibVersion > kgpVersion) {
-                    ideStdlibVersion
-                } else {
-                    kgpVersion
-                }
-                useVersion(version)
-                because("resolve kotlin version conflicts: use IDE-bundled version when newer, otherwise KGP version")
+                useVersion(versionCatalog.findVersion("kotlin").get().toString())
+                because("resolve kotlin version conflicts in favor of local version catalog")
             }
 
             // https://nvd.nist.gov/vuln/detail/cve-2022-25647
@@ -97,24 +80,19 @@ tasks.processResources {
     duplicatesStrategy = DuplicatesStrategy.WARN
 }
 
-// IntelliJ Platform Gradle Plugin 2.8+ strictly resolves bundled plugin artifacts.
-// The community profile (IC) declares bundled plugins like com.intellij.java, com.intellij.gradle, etc.
-// When a non-IC module (IU, RD, GW) depends transitively on an IC module, those bundled plugin
-// coordinates leak into the non-IC module's test classpath with IC-xxx coordinates that can't
-// resolve against the non-IC SDK. Exclude them for any module whose flavor differs from IC.
-afterEvaluate {
-    val flavor = toolkitIntelliJ.ideFlavor.get()
-    if (flavor != IdeFlavor.IC) {
-        val communityBundledPlugins = listOf(
-            "com.intellij.java",
-            "com.intellij.gradle",
-            "org.jetbrains.idea.maven",
-            "com.intellij.properties",
-            "org.jetbrains.idea.reposearch",
-        )
-        configurations.matching { it.name == "testCompileClasspath" || it.name == "testRuntimeClasspath" }.configureEach {
-            communityBundledPlugins.forEach { pluginId ->
-                exclude(group = "bundledPlugin", module = pluginId)
+// Plugin 2.8+ strictly resolves bundled plugin/module artifacts. Community-edition (IC) bundled
+// plugins/modules leak transitively into non-IC modules and can't resolve against IU/RD/GW SDKs.
+// Match amazon-q-jetbrains approach: exclude at configuration time (not afterEvaluate), and blanket-exclude
+// all bundledModule artifacts for non-IC modules.
+configurations {
+    if (project.name.contains("jetbrains-ultimate") || project.name.contains("jetbrains-rider") || project.name.contains("jetbrains-gateway")) {
+        listOf("testCompileClasspath", "testRuntimeClasspath", "testFixturesApi").forEach { configName ->
+            findByName(configName)?.apply {
+                exclude(group = "bundledPlugin", module = "com.intellij.java")
+                exclude(group = "bundledPlugin", module = "org.jetbrains.idea.maven")
+                exclude(group = "bundledPlugin", module = "com.intellij.gradle")
+                exclude(group = "bundledPlugin", module = "com.intellij.properties")
+                exclude(group = "bundledModule")
             }
         }
     }
@@ -127,8 +105,6 @@ tasks.processTestResources {
 
 // Run after the project has been evaluated so that the extension (intellijToolkit) has been configured
 intellijPlatform {
-    // find the name of first subproject depth, or root if not applied to a subproject hierarchy
-    projectName.convention(generateSequence(project) { it.parent }.first { it.depth <= 1 }.name)
     instrumentCode = true
     // Keep per-project sandbox isolation. This project builds multiple IDE flavors (IC, IU, RD, GW)
     // in one Gradle invocation. The shared sandbox (plugin 2.13+ default) resolves bundled plugins
@@ -139,22 +115,26 @@ intellijPlatform {
 
 dependencies {
     intellijPlatform {
-        val version = toolkitIntelliJ.version()
+        val sdkVersion = toolkitIntelliJ.version().get()
 
         // annoying resolution issue that we don't want to bother fixing
         if (!project.name.contains("jetbrains-gateway")) {
-            val type = toolkitIntelliJ.ideFlavor.map { flavor ->
-                // Starting with 2025.3, IntelliJ IDEA is unified (no separate Community edition)
-                if ((version.get().startsWith("2025.3") || version.get().startsWith("2026.")) && flavor == IdeFlavor.IC) {
-                    IntelliJPlatformType.IntellijIdeaUltimate
-                } else {
-                    IntelliJPlatformType.fromCode(flavor.toString())
+            // Named helpers (match amazon-q-jetbrains pattern) — interact better with plugin 2.14+
+            // auto-inheritance detection than generic create(type, version).
+            // Starting with 2025.3, IntelliJ IDEA is unified (no separate Community edition).
+            when (toolkitIntelliJ.ideFlavor.get()) {
+                IdeFlavor.IU -> intellijIdeaUltimate(sdkVersion) { useInstaller.set(false) }
+                IdeFlavor.RD -> rider(sdkVersion) { useInstaller.set(false) }
+                else -> {
+                    if (sdkVersion.startsWith("2025.3") || sdkVersion.startsWith("2026.")) {
+                        intellijIdeaUltimate(sdkVersion) { useInstaller.set(false) }
+                    } else {
+                        intellijIdeaCommunity(sdkVersion) { useInstaller.set(false) }
+                    }
                 }
             }
-
-            create(type, version) { useInstaller = false }
         } else {
-            create(IntelliJPlatformType.Gateway, version)
+            create(IntelliJPlatformType.Gateway, sdkVersion)
 
             // Gateway 2026.1 product-info.json has layout entries without "classPath".
             // intellij-plugin-structure crashes on these (ProductModuleV2.classPath is non-null).
@@ -172,9 +152,8 @@ dependencies {
         plugins(toolkitIntelliJ.productProfile().map { it.marketplacePlugins })
 
         // OAuth modules split in 2025.3+ - must be explicitly bundled
-        val versionStr = version.get()
-        if (versionStr.contains("253") || versionStr.startsWith("2025.3") ||
-            versionStr.startsWith("2026.")) {
+        if (sdkVersion.contains("253") || sdkVersion.startsWith("2025.3") ||
+            sdkVersion.startsWith("2026.")) {
             bundledModule("intellij.platform.collaborationTools")
             bundledModule("intellij.platform.collaborationTools.auth.base")
             bundledModule("intellij.platform.collaborationTools.auth")

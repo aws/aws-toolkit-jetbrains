@@ -24,7 +24,7 @@ class IdeVariant:
 
 TEMPLATE = '''<component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Run {plugin.name} - {variant.pretty} [{major_version}]" type="GradleRunConfiguration" factoryName="Gradle" folderName="{major_version}">
-    <log_file alias="idea.log" path="$PROJECT_DIR$/plugins/{plugin.path}/build/idea-sandbox/{plugin.project_name}/{variant.short}-{major_version}/log/idea.log" />
+    <log_file alias="idea.log" path="$PROJECT_DIR$/plugins/{plugin.path}/build/idea-sandbox/{plugin.project_name}/{sandbox_type}-{major_version}/log/idea.log" />
     <ExternalSystemSettings>
       <option name="executionName" />
       <option name="externalProjectPath" value="$PROJECT_DIR$" />
@@ -48,9 +48,16 @@ TEMPLATE = '''<component name="ProjectRunConfigurationManager">
   </configuration>
 </component>'''
 
+def resolve_sandbox_type(ide: 'IdeVariant', mv: str) -> str:
+    """Starting with 2025.3, IntelliJ IDEA is unified — IC resolves to IU at runtime."""
+    if ide.short == 'IC' and mv >= '2025.3':
+        return 'IU'
+    return ide.short
+
 def write_config(mv: str, ide: IdeVariant, plugin: PluginVariant):
+    sandbox_type = resolve_sandbox_type(ide, mv)
     with open(os.path.join(script_root, f'Run {plugin.name} - {ide.pretty} [{mv}].run.xml'), 'w') as f:
-        f.write(TEMPLATE.format(plugin = plugin, variant = ide, major_version = mv))
+        f.write(TEMPLATE.format(plugin=plugin, variant=ide, major_version=mv, sandbox_type=sandbox_type))
 
 if __name__ == '__main__':
     mvs = ["2025.1", "2025.2", "2025.3", "2026.1"]

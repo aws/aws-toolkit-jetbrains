@@ -6,22 +6,23 @@ import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.ToolkitIntelliJExtension
 
 val intellijToolkit = project.extensions.create("intellijToolkit", ToolkitIntelliJExtension::class)
-// Use convention() so that toolkit-publish-root-conventions can override with runIdeVariant
+// Hard-set flavor per module name. Using set() (not convention()) prevents plugin 2.14+ auto-inheritance
+// from overriding the flavor through its own mechanisms.
 when {
     project.name.contains("jetbrains-rider") -> {
-        intellijToolkit.ideFlavor.convention(IdeFlavor.RD)
+        intellijToolkit.ideFlavor.set(IdeFlavor.RD)
     }
 
     project.name.contains("jetbrains-ultimate") -> {
-        intellijToolkit.ideFlavor.convention(IdeFlavor.IU)
+        intellijToolkit.ideFlavor.set(IdeFlavor.IU)
     }
 
     project.name.contains("jetbrains-gateway") -> {
-        intellijToolkit.ideFlavor.convention(IdeFlavor.GW)
+        intellijToolkit.ideFlavor.set(IdeFlavor.GW)
     }
 
     else -> {
-        intellijToolkit.ideFlavor.convention(IdeFlavor.IC)
+        intellijToolkit.ideFlavor.set(IdeFlavor.IC)
     }
 }
 

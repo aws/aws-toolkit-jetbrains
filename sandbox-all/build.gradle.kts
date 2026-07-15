@@ -29,6 +29,9 @@ tasks.buildPlugin {
 
 intellijPlatform {
     buildSearchableOptions.set(false)
+    // Override sandbox into build/ so tests use build/idea-sandbox/{projectName}/{TYPE-VER}/
+    // instead of the 2.12+ default .intellijPlatform/sandbox/ at repo root.
+    sandboxContainer.set(layout.buildDirectory.dir("idea-sandbox"))
 }
 
 dependencies {

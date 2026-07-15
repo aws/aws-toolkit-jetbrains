@@ -62,21 +62,19 @@ dependencies {
                 }
                 ideFlavor.set(IdeFlavor.values().firstOrNull { it.name == runIdeVariant.orNull } ?: defaultFlavor)
             }
-            val (type, version) = if (runIdeVariant.isPresent) {
-                val type = toolkitIntelliJ.ideFlavor.map { IntelliJPlatformType.fromCode(it.toString()) }
-                val version = toolkitIntelliJ.version()
 
-                type to version
-            } else {
-                val defaultType = if (toolkitIntelliJ.version().get().startsWith("2025.3")) {
-                    provider { IntelliJPlatformType.IntellijIdeaUltimate }
-                } else {
-                    provider { IntelliJPlatformType.IntellijIdeaCommunity }
+            val sdkVersion = toolkitIntelliJ.version().get()
+            when (toolkitIntelliJ.ideFlavor.get()) {
+                IdeFlavor.IU -> intellijIdeaUltimate(sdkVersion) { useInstaller.set(false) }
+                IdeFlavor.RD -> rider(sdkVersion) { useInstaller.set(false) }
+                else -> {
+                    if (sdkVersion.startsWith("2025.3") || sdkVersion.startsWith("2026.")) {
+                        intellijIdeaUltimate(sdkVersion) { useInstaller.set(false) }
+                    } else {
+                        intellijIdeaCommunity(sdkVersion) { useInstaller.set(false) }
+                    }
                 }
-                defaultType to toolkitIntelliJ.version()
             }
-
-            create(type, version) { useInstaller = false }
             jetbrainsRuntime()
         }
     }
