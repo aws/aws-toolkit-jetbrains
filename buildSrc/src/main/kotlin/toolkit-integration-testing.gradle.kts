@@ -7,6 +7,7 @@ import org.jetbrains.intellij.platform.gradle.extensions.IntelliJPlatformTesting
 import software.aws.toolkits.gradle.ciOnly
 import software.aws.toolkits.gradle.findFolders
 import software.aws.toolkits.gradle.intellij.IdeVersions
+import software.aws.toolkits.gradle.intellij.toolkitIntelliJ
 
 plugins {
     id("java")
@@ -80,6 +81,11 @@ extensions.findByType<IntelliJPlatformTestingExtension>()?.let {
         testFramework(TestFrameworkType.Plugin.Java)
         testFramework(TestFrameworkType.Platform)
         testFramework(TestFrameworkType.JUnit5)
+
+        plugins {
+            bundledPlugins(toolkitIntelliJ.productProfile().map { profile -> profile.bundledPlugins })
+            plugins(toolkitIntelliJ.productProfile().map { profile -> profile.marketplacePlugins })
+        }
 
         task {
             integrationTestConfiguration(this)
