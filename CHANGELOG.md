@@ -1,3 +1,6 @@
+# _4.5_ (2026-07-15)
+- **(Bug Fix)** CloudFormation: Display the AWS error message when importing or cloning resource state fails, instead of only a failure count.
+
 # _4.4_ (2026-07-08)
 - **(Feature)** Auto generate client id for cloudformation lsp if an telemetry is enabled and an anonymous client id is cached
 
