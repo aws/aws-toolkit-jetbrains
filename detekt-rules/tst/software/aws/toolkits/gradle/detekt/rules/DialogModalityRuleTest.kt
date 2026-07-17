@@ -3,12 +3,13 @@
 
 package software.aws.toolkits.gradle.detekt.rules
 
-import io.gitlab.arturbosch.detekt.test.lint
+import dev.detekt.api.Config
+import dev.detekt.test.lint
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 
 class DialogModalityRuleTest {
-    private val rule = DialogModalityRule()
+    private val rule = DialogModalityRule(Config.empty)
 
     @Test
     fun runInEdtCallsShouldSpecifyModalityWhenCalledWithinDialog() {
@@ -21,8 +22,8 @@ class DialogModalityRuleTest {
         """
         assertThat(rule.lint(code)).singleElement()
             .matches {
-                it.id == "RunInEdtWithoutModalityInDialog" &&
-                    it.message == "Call to runInEdt without ModalityState.any() within Dialog will not run until Dialog exits."
+                it.message ==
+                    "Call to runInEdt without ModalityState.any() within Dialog will not run until Dialog exits."
             }
     }
 
@@ -50,8 +51,8 @@ class DialogModalityRuleTest {
 
         assertThat(rule.lint(code)).singleElement()
             .matches {
-                it.id == "RunInEdtWithoutModalityInDialog" &&
-                    it.message == "Call to runInEdt without ModalityState.any() within Dialog will not run until Dialog exits."
+                it.message ==
+                    "Call to runInEdt without ModalityState.any() within Dialog will not run until Dialog exits."
             }
     }
 }

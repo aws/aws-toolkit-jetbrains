@@ -20,6 +20,10 @@ dependencyResolutionManagement {
                     "1.10.2-intellij-1"
                 }
 
+                "2026.2" -> {
+                    "1.10.2-intellij-1"
+                }
+
                 else -> { error("not set") }
             }
 
@@ -32,6 +36,7 @@ dependencyResolutionManagement {
                 "2025.2" -> "2.1.20"
                 "2025.3" -> "2.2.20"
                 "2026.1" -> "2.3.20"
+                "2026.2" -> "2.4.0"
                 else -> { error("not set") }
             }
 

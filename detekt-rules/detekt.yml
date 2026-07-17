@@ -1,6 +1,3 @@
-build:
-  excludeCorrectable: false
-
 config:
   validation: true
 
@@ -17,14 +14,12 @@ console-reports:
     - 'NotificationReport'
     - 'FileBasedFindingsReport'
 
-output-reports:
-  active: true
-
 comments:
   active: true
   AbsentOrWrongFileLicense:
     active: true
-    licenseTemplateFile: ./license.template
+    # detekt 2.0 removed licenseTemplateFile (file-based) support; the regex must be inlined directly
+    licenseTemplate: '^// Copyright \d{4} Amazon.com, Inc. or its affiliates. All Rights Reserved.\n// SPDX-License-Identifier: Apache-2.0\n?'
     licenseTemplateIsRegex: true
 
 complexity:
@@ -48,12 +43,23 @@ exceptions:
   active: false
 
 # unfortunately, does not respect .editorconfig in the project folder
-# this configuration reflects the delta from the default "formatting" (ktlint) rule set
-formatting:
+# this configuration reflects the delta from the default ktlint rule set
+ktlint:
   active: true
   android: false
   autoCorrect: true
   AnnotationOnSeparateLine:
+    active: false
+  # newly active-by-default in detekt 2.0; not previously enforced across this codebase
+  CommentWrapping:
+    active: false
+  Filename:
+    active: false
+  Kdoc:
+    active: false
+  MixedConditionOperators:
+    active: false
+  NoEmptyFile:
     active: false
   AnnotationSpacing:
     active: false
@@ -65,6 +71,9 @@ formatting:
     active: true
     indentSize: 4
     excludes: [ '**/TelemetryDefinitions.kt' ]
+  # newly active-by-default in detekt 2.0; not previously enforced across this codebase
+  PropertyName:
+    active: false
   MaximumLineLength:
     active: true
     maxLineLength: 160
@@ -114,6 +123,8 @@ naming:
     functionPattern: '([a-z][a-zA-Z0-9]*)|(`.*`)'
     excludeClassPattern: '$^'
     ignoreAnnotated: [ 'Composable' ]
+    # test method names commonly use methodName_scenario_expectedResult style
+    excludes: [ '**/tst/**', '**/it/**' ]
   FunctionParameterNaming:
     active: true
     parameterPattern: '[a-z][A-Za-z0-9]*'
@@ -138,11 +149,20 @@ naming:
     constantPattern: '[A-Z][_A-Z0-9]*'
     propertyPattern: '[A-Za-z][_A-Za-z0-9]*'
     privatePropertyPattern: '_?[A-Za-z][_A-Za-z0-9]*'
+    # detekt 2.0 now correctly checks private top-level consts too, surfacing pre-existing camelCase names
+    excludes: [
+      '**/services/sqs/SqsUtils.kt',
+      '**/services/cloudformation/stack/EventsFetcherTest.kt'
+    ]
   VariableNaming:
     active: true
     variablePattern: '[a-z][A-Za-z0-9]*'
     privateVariablePattern: '(_)?[a-z][A-Za-z0-9]*'
     excludeClassPattern: '$^'
+    excludes: [
+      '**/uitests/tests/InsightsQueryTest.kt',
+      '**/uitests/tests/S3BrowserTest.kt'
+    ]
 
 performance:
   SpreadOperator:
@@ -167,6 +187,8 @@ potential-bugs:
   HasPlatformType:
     active: false
   IgnoredReturnValue:
+    active: false
+  ImplicitDefaultLocale:
     active: false
   ImplicitUnitReturnType:
     active: false
@@ -205,9 +227,17 @@ potential-bugs:
     active: true
 
 style:
+  # newly active-by-default in detekt 2.0; not previously enforced across this codebase
+  AbstractClassCanBeConcreteClass:
+    active: false
+  AbstractClassCanBeInterface:
+    active: false
   ExpressionBodySyntax:
     active: true
     includeLineWrapping: true
+    excludes: [ '**/services/caws/CawsProjectListRenderer.kt' ]
+  LoopWithTooManyJumpStatements:
+    excludes: [ '**/services/s3/objectActions/DownloadObjectAction.kt' ]
   ForbiddenComment:
     active: false
   MagicNumber:
@@ -227,9 +257,19 @@ style:
     active: false
   ThrowsCount:
     active: false
-  UnnecessaryAbstractClass:
+  # newly active-by-default in detekt 2.0; not previously enforced across this codebase
+  UseCheckOrError:
     active: false
-  UnusedPrivateMember:
+  UseOrEmpty:
+    active: false
+  UseRequire:
+    active: false
+  UnusedParameter:
+    excludes: [ '**/services/lambda/completion/DotNetHandlerCompletionProviderTest.kt' ]
+  UnusedPrivateFunction:
     allowedNames: '(_|ignored|expected|serialVersionUID|createUIComponents)'
+  UnusedPrivateProperty:
+    allowedNames: '(_|ignored|expected|serialVersionUID|createUIComponents)'
+    excludes: [ '**/resources/tst/software/aws/toolkits/resources/BundledResourcesTest.kt' ]
   VarCouldBeVal:
     active: false

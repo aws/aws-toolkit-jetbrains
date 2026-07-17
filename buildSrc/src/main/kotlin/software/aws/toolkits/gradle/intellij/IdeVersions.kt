@@ -191,6 +191,56 @@ object IdeVersions {
                 rdGenVersion = "2026.1.3",
                 nugetVersion = "2026.1.0"
             )
+        ),
+        Profile(
+            name = "2026.2",
+            gateway = ProductProfile(
+                sdkVersion = "2026.2",
+                bundledPlugins = listOf("org.jetbrains.plugins.terminal")
+            ),
+            community = ProductProfile(
+                sdkVersion = "2026.2",
+                bundledPlugins = commonPlugins + listOf(
+                    "com.intellij.java",
+                    "com.intellij.gradle",
+                    "org.jetbrains.idea.maven",
+                    "com.intellij.properties",
+                    // JCEF was split out into its own bundled plugin starting with 2026.2
+                    "com.intellij.modules.jcef"
+                ),
+                marketplacePlugins = listOf(
+                    "org.toml.lang:262.8665.176",
+                    "PythonCore:262.8665.258",
+                    "Docker:262.8665.185",
+                    "com.intellij.modules.json:262.8665.176"
+                )
+            ),
+            ultimate = ProductProfile(
+                sdkVersion = "2026.2",
+                bundledPlugins = commonPlugins + listOf(
+                    "JavaScript",
+                    "JavaScriptDebugger",
+                    "com.intellij.database",
+                    // JCEF was split out into its own bundled plugin starting with 2026.2
+                    "com.intellij.modules.jcef"
+                ),
+                marketplacePlugins = listOf(
+                    "Pythonid:262.8665.258",
+                    "org.jetbrains.plugins.go:262.8665.258",
+                    "com.intellij.modules.json:262.8665.176"
+                )
+            ),
+            rider = RiderProfile(
+                // Rider 2026.2 is still pre-release; "2026.2" alone isn't a published artifact version.
+                // Pin to the RC1 snapshot rather than the rolling "2026.2-SNAPSHOT" for reproducibility;
+                // bump to a plain stable version once JetBrains ships Rider 2026.2 GA.
+                sdkVersion = "2026.2-RC1-SNAPSHOT",
+                bundledPlugins = commonPlugins,
+                netFrameworkTarget = "net472",
+                rdGenVersion = "2026.2.5",
+                // EAP only as of this writing; bump to stable once JetBrains publishes it
+                nugetVersion = "2026.2.0-eap01"
+            )
         )
     ).associateBy { it.name }
 

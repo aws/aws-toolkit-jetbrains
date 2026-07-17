@@ -50,7 +50,7 @@ class PluginUpdateManager : Disposable {
         runInEdt {
             ProgressManager.getInstance().run(object : Task.Backgroundable(
                 null,
-                AwsCoreBundle.message("aws.settings.auto_update.progress.message")
+                AwsCoreBundle.message("aws.settings.auto_update.progress.message"),
             ) {
                 override fun run(indicator: ProgressIndicator) {
                     checkForUpdates(indicator, AwsPlugin.TOOLKIT)
@@ -84,7 +84,7 @@ class PluginUpdateManager : Disposable {
                 success = true,
                 id = SOURCE_AUTO_UPDATE_FINISH_NOTIFY,
                 source = SOURCE_AUTO_UPDATE_FINISH_NOTIFY,
-                component = Component.Filesystem
+                component = Component.Filesystem,
             )
         } catch (e: Exception) {
             LOG.debug(e) { "Unable to update $pluginName" }
@@ -95,7 +95,7 @@ class PluginUpdateManager : Disposable {
                 id = SOURCE_AUTO_UPDATE_FINISH_NOTIFY,
                 source = SOURCE_AUTO_UPDATE_FINISH_NOTIFY,
                 component = Component.Filesystem,
-                reason = e.message
+                reason = e.message,
             )
             return
         } catch (e: Error) {
@@ -108,7 +108,7 @@ class PluginUpdateManager : Disposable {
                 id = SOURCE_AUTO_UPDATE_FINISH_NOTIFY,
                 source = SOURCE_AUTO_UPDATE_FINISH_NOTIFY,
                 component = Component.Filesystem,
-                reason = e.message
+                reason = e.message,
             )
             return
         }
@@ -126,7 +126,7 @@ class PluginUpdateManager : Disposable {
                         id = "autoUpdateActionRestart",
                         source = SOURCE_AUTO_UPDATE_FINISH_NOTIFY,
                         component = Component.Filesystem,
-                        action = "restart"
+                        action = "restart",
                     )
                     ApplicationManager.getApplication().restart()
                 },
@@ -138,7 +138,7 @@ class PluginUpdateManager : Disposable {
                         id = "autoUpdateActionNotNow",
                         source = SOURCE_AUTO_UPDATE_FINISH_NOTIFY,
                         component = Component.Filesystem,
-                        action = "notNow"
+                        action = "notNow",
                     )
                 },
                 NotificationAction.createSimple(AwsCoreBundle.message("aws.notification.auto_update.settings.title")) {
@@ -149,11 +149,11 @@ class PluginUpdateManager : Disposable {
                         id = ID_ACTION_AUTO_UPDATE_SETTINGS,
                         source = SOURCE_AUTO_UPDATE_FINISH_NOTIFY,
                         component = Component.Filesystem,
-                        action = "showSettingsDialog"
+                        action = "showSettingsDialog",
                     )
                     ShowSettingsUtil.getInstance().showSettingsDialog(null, AwsSettingsSharedConfigurable::class.java)
-                }
-            )
+                },
+            ),
         )
     }
 
@@ -162,7 +162,8 @@ class PluginUpdateManager : Disposable {
             title = AwsCoreBundle.message("aws.notification.auto_update.feature_intro.title"),
             project = project,
             notificationActions = listOf(
-                NotificationAction.createSimpleExpiring(AwsCoreBundle.message("aws.notification.auto_update.feature_intro.ok")) {},
+                NotificationAction.createSimpleExpiring(AwsCoreBundle.message("aws.notification.auto_update.feature_intro.ok")) {
+                },
                 NotificationAction.createSimple(AwsCoreBundle.message("aws.notification.auto_update.settings.title")) {
                     ToolkitTelemetry.invokeAction(
                         project = null,
@@ -170,12 +171,12 @@ class PluginUpdateManager : Disposable {
                         id = ID_ACTION_AUTO_UPDATE_SETTINGS,
                         source = SOURCE_AUTO_UPDATE_FEATURE_INTRO_NOTIFY,
                         component = Component.Filesystem,
-                        action = "showSettingsDialog"
+                        action = "showSettingsDialog",
                     )
                     ShowSettingsUtil.getInstance()
                         .showSettingsDialog(project, AwsSettingsSharedConfigurable::class.java)
-                }
-            )
+                },
+            ),
         )
     }
 
@@ -189,11 +190,11 @@ class PluginUpdateManager : Disposable {
         const val SOURCE_AUTO_UPDATE_FEATURE_INTRO_NOTIFY = "autoUpdateFeatureIntroNotification"
         const val ID_ACTION_AUTO_UPDATE_SETTINGS = "autoUpdateActionSettings"
 
-        fun getUpdate(pluginDescriptor: IdeaPluginDescriptor): PluginDownloader? =
-            getUpdateInfo().firstOrNull {
-                it.id == pluginDescriptor.pluginId &&
-                    PluginDownloader.compareVersionsSkipBrokenAndIncompatible(it.pluginVersion, pluginDescriptor) > 0
-            }
+        fun getUpdate(pluginDescriptor: IdeaPluginDescriptor): PluginDownloader? = getUpdateInfo().firstOrNull {
+            val pluginVersion = it.pluginVersion ?: return@firstOrNull false
+            it.id == pluginDescriptor.pluginId &&
+                PluginDownloader.compareVersionsSkipBrokenAndIncompatible(pluginVersion, pluginDescriptor) > 0
+        }
 
         // TODO: Optimize this to only search the result for AWS plugins
         fun getUpdateInfo(): Collection<PluginDownloader> = UpdateChecker.getPluginUpdates() ?: emptyList()

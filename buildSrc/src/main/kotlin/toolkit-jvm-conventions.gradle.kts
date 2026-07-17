@@ -21,7 +21,7 @@ java {
 
 kotlin {
     compilerOptions {
-        jvmTarget = JvmTarget.fromTarget("21")
+        jvmTarget = JvmTarget.fromTarget(javaVersion.majorVersion)
         languageVersion = KotlinVersion.fromVersion(project.kotlinTarget().get())
         apiVersion = KotlinVersion.fromVersion(project.kotlinTarget().get())
         jvmDefault.set(JvmDefaultMode.NO_COMPATIBILITY)

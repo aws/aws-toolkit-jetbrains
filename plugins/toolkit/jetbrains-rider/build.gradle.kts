@@ -4,8 +4,8 @@
 import com.jetbrains.rd.generator.gradle.RdGenExtension
 import com.jetbrains.rd.generator.gradle.RdGenPlugin
 import com.jetbrains.rd.generator.gradle.RdGenTask
-import io.gitlab.arturbosch.detekt.Detekt
-import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
+import dev.detekt.gradle.Detekt
+import dev.detekt.gradle.DetektCreateBaselineTask
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import org.jetbrains.intellij.platform.gradle.tasks.PrepareSandboxTask
 import software.aws.toolkits.gradle.intellij.IdeFlavor
@@ -53,7 +53,7 @@ if (providers.gradleProperty("ideProfileName").get() == "2025.3") {
             listOf(
                 "com.jetbrains.intellij.java:java-test-framework",
                 "com.jetbrains.intellij.platform:test-framework",
-                "com.jetbrains.intellij.platform:test-framework-junit5"
+                "com.jetbrains.intellij.platform:test-framework-junit5",
             ).forEach {
                 substitute(module(it))
                     .using(module("$it:253.28294.334"))
@@ -105,7 +105,7 @@ val resharperParts = listOf(
     "AWS.Localization",
     "AWS.Project",
     "AWS.Psi",
-    "AWS.Settings"
+    "AWS.Settings",
 )
 
 val buildConfiguration = project.extra.properties["BuildConfiguration"] ?: "Debug" // TODO: Do we ever want to make a release build?
@@ -152,7 +152,7 @@ configure<RdGenExtension> {
 val compiledModelsDir = File("$nonLazyBuildDir/rdgen/compiled-models")
 val compileModelSources = if (ideProfile.name.startsWith("2026")) {
     val kotlinCompilerConfig = configurations.detachedConfiguration(
-        dependencies.create("org.jetbrains.kotlin:kotlin-compiler-embeddable:${libs.versions.kotlin.get()}")
+        dependencies.create("org.jetbrains.kotlin:kotlin-compiler-embeddable:${libs.versions.kotlin.get()}"),
     )
 
     tasks.register<JavaExec>("compileModelSources") {
@@ -170,7 +170,7 @@ val compileModelSources = if (ideProfile.name.startsWith("2026")) {
             compiledModelsDir.absolutePath,
             "-jvm-target",
             "21",
-            modelDir.absolutePath
+            modelDir.absolutePath,
         )
 
         inputs.dir(modelDir)
@@ -299,7 +299,7 @@ val buildReSharperPlugin = tasks.register("buildReSharperPlugin") {
             "build",
             "--verbosity",
             "normal",
-            "${resharperPluginPath.canonicalPath}/ReSharper.AWS.sln"
+            "${resharperPluginPath.canonicalPath}/ReSharper.AWS.sln",
         )
         project.providers.exec {
             executable = "dotnet"

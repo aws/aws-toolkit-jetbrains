@@ -60,7 +60,7 @@ def write_config(mv: str, ide: IdeVariant, plugin: PluginVariant):
         f.write(TEMPLATE.format(plugin=plugin, variant=ide, major_version=mv, sandbox_type=sandbox_type))
 
 if __name__ == '__main__':
-    mvs = ["2025.1", "2025.2", "2025.3", "2026.1"]
+    mvs = ["2025.1", "2025.2", "2025.3", "2026.1", "2026.2"]
     ides = [
         IdeVariant("Community", "IC"),
         IdeVariant("Rider", "RD"),

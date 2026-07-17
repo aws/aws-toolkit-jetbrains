@@ -1,8 +1,8 @@
 // Copyright 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-import io.gitlab.arturbosch.detekt.Detekt
-import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
+import dev.detekt.gradle.Detekt
+import dev.detekt.gradle.DetektCreateBaselineTask
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.IdeVersions
 import software.aws.toolkits.telemetry.generator.gradle.GenerateTelemetry
@@ -51,7 +51,7 @@ val replaceInGeneratedSources = tasks.register<DefaultTask>("replaceInGeneratedS
         // Define your string replacements as pairs (old -> new)
         val replacements = mapOf(
             "software.aws.toolkits.jetbrains.services.telemetry" to "software.aws.toolkit.jetbrains.services.telemetry",
-            "software.aws.toolkits.core" to "software.aws.toolkit.core"
+            "software.aws.toolkits.core" to "software.aws.toolkit.core",
         )
 
         // Walk through all generated source files
@@ -90,7 +90,7 @@ intellijToolkit {
 // expose intellij test framework to fixture consumers
 configurations.testFixturesCompileOnlyApi {
     extendsFrom(
-        configurations.intellijPlatformTestDependencies.get()
+        configurations.intellijPlatformTestDependencies.get(),
     )
 }
 

@@ -3,25 +3,22 @@
 
 package software.aws.toolkits.gradle.detekt.rules
 
-import io.github.detekt.test.utils.createEnvironment
-import io.gitlab.arturbosch.detekt.test.compileAndLintWithContext
+import dev.detekt.api.Config
+import dev.detekt.test.junit.KotlinCoreEnvironmentTest
+import dev.detekt.test.lintWithContext
+import dev.detekt.test.utils.KotlinEnvironmentContainer
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.Test
-import java.io.File
+import org.junit.jupiter.api.Test
 
+@KotlinCoreEnvironmentTest
 class LazyLogRuleTest {
-    private val rule = LazyLogRule()
-    private val environment = createEnvironment(
-        additionalRootPaths = LazyLogRule.loggers.map {
-            File(Class.forName(it).protectionDomain.codeSource.location.path)
-        }
-    ).env
+    private val rule = LazyLogRule(Config.empty)
 
     @Test
-    fun lambdaIsUsedToLog() {
+    fun lambdaIsUsedToLog(env: KotlinEnvironmentContainer) {
         assertThat(
-            rule.compileAndLintWithContext(
-                environment,
+            rule.lintWithContext(
+                env,
                 """
 import org.slf4j.LoggerFactory
 
@@ -29,16 +26,16 @@ val LOG = LoggerFactory.getLogger("")
 fun foo() {
     LOG.debug { "Hi" }
 }
-                """.trimIndent()
-            )
+                """.trimIndent(),
+            ),
         ).isEmpty()
     }
 
     @Test
-    fun methodCallIsUsedToLog() {
+    fun methodCallIsUsedToLog(env: KotlinEnvironmentContainer) {
         assertThat(
-            rule.compileAndLintWithContext(
-                environment,
+            rule.lintWithContext(
+                env,
                 """
 import org.slf4j.LoggerFactory
 
@@ -46,19 +43,19 @@ val LOG = LoggerFactory.getLogger("")
 fun foo() {
     LOG.debug("Hi")
 }
-                """.trimIndent()
-            )
+                """.trimIndent(),
+            ),
         ).singleElement()
             .matches {
-                it.id == "LazyLog" && it.message == "Use the lambda version of LOG.debug instead"
+                it.message == "Use the lambda version of LOG.debug instead"
             }
     }
 
     @Test
-    fun lambdaIsUsedToLogButWithException() {
+    fun lambdaIsUsedToLogButWithException(env: KotlinEnvironmentContainer) {
         assertThat(
-            rule.compileAndLintWithContext(
-                environment,
+            rule.lintWithContext(
+                env,
                 """
 import org.slf4j.LoggerFactory
 
@@ -67,16 +64,16 @@ fun foo() {
     val e = RuntimeException()
     LOG.debug(e) {"Hi" }
 }
-                """.trimIndent()
-            )
+                """.trimIndent(),
+            ),
         ).isEmpty()
     }
 
     @Test
-    fun methodCallIsUsedToLogInUiTests() {
+    fun methodCallIsUsedToLogInUiTests(env: KotlinEnvironmentContainer) {
         assertThat(
-            rule.compileAndLintWithContext(
-                environment,
+            rule.lintWithContext(
+                env,
                 """
 package software.aws.toolkits.jetbrains.uitests.really.cool.test
 
@@ -86,8 +83,8 @@ val LOG = LoggerFactory.getLogger("")
 fun foo() {
     LOG.debug("Hi")
 }
-                """.trimIndent()
-            )
+                """.trimIndent(),
+            ),
         ).isEmpty()
     }
 }
