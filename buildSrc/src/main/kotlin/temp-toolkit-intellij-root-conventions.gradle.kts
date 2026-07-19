@@ -78,8 +78,11 @@ dependencies {
 
     // Plugin 2.15+ auto-packages .module dependencies into lib/modules/ where IntelliJ can't find
     // plugin.xml. jetbrains-core contains META-INF/plugin.xml — must be composed into the root JAR.
+    // jetbrains-ultimate contributes META-INF/IU.xml (RDS/Redshift explorer nodes + database
+    // connection interceptors) via xi:include, which only resolves from the main classpath.
     intellijPlatform {
         pluginComposedModule(project(":plugin-toolkit:jetbrains-core"))
+        pluginComposedModule(project(":plugin-toolkit:jetbrains-ultimate"))
     }
 
     implementation(project(":plugin-toolkit:jetbrains-core"))
