@@ -83,8 +83,8 @@ object GoDebugHelper {
                                 // the container before it starts Devle. So, we have to poll output
                                 // See https://youtrack.jetbrains.com/issue/GO-10279
                                 // TODO revisit this to see if higher IDE versions help FIX_WHEN_MIN_IS_211 (?)
-                                override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
-                                    if (event.text.contains(SamExecutable.goStartMessage) && !connected.getAndSet(true)) {
+                                override fun onTextAvailable(outputEvent: ProcessEvent, outputType: Key<*>) {
+                                    if (outputEvent.text.contains(SamExecutable.goStartMessage) && !connected.getAndSet(true)) {
                                         process.connect(socketAddress)
                                     }
                                 }
