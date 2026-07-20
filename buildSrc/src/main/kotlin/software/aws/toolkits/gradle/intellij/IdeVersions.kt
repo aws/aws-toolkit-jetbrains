@@ -204,13 +204,16 @@ object IdeVersions {
                     "com.intellij.java",
                     "com.intellij.gradle",
                     "org.jetbrains.idea.maven",
-                    "com.intellij.properties"
+                    "com.intellij.properties",
+                    // JCEF split into its own bundled plugin ("com.intellij.modules.jcef") in 2026.2.
+                    // Needed on the compile classpath; runtime edge declared via <depends> in plugin.xml.
+                    "com.intellij.modules.jcef"
                 ),
                 marketplacePlugins = listOf(
                     "org.toml.lang:262.8665.176",
                     "PythonCore:262.8665.258",
                     "Docker:262.8665.185",
-                    "com.intellij.modules.json:262.8665.258"
+                    "com.intellij.modules.json:262.8665.176"
                 )
             ),
             ultimate = ProductProfile(
@@ -218,17 +221,22 @@ object IdeVersions {
                 bundledPlugins = commonPlugins + listOf(
                     "JavaScript",
                     "JavaScriptDebugger",
-                    "com.intellij.database"
+                    "com.intellij.database",
+                    // JCEF split into its own bundled plugin ("com.intellij.modules.jcef") in 2026.2.
+                    // Needed on the compile classpath; runtime edge declared via <depends> in plugin.xml.
+                    "com.intellij.modules.jcef"
                 ),
                 marketplacePlugins = listOf(
                     "Pythonid:262.8665.258",
                     "org.jetbrains.plugins.go:262.8665.258",
-                    "com.intellij.modules.json:262.8665.258"
+                    "com.intellij.modules.json:262.8665.176"
                 )
             ),
             rider = RiderProfile(
-                // Rider 2026.2 still EAP — pin to EAP snapshot until GA, then switch to "2026.2" / "2026.2.0".
-                sdkVersion = "2026.2-SNAPSHOT",
+                // Rider 2026.2 is still pre-release (RC1) with a closed-source backend API that shifted; the
+                // jetbrains-rider module is excluded from the 2026.2 build in settings.gradle.kts, so this entry
+                // is currently unused. Re-enable the module and switch to "2026.2" / "2026.2.0" once Rider GAs.
+                sdkVersion = "2026.2-RC1-SNAPSHOT",
                 bundledPlugins = commonPlugins,
                 netFrameworkTarget = "net472",
                 rdGenVersion = "2026.2.4",

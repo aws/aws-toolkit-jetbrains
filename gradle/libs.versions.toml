@@ -6,7 +6,7 @@ assertJ = "3.26.3"
 # match with <root>/settings.gradle.kts
 awsSdk = "2.26.25"
 commonmark = "0.22.0"
-detekt = "1.23.8"
+detekt = "2.0.0-alpha.5"
 diff-util = "4.12"
 intellijExt = "1.1.8"
 # match with <root>/settings.gradle.kts
@@ -19,7 +19,7 @@ junit4 = "4.13.2"
 junit5 = "5.13.4"
 # https://plugins.jetbrains.com/docs/intellij/kotlin.html#adding-kotlin-support
 # https://kotlinlang.org/docs/releases.html#release-details
-kotlin = "2.2.20"
+kotlin = "2.3.0"
 # set in <root>/settings.gradle.kts
 kotlinCoroutines = "1.10.1"
 lsp4j = "0.24.0"
@@ -74,11 +74,13 @@ commonmark = { module = "org.commonmark:commonmark", version.ref = "commonmark" 
 commons-collections = { module = "org.apache.commons:commons-collections4", version.ref = "apache-commons-collections" }
 commons-io = { module = "commons-io:commons-io", version.ref = "apache-commons-io" }
 commons-text = {module = "org.apache.commons:commons-text", version.ref = "apache-commons-text"}
-detekt-api = { module = "io.gitlab.arturbosch.detekt:detekt-api", version.ref = "detekt" }
-detekt-formattingRules = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
+detekt-api = { module = "dev.detekt:detekt-api", version.ref = "detekt" }
+detekt-kotlinAnalysisApi = { module = "dev.detekt:detekt-kotlin-analysis-api", version.ref = "detekt" }
+detekt-formattingRules = { module = "dev.detekt:detekt-rules-ktlint-wrapper", version.ref = "detekt" }
 diff-util = { module = "io.github.java-diff-utils:java-diff-utils", version.ref = "diff-util" }
-detekt-test = { module = "io.gitlab.arturbosch.detekt:detekt-test", version.ref = "detekt" }
-gradlePlugin-detekt = { module = "io.gitlab.arturbosch.detekt:detekt-gradle-plugin", version.ref = "detekt" }
+detekt-test = { module = "dev.detekt:detekt-test", version.ref = "detekt" }
+detekt-testJunit = { module = "dev.detekt:detekt-test-junit", version.ref = "detekt" }
+gradlePlugin-detekt = { module = "dev.detekt:detekt-gradle-plugin", version.ref = "detekt" }
 gradlePlugin-ideaExt = { module = "gradle.plugin.org.jetbrains.gradle.plugin.idea-ext:gradle-idea-ext", version.ref = "intellijExt" }
 gradlePlugin-intellij = { module = "org.jetbrains.intellij.platform:intellij-platform-gradle-plugin", version.ref = "intellijGradle" }
 gradlePlugin-kotlin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }

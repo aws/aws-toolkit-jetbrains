@@ -78,8 +78,14 @@ dependencies {
 
     // Plugin 2.15+ auto-packages .module dependencies into lib/modules/ where IntelliJ can't find
     // plugin.xml. jetbrains-core contains META-INF/plugin.xml — must be composed into the root JAR.
+    // jetbrains-ultimate likewise ships descriptors (IU.xml, ext-datagrip.xml, ...) that the root
+    // plugin.xml pulls in via <xi:include href="/META-INF/IU.xml">. XInclude only resolves resources on
+    // the main plugin classpath (lib/), not lib/modules/, so ultimate must be composed into the root JAR
+    // too — otherwise the include silently falls back to empty and features like the DataGrip "AWS IAM"
+    // auth interceptor (registered through ext-datagrip.xml) never load.
     intellijPlatform {
         pluginComposedModule(project(":plugin-toolkit:jetbrains-core"))
+        pluginComposedModule(project(":plugin-toolkit:jetbrains-ultimate"))
     }
 
     implementation(project(":plugin-toolkit:jetbrains-core"))

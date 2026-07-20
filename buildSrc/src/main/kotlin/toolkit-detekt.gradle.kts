@@ -1,11 +1,11 @@
 // Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-import io.gitlab.arturbosch.detekt.Detekt
-import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
+import dev.detekt.gradle.Detekt
+import dev.detekt.gradle.DetektCreateBaselineTask
 import software.aws.toolkits.gradle.jvmTarget
 
 plugins {
-    id("io.gitlab.arturbosch.detekt")
+    id("dev.detekt")
     id("toolkit-testing")
 }
 
@@ -30,6 +30,7 @@ detekt {
     allRules = false
     config.setFrom("$rulesProject/detekt.yml")
     autoCorrect = true
+    baseline.set(project.file("detekt-baseline.xml"))
 }
 
 val javaVersion = project.jvmTarget().get()
@@ -40,7 +41,7 @@ tasks.withType<Detekt>().configureEach {
 
     reports {
         html.required.set(true) // Human readable report
-        xml.required.set(true) // Checkstyle like format for CI tool integrations
+        checkstyle.required.set(true)
     }
 }
 

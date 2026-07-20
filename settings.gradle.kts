@@ -176,6 +176,18 @@ file("plugins").listFiles()?.forEach root@ {
                 }
             }
 
+            if (it.name == "jetbrains-rider") {
+                when (providers.gradleProperty("ideProfileName").get()) {
+                    // Rider 2026.2 is still pre-release (RC1) with a closed-source backend API that shifted
+                    // significantly (solution/workspace model, language registration, RdDispatcher, etc.) -
+                    // deferred to a follow-up PR once the API stabilizes at GA. Other 2026.2 flavors (IU/IC)
+                    // already compile cleanly.
+                    "2026.2" -> {
+                        return@forEach
+                    }
+                }
+            }
+
             val projectName = path.joinToString(separator = ":", prefix = ":")
             include(projectName)
             project(projectName).projectDir = it

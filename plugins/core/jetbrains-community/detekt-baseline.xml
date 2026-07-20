@@ -2,21 +2,15 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
-    <ID>Filename:DEFAULT_PROFILE_ID.kt$software.aws.toolkit.jetbrains.core.credentials.profiles.DEFAULT_PROFILE_ID.kt</ID>
-    <ID>Filename:contexts.kt$software.aws.toolkit.jetbrains.core.coroutines.contexts.kt</ID>
-    <ID>Filename:scopes.kt$software.aws.toolkit.jetbrains.core.coroutines.scopes.kt</ID>
-    <ID>FunctionNaming:CreateOrUpdateCredentialProfilesActionTest.kt$CreateOrUpdateCredentialProfilesActionTest$@Test fun bothFilesOpened_bothFilesExists()</ID>
-    <ID>FunctionNaming:CreateOrUpdateCredentialProfilesActionTest.kt$CreateOrUpdateCredentialProfilesActionTest$@Test fun configFileOpened_onlyConfigExists()</ID>
-    <ID>FunctionNaming:CreateOrUpdateCredentialProfilesActionTest.kt$CreateOrUpdateCredentialProfilesActionTest$@Test fun confirmConfigFileCreated_bothFilesDoNotExist()</ID>
-    <ID>FunctionNaming:CreateOrUpdateCredentialProfilesActionTest.kt$CreateOrUpdateCredentialProfilesActionTest$@Test fun credentialFileOpened_onlyCredentialsExists()</ID>
-    <ID>FunctionNaming:DefaultTelemetryPublisherTest.kt$DefaultTelemetryPublisherTest$@Test fun testPublish_withNamespace()</ID>
-    <ID>FunctionNaming:DefaultTelemetryPublisherTest.kt$DefaultTelemetryPublisherTest$@Test fun testPublish_withoutNamespace()</ID>
-    <ID>UseCheckOrError:AwsConnectionManager.kt$throw IllegalStateException("Bug: Attempting to retrieve connection settings with invalid connection state")</ID>
-    <ID>UseCheckOrError:AwsConnectionManager.kt$throw IllegalStateException("Connection settings are not configured")</ID>
-    <ID>UseCheckOrError:AwsRegionProvider.kt$AwsRegionProvider$throw IllegalStateException("Region provider data is missing default data")</ID>
-    <ID>UseCheckOrError:MockClientManager.kt$MockClientManager$throw IllegalStateException("No mock registered for $sdkClass")</ID>
-    <ID>UseCheckOrError:ProfileCredentialProviderFactory.kt$ProfileCredentialProviderFactory$throw IllegalStateException("Profile $sourceProfileName looks to have been removed")</ID>
-    <ID>UseCheckOrError:ProfileCredentialProviderFactory.kt$ProfileCredentialProviderFactory$throw IllegalStateException("Profile ${profileProviderId.profileName} looks to have been removed")</ID>
-    <ID>UseCheckOrError:ProfileCredentialProviderFactory.kt$ProfileCredentialProviderFactory$throw IllegalStateException("ProfileCredentialProviderFactory can only handle ProfileCredentialsIdentifier, but got ${providerId::class}")</ID>
+    <ID>BinaryExpressionWrapping:AwsClientManagerTest.kt:AwsClientManagerTest.TestClientBuilder$SdkAdvancedClientOption.SIGNER to Signer { _, _ -> throw NotImplementedError() }</ID>
+    <ID>BinaryExpressionWrapping:NotificationUtils.kt:this.message ?: "${this::class.java.name}${this.stackTrace?.joinToString("\n", prefix = "\n")}"</ID>
+    <ID>BinaryExpressionWrapping:ProfileReaderTest.kt:ProfileReaderTest$"role" to AwsCoreBundle.message("credentials.profile.assume_role.invalid_credential_source", "role")</ID>
+    <ID>BinaryExpressionWrapping:ProfileReaderTest.kt:ProfileReaderTest$"role" to AwsCoreBundle.message("credentials.profile.assume_role.missing_source", "source_profile")</ID>
+    <ID>FunctionLiteral:DefaultToolkitAuthManagerTest.kt:DefaultToolkitAuthManagerTest$&lt;anonymous></ID>
+    <ID>Indentation:DefaultToolkitAuthManagerTest.kt:DefaultToolkitAuthManagerTest$ </ID>
+    <ID>SpacingAroundParens:AwsClientManagerTest.kt:AwsClientManagerTest.TestClientBuilder$(</ID>
+    <ID>SpacingAroundParens:NotificationUtils.kt:(</ID>
+    <ID>SpacingAroundParens:ProfileReaderTest.kt:ProfileReaderTest$(</ID>
+    <ID>TrailingCommaOnDeclarationSite:DefaultToolkitAuthManagerTest.kt:DefaultToolkitAuthManagerTest$&lt;anonymous></ID>
   </CurrentIssues>
 </SmellBaseline>

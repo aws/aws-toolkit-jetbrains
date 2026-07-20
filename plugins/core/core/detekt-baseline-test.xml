@@ -2,8 +2,13 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
-    <ID>UnsafeCallOnNullableType:EnvironmentVariableHelper.kt$EnvironmentVariableHelper$getField(System.getenv().javaClass, System.getenv(), "m")!!</ID>
-    <ID>UnsafeCallOnNullableType:PartitionParserTest.kt$PartitionParserTest$PartitionParser.parse(BundledResources.ENDPOINTS_FILE)!!</ID>
-    <ID>UnsafeCallOnNullableType:ZipUtilsTest.kt$ZipUtilsTest$zipFile!!</ID>
+    <ID>NoNameShadowing:RemoteResourceResolverTest.kt:RemoteResourceResolverTest.Companion.&lt;no name provided>$initialValue</ID>
+    <ID>NoNameShadowing:RemoteResourceResolverTest.kt:RemoteResourceResolverTest.Companion.&lt;no name provided>$name</ID>
+    <ID>NoNameShadowing:RemoteResourceResolverTest.kt:RemoteResourceResolverTest.Companion.&lt;no name provided>$remoteResolveParser</ID>
+    <ID>NoNameShadowing:RemoteResourceResolverTest.kt:RemoteResourceResolverTest.Companion.&lt;no name provided>$ttl</ID>
+    <ID>NoNameShadowing:RemoteResourceResolverTest.kt:RemoteResourceResolverTest.Companion.&lt;no name provided>$urls</ID>
+    <ID>UnsafeCallOnNullableType:EnvironmentVariableHelper.kt:EnvironmentVariableHelper$getField(System.getenv().javaClass, System.getenv(), "m")!!</ID>
+    <ID>UnsafeCallOnNullableType:PartitionParserTest.kt:PartitionParserTest$PartitionParser.parse(BundledResources.ENDPOINTS_FILE)!!</ID>
+    <ID>UnsafeCallOnNullableType:ZipUtilsTest.kt:ZipUtilsTest$zipFile!!</ID>
   </CurrentIssues>
 </SmellBaseline>

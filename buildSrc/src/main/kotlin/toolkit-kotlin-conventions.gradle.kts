@@ -1,6 +1,5 @@
-import io.gitlab.arturbosch.detekt.Detekt
-import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
-import io.gitlab.arturbosch.detekt.DetektPlugin
+import dev.detekt.gradle.Detekt
+import dev.detekt.gradle.DetektCreateBaselineTask
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
@@ -66,11 +65,12 @@ project.extensions.getByType(KotlinJvmProjectExtension::class.java).target.compi
     // can't figure out why exclude("build/**") doesn't work
     fun FileTree.withoutBuild() = filter { f -> f.path.split(File.separatorChar).none { it == "build" } }.asFileTree
 
-    tasks.named<Detekt>(DetektPlugin.DETEKT_TASK_NAME + name.capitalize()).configure {
+    // detekt 2.0 made DetektPlugin.DETEKT_TASK_NAME/BASELINE_TASK_NAME internal, so use the literals directly
+    tasks.named<Detekt>("detekt" + name.capitalize()).configure {
         source = source.withoutBuild()
     }
 
-    tasks.named<DetektCreateBaselineTask>(DetektPlugin.BASELINE_TASK_NAME + name.capitalize()).configure {
+    tasks.named<DetektCreateBaselineTask>("detektBaseline" + name.capitalize()).configure {
         source = source.withoutBuild()
     }
 }
