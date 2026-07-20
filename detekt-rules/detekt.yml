@@ -94,8 +94,10 @@ ktlint:
   SpacingBetweenDeclarationsWithComments:
     active: true
     excludes: [ '**/icons/**' ]
-  #  TrailingCommaOnCallSite:
-  #    active: true
+  TrailingCommaOnCallSite:
+    # keep disabled: default-active in detekt 2.0, but with autoCorrect it rewrites call sites and
+    # destabilizes baseline IDs (e.g. NoNameShadowing in S3VirtualBucketTest) between local and CI runs
+    active: false
   TrailingCommaOnDeclarationSite:
     active: true
   Wrapping:
