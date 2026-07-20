@@ -1,0 +1,4 @@
+{
+    "type": "bugfix",
+    "description": "Fix AWS IAM and Secrets Manager database authentication not being available in DataGrip and IntelliJ IDEA Ultimate."
+}

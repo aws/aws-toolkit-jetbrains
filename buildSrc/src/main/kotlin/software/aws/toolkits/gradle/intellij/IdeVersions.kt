@@ -205,7 +205,9 @@ object IdeVersions {
                     "com.intellij.gradle",
                     "org.jetbrains.idea.maven",
                     "com.intellij.properties",
-                    // JCEF was split out into its own bundled plugin starting with 2026.2
+                    // JCEF split into its own bundled plugin (id "com.intellij.modules.jcef") in 2026.2.
+                    // This puts JBCefApp on the compile classpath; the runtime classloader edge is declared
+                    // via <depends> in plugin.xml (bundledPlugins alone does not add a descriptor dependency).
                     "com.intellij.modules.jcef"
                 ),
                 marketplacePlugins = listOf(
@@ -221,7 +223,9 @@ object IdeVersions {
                     "JavaScript",
                     "JavaScriptDebugger",
                     "com.intellij.database",
-                    // JCEF was split out into its own bundled plugin starting with 2026.2
+                    // JCEF split into its own bundled plugin (id "com.intellij.modules.jcef") in 2026.2.
+                    // This puts JBCefApp on the compile classpath; the runtime classloader edge is declared
+                    // via <depends> in plugin.xml (bundledPlugins alone does not add a descriptor dependency).
                     "com.intellij.modules.jcef"
                 ),
                 marketplacePlugins = listOf(

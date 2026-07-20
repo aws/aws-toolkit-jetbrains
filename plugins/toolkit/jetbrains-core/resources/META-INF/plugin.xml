@@ -102,6 +102,11 @@
     <!-- global optional dependencies here, otherwise in their respective optional includes -->
     <depends optional="true">org.jetbrains.idea.maven</depends>
     <depends optional="true">org.jetbrains.plugins.gradle</depends>
+    <!-- JCEF became its own bundled plugin (id "com.intellij.modules.jcef") in 2026.2; previously it was on
+         the platform core classpath. This descriptor dependency grants the plugin classloader runtime access to
+         com.intellij.ui.jcef.JBCefApp. Optional so IDE variants without JCEF (e.g. remote/headless) still load;
+         the id has been a stable module alias in earlier versions, so this is safe across the supported profiles. -->
+    <depends optional="true">com.intellij.modules.jcef</depends>
     <depends optional="true" config-file="ext-terminal.xml">org.jetbrains.plugins.terminal</depends>
     <depends optional="true">com.intellij.modules.externalSystem</depends>
     <depends optional="true" config-file="ext-yaml.xml">org.jetbrains.plugins.yaml</depends>
