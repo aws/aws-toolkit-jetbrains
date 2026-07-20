@@ -191,6 +191,49 @@ object IdeVersions {
                 rdGenVersion = "2026.1.3",
                 nugetVersion = "2026.1.0"
             )
+        ),
+        Profile(
+            name = "2026.2",
+            gateway = ProductProfile(
+                sdkVersion = "2026.2",
+                bundledPlugins = listOf("org.jetbrains.plugins.terminal")
+            ),
+            community = ProductProfile(
+                sdkVersion = "2026.2",
+                bundledPlugins = commonPlugins + listOf(
+                    "com.intellij.java",
+                    "com.intellij.gradle",
+                    "org.jetbrains.idea.maven",
+                    "com.intellij.properties"
+                ),
+                marketplacePlugins = listOf(
+                    "org.toml.lang:262.8665.176",
+                    "PythonCore:262.8665.258",
+                    "Docker:262.8665.185",
+                    "com.intellij.modules.json:262.8665.258"
+                )
+            ),
+            ultimate = ProductProfile(
+                sdkVersion = "2026.2",
+                bundledPlugins = commonPlugins + listOf(
+                    "JavaScript",
+                    "JavaScriptDebugger",
+                    "com.intellij.database"
+                ),
+                marketplacePlugins = listOf(
+                    "Pythonid:262.8665.258",
+                    "org.jetbrains.plugins.go:262.8665.258",
+                    "com.intellij.modules.json:262.8665.258"
+                )
+            ),
+            rider = RiderProfile(
+                // Rider 2026.2 still EAP — pin to EAP snapshot until GA, then switch to "2026.2" / "2026.2.0".
+                sdkVersion = "2026.2-SNAPSHOT",
+                bundledPlugins = commonPlugins,
+                netFrameworkTarget = "net472",
+                rdGenVersion = "2026.2.4",
+                nugetVersion = "2026.2.0-eap06"
+            )
         )
     ).associateBy { it.name }
 
