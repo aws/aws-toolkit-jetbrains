@@ -102,6 +102,7 @@
     <!-- global optional dependencies here, otherwise in their respective optional includes -->
     <depends optional="true">org.jetbrains.idea.maven</depends>
     <depends optional="true">org.jetbrains.plugins.gradle</depends>
+    <depends optional="true">com.intellij.modules.jcef</depends>
     <depends optional="true" config-file="ext-terminal.xml">org.jetbrains.plugins.terminal</depends>
     <depends optional="true">com.intellij.modules.externalSystem</depends>
     <depends optional="true" config-file="ext-yaml.xml">org.jetbrains.plugins.yaml</depends>

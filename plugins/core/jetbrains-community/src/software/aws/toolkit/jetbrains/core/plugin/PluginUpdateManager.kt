@@ -189,11 +189,11 @@ class PluginUpdateManager : Disposable {
         const val SOURCE_AUTO_UPDATE_FEATURE_INTRO_NOTIFY = "autoUpdateFeatureIntroNotification"
         const val ID_ACTION_AUTO_UPDATE_SETTINGS = "autoUpdateActionSettings"
 
-        fun getUpdate(pluginDescriptor: IdeaPluginDescriptor): PluginDownloader? =
-            getUpdateInfo().firstOrNull {
-                it.id == pluginDescriptor.pluginId &&
-                    PluginDownloader.compareVersionsSkipBrokenAndIncompatible(it.pluginVersion, pluginDescriptor) > 0
-            }
+        fun getUpdate(pluginDescriptor: IdeaPluginDescriptor): PluginDownloader? = getUpdateInfo().firstOrNull {
+            val pluginVersion = it.pluginVersion ?: return@firstOrNull false
+            it.id == pluginDescriptor.pluginId &&
+                PluginDownloader.compareVersionsSkipBrokenAndIncompatible(pluginVersion, pluginDescriptor) > 0
+        }
 
         // TODO: Optimize this to only search the result for AWS plugins
         fun getUpdateInfo(): Collection<PluginDownloader> = UpdateChecker.getPluginUpdates() ?: emptyList()

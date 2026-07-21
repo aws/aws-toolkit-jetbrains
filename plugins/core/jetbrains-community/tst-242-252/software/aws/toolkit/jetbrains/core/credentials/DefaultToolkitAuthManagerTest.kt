@@ -226,7 +226,7 @@ class DefaultToolkitAuthManagerTest {
         mockConstruction(InteractiveBearerTokenProvider::class.java) { context, _ ->
             whenever(context.state()).thenReturn(BearerTokenAuthState.AUTHORIZED)
         }.use {
-            val existingConnection = sut.createConnection(
+            sut.createConnection(
                 ManagedSsoProfile(
                     "us-east-1",
                     "foo",

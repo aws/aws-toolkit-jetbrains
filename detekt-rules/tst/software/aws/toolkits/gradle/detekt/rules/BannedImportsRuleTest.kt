@@ -3,35 +3,39 @@
 
 package software.aws.toolkits.gradle.detekt.rules
 
-import io.gitlab.arturbosch.detekt.test.lint
+import dev.detekt.api.Config
+import dev.detekt.test.lint
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 
 class BannedImportsRuleTest {
-    private val rule = BannedImportsRule()
+    private val rule = BannedImportsRule(Config.empty)
 
     @Test
     fun `Importing Assert fails`() {
         assertThat(rule.lint("import org.assertj.core.api.Assertions"))
             .singleElement()
-            .matches { it.id == "BannedImports" && it.message == "Import the assertion you want to use directly instead of importing the top level Assertions" }
+            .matches {
+                it.message ==
+                    "Import the assertion you want to use directly instead of importing the top level Assertions"
+            }
     }
 
     @Test
     fun `Importing Hamcrest fails`() {
         assertThat(rule.lint("import org.hamcrest.AnyClass"))
             .singleElement()
-            .matches { it.id == "BannedImports" && it.message == "Use AssertJ instead of Hamcrest assertions" }
+            .matches { it.message == "Use AssertJ instead of Hamcrest assertions" }
     }
 
     @Test
     fun `Importing Kotlin test assert fails`() {
         assertThat(rule.lint("import kotlin.test.assertTrue"))
             .singleElement()
-            .matches { it.id == "BannedImports" && it.message == "Use AssertJ instead of Kotlin test assertions" }
+            .matches { it.message == "Use AssertJ instead of Kotlin test assertions" }
         assertThat(rule.lint("import kotlin.test.assertFalse"))
             .singleElement()
-            .matches { it.id == "BannedImports" && it.message == "Use AssertJ instead of Kotlin test assertions" }
+            .matches { it.message == "Use AssertJ instead of Kotlin test assertions" }
     }
 
     @Test
@@ -49,7 +53,8 @@ class BannedImportsRuleTest {
         assertThat(rule.lint("import org.gradle.internal.impldep"))
             .singleElement()
             .matches {
-                it.id == "BannedImports" && it.message == "Avoid using Gradle's internal implementation classes: not public API and may change without notice."
+                it.message ==
+                    "Avoid using Gradle's internal implementation classes: not public API and may change without notice."
             }
     }
 
@@ -57,13 +62,13 @@ class BannedImportsRuleTest {
     fun `Importing Dispatchers fails`() {
         assertThat(rule.lint("import kotlinx.coroutines.Dispatchers"))
             .singleElement()
-            .matches { it.id == "BannedImports" && it.message == "Use contexts from contexts.kt instead of Dispatchers" }
+            .matches { it.message == "Use contexts from contexts.kt instead of Dispatchers" }
     }
 
     @Test
     fun `Importing Dispatchers statically fails`() {
         assertThat(rule.lint("import kotlinx.coroutines.Dispatchers.IO"))
             .singleElement()
-            .matches { it.id == "BannedImports" && it.message == "Use contexts from contexts.kt instead of Dispatchers" }
+            .matches { it.message == "Use contexts from contexts.kt instead of Dispatchers" }
     }
 }

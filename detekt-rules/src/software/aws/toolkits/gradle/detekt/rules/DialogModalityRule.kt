@@ -3,20 +3,16 @@
 
 package software.aws.toolkits.gradle.detekt.rules
 
-import io.gitlab.arturbosch.detekt.api.CodeSmell
-import io.gitlab.arturbosch.detekt.api.Debt
-import io.gitlab.arturbosch.detekt.api.Entity
-import io.gitlab.arturbosch.detekt.api.Issue
-import io.gitlab.arturbosch.detekt.api.Rule
-import io.gitlab.arturbosch.detekt.api.Severity
+import dev.detekt.api.Config
+import dev.detekt.api.Entity
+import dev.detekt.api.Finding
+import dev.detekt.api.Rule
 import org.jetbrains.kotlin.psi.KtCallExpression
 import org.jetbrains.kotlin.psi.KtNameReferenceExpression
 import org.jetbrains.kotlin.psi.psiUtil.containingClass
 import org.jetbrains.kotlin.psi.psiUtil.getSuperNames
 
-class DialogModalityRule : Rule() {
-    override val issue = Issue("RunInEdtWithoutModalityInDialog", Severity.Defect, "Use ModalityState when calling runInEdt in dialogs", Debt.FIVE_MINS)
-
+class DialogModalityRule(config: Config) : Rule(config, "Use ModalityState when calling runInEdt in dialogs") {
     override fun visitCallExpression(element: KtCallExpression) {
         super.visitCallExpression(element)
         val callee = element.calleeExpression as? KtNameReferenceExpression ?: return
@@ -26,11 +22,10 @@ class DialogModalityRule : Rule() {
 
         if (element.valueArguments.none { it.text == "ModalityState.any()" }) {
             report(
-                CodeSmell(
-                    issue,
+                Finding(
                     Entity.from(element),
-                    message = "Call to runInEdt without ModalityState.any() within Dialog will not run until Dialog exits."
-                )
+                    message = "Call to runInEdt without ModalityState.any() within Dialog will not run until Dialog exits.",
+                ),
             )
         }
     }

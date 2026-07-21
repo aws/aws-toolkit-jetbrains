@@ -3,19 +3,22 @@
 
 package software.aws.toolkits.gradle.detekt.rules
 
-import io.gitlab.arturbosch.detekt.api.Config
-import io.gitlab.arturbosch.detekt.api.RuleSet
-import io.gitlab.arturbosch.detekt.api.RuleSetProvider
+import dev.detekt.api.Config
+import dev.detekt.api.RuleName
+import dev.detekt.api.RuleSet
+import dev.detekt.api.RuleSetId
+import dev.detekt.api.RuleSetProvider
 
 class CustomRuleSetProvider : RuleSetProvider {
-    override val ruleSetId: String = "CustomDetektRules"
-    override fun instance(config: Config): RuleSet = RuleSet(
+    override val ruleSetId: RuleSetId = RuleSetId("CustomDetektRules")
+    override fun instance(): RuleSet = RuleSet(
         ruleSetId,
-        listOf(
-            BannedPatternRule(BannedPatternRule.DEFAULT_PATTERNS),
-            LazyLogRule(),
-            DialogModalityRule(),
-            BannedImportsRule()
-        )
+        mapOf(
+            RuleName("BannedPattern") to
+                { config: Config -> BannedPatternRule(config, BannedPatternRule.DEFAULT_PATTERNS) },
+            RuleName("LazyLog") to ::LazyLogRule,
+            RuleName("RunInEdtWithoutModalityInDialog") to ::DialogModalityRule,
+            RuleName("BannedImports") to ::BannedImportsRule,
+        ),
     )
 }
