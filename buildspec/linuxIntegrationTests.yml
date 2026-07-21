@@ -36,7 +36,13 @@ phases:
       - cat $AWS_CONFIG_FILE
       - chmod +x gradlew
       # --no-parallel: plugin 2.16 cached layout index is shared; parallel test tasks resolve bundled plugins against wrong IDE (fatal on Gradle 9)
-      - DISPLAY=:22 ./gradlew -PideProfileName=$ALTERNATIVE_IDE_PROFILE_NAME integrationTest coverageReport -x :plugin-toolkit:jetbrains-rider:integrationTest --no-parallel --info --console plain
+      # jetbrains-rider is excluded from the 2026.2 build graph (settings.gradle.kts), so don't reference its tasks for that profile
+      - |
+        if [ "$ALTERNATIVE_IDE_PROFILE_NAME" = "2026.2" ]; then
+          DISPLAY=:22 ./gradlew -PideProfileName=$ALTERNATIVE_IDE_PROFILE_NAME integrationTest coverageReport --no-parallel --info --console plain
+        else
+          DISPLAY=:22 ./gradlew -PideProfileName=$ALTERNATIVE_IDE_PROFILE_NAME integrationTest coverageReport -x :plugin-toolkit:jetbrains-rider:integrationTest --no-parallel --info --console plain
+        fi
       - |
         if [ $(docker ps -q | wc -l) -gt 0 ]; then
             echo 'Docker containers were not completely cleaned up!';
