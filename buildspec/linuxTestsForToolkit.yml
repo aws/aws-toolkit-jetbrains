@@ -32,9 +32,16 @@ phases:
         fi
 
       - chmod +x gradlew
+      # Select the JDK this profile requires (jvmTarget() is the single source of truth). Forked tasks
+      # (test, instrumentCode) run on the launcher JVM, so JAVA_HOME must match the compiled bytecode version 
+      # or they fail to load classes
+      - |
+        REQUIRED_JDK=$(su codebuild-user -c "./gradlew -q printJvmTarget -PideProfileName=$ALTERNATIVE_IDE_PROFILE_NAME" | grep -Eo '^[0-9]+$' | tail -1)
+        export JAVA_HOME=/usr/lib/jvm/java-${REQUIRED_JDK}-amazon-corretto.x86_64
+        echo "Using JAVA_HOME=$JAVA_HOME for profile $ALTERNATIVE_IDE_PROFILE_NAME"
       # --no-parallel: plugin 2.16 cached layout index is shared; parallel test tasks resolve bundled plugins against wrong IDE (fatal on Gradle 9)
-      - su codebuild-user -c "./gradlew -PideProfileName=$ALTERNATIVE_IDE_PROFILE_NAME :plugin-toolkit:intellij-standalone:check coverageReport --no-parallel --info --console plain --continue"
-      - ./gradlew -PideProfileName=$ALTERNATIVE_IDE_PROFILE_NAME :plugin-toolkit:intellij-standalone:buildPlugin --no-parallel
+      - su codebuild-user -c "JAVA_HOME=$JAVA_HOME ./gradlew -PideProfileName=$ALTERNATIVE_IDE_PROFILE_NAME :plugin-toolkit:intellij-standalone:check coverageReport --no-parallel --info --console plain --continue"
+      - JAVA_HOME=$JAVA_HOME ./gradlew -PideProfileName=$ALTERNATIVE_IDE_PROFILE_NAME :plugin-toolkit:intellij-standalone:buildPlugin --no-parallel
       - VCS_COMMIT_ID="${CODEBUILD_RESOLVED_SOURCE_VERSION}"
       - CI_BUILD_URL=$(echo $CODEBUILD_BUILD_URL | sed 's/#/%23/g') # Encode `#` in the URL because otherwise the url is clipped in the Codecov.io site
       - CI_BUILD_ID="${CODEBUILD_BUILD_ID}"
