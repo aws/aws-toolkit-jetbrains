@@ -4,7 +4,7 @@
 package software.aws.toolkits.jetbrains.core.credentials.sso.bearer
 
 import com.intellij.openapi.util.Disposer
-import com.intellij.testFramework.ApplicationExtension
+import com.intellij.testFramework.junit5.TestApplication
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assumptions.assumeThat
 import org.junit.jupiter.api.MethodOrderer
@@ -27,7 +27,8 @@ import java.nio.file.Path
 import java.time.Instant
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation::class)
-@ExtendWith(ApplicationExtension::class, SsoLoginExtension::class)
+@TestApplication
+@ExtendWith(SsoLoginExtension::class)
 @SsoLogin("codecatalyst-test-account")
 @DisabledIfEnvironmentVariable(named = "IS_PROD", matches = "false")
 class InteractiveBearerTokenProviderIntegrationTest {

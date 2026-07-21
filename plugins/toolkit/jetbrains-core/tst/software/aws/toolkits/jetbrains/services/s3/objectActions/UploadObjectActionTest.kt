@@ -274,11 +274,6 @@ class UploadObjectActionTest : ObjectActionTestBase() {
 
     private fun createFileChooserMock(files: List<File>) {
         val dialog = object : FileChooserDialog {
-            @Deprecated("needs to be implemented, but interface doesn't provide default impl")
-            override fun choose(toSelect: VirtualFile?, project: Project?): Array<VirtualFile> = toSelect?.let {
-                choose(project, it)
-            } ?: choose(project)
-
             override fun choose(project: Project?, vararg toSelect: VirtualFile): Array<VirtualFile> {
                 val lfs = LocalFileSystem.getInstance()
                 return files.mapNotNull {

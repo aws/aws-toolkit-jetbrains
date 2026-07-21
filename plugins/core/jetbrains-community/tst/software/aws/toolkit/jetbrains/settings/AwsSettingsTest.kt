@@ -5,14 +5,13 @@ package software.aws.toolkit.jetbrains.settings
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.testFramework.ApplicationExtension
+import com.intellij.testFramework.junit5.TestApplication
 import com.intellij.testFramework.junit5.TestDisposable
 import com.intellij.testFramework.replaceService
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.mock
@@ -23,7 +22,7 @@ import software.aws.toolkit.jetbrains.services.telemetry.NoOpPublisher
 import software.aws.toolkit.jetbrains.services.telemetry.TelemetryService
 import java.util.UUID
 
-@ExtendWith(ApplicationExtension::class)
+@TestApplication
 class AwsSettingsTest {
     private class TestTelemetryService(
         publisher: TelemetryPublisher = NoOpPublisher(),
