@@ -26,7 +26,7 @@ intellijPlatform {
             // recommended() appears to resolve latest EAP for a product?
             // Starting with 2025.3, IntelliJ IDEA is unified (no separate Community edition)
             val version = toolkitIntelliJ.version().get()
-            if (version.startsWith("2025.3")) {
+            if (version.startsWith("2025.3") || version.startsWith("2026.")) {
                 create(IntelliJPlatformType.IntellijIdeaUltimate, version)
             } else {
                 create(IntelliJPlatformType.IntellijIdeaCommunity, version)
