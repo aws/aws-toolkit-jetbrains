@@ -3,6 +3,7 @@
 import org.jetbrains.gradle.ext.ProjectSettings
 import org.jetbrains.gradle.ext.TaskTriggersConfig
 import software.aws.toolkits.gradle.changelog.tasks.GenerateGithubChangeLog
+import software.aws.toolkits.gradle.jvmTarget
 
 plugins {
     id("base")
@@ -44,6 +45,15 @@ dependencies {
 tasks.register("runIde") {
     doFirst {
         throw GradleException("Use project specific runIde command, i.e. :plugin-toolkit:intellij-standalone:runIde")
+    }
+}
+
+// Prints the major JDK version required to build the currently-selected IDE profile (e.g. "21" or "25").
+// CI buildspecs use this to provision the right JDK without hardcoding per-profile version mappings.
+tasks.register("printJvmTarget") {
+    val target = project.jvmTarget()
+    doLast {
+        println(target.get().majorVersion)
     }
 }
 

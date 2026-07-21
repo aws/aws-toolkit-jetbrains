@@ -8,12 +8,6 @@ env:
 phases:
   install:
     commands:
-      # force install java21 while we work throuh path issues
-      - |
-        $javaName = "C:\Program Files\Amazon Corretto" | ForEach-Object {
-          ls $_ | Where-Object {$_ -Like "jdk*"} | Sort-Object -Descending -Property Name | Select-Object -first 1 -expandproperty Name
-        }
-        $JAVA_HOME = "C:\Program Files\Amazon Corretto\$javaName"
       - |
         if(-Not($Env:CODE_COV_TOKEN -eq $null)) {
             [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12;
@@ -27,22 +21,47 @@ phases:
         # See https://github.com/NuGet/NuGet.Client/pull/4259
         $Env:NUGET_EXPERIMENTAL_CHAIN_BUILD_RETRY_POLICY = "3,1000"
 
-        $Env:JAVA_HOME = $JAVA_HOME
-
         if ($Env:CODEARTIFACT_DOMAIN_NAME -and $Env:CODEARTIFACT_REPO_NAME) {
           $Env:CODEARTIFACT_URL=aws codeartifact get-repository-endpoint --domain $Env:CODEARTIFACT_DOMAIN_NAME --repository $Env:CODEARTIFACT_REPO_NAME --format maven --query repositoryEndpoint --output text
           # $Env:CODEARTIFACT_NUGET_URL=aws codeartifact get-repository-endpoint --domain $Env:CODEARTIFACT_DOMAIN_NAME --repository $Env:CODEARTIFACT_REPO_NAME --format nuget --query repositoryEndpoint --output text
           $Env:CODEARTIFACT_AUTH_TOKEN=aws codeartifact get-authorization-token --domain $Env:CODEARTIFACT_DOMAIN_NAME --query authorizationToken --output text --duration-seconds 3600
         }
 
+        # Select JDK by the version the build actually requires for this profile (jvmTarget() is the single source of truth),
+        # installing the latest Corretto of that major if the managed image doesn't already ship it.
+        # Run after CodeArtifact setup so the printJvmTarget resolution uses the same repos as the build.
+        $correttoRoot = "C:\Program Files\Amazon Corretto"
+        # Bootstrap gradle with the highest Corretto already on the image (>=17 is enough to run Gradle and print the target)
+        $Env:JAVA_HOME = (Get-ChildItem $correttoRoot -Directory | Where-Object {$_.Name -Like "jdk*"} | Sort-Object -Descending -Property Name | Select-Object -First 1).FullName
+        $required = (./gradlew -q printJvmTarget -PideProfileName="$Env:ALTERNATIVE_IDE_PROFILE_NAME" 2>$null | Where-Object {$_ -match '^\d+$'} | Select-Object -Last 1)
+        if (-Not $required) { Write-Host "Could not determine required JDK version"; exit -1 }
+        $jdk = Get-ChildItem $correttoRoot -Directory -ErrorAction SilentlyContinue | Where-Object {$_.Name -Like "jdk$required*"} | Select-Object -First 1
+        if (-Not $jdk) {
+          [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+          $msi = Join-Path $Env:TEMP "corretto$required.msi"
+          Invoke-WebRequest -Uri "https://corretto.aws/downloads/latest/amazon-corretto-$required-x64-windows-jdk.msi" -OutFile $msi
+          Start-Process msiexec.exe -ArgumentList "/i","`"$msi`"","/quiet","/norestart" -Wait
+          $jdk = Get-ChildItem $correttoRoot -Directory | Where-Object {$_.Name -Like "jdk$required*"} | Select-Object -First 1
+        }
+        $Env:JAVA_HOME = $jdk.FullName
+
         # Rider is very expensive (spikes our CI jobs to 50% CPU, so let it do the prep work in parallel, but run tests later
         # --no-parallel: plugin 2.16 cached layout index is shared; parallel test tasks resolve bundled plugins against wrong IDE (fatal on Gradle 9)
-        ./gradlew -PideProfileName="$Env:ALTERNATIVE_IDE_PROFILE_NAME" check :plugin-toolkit:jetbrains-rider:compileTestKotlin -x :plugin-toolkit:jetbrains-rider:check --no-parallel --info --console plain --continue --stacktrace
-        if ($LastExitCode -ne 0) {
-          Write-Host "Command failed with exit code $LastExitCode"
-          exit -1
+        # jetbrains-rider is excluded from the 2026.2 build graph (settings.gradle.kts), so don't reference its tasks for that profile
+        if ("$Env:ALTERNATIVE_IDE_PROFILE_NAME" -eq "2026.2") {
+          ./gradlew -PideProfileName="$Env:ALTERNATIVE_IDE_PROFILE_NAME" check --no-parallel --info --console plain --continue --stacktrace
+          if ($LastExitCode -ne 0) {
+            Write-Host "Command failed with exit code $LastExitCode"
+            exit -1
+          }
+        } else {
+          ./gradlew -PideProfileName="$Env:ALTERNATIVE_IDE_PROFILE_NAME" check :plugin-toolkit:jetbrains-rider:compileTestKotlin -x :plugin-toolkit:jetbrains-rider:check --no-parallel --info --console plain --continue --stacktrace
+          if ($LastExitCode -ne 0) {
+            Write-Host "Command failed with exit code $LastExitCode"
+            exit -1
+          }
+          ./gradlew -PideProfileName="$Env:ALTERNATIVE_IDE_PROFILE_NAME" :plugin-toolkit:jetbrains-rider:check coverageReport --no-parallel --info --console plain
         }
-        ./gradlew -PideProfileName="$Env:ALTERNATIVE_IDE_PROFILE_NAME" :plugin-toolkit:jetbrains-rider:check coverageReport --no-parallel --info --console plain
 
   post_build:
     commands:
