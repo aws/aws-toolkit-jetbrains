@@ -3,8 +3,9 @@
 
 package software.aws.toolkits.jetbrains.services.caws
 
-import com.intellij.testFramework.junit5.TestApplication
+import com.intellij.testFramework.junit5.impl.TestApplicationExtension
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.extension.RegisterExtension
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -14,7 +15,7 @@ import software.amazon.awssdk.services.codecatalyst.CodeCatalystClientBuilder
 import software.aws.toolkits.jetbrains.utils.rules.RegistryExtension
 import java.net.URI
 
-@TestApplication
+@ExtendWith(TestApplicationExtension::class)
 class CawsClientCustomizerTest {
     @JvmField
     @RegisterExtension

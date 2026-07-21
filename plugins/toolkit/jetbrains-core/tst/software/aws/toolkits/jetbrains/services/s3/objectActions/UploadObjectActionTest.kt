@@ -273,6 +273,7 @@ class UploadObjectActionTest : ObjectActionTestBase() {
     }
 
     private fun createFileChooserMock(files: List<File>) {
+        @Suppress("ObjectLiteralToLambda")
         val dialog = object : FileChooserDialog {
             override fun choose(project: Project?, vararg toSelect: VirtualFile): Array<VirtualFile> {
                 val lfs = LocalFileSystem.getInstance()

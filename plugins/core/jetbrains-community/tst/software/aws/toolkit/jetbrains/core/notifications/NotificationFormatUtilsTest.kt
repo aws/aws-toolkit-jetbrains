@@ -6,8 +6,8 @@ package software.aws.toolkit.jetbrains.core.notifications
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
-import com.intellij.testFramework.junit5.TestApplication
 import com.intellij.testFramework.ProjectRule
+import com.intellij.testFramework.junit5.impl.TestApplicationExtension
 import io.mockk.every
 import io.mockk.mockkStatic
 import io.mockk.unmockkAll
@@ -18,6 +18,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
+import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
@@ -28,7 +29,7 @@ import java.io.InputStream
 import java.nio.file.Paths
 import java.util.stream.Stream
 
-@TestApplication
+@ExtendWith(TestApplicationExtension::class)
 class NotificationFormatUtilsTest {
     @Rule
     @JvmField

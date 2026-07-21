@@ -6,12 +6,13 @@ package software.aws.toolkits.jetbrains.feedback
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.util.Disposer
-import com.intellij.testFramework.junit5.TestApplication
 import com.intellij.testFramework.ExtensionTestUtil
 import com.intellij.testFramework.junit5.TestDisposable
+import com.intellij.testFramework.junit5.impl.TestApplicationExtension
 import com.intellij.testFramework.replaceService
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import software.amazon.awssdk.services.toolkittelemetry.model.Sentiment
@@ -25,7 +26,7 @@ import software.aws.toolkits.jetbrains.core.experiments.DummyExperiment
 import software.aws.toolkits.jetbrains.core.experiments.ToolkitExperimentManager
 import software.aws.toolkits.jetbrains.core.experiments.setState
 
-@TestApplication
+@ExtendWith(TestApplicationExtension::class)
 class SendFeedbackWithExperimentsMetadataTest {
     private class TestTelemetryService(publisher: TelemetryPublisher = NoOpPublisher(), batcher: TelemetryBatcher) : TelemetryService(publisher, batcher)
 

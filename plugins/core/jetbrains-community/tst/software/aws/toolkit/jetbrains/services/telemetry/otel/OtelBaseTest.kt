@@ -4,7 +4,7 @@
 package software.aws.toolkit.jetbrains.services.telemetry.otel
 
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.testFramework.junit5.TestApplication
+import com.intellij.testFramework.junit5.impl.TestApplicationExtension
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.TraceId
 import io.opentelemetry.context.Context
@@ -22,6 +22,7 @@ import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.AfterAllCallback
 import org.junit.jupiter.api.extension.AfterEachCallback
+import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.extension.ExtensionContext
 import org.junit.jupiter.api.extension.RegisterExtension
 import org.junit.jupiter.params.ParameterizedTest
@@ -41,7 +42,7 @@ import java.time.Instant
 import java.util.concurrent.TimeUnit
 import java.util.stream.Stream
 
-@TestApplication
+@ExtendWith(TestApplicationExtension::class)
 class OtelBaseTest {
     private companion object {
         @RegisterExtension

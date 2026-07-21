@@ -4,7 +4,7 @@
 package software.aws.toolkit.jetbrains.core.notifications
 
 import com.intellij.openapi.project.Project
-import com.intellij.testFramework.junit5.TestApplication
+import com.intellij.testFramework.junit5.impl.TestApplicationExtension
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
@@ -14,9 +14,10 @@ import io.mockk.verify
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
 import java.util.concurrent.atomic.AtomicBoolean
 
-@TestApplication
+@ExtendWith(TestApplicationExtension::class)
 class ProcessNotificationsBaseTest {
     private lateinit var sut: ProcessNotificationsBase
     private lateinit var project: Project

@@ -17,6 +17,7 @@ import org.mockito.kotlin.mock
 import java.nio.file.Path
 
 fun createMockFileChooser(disposable: Disposable, vararg files: Path) {
+    @Suppress("ObjectLiteralToLambda")
     val dialog = object : FileChooserDialog {
         override fun choose(project: Project?, vararg toSelect: VirtualFile): Array<VirtualFile> {
             val lfs = LocalFileSystem.getInstance()

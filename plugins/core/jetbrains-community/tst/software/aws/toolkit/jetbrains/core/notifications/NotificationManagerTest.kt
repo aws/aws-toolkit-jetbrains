@@ -3,14 +3,15 @@
 
 package software.aws.toolkit.jetbrains.core.notifications
 
-import com.intellij.testFramework.junit5.TestApplication
 import com.intellij.testFramework.ProjectRule
+import com.intellij.testFramework.junit5.impl.TestApplicationExtension
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.extension.Extension
 import org.junit.jupiter.api.extension.RegisterExtension
 
-@TestApplication
+@ExtendWith(TestApplicationExtension::class)
 class NotificationManagerTest {
 
     val projectRule = ProjectRule()

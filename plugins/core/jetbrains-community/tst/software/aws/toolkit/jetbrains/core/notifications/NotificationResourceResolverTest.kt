@@ -3,12 +3,13 @@
 
 package software.aws.toolkit.jetbrains.core.notifications
 
-import com.intellij.testFramework.junit5.TestApplication
+import com.intellij.testFramework.junit5.impl.TestApplicationExtension
 import io.mockk.every
 import io.mockk.mockk
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.io.TempDir
 import software.aws.toolkit.core.utils.DefaultRemoteResourceResolver
 import software.aws.toolkit.core.utils.UpdateCheckResult
@@ -17,7 +18,7 @@ import java.nio.file.Path
 import java.util.concurrent.Callable
 import java.util.concurrent.CompletableFuture
 
-@TestApplication
+@ExtendWith(TestApplicationExtension::class)
 class NotificationResourceResolverTest {
     private lateinit var urlFetcher: UrlFetcher
     private lateinit var sut: DefaultRemoteResourceResolver

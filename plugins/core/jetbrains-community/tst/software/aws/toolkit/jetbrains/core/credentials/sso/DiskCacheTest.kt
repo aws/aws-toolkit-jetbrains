@@ -5,12 +5,13 @@ package software.aws.toolkit.jetbrains.core.credentials.sso
 
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.openapi.util.io.NioFiles
-import com.intellij.testFramework.junit5.TestApplication
+import com.intellij.testFramework.junit5.impl.TestApplicationExtension
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.DisabledOnOs
 import org.junit.jupiter.api.condition.OS
+import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.io.TempDir
 import software.aws.toolkit.core.utils.readText
 import software.aws.toolkit.core.utils.test.assertPosixPermissions
@@ -27,7 +28,7 @@ import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import kotlin.io.path.setPosixFilePermissions
 
-@TestApplication
+@ExtendWith(TestApplicationExtension::class)
 class DiskCacheTest {
     private val now = Instant.now()
     private val clock = Clock.fixed(now, ZoneOffset.UTC)

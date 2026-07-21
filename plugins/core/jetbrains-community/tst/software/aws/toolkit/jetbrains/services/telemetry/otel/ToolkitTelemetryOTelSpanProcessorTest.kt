@@ -3,8 +3,8 @@
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.testFramework.junit5.TestApplication
 import com.intellij.testFramework.junit5.TestDisposable
+import com.intellij.testFramework.junit5.impl.TestApplicationExtension
 import com.intellij.testFramework.replaceService
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.SpanId
@@ -13,6 +13,7 @@ import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
@@ -36,7 +37,7 @@ import software.aws.toolkits.telemetry.Telemetry
 import java.time.Instant
 // import software.aws.toolkits.jetbrains.core.CoreTestHelper
 
-@TestApplication
+@ExtendWith(TestApplicationExtension::class)
 class ToolkitTelemetryOTelSpanProcessorTest {
     private class TestTelemetryService(
         publisher: TelemetryPublisher = NoOpPublisher(),
