@@ -5,7 +5,6 @@ package software.aws.toolkit.jetbrains.core.credentials.sso
 
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.openapi.util.io.NioFiles
-import com.intellij.testFramework.ApplicationExtension
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -16,6 +15,7 @@ import org.junit.jupiter.api.io.TempDir
 import software.aws.toolkit.core.utils.readText
 import software.aws.toolkit.core.utils.test.assertPosixPermissions
 import software.aws.toolkit.core.utils.writeText
+import software.aws.toolkit.jetbrains.utils.extensions.ApplicationExtension
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths

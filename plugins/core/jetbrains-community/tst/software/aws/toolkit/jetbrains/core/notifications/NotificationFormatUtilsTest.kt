@@ -6,7 +6,6 @@ package software.aws.toolkit.jetbrains.core.notifications
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
-import com.intellij.testFramework.ApplicationExtension
 import com.intellij.testFramework.ProjectRule
 import io.mockk.every
 import io.mockk.mockkStatic
@@ -25,6 +24,7 @@ import org.junit.jupiter.params.provider.MethodSource
 import software.aws.toolkit.core.utils.exists
 import software.aws.toolkit.core.utils.inputStream
 import software.aws.toolkit.jetbrains.core.gettingstarted.editor.BearerTokenFeatureSet
+import software.aws.toolkit.jetbrains.utils.extensions.ApplicationExtension
 import java.io.InputStream
 import java.nio.file.Paths
 import java.util.stream.Stream

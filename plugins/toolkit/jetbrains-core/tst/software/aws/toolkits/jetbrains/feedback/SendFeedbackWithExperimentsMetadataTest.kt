@@ -6,7 +6,6 @@ package software.aws.toolkits.jetbrains.feedback
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.util.Disposer
-import com.intellij.testFramework.ApplicationExtension
 import com.intellij.testFramework.ExtensionTestUtil
 import com.intellij.testFramework.junit5.TestDisposable
 import com.intellij.testFramework.replaceService
@@ -22,6 +21,7 @@ import software.aws.toolkit.core.utils.test.aString
 import software.aws.toolkit.jetbrains.services.telemetry.NoOpPublisher
 import software.aws.toolkit.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkit.jetbrains.ui.feedback.ENABLED_EXPERIMENTS
+import software.aws.toolkit.jetbrains.utils.extensions.ApplicationExtension
 import software.aws.toolkits.jetbrains.core.experiments.DummyExperiment
 import software.aws.toolkits.jetbrains.core.experiments.ToolkitExperimentManager
 import software.aws.toolkits.jetbrains.core.experiments.setState

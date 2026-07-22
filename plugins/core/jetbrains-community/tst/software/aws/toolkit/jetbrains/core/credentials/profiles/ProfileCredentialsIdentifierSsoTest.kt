@@ -5,7 +5,6 @@ package software.aws.toolkit.jetbrains.core.credentials.profiles
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.testFramework.ApplicationExtension
 import com.intellij.testFramework.junit5.TestDisposable
 import com.intellij.testFramework.replaceService
 import migration.software.aws.toolkit.core.ToolkitClientManager
@@ -20,6 +19,7 @@ import software.aws.toolkit.jetbrains.core.MockClientManager
 import software.aws.toolkit.jetbrains.core.credentials.sso.DiskCache
 import software.aws.toolkit.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
 import software.aws.toolkit.jetbrains.core.credentials.sso.bearer.NoTokenInitializedException
+import software.aws.toolkit.jetbrains.utils.extensions.ApplicationExtension
 
 @ExtendWith(ApplicationExtension::class)
 class ProfileCredentialsIdentifierSsoTest {

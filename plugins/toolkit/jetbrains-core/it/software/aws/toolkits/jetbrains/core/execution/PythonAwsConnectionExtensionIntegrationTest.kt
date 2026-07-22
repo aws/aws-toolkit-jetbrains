@@ -55,6 +55,8 @@ class PythonAwsConnectionExtensionIntegrationTest {
     val disposableRule = DisposableRule()
 
     @Test
+    // detectSystemWideSdks deprecated in 2026.2 (PyCharm SystemPythonService); still functional for test SDK detection
+    @Suppress("DEPRECATION", "DEPRECATION_ERROR")
     fun happyPathPythonConnectionInjection() {
         assumeTrue("Needs heavy project on >= 232", ApplicationInfo.getInstance().build.baselineVersion < 232)
         val file = projectRule.fixture.addFileToProject(
