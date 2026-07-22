@@ -5,9 +5,8 @@ package software.aws.toolkit.jetbrains.core
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.components.service
 import com.intellij.testFramework.common.ThreadLeakTracker
-import com.intellij.testFramework.replaceService
+import com.intellij.testFramework.registerOrReplaceServiceInstance
 import org.junit.jupiter.api.extension.AfterEachCallback
 import org.junit.jupiter.api.extension.BeforeEachCallback
 import org.junit.jupiter.api.extension.ExtensionContext
@@ -70,11 +69,11 @@ class MockClientManager : AwsClientManager() {
          */
         fun useRealImplementations(disposable: Disposable) {
             val clientManager = AwsClientManager()
-            ApplicationManager.getApplication().replaceService(ToolkitClientManager::class.java, clientManager, disposable)
+            ApplicationManager.getApplication().registerOrReplaceServiceInstance(ToolkitClientManager::class.java, clientManager, disposable)
 
             // Need to use real region provider to know about global services
             val regionProvider = AwsRegionProvider()
-            ApplicationManager.getApplication().replaceService(ToolkitRegionProvider::class.java, regionProvider, disposable)
+            ApplicationManager.getApplication().registerOrReplaceServiceInstance(ToolkitRegionProvider::class.java, regionProvider, disposable)
 
             // Make a new http client that is scoped to the disposable and replace the global one with it, otherwise the apache connection reaper thread
             // is detected as leaking threads and fails the tests
@@ -82,13 +81,14 @@ class MockClientManager : AwsClientManager() {
             ThreadLeakTracker.longRunningThreadCreated(disposable, "idle-connection-reaper")
 
             val httpClient = AwsSdkClient()
-            ApplicationManager.getApplication().replaceService(SdkClientProvider::class.java, httpClient, disposable)
+            ApplicationManager.getApplication().registerOrReplaceServiceInstance(SdkClientProvider::class.java, httpClient, disposable)
         }
     }
 }
 
 // Scoped to this file only, users should be using MockClientManagerRule to enforce cleanup correctly
-private fun getMockInstance(): MockClientManager = service<ToolkitClientManager>() as MockClientManager
+private fun getMockInstance(): MockClientManager =
+    getOrRegisterApplicationService<ToolkitClientManager> { MockClientManager() } as MockClientManager
 
 sealed class MockClientManagerBase : ExternalResource() {
     private lateinit var mockClientManager: MockClientManager

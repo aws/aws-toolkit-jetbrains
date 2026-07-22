@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.caws
 
-import com.intellij.testFramework.ApplicationExtension
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.extension.RegisterExtension
@@ -12,6 +11,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import software.amazon.awssdk.services.codecatalyst.CodeCatalystClientBuilder
+import software.aws.toolkit.jetbrains.utils.extensions.ApplicationExtension
 import software.aws.toolkits.jetbrains.utils.rules.RegistryExtension
 import java.net.URI
 

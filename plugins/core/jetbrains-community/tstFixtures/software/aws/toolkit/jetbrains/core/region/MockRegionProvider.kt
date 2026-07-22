@@ -15,6 +15,7 @@ import software.aws.toolkit.core.region.ToolkitRegionProvider
 import software.aws.toolkit.core.region.aRegionId
 import software.aws.toolkit.core.region.anAwsRegion
 import software.aws.toolkit.core.utils.test.aString
+import software.aws.toolkit.jetbrains.core.getOrRegisterApplicationService
 import software.aws.toolkit.jetbrains.utils.rules.ClearableLazy
 
 private class MockRegionProvider : ToolkitRegionProvider() {
@@ -60,7 +61,8 @@ private class MockRegionProvider : ToolkitRegionProvider() {
     companion object {
         private val AWS_CLASSIC = AwsPartition("aws", "AWS Classic", listOf(US_EAST_1))
         private val regions = mapOf(US_EAST_1.id to US_EAST_1)
-        fun getInstance(): MockRegionProvider = service<ToolkitRegionProvider>() as MockRegionProvider
+        fun getInstance(): MockRegionProvider =
+            getOrRegisterApplicationService<ToolkitRegionProvider> { MockRegionProvider() } as MockRegionProvider
     }
 }
 

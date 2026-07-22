@@ -6,7 +6,7 @@ package software.aws.toolkit.jetbrains.services.telemetry
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.util.Disposer
-import com.intellij.testFramework.replaceService
+import com.intellij.testFramework.registerOrReplaceServiceInstance
 import org.junit.jupiter.api.extension.AfterEachCallback
 import org.junit.jupiter.api.extension.BeforeEachCallback
 import org.junit.jupiter.api.extension.ExtensionContext
@@ -48,7 +48,7 @@ sealed class MockTelemetryServiceBase : ExternalResource() {
     override fun before() {
         // hack because @TestDisposable doesn't work here as it's not a test
         disposableParent = Disposer.newDisposable()
-        ApplicationManager.getApplication().replaceService(TelemetryService::class.java, mockTelemetryService, disposableParent)
+        ApplicationManager.getApplication().registerOrReplaceServiceInstance(TelemetryService::class.java, mockTelemetryService, disposableParent)
     }
 
     override fun after() {

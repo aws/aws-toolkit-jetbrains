@@ -4,7 +4,6 @@
 package software.aws.toolkit.jetbrains.core.notifications
 
 import com.intellij.openapi.project.Project
-import com.intellij.testFramework.ApplicationExtension
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
@@ -16,6 +15,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import java.util.concurrent.atomic.AtomicBoolean
+import software.aws.toolkit.jetbrains.utils.extensions.ApplicationExtension
 
 @ExtendWith(ApplicationExtension::class)
 class ProcessNotificationsBaseTest {

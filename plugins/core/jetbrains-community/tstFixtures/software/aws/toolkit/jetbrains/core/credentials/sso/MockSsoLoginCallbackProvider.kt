@@ -3,7 +3,6 @@
 
 package software.aws.toolkit.jetbrains.core.credentials.sso
 
-import com.intellij.openapi.components.service
 import org.junit.jupiter.api.Assumptions.assumeTrue
 import software.amazon.awssdk.core.SdkBytes
 import software.amazon.awssdk.services.lambda.LambdaClient
@@ -14,6 +13,7 @@ import software.aws.toolkit.core.utils.error
 import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkit.core.utils.info
 import software.aws.toolkit.core.utils.warn
+import software.aws.toolkit.jetbrains.core.getOrRegisterApplicationService
 import software.aws.toolkit.jetbrains.utils.scrubException
 
 internal class MockSsoLoginCallbackProvider : SsoLoginCallbackProvider {
@@ -32,7 +32,8 @@ internal class MockSsoLoginCallbackProvider : SsoLoginCallbackProvider {
         provider ?: ErrorSsoLoginCallback
 
     companion object {
-        fun getInstance() = service<SsoLoginCallbackProvider>() as MockSsoLoginCallbackProvider
+        fun getInstance() =
+            getOrRegisterApplicationService<SsoLoginCallbackProvider> { MockSsoLoginCallbackProvider() } as MockSsoLoginCallbackProvider
     }
 }
 

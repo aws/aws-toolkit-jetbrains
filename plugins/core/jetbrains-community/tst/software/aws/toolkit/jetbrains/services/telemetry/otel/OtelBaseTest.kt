@@ -4,7 +4,6 @@
 package software.aws.toolkit.jetbrains.services.telemetry.otel
 
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.testFramework.ApplicationExtension
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.TraceId
 import io.opentelemetry.context.Context
@@ -32,6 +31,7 @@ import software.amazon.awssdk.services.toolkittelemetry.model.AWSProduct
 import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkit.core.utils.warn
 import software.aws.toolkit.jetbrains.core.coroutines.getCoroutineBgContext
+import software.aws.toolkit.jetbrains.utils.extensions.ApplicationExtension
 import software.aws.toolkit.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkit.jetbrains.utils.satisfiesKt
 import software.aws.toolkit.jetbrains.utils.spinUntil

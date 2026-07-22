@@ -35,9 +35,15 @@ phases:
       - ls -alh $AWS_CONFIG_FILE
       - cat $AWS_CONFIG_FILE
       - chmod +x gradlew
+      # Select the JDK this profile requires (jvmTarget() is the single source of truth). Forked tasks
+      # (test, instrumentCode) run on the launcher JVM, so JAVA_HOME must match the compiled bytecode version
+      # or they fail to load classes
       # --no-parallel: plugin 2.16 cached layout index is shared; parallel test tasks resolve bundled plugins against wrong IDE (fatal on Gradle 9)
       # jetbrains-rider is excluded from the 2026.2 build graph (settings.gradle.kts), so don't reference its tasks for that profile
       - |
+        REQUIRED_JDK=$(./gradlew -q printJvmTarget -PideProfileName=$ALTERNATIVE_IDE_PROFILE_NAME | grep -Eo '^[0-9]+$' | tail -1)
+        export JAVA_HOME=/usr/lib/jvm/java-${REQUIRED_JDK}-amazon-corretto.x86_64
+        echo "Using JAVA_HOME=$JAVA_HOME for profile $ALTERNATIVE_IDE_PROFILE_NAME"
         if [ "$ALTERNATIVE_IDE_PROFILE_NAME" = "2026.2" ]; then
           DISPLAY=:22 ./gradlew -PideProfileName=$ALTERNATIVE_IDE_PROFILE_NAME integrationTest coverageReport --no-parallel --info --console plain
         else

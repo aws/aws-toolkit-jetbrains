@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.core.credentials.sso.bearer
 
 import com.intellij.openapi.util.Disposer
-import com.intellij.testFramework.ApplicationExtension
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assumptions.assumeThat
 import org.junit.jupiter.api.MethodOrderer
@@ -20,6 +19,7 @@ import software.aws.toolkit.jetbrains.core.credentials.sso.DeviceAuthorizationGr
 import software.aws.toolkit.jetbrains.core.credentials.sso.DeviceGrantAccessTokenCacheKey
 import software.aws.toolkit.jetbrains.core.credentials.sso.DiskCache
 import software.aws.toolkit.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
+import software.aws.toolkit.jetbrains.utils.extensions.ApplicationExtension
 import software.aws.toolkit.jetbrains.utils.extensions.SsoLogin
 import software.aws.toolkit.jetbrains.utils.extensions.SsoLoginExtension
 import software.aws.toolkit.jetbrains.utils.satisfiesKt

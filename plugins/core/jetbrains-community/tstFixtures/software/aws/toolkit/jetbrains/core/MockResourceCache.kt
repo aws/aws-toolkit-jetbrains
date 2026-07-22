@@ -4,7 +4,6 @@
 package software.aws.toolkit.jetbrains.core
 
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.testFramework.ApplicationRule
 import kotlinx.coroutines.runBlocking
@@ -124,7 +123,8 @@ class MockResourceCache : AwsResourceCache {
 
     companion object {
         @JvmStatic
-        fun getInstance(): MockResourceCache = service<AwsResourceCache>() as MockResourceCache
+        fun getInstance(): MockResourceCache =
+            getOrRegisterApplicationService<AwsResourceCache> { MockResourceCache() } as MockResourceCache
 
         private data class CacheKey(val resourceId: String, val regionId: String, val credentialsId: String)
     }

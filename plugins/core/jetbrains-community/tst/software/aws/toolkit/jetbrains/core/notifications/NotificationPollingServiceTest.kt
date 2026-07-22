@@ -3,7 +3,6 @@
 
 package software.aws.toolkit.jetbrains.core.notifications
 
-import com.intellij.testFramework.ApplicationExtension
 import io.mockk.Runs
 import io.mockk.every
 import io.mockk.just
@@ -16,6 +15,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import software.aws.toolkit.core.utils.RemoteResourceResolver
 import software.aws.toolkit.core.utils.UpdateCheckResult
 import software.aws.toolkit.jetbrains.core.RemoteResourceResolverProvider
+import software.aws.toolkit.jetbrains.utils.extensions.ApplicationExtension
 import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
 

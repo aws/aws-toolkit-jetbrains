@@ -12,7 +12,6 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.remoteDev.downloader.JetBrainsClientDownloaderConfigurationProvider
 import com.intellij.remoteDev.downloader.TestJetBrainsClientDownloaderConfigurationProvider
 import com.intellij.remoteDev.hostStatus.UnattendedHostStatus
-import com.intellij.testFramework.ApplicationExtension
 import com.intellij.testFramework.registerOrReplaceServiceInstance
 import com.intellij.util.io.HttpRequests
 import com.intellij.util.net.NetUtils
@@ -46,6 +45,7 @@ import software.aws.toolkit.jetbrains.core.credentials.pinning.ConnectionPinning
 import software.aws.toolkit.jetbrains.core.credentials.sono.SONO_REGION
 import software.aws.toolkit.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkit.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
+import software.aws.toolkit.jetbrains.utils.extensions.ApplicationExtension
 import software.aws.toolkit.jetbrains.utils.extensions.SsoLogin
 import software.aws.toolkits.jetbrains.core.tools.MockToolManagerRule
 import software.aws.toolkits.jetbrains.core.tools.ToolManager

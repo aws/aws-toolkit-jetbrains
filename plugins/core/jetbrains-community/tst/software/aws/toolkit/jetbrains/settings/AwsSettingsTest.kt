@@ -5,7 +5,6 @@ package software.aws.toolkit.jetbrains.settings
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.testFramework.ApplicationExtension
 import com.intellij.testFramework.junit5.TestDisposable
 import com.intellij.testFramework.replaceService
 import org.assertj.core.api.Assertions.assertThat
@@ -21,6 +20,7 @@ import software.aws.toolkit.core.telemetry.TelemetryBatcher
 import software.aws.toolkit.core.telemetry.TelemetryPublisher
 import software.aws.toolkit.jetbrains.services.telemetry.NoOpPublisher
 import software.aws.toolkit.jetbrains.services.telemetry.TelemetryService
+import software.aws.toolkit.jetbrains.utils.extensions.ApplicationExtension
 import java.util.UUID
 
 @ExtendWith(ApplicationExtension::class)

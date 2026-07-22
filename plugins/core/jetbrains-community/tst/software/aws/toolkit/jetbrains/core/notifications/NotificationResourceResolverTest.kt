@@ -3,7 +3,6 @@
 
 package software.aws.toolkit.jetbrains.core.notifications
 
-import com.intellij.testFramework.ApplicationExtension
 import io.mockk.every
 import io.mockk.mockk
 import org.assertj.core.api.Assertions.assertThat
@@ -14,6 +13,7 @@ import org.junit.jupiter.api.io.TempDir
 import software.aws.toolkit.core.utils.DefaultRemoteResourceResolver
 import software.aws.toolkit.core.utils.UpdateCheckResult
 import software.aws.toolkit.core.utils.UrlFetcher
+import software.aws.toolkit.jetbrains.utils.extensions.ApplicationExtension
 import java.nio.file.Path
 import java.util.concurrent.Callable
 import java.util.concurrent.CompletableFuture

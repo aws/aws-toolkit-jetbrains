@@ -3,7 +3,6 @@
 
 package software.aws.toolkit.jetbrains.core.credentials
 
-import com.intellij.openapi.components.service
 import com.intellij.testFramework.ApplicationRule
 import org.junit.jupiter.api.extension.AfterEachCallback
 import org.junit.jupiter.api.extension.ExtensionContext
@@ -20,6 +19,7 @@ import software.aws.toolkit.core.credentials.SsoSessionIdentifier
 import software.aws.toolkit.core.credentials.ToolkitCredentialsProvider
 import software.aws.toolkit.core.region.AwsRegion
 import software.aws.toolkit.core.utils.test.aString
+import software.aws.toolkit.jetbrains.core.getOrRegisterApplicationService
 import software.aws.toolkit.jetbrains.core.region.getDefaultRegion
 import software.aws.toolkit.jetbrains.utils.rules.ClearableLazy
 
@@ -85,7 +85,8 @@ class MockCredentialsManager : CredentialManager() {
 
     companion object {
         @Suppress("DEPRECATION")
-        fun getInstance(): MockCredentialsManager = service<CredentialManager>() as MockCredentialsManager
+        fun getInstance(): MockCredentialsManager =
+            getOrRegisterApplicationService<CredentialManager> { MockCredentialsManager() } as MockCredentialsManager
     }
 
     class MockCredentialIdentifier(override val displayName: String, val credentials: AwsCredentialsProvider, override val defaultRegionId: String?) :

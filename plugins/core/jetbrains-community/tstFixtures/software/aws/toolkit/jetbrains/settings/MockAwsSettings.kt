@@ -4,6 +4,7 @@
 package software.aws.toolkit.jetbrains.settings
 
 import com.intellij.testFramework.ApplicationRule
+import software.aws.toolkit.jetbrains.core.getOrRegisterApplicationService
 import java.util.UUID
 
 class MockAwsSettings : AwsSettings {
@@ -27,7 +28,7 @@ class MockAwsSettings : AwsSettings {
 
 class AwsSettingsRule : ApplicationRule() {
     val settings by lazy {
-        AwsSettings.getInstance()
+        getOrRegisterApplicationService<AwsSettings> { MockAwsSettings() }
     }
 
     override fun after() {
