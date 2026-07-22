@@ -1,0 +1,4 @@
+{
+    "type": "deprecation",
+    "description": "Support for IDEs based on the 2025.1 and 2025.2 platforms is being deprecated and will be removed in an upcoming release. The minimum supported version will be 2025.3."
+}
