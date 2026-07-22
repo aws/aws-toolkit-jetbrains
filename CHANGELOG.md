@@ -1,3 +1,8 @@
+# _4.6_ (2026-07-22)
+- **(Feature)** Add support for 2026.2
+- **(Bug Fix)** Restore RDS/Redshift explorer nodes and IAM/Secrets Manager database authentication in DataGrip and IntelliJ Ultimate ([[#6395](https://github.com/aws/aws-toolkit-jetbrains/issues/6395)](https://github.com/aws/aws-toolkit-jetbrains/issues/6395))
+- **(Deprecation)** Support for IDEs based on the 2025.1 and 2025.2 platforms is being deprecated and will be removed in an upcoming release. The minimum supported version will be 2025.3.
+
 # _4.5_ (2026-07-15)
 - **(Bug Fix)** CloudFormation: Display the AWS error message when importing or cloning resource state fails, instead of only a failure count.
 
