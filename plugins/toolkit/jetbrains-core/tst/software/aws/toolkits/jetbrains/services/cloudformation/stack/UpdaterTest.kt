@@ -2,8 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 package software.aws.toolkits.jetbrains.services.cloudformation.stack
 
+import com.intellij.openapi.util.Disposer
 import com.intellij.testFramework.ProjectRule
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -29,6 +31,7 @@ import software.aws.toolkit.core.utils.delegateMock
 import software.aws.toolkit.jetbrains.core.MockClientManagerRule
 import software.aws.toolkit.jetbrains.utils.satisfiesKt
 import java.time.Duration
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
 import javax.swing.JLabel
@@ -56,9 +59,19 @@ class UpdaterTest {
     private val updateListener = mock<UpdateListener>()
     private val resourceListener = mock<ResourceListener>()
 
+    // Updater holds a self-rescheduling Alarm; dispose it so no leaked callback fires against the
+    // mock client after the test ends (which pollutes a later, unrelated test with a logged error).
+    // CopyOnWriteArrayList because the first test creates its Updater on the EDT
+    private val updaters = CopyOnWriteArrayList<Updater>()
+
     @Before
     fun setUp() {
         arrayOf(treeView, eventsTable).forEach { whenever(it.component).thenReturn(JLabel()) }
+    }
+
+    @After
+    fun tearDown() {
+        updaters.forEach { Disposer.dispose(it) }
     }
 
     @Test
@@ -109,7 +122,7 @@ class UpdaterTest {
                 client = client,
                 setPagesAvailable = { p -> availablePages = p },
                 stackId = "1234"
-            ).start()
+            ).also { updaters.add(it) }.start()
         }
 
         arrayOf(setStackStatus, fillResources, insertEvents).forEach { it.waitFor() }
@@ -161,7 +174,7 @@ class UpdaterTest {
             client = client,
             setPagesAvailable = { },
             stackId = "1234"
-        ).applyFilter { it.logicalResourceId() == "L1" }
+        ).also { updaters.add(it) }.applyFilter { it.logicalResourceId() == "L1" }
 
         fillResources.waitFor()
 
