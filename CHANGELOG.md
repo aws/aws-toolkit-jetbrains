@@ -1,3 +1,5 @@
+# _4.7_ (2026-07-23)
+
 # _4.6_ (2026-07-22)
 - **(Feature)** Add support for 2026.2
 - **(Bug Fix)** Restore RDS/Redshift explorer nodes and IAM/Secrets Manager database authentication in DataGrip and IntelliJ Ultimate ([[#6395](https://github.com/aws/aws-toolkit-jetbrains/issues/6395)](https://github.com/aws/aws-toolkit-jetbrains/issues/6395))
