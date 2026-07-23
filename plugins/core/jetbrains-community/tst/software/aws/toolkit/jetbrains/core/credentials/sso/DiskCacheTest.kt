@@ -8,6 +8,7 @@ import com.intellij.openapi.util.io.NioFiles
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.condition.DisabledIfSystemProperty
 import org.junit.jupiter.api.condition.DisabledOnOs
 import org.junit.jupiter.api.condition.OS
 import org.junit.jupiter.api.extension.ExtendWith
@@ -544,6 +545,9 @@ class DiskCacheTest {
 
     @Test
     @DisabledOnOs(OS.WINDOWS)
+    // root bypasses POSIX permission checks, so the file op never throws AccessDeniedException and the
+    // self-healing perm-fix path under test is never exercised (the CI integration job runs as root)
+    @DisabledIfSystemProperty(named = "user.name", matches = "root")
     fun `handles error saving client registration when user home is not writable`() {
         Files.newDirectoryStream(cacheRoot).forEach { NioFiles.deleteRecursively(it) }
         cacheRoot.resolve("fakehome").apply {
@@ -577,6 +581,8 @@ class DiskCacheTest {
 
     @Test
     @DisabledOnOs(OS.WINDOWS)
+    // root can write to a 0-permission file, so the AccessDeniedException that drives the perm-fix never fires
+    @DisabledIfSystemProperty(named = "user.name", matches = "root")
     fun `handles error saving client registration when client registration is not writable`() {
         val key = DeviceAuthorizationClientRegistrationCacheKey(
             startUrl = ssoUrl,
@@ -610,6 +616,8 @@ class DiskCacheTest {
 
     @Test
     @DisabledOnOs(OS.WINDOWS)
+    // root can read a 0-permission file, so the AccessDeniedException that drives the perm-fix never fires
+    @DisabledIfSystemProperty(named = "user.name", matches = "root")
     fun `handles reading client registration when file is owned but not readable`() {
         val key = DeviceAuthorizationClientRegistrationCacheKey(
             startUrl = ssoUrl,
