@@ -152,14 +152,11 @@ object IdeVersions {
                 )
             ),
             rider = RiderProfile(
-                // Rider 2026.2 is still pre-release (RC1) with a closed-source backend API that shifted; the
-                // jetbrains-rider module is excluded from the 2026.2 build in settings.gradle.kts, so this entry
-                // is currently unused. Re-enable the module and switch to "2026.2" / "2026.2.0" once Rider GAs.
-                sdkVersion = "2026.2-RC1-SNAPSHOT",
+                sdkVersion = "2026.2",
                 bundledPlugins = commonPlugins,
                 netFrameworkTarget = "net472",
-                rdGenVersion = "2026.2.4",
-                nugetVersion = "2026.2.0-eap06"
+                rdGenVersion = "2026.2.5",
+                nugetVersion = "2026.2.0"
             )
         )
     ).associateBy { it.name }

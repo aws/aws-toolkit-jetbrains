@@ -92,7 +92,23 @@ configurations {
                 exclude(group = "bundledPlugin", module = "org.jetbrains.idea.maven")
                 exclude(group = "bundledPlugin", module = "com.intellij.gradle")
                 exclude(group = "bundledPlugin", module = "com.intellij.properties")
-                exclude(group = "bundledModule")
+                // jcef became a bundled plugin the community/ultimate profiles depend on (2026.2); it leaks
+                // transitively via jetbrains-community testFixtures and can't resolve as IU against the RD/GW SDK
+                exclude(group = "bundledPlugin", module = "com.intellij.modules.jcef")
+                if (project.name.contains("jetbrains-rider")) {
+                    // Rider needs its own RD-flavored bundled modules (declared in its build.gradle.kts for 2026.2)
+                    // on the test classpath, so we can't blanket-exclude the group. Instead drop only the modules
+                    // that leak transitively from jetbrains-community/-core and resolve with IU coordinates.
+                    listOf(
+                        "intellij.platform.collaborationTools",
+                        "intellij.platform.collaborationTools.auth",
+                        "intellij.platform.collaborationTools.auth.base",
+                        "intellij.platform.vcs.dvcs.impl",
+                        "intellij.libraries.microba",
+                    ).forEach { exclude(group = "bundledModule", module = it) }
+                } else {
+                    exclude(group = "bundledModule")
+                }
             }
         }
     }

@@ -18,7 +18,6 @@ import com.intellij.xdebugger.XDebugSession
 import com.intellij.xdebugger.XDebuggerManager
 import com.intellij.xdebugger.XDebuggerManagerListener
 import com.jetbrains.rdclient.util.idea.waitAndPump
-import com.jetbrains.rider.projectView.solutionDirectory
 import com.jetbrains.rider.test.scriptingApi.DebugTestExecutionContext
 import com.jetbrains.rider.test.scriptingApi.debugProgramAfterAttach
 import com.jetbrains.rider.test.scriptingApi.dumpFullCurrentData
@@ -103,7 +102,8 @@ fun executeRunConfigurationAndWaitRider(runConfiguration: RunConfiguration, exec
         resumeSession()
     }
 
-    debugProgramAfterAttach(session.get(), runConfiguration.project.solutionDirectory.resolve("expected.gold"), waitAndTest, true)
+    // goldFile() is version-split: debugProgramAfterAttach's gold-file param is File pre-262, Path in 262+
+    debugProgramAfterAttach(session.get(), goldFile(runConfiguration.project, "expected.gold"), waitAndTest, true)
 
     return executionFuture.get()
 }
