@@ -2,9 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
+import org.jetbrains.intellij.platform.gradle.models.ProductRelease
 import org.jetbrains.intellij.platform.gradle.tasks.PatchPluginXmlTask
 import org.jetbrains.intellij.platform.gradle.tasks.aware.SplitModeAware
 import software.aws.toolkits.gradle.intellij.IdeFlavor
+import software.aws.toolkits.gradle.intellij.IdeVersions
 import software.aws.toolkits.gradle.intellij.toolkitIntelliJ
 
 // publish-root should imply publishing-conventions, but we keep separate so that gateway always has the GW flavor
@@ -26,7 +28,30 @@ intellijPlatform {
             // recommended() appears to resolve latest EAP for a product?
             val version = toolkitIntelliJ.version().get()
             create(IntelliJPlatformType.IntellijIdeaUltimate, version)
+
+            // Opt-in (only when -PverifyUpcoming is set, e.g. the scheduled verify-upcoming CI job) so normal
+            // PR/release builds are unaffected. Verifies the current build against the NEXT major's pre-release
+            // builds to catch platform API breaks during the EAP/RC window.
+            if (providers.gradleProperty("verifyUpcoming").isPresent) {
+                select {
+                    types = listOf(IntelliJPlatformType.IntellijIdeaUltimate)
+                    channels = listOf(ProductRelease.Channel.EAP, ProductRelease.Channel.RC)
+                    sinceBuild = IdeVersions.upcomingBranchNumber()
+                    untilBuild = "${IdeVersions.upcomingBranchNumber()}.*"
+                }
+            }
         }
+    }
+}
+
+if (providers.gradleProperty("verifyUpcoming").isPresent) {
+    tasks.named<org.jetbrains.intellij.platform.gradle.tasks.PrintProductsReleasesTask>(
+        org.jetbrains.intellij.platform.gradle.Constants.Tasks.PRINT_PRODUCTS_RELEASES
+    ).configure {
+        types.set(listOf(IntelliJPlatformType.IntellijIdeaUltimate))
+        channels.set(listOf(ProductRelease.Channel.EAP, ProductRelease.Channel.RC))
+        sinceBuild.set(IdeVersions.upcomingBranchNumber())
+        untilBuild.set("${IdeVersions.upcomingBranchNumber()}.*")
     }
 }
 

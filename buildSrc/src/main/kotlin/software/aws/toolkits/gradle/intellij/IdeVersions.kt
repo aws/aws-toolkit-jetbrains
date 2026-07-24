@@ -167,6 +167,24 @@ object IdeVersions {
         ideProfiles[it] ?: throw IllegalStateException("Can't find profile for $it")
     }
 
+    // The newest profile we support (by year.minor), i.e. our latest GA target
+    fun latestProfileName(): String = ideProfiles.keys.maxByOrNull { name ->
+        val (year, minor) = name.split(".").map { it.toInt() }
+        year * 10 + minor
+    } ?: error("no IDE profiles defined")
+
+    /**
+     * The next JetBrains marketing version after [latest], following the 3-releases-per-year cadence
+     * (YYYY.1 -> YYYY.2 -> YYYY.3 -> (YYYY+1).1). E.g. "2025.3" -> "2026.1", "2026.2" -> "2026.3".
+     */
+    fun nextProfileName(latest: String = latestProfileName()): String {
+        val (year, minor) = latest.split(".").map { it.toInt() }
+        return if (minor >= 3) "${year + 1}.1" else "$year.${minor + 1}"
+    }
+
+    // Plugin Verifier / SDK build numbers use the branch form (e.g. "263"), not the marketing form ("2026.3").
+    fun upcomingBranchNumber(): String = shortenedIdeProfileName(nextProfileName())
+
     private fun resolveIdeProfileName(providers: ProviderFactory): Provider<String> = providers.gradleProperty("ideProfileName")
 }
 

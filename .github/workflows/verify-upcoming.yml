@@ -1,0 +1,116 @@
+name: Verify against upcoming JetBrains release
+
+# Weekly awareness signal: detects when JetBrains has published an EAP/RC for the NEXT major that we don't
+# support yet, and posts to Slack so the team can plan the migration. Plugin Verifier runs against that
+# upcoming build too, but only to enrich the notification (compatible vs. API breaks) — it never gates the
+# alert. Non-gating, off the release path. No dedup: it re-notifies weekly until we ship support (the probe
+# stops matching once the profile is added), which is the intended persistent nag.
+on:
+  workflow_dispatch: {}
+  schedule:
+    # Mondays 15:00 UTC
+    - cron: "0 15 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  verify-upcoming:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Maximize Build Space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+          large-packages: false
+
+      # Bootstrap JDK just to run the print tasks (they don't compile anything).
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'corretto'
+          java-version: '21'
+
+      # Derive the latest supported profile and the JDK it needs — no hardcoded version/JDK.
+      - name: Resolve latest profile and required JDK
+        id: profile
+        run: |
+          LATEST=$(./gradlew -q printLatestProfile | grep -E '^[0-9]{4}\.[0-9]+$' | tail -1)
+          REQUIRED_JDK=$(./gradlew -q printJvmTarget -PideProfileName=$LATEST | grep -Eo '^[0-9]+$' | tail -1)
+          echo "latest=$LATEST" >> "$GITHUB_OUTPUT"
+          echo "jdk=$REQUIRED_JDK" >> "$GITHUB_OUTPUT"
+          echo "Latest profile: $LATEST (JDK $REQUIRED_JDK)"
+
+      # Re-provision the JDK the latest profile actually needs.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'corretto'
+          java-version: ${{ steps.profile.outputs.jdk }}
+
+      # Has JetBrains published an EAP/RC for the next major yet? printProductsReleases uses the same upcoming
+      # criteria as the verifyPlugin select{} block (both under -PverifyUpcoming); empty output = none yet.
+      # Detection — not verification result — is what drives the notification.
+      - name: Detect upcoming EAP/RC releases
+        id: upcoming
+        run: |
+          RELEASES=$(./gradlew -q -PideProfileName=${{ steps.profile.outputs.latest }} -PverifyUpcoming \
+            :plugin-toolkit:intellij-standalone:printProductsReleases --console plain \
+            | grep -E '^IU-' || true)
+          if [ -z "$RELEASES" ]; then
+            echo "No upcoming EAP/RC published yet — nothing to notify. Neutral no-op."
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Upcoming release(s) detected:"
+            echo "$RELEASES"
+            echo "found=true" >> "$GITHUB_OUTPUT"
+            echo "releases=$(echo "$RELEASES" | paste -sd ', ' -)" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Verify against the upcoming build to learn whether it breaks APIs we call. continue-on-error so a
+      # break (or a verification error) does NOT fail the job — the notification must fire either way.
+      # -x buildSearchableOptions keeps it off the JBR/JCEF path (Verifier is static bytecode analysis).
+      - name: Verify plugin against upcoming EAP/RC
+        id: verify
+        if: steps.upcoming.outputs.found == 'true'
+        continue-on-error: true
+        run: |
+          ./gradlew -PideProfileName=${{ steps.profile.outputs.latest }} -PverifyUpcoming \
+            :plugin-toolkit:intellij-standalone:verifyPlugin \
+            -x buildSearchableOptions --console plain
+
+      - name: Upload verifier reports
+        if: steps.upcoming.outputs.found == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: plugin-verifier-report
+          path: plugins/toolkit/intellij-standalone/build/reports/pluginVerifier/**
+          retention-days: 7
+          if-no-files-found: ignore
+
+      # Build the awareness message. Fires whenever an upcoming release is detected, regardless of the verify
+      # result; the verify outcome only changes the wording (compatible / problems-found).
+      - name: Compose Slack message
+        id: compose
+        if: steps.upcoming.outputs.found == 'true'
+        run: |
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          RELEASES="${{ steps.upcoming.outputs.releases }}"
+          if [ "${{ steps.verify.outcome }}" = "success" ]; then
+            STATUS="the current build is bytecode-compatible (likely a low-effort migration) — but we still need to add the profile and publish support."
+          else
+            STATUS="Plugin Verifier reported problems (API break or verification error) — migration likely needed. See the run for the report."
+          fi
+          echo "message=:jetbrains: Upcoming JetBrains release detected that AWS Toolkit does not support yet: ${RELEASES} (built against ${{ steps.profile.outputs.latest }}). ${STATUS} ${RUN_URL}" >> "$GITHUB_OUTPUT"
+
+      - name: Notify Slack
+        if: steps.upcoming.outputs.found == 'true'
+        uses: slackapi/slack-github-action@v1.23.0
+        with:
+          payload: |
+            {
+              "message": "${{ steps.compose.outputs.message }}"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.ON_DUTY_SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: WEBHOOK_TRIGGER
