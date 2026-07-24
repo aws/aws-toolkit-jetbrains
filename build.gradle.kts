@@ -3,6 +3,7 @@
 import org.jetbrains.gradle.ext.ProjectSettings
 import org.jetbrains.gradle.ext.TaskTriggersConfig
 import software.aws.toolkits.gradle.changelog.tasks.GenerateGithubChangeLog
+import software.aws.toolkits.gradle.intellij.IdeVersions
 import software.aws.toolkits.gradle.jvmTarget
 
 plugins {
@@ -54,6 +55,14 @@ tasks.register("printJvmTarget") {
     val target = project.jvmTarget()
     doLast {
         println(target.get().majorVersion)
+    }
+}
+
+// Prints the latest supported IDE profile (e.g. "2026.2") so CI can build/verify against it without
+// hardcoding a version.
+tasks.register("printLatestProfile") {
+    doLast {
+        println(IdeVersions.latestProfileName())
     }
 }
 
