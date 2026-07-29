@@ -1,0 +1,8 @@
+{
+  "date" : "2026-07-29",
+  "version" : "4.7",
+  "entries" : [ {
+    "type" : "removal",
+    "description" : "Removed support for 2025.1 and 2025.2 IDEs"
+  } ]
+}
