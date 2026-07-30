@@ -1,10 +1,15 @@
-name: Verify against upcoming JetBrains release
+name: JetBrains release radar
 
-# Weekly awareness signal: detects when JetBrains has published an EAP/RC for the NEXT major that we don't
-# support yet, and posts to Slack so the team can plan the migration. Plugin Verifier runs against that
-# upcoming build too, but only to enrich the notification (compatible vs. API breaks) — it never gates the
-# alert. Non-gating, off the release path. No dedup: it re-notifies weekly until we ship support (the probe
-# stops matching once the profile is added), which is the intended persistent nag.
+# Weekly awareness signals about JetBrains releases, posted to Slack. Two independent jobs:
+#
+#   verify-upcoming    — the NEXT major we don't support yet (e.g. 263 while latest is 262): has an EAP/RC
+#                        appeared? If so, notify + run Plugin Verifier to enrich with compatible/API-break.
+#   latest-maturity    — the major we ALREADY support (e.g. 262): has our pinned build matured to GA? If we
+#                        pin an EAP/RC and JetBrains has since published a higher channel for that branch,
+#                        notify so we bump the pin (EAP -> RC -> GA). Silent once we're on stable.
+#
+# Both are non-gating, off the release path, and use "no dedup" — they re-notify weekly until the state
+# clears (profile added / pin bumped)
 on:
   workflow_dispatch: {}
   schedule:
@@ -101,10 +106,121 @@ jobs:
           else
             STATUS="Plugin Verifier reported problems (API break or verification error) — migration likely needed. See the run for the report."
           fi
-          echo "message=:jetbrains: Upcoming JetBrains release detected that AWS Toolkit does not support yet: ${RELEASES} (built against ${{ steps.profile.outputs.latest }}). ${STATUS} ${RUN_URL}" >> "$GITHUB_OUTPUT"
+          echo "message=[JetBrains] Upcoming JetBrains release detected that AWS Toolkit does not support yet: ${RELEASES} (built against ${{ steps.profile.outputs.latest }}). ${STATUS} ${RUN_URL}" >> "$GITHUB_OUTPUT"
 
       - name: Notify Slack
         if: steps.upcoming.outputs.found == 'true'
+        uses: slackapi/slack-github-action@v1.23.0
+        with:
+          payload: |
+            {
+              "message": "${{ steps.compose.outputs.message }}"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.ON_DUTY_SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: WEBHOOK_TRIGGER
+
+  # Is the major we already support still pinned to a pre-GA build while JetBrains has moved on? Compares
+  # the channel of our pin (from IdeVersions) against the highest channel published for the same branch in
+  # the JetBrains releases feed. Notifies only when we're pre-GA AND something more mature is available.
+  latest-maturity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Print tasks only — no compile — so the bootstrap JDK is enough; no per-profile JDK needed here.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'corretto'
+          java-version: '21'
+
+      # Our side: the latest profile's branch, its overall (minimum) channel used as a cheap gate, and the
+      # per-product channels used to name exactly which products lag.
+      - name: Resolve our pin
+        id: pin
+        run: |
+          BRANCH=$(./gradlew -q printLatestBranch | grep -E '^[0-9]+$' | tail -1)
+          MIN_CHANNEL=$(./gradlew -q printLatestChannel | grep -E '^(EAP|BETA|RC|STABLE)$' | tail -1)
+          PRODUCTS=$(./gradlew -q printLatestChannelsByProduct | grep -E '^[a-z]+=(EAP|BETA|RC|STABLE)$')
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+          echo "min_channel=$MIN_CHANNEL" >> "$GITHUB_OUTPUT"
+          {
+            echo "products<<PRODUCTS_EOF"
+            echo "$PRODUCTS"
+            echo "PRODUCTS_EOF"
+          } >> "$GITHUB_OUTPUT"
+          echo "Branch $BRANCH — overall channel $MIN_CHANNEL; per-product:"
+          echo "$PRODUCTS"
+
+      # Compare EACH product against ITS OWN JetBrains product feed. IDEA Ultimate/Community (IIU/IIC),
+      # Rider (RD), and Gateway (GW) release on independent schedules for the same branch — IDEA reaching GA
+      # does NOT imply Rider's or Gateway's GA exists yet — so each product is measured against its own feed's
+      # highest channel for the branch. A product is "behind" only if our pin is below its own upstream max.
+      # One combined notification lists the laggards. All feeds fetched in a single multi-code request.
+      # The min_channel gate short-circuits when every product is already STABLE (nothing can be higher).
+      - name: Evaluate per-product maturity
+        id: compose
+        if: steps.pin.outputs.min_channel != 'STABLE'
+        run: |
+          BRANCH="${{ steps.pin.outputs.branch }}"
+          rank() { case "$1" in EAP|eap) echo 1;; BETA|beta) echo 2;; RC|rc) echo 3;; STABLE|release) echo 4;; *) echo 0;; esac; }
+          label() { case "$1" in release) echo "GA/stable";; rc) echo "an RC";; beta) echo "a Beta";; *) echo "an EAP";; esac; }
+          # Map our product name to its JetBrains releases-feed product code.
+          feed_code() {
+            case "$1" in
+              ultimate) echo "IIU";;
+              community) echo "IIC";;
+              rider) echo "RD";;
+              gateway) echo "GW";;
+              *) echo "";;
+            esac
+          }
+          # printf (not echo) to round-trip the JSON without mangling embedded control chars.
+          FEED=$(curl -fsSL --max-time 30 \
+            "https://data.services.jetbrains.com/products/releases?code=IIU,IIC,RD,GW&type=eap,beta,rc,release&latest=false")
+
+          BEHIND=""
+          UPTODATE=""
+          while IFS='=' read -r PROD CH; do
+            [ -z "$PROD" ] && continue
+            CODE=$(feed_code "$PROD")
+            if [ -z "$CODE" ]; then
+              # Unknown product -> no feed to compare against; surface it rather than silently dropping.
+              UPTODATE="${UPTODATE:+$UPTODATE, }$PROD ($CH; no feed mapping)"
+              continue
+            fi
+            BEST=$(printf '%s' "$FEED" | jq -r --arg code "$CODE" --arg br "$BRANCH" '
+              (.[$code] // [])
+              | map(select(.build | startswith($br + ".")))
+              | map(. + {rank: ({"eap":1,"beta":2,"rc":3,"release":4}[.type] // 0)})
+              | (max_by(.rank) // {})
+              | "\(.type // "none")\t\(.version // "")"')
+            UP_CH=$(printf '%s' "$BEST" | cut -f1)
+            UP_VER=$(printf '%s' "$BEST" | cut -f2)
+            if [ "$(rank "$CH")" -lt "$(rank "$UP_CH")" ]; then
+              BEHIND="${BEHIND:+$BEHIND; }$PROD (on $CH — $(label "$UP_CH") ${UP_VER} available)"
+            else
+              UPTODATE="${UPTODATE:+$UPTODATE, }$PROD ($CH)"
+            fi
+          done <<'PRODUCTS_EOF'
+          ${{ steps.pin.outputs.products }}
+          PRODUCTS_EOF
+
+          if [ -n "$BEHIND" ]; then
+            RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            MSG="[JetBrains] AWS Toolkit ${BRANCH}: products behind their own JetBrains release channel — ${BEHIND}."
+            [ -n "$UPTODATE" ] && MSG="${MSG} Up to date: ${UPTODATE}."
+            MSG="${MSG} Consider bumping the lagging SDK pins. ${RUN_URL}"
+            echo "notify=true" >> "$GITHUB_OUTPUT"
+            echo "message=${MSG}" >> "$GITHUB_OUTPUT"
+            echo "Behind: $BEHIND | Up to date: ${UPTODATE:-none} — will notify."
+          else
+            echo "notify=false" >> "$GITHUB_OUTPUT"
+            echo "Every product is at or above its own upstream channel — nothing newer, no notification."
+          fi
+
+      - name: Notify Slack
+        if: steps.compose.outputs.notify == 'true'
         uses: slackapi/slack-github-action@v1.23.0
         with:
           payload: |
