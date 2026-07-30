@@ -13,8 +13,8 @@ name: JetBrains release radar
 on:
   workflow_dispatch: {}
   schedule:
-    # Mondays 15:00 UTC
-    - cron: "0 15 * * 1"
+    # Fridays 12:00 UTC
+    - cron: "0 12 * * 5"
 
 permissions:
   contents: read
