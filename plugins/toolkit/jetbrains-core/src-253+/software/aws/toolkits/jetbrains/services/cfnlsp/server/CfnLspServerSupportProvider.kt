@@ -93,6 +93,7 @@ class CfnLspServerDescriptor private constructor(project: Project) :
 
         return GeneralCommandLine(nodePath.toString(), serverPath.toString(), "--stdio")
             .withWorkDirectory(serverPath.parent.toString())
+            .withEnvironment("NODE_OPTIONS", "--max-old-space-size=384")
     }
 
     private fun resolveNodeRuntime(): Path {
