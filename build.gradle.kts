@@ -66,6 +66,31 @@ tasks.register("printLatestProfile") {
     }
 }
 
+// Prints the branch number of the latest supported profile (e.g. "262")
+tasks.register("printLatestBranch") {
+    doLast {
+        println(IdeVersions.latestBranchNumber())
+    }
+}
+
+// Prints the release channel (EAP/BETA/RC/STABLE) we're pinned to for the latest supported profile.
+// This is the minimum across products
+tasks.register("printLatestChannel") {
+    doLast {
+        println(IdeVersions.latestProfileChannel().name)
+    }
+}
+
+// Prints one "product=CHANNEL" line per shipped IDE product (ultimate/rider/gateway) for the latest profile
+
+tasks.register("printLatestChannelsByProduct") {
+    doLast {
+        IdeVersions.latestProfileChannelsByProduct().forEach { (product, channel) ->
+            println("$product=${channel.name}")
+        }
+    }
+}
+
 if (idea.project != null) { // may be null during script compilation
     idea {
         project {

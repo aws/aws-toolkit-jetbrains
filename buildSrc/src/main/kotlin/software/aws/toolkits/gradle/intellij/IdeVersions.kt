@@ -185,7 +185,53 @@ object IdeVersions {
     // Plugin Verifier / SDK build numbers use the branch form (e.g. "263"), not the marketing form ("2026.3").
     fun upcomingBranchNumber(): String = shortenedIdeProfileName(nextProfileName())
 
+    // Branch form of the latest supported profile (e.g. "2026.2" -> "262")
+    fun latestBranchNumber(): String = shortenedIdeProfileName(latestProfileName())
+
+    /**
+     * Per-product release channel for the latest profile's shipped IDE pins, inferred from each SDK
+     * coordinate.
+     */
+    fun latestProfileChannelsByProduct(): List<Pair<String, ReleaseChannel>> {
+        val profile = ideProfiles[latestProfileName()] ?: error("no latest profile defined")
+        // gateway is nullable on Profile (not every profile ships it), so drop it when absent.
+        return listOfNotNull(
+            "rider" to profile.rider,
+            "ultimate" to profile.ultimate,
+            profile.gateway?.let { "gateway" to it },
+        ).map { (product, p) -> product to classifyChannel(p.sdkVersion) }
+    }
+
+    /**
+     * The latest profile's overall maturity — the minimum across its per-product channels
+     */
+    fun latestProfileChannel(): ReleaseChannel =
+        latestProfileChannelsByProduct().minByOrNull { it.second.rank }?.second ?: ReleaseChannel.STABLE
+
     private fun resolveIdeProfileName(providers: ProviderFactory): Provider<String> = providers.gradleProperty("ideProfileName")
+}
+
+/**
+ * IDE release maturity, ordered by [rank]. Ranks are aligned with the `type` values in the JetBrains
+ * releases feed (eap=1, beta=2, rc=3, release=4)
+ */
+enum class ReleaseChannel(val rank: Int) {
+    EAP(1), BETA(2), RC(3), STABLE(4),
+}
+
+/**
+ * Classifies an SDK coordinate string into a [ReleaseChannel].
+ * e.g. "2026.2-SNAPSHOT" (EAP), "2026.2-RC1-SNAPSHOT" (RC), and clean "2026.2" (GA).
+ * RC is checked before EAP because RC snapshots also contain "SNAPSHOT".
+ */
+internal fun classifyChannel(sdkVersion: String): ReleaseChannel {
+    val v = sdkVersion.uppercase()
+    return when {
+        "RC" in v -> ReleaseChannel.RC
+        "BETA" in v -> ReleaseChannel.BETA
+        "EAP" in v || "SNAPSHOT" in v -> ReleaseChannel.EAP
+        else -> ReleaseChannel.STABLE
+    }
 }
 
 open class ProductProfile(
