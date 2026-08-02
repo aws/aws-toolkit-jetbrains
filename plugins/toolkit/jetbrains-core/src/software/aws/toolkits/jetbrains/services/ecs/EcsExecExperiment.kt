@@ -6,7 +6,7 @@ package software.aws.toolkits.jetbrains.services.ecs
 import software.aws.toolkits.jetbrains.core.experiments.ToolkitExperiment
 import software.aws.toolkits.resources.message
 
-object EcsExecExperiment : ToolkitExperiment(
+class EcsExecExperiment : ToolkitExperiment(
     "ecsExec",
     { message("ecs.execute_command.experiment.title") },
     { message("ecs.execute_command.experiment.description") },
