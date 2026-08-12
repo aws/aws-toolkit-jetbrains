@@ -17,6 +17,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.testFramework.LightProjectDescriptor
 import com.intellij.testFramework.PsiTestUtil
+import com.intellij.testFramework.StartupActivityTestUtil
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory
 import com.intellij.testFramework.runInEdtAndGet
@@ -32,6 +33,21 @@ class GoCodeInsightTestFixtureRule : CodeInsightTestFixtureRule(GoLightProjectDe
             GoModuleSettings.getInstance(codeInsightFixture.module).isGoSupportEnabled = true
         }
         return codeInsightFixture
+    }
+
+    override fun after() {
+        // TODO: Replace with dedicated Go plugin event/listener wait per JetBrains guidance.
+        // ProjectActivity is no longer awaited in tests (since 2024.2). The Go plugin's async
+        // ProjectActivity (SDK detection, go.mod parsing) can submit indexing tasks during tearDown,
+        // causing a scanning↔dumb mode deadlock in waitUntilIndexesAreReady().
+        // Long-term fix: implement a dedicated listener for Go plugin initialization completion
+        // and wait for that specific event instead of all activities.
+        // See: https://plugins.jetbrains.com/docs/intellij/testing-faq.html#how-to-handle-projectactivity
+        lazyFixture.ifSet {
+            @Suppress("DEPRECATION")
+            StartupActivityTestUtil.waitForProjectActivitiesToComplete(project)
+        }
+        super.after()
     }
 }
 
@@ -49,6 +65,21 @@ class HeavyGoCodeInsightTestFixtureRule : CodeInsightTestFixtureRule() {
         codeInsightFixture.testDataPath = testDataPath
 
         return codeInsightFixture
+    }
+
+    override fun after() {
+        // TODO: Replace with dedicated Go plugin event/listener wait per JetBrains guidance.
+        // ProjectActivity is no longer awaited in tests (since 2024.2). The Go plugin's async
+        // ProjectActivity (SDK detection, go.mod parsing) can submit indexing tasks during tearDown,
+        // causing a scanning↔dumb mode deadlock in waitUntilIndexesAreReady().
+        // Long-term fix: implement a dedicated listener for Go plugin initialization completion
+        // and wait for that specific event instead of all activities.
+        // See: https://plugins.jetbrains.com/docs/intellij/testing-faq.html#how-to-handle-projectactivity
+        lazyFixture.ifSet {
+            @Suppress("DEPRECATION")
+            StartupActivityTestUtil.waitForProjectActivitiesToComplete(project)
+        }
+        super.after()
     }
 
     fun addBreakpoint() {
