@@ -62,7 +62,7 @@ internal class CfnTelemetryPrompter : ProjectActivity {
 
     private fun showPrompt(project: Project) {
         val notification = Notification(
-            CfnLspExtensionConfig.TELEMETRY_NOTIFICATION_GROUP_ID,
+            "aws.cfn.telemetry",
             message("cloudformation.telemetry.prompt.title"),
             message("cloudformation.telemetry.prompt.message"),
             NotificationType.INFORMATION

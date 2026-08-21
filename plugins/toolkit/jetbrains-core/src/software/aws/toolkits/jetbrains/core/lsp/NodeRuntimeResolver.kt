@@ -10,6 +10,7 @@ import com.intellij.openapi.util.SystemInfo
 import org.jetbrains.annotations.VisibleForTesting
 import software.aws.toolkit.core.utils.debug
 import software.aws.toolkit.core.utils.getLogger
+import software.aws.toolkit.core.utils.warn
 import java.nio.file.FileSystems
 import java.nio.file.Files
 import java.nio.file.Path
@@ -101,7 +102,34 @@ internal object NodeRuntimeResolver {
     private val wellKnownPaths: List<Path> = buildWellKnownPaths(platform, home)
     private val globPatterns: List<String> by lazy { buildGlobPatterns(platform, home) { System.getenv(it) } }
 
-    fun resolve(minVersion: Int = 18): Path? =
+    /**
+     * Resolves the Node.js runtime from an explicit [configuredPath] when one is set, otherwise from
+     * [autoDetect], using [minVersion] (18 by default). Every configuration or resolution failure —
+     * a syntactically malformed explicit path, an exception thrown by auto-detection, or no runtime
+     * found — is normalized to an [LspInstallException] with
+     * [LspInstallException.ErrorCode.NODE_NOT_FOUND] and the original cause preserved. A missing
+     * runtime is thus reported as a typed install failure rather than being papered over, letting a
+     * launcher distinguish it from failures that reinstalling a server would fix.
+     */
+    fun resolve(
+        configuredPath: String?,
+        nodeNotFoundMessage: String,
+        minVersion: Int = 18,
+        autoDetect: (Int) -> Path? = ::detectAutomatically,
+        isExecutable: (Path) -> Boolean = { Files.isExecutable(it) },
+    ): Path =
+        try {
+            resolveConfigured(configuredPath, isExecutable)
+                ?: autoDetect(minVersion)
+                ?: throw nodeNotFound(nodeNotFoundMessage)
+        } catch (e: LspInstallException) {
+            throw e
+        } catch (e: Exception) {
+            LOG.warn(e) { "Failed to resolve Node.js runtime; treating it as not found" }
+            throw nodeNotFound(nodeNotFoundMessage, e)
+        }
+
+    private fun detectAutomatically(minVersion: Int): Path? =
         resolveFromPath(minVersion) ?: resolveFromWellKnownLocations(minVersion)
 
     private fun resolveFromPath(minVersion: Int): Path? =
@@ -159,4 +187,19 @@ internal object NodeRuntimeResolver {
             null
         }
     }
+
+    private fun resolveConfigured(configuredPath: String?, isExecutable: (Path) -> Boolean): Path? {
+        if (configuredPath.isNullOrBlank()) return null
+
+        // A syntactically invalid path is a hard configuration error: let InvalidPathException propagate
+        // so resolve() reports NODE_NOT_FOUND with it as the cause, rather than silently masking a broken
+        // setting via auto-detection. A valid but non-executable path still falls back to auto-detection.
+        val configured = Path.of(configuredPath)
+        if (isExecutable(configured)) return configured
+        LOG.warn { "Configured Node.js path is not executable: $configured, using auto-detection" }
+        return null
+    }
+
+    private fun nodeNotFound(message: String, cause: Throwable? = null) =
+        LspInstallException(message, LspInstallException.ErrorCode.NODE_NOT_FOUND, cause)
 }

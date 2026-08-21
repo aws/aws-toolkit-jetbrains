@@ -1,7 +1,7 @@
 // Copyright 2025 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.services.cfnlsp.server
+package software.aws.toolkits.jetbrains.core.lsp
 
 import com.intellij.openapi.util.SystemInfo
 import software.aws.toolkit.core.utils.getLogger
@@ -13,10 +13,11 @@ import java.util.concurrent.TimeUnit
 /**
  * Detects legacy Linux environments that require older glibc-compatible builds.
  */
-internal class LegacyLinuxDetector {
+internal object LegacyLinuxDetector {
+    private val LOG = getLogger<LegacyLinuxDetector>()
     private val glibcxxThreshold = listOf(3, 4, 29) // GLIBCXX_3.4.29
 
-    fun useLegacyLinux(): Boolean {
+    fun isLegacyLinux(): Boolean {
         if (!SystemInfo.isLinux) return false
 
         // Check for Snap environment
@@ -34,7 +35,7 @@ internal class LegacyLinuxDetector {
         return isLegacy
     }
 
-    internal fun getMaxGlibcxxVersion(): List<Int>? {
+    private fun getMaxGlibcxxVersion(): List<Int>? {
         val libPath = findLibStdCpp() ?: return null
 
         val output = extractGlibcxxStringsUsingStringsCommand(libPath)
@@ -48,15 +49,31 @@ internal class LegacyLinuxDetector {
     }
 
     private fun extractGlibcxxStringsUsingStringsCommand(libPath: String): String? = try {
-        val process = ProcessBuilder("strings", libPath)
-            .redirectErrorStream(true)
-            .start()
-
-        val output = process.inputStream.bufferedReader().use { it.readText() }
-        if (process.waitFor(10, TimeUnit.SECONDS) && output.contains("GLIBCXX")) output else null
+        val output = runCommand(listOf("strings", libPath), 10, TimeUnit.SECONDS)
+        if (output?.contains("GLIBCXX") == true) output else null
     } catch (_: Exception) {
         LOG.info { "strings command failed, trying binary read fallback" }
         null
+    }
+
+    private fun runCommand(command: List<String>, timeout: Long, unit: TimeUnit): String? {
+        val outputFile = File.createTempFile("legacy-linux-detector-", ".out")
+        return try {
+            val process = ProcessBuilder(command)
+                .redirectErrorStream(true)
+                .redirectOutput(outputFile)
+                .start()
+
+            if (!process.waitFor(timeout, unit)) {
+                process.destroyForcibly()
+                process.waitFor(1, TimeUnit.SECONDS)
+                null
+            } else {
+                outputFile.readText()
+            }
+        } finally {
+            outputFile.delete()
+        }
     }
 
     private fun extractGlibcxxStringsFromBinaryFile(libPath: String): String? = try {
@@ -90,35 +107,24 @@ internal class LegacyLinuxDetector {
     }
 
     private fun findLibStdCppUsingLdconfig(): String? = try {
-        val process = ProcessBuilder("/sbin/ldconfig", "-p")
-            .redirectErrorStream(true)
-            .start()
+        val output = runCommand(listOf("/sbin/ldconfig", "-p"), 5, TimeUnit.SECONDS) ?: return null
 
-        val output = process.inputStream.bufferedReader().use { it.readText() }
-        if (!process.waitFor(5, TimeUnit.SECONDS)) {
-            null
-        } else {
-            // Parse: "libstdc++.so.6 (libc6,x86-64) => /lib/x86_64-linux-gnu/libstdc++.so.6"
-            output.lineSequence()
-                .filter { it.contains("libstdc++.so.6") }
-                .firstNotNullOfOrNull { line ->
-                    Regex("""=>\s+(.+)$""").find(line)?.groupValues?.get(1)?.trim()
-                }
-        }
+        // Parse: "libstdc++.so.6 (libc6,x86-64) => /lib/x86_64-linux-gnu/libstdc++.so.6"
+        output.lineSequence()
+            .filter { it.contains("libstdc++.so.6") }
+            .firstNotNullOfOrNull { line ->
+                Regex("""=>\s+(.+)$""").find(line)?.groupValues?.get(1)?.trim()
+            }
     } catch (_: Exception) {
         null
     }
 
-    companion object {
-        private val LOG = getLogger<LegacyLinuxDetector>()
-
-        internal fun compareVersions(a: List<Int>, b: List<Int>): Int {
-            for (i in 0 until maxOf(a.size, b.size)) {
-                val partA = a.getOrElse(i) { 0 }
-                val partB = b.getOrElse(i) { 0 }
-                if (partA != partB) return partA.compareTo(partB)
-            }
-            return 0
+    internal fun compareVersions(a: List<Int>, b: List<Int>): Int {
+        for (i in 0 until maxOf(a.size, b.size)) {
+            val partA = a.getOrElse(i) { 0 }
+            val partB = b.getOrElse(i) { 0 }
+            if (partA != partB) return partA.compareTo(partB)
         }
+        return 0
     }
 }
