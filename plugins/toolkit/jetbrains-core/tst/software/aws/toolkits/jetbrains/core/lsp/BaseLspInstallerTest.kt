@@ -388,6 +388,101 @@ class BaseLspInstallerTest {
     }
 
     @Test
+    fun `getServerPath rejects manifest versions containing path separators`() {
+        val baseRoot = tempFolder.newFolder("unsafe-versions-${System.nanoTime()}").toPath()
+        val unsafeVersions = listOf(
+            "1.2.3+/../../../outside",
+            """1.2.3+\..\..\outside""",
+        )
+
+        unsafeVersions.forEach { version ->
+            var downloads = 0
+            val manifest = LspManifest(
+                versions = listOf(
+                    LspManifestVersion(serverVersion = version, targets = targets("darwin", "arm64")),
+                )
+            )
+            val installer = InstallerTestHelper(
+                testConfig(baseRoot),
+                httpGetText = { "{}" },
+                httpGetBytes = {
+                    downloads++
+                    error("download must not happen for an unsafe version")
+                },
+                manifestAdapter = FixedManifestAdapter(manifest),
+                sleep = {},
+            )
+
+            assertThatThrownBy { installer.getServerPath() }
+                .isInstanceOfSatisfying(LspInstallException::class.java) {
+                    assertThat(it.errorCode).isEqualTo(LspInstallException.ErrorCode.NO_COMPATIBLE_VERSION)
+                }
+                .hasMessageContaining("safe as a single directory name")
+            assertThat(downloads).isEqualTo(0)
+        }
+    }
+
+    @Test
+    fun `getServerPath accepts a safe version with build metadata`() {
+        val (baseRoot, storageDir) = createLayout()
+        val version = "1.9.0+build.7"
+        createVersion(storageDir, version, "srv.js")
+        val manifest = LspManifest(
+            versions = listOf(
+                LspManifestVersion(serverVersion = version, targets = targets("darwin", "arm64")),
+            )
+        )
+        val installer = InstallerTestHelper(
+            testConfig(baseRoot, versionRange = "<2.0.0"),
+            httpGetText = { "{}" },
+            httpGetBytes = { error("download must not happen for an installed safe version") },
+            manifestAdapter = FixedManifestAdapter(manifest),
+            sleep = {},
+        )
+
+        val resolved = installer.getServerPath()
+
+        assertThat(resolved).isEqualTo(storageDir.resolve(version).resolve("srv.js"))
+        assertThat(installer.resolvedDir).isEqualTo(storageDir.resolve(version))
+    }
+
+    @Test
+    fun `downloadAndInstall rejects an unsafe version before download or cleanup`() {
+        val (baseRoot, _) = createLayout()
+        val outsideDir = baseRoot.resolve("outside")
+        val sentinel = outsideDir.resolve("sentinel.txt")
+        Files.createDirectories(outsideDir)
+        Files.writeString(sentinel, "preserve")
+
+        val payload = "payload".toByteArray()
+        var downloads = 0
+        val installer = InstallerTestHelper(
+            testConfig(baseRoot),
+            httpGetBytes = {
+                downloads++
+                payload
+            },
+            sleep = {},
+        )
+        val release = LspRelease(
+            version = "1.2.3+/../../../outside",
+            contents = listOf(
+                LspContentEntry("wrong.js", "https://example.com/wrong.js", emptyList(), payload.size.toLong()),
+            ),
+        )
+
+        assertThatThrownBy { installer.downloadAndInstall(release) }
+            .isInstanceOfSatisfying(LspInstallException::class.java) {
+                assertThat(it.errorCode).isEqualTo(LspInstallException.ErrorCode.NO_COMPATIBLE_VERSION)
+            }
+            .hasMessageContaining("safe as a single directory name")
+
+        assertThat(downloads).isEqualTo(0)
+        assertThat(Files.readString(sentinel)).isEqualTo("preserve")
+        assertThat(Files.exists(outsideDir.resolve("wrong.js"))).isFalse()
+    }
+
+    @Test
     fun `getServerPath propagates NO_COMPATIBLE_VERSION from a fresh manifest without falling back to a cached server`() {
         val (baseRoot, storageDir) = createLayout()
         // A valid cached server exists and WOULD satisfy an offline fallback...

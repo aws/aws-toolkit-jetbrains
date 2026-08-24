@@ -79,7 +79,7 @@ abstract class BaseLspInstaller(
             }
         }
 
-        val versionDir = storageDir.resolve(release.version)
+        val versionDir = resolveVersionDirectory(release.version)
         reuseInstalledServer(versionDir)?.let { serverFile ->
             LOG.info { "Reusing complete ${config.name} ${release.version} installation" }
             return serverFile
@@ -182,6 +182,32 @@ abstract class BaseLspInstaller(
         )
     }
 
+    private fun resolveVersionDirectory(version: String): Path {
+        if (version.isBlank() || SemVerParser.parse(version) == null || version.any { it == '/' || it == '\\' }) {
+            throw invalidVersion(version)
+        }
+
+        val normalizedStorageDir = storageDir.toAbsolutePath().normalize()
+        val versionDir = try {
+            normalizedStorageDir.resolve(version).normalize()
+        } catch (e: Exception) {
+            throw invalidVersion(version, e)
+        }
+
+        if (versionDir.parent != normalizedStorageDir) {
+            throw invalidVersion(version)
+        }
+
+        return versionDir
+    }
+
+    private fun invalidVersion(version: String, cause: Throwable? = null) =
+        LspInstallException(
+            "Invalid version '$version' for ${config.name}: expected a semantic version that is safe as a single directory name",
+            LspInstallException.ErrorCode.NO_COMPATIBLE_VERSION,
+            cause,
+        )
+
     internal fun findCachedServer(): Path? =
         LspFileUtils.listSubdirectories(storageDir).asSequence()
             .mapNotNull { dir ->
@@ -212,7 +238,7 @@ abstract class BaseLspInstaller(
         LspFileUtils.findServerFile(versionDir, config.serverFilename)
 
     internal fun downloadAndInstall(release: LspRelease): Path {
-        val versionDir = storageDir.resolve(release.version)
+        val versionDir = resolveVersionDirectory(release.version)
         return try {
             installRelease(release, versionDir)
         } catch (e: Exception) {
