@@ -18,7 +18,7 @@ data class LspInstallerConfig(
     val manifestUrl: String,
     val serverFilename: String,
     val requiredFiles: List<String> = emptyList(),
-    val storageDir: Path = getAwsCacheRoot().resolve("toolkits").resolve("language-servers").resolve(name),
+    val storageDir: Path = getAwsCacheRoot().resolve("language-servers").resolve(name),
     /**
      * Exact root of a pre-built local server bundle. When set, [BaseLspInstaller.getServerPath]
      * resolves [serverFilename] directly under this root and bypasses the managed install entirely.

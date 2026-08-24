@@ -27,7 +27,6 @@ internal object CfnLspServerConfig {
         manifestUrl = "https://raw.githubusercontent.com/aws-cloudformation/cloudformation-languageserver/main/assets/release-manifest.json",
         serverFilename = "cfn-lsp-server-standalone.js",
         requiredFiles = listOf("bin", "node_modules"),
-        storageDir = getAwsCacheRoot().resolve("cloudformation").resolve("language-server"),
         localBundleRoot = devBundleRoot(),
     )
 
