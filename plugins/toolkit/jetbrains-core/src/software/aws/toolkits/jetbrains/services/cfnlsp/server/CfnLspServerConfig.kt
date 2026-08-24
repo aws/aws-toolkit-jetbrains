@@ -11,7 +11,6 @@ import software.aws.toolkits.jetbrains.core.lsp.LspInstallerConfig
 import software.aws.toolkits.jetbrains.core.lsp.LspManifest
 import software.aws.toolkits.jetbrains.core.lsp.ManifestAdapter
 import software.aws.toolkits.jetbrains.core.lsp.SemVerParser
-import software.aws.toolkits.jetbrains.core.lsp.getAwsCacheRoot
 import java.nio.file.Path
 
 internal object CfnLspServerConfig {
