@@ -1,4 +1,0 @@
-{
-  "type" : "feature",
-  "description" : "Improved CloudFormation language support with more reliable managed server installation, broader Node.js 18+ discovery, offline fallback, and startup recovery. Managed language-server files now use the standard AWS cache directory."
-}

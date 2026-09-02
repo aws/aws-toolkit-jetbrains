@@ -1,0 +1,11 @@
+{
+  "date" : "2026-09-02",
+  "version" : "4.8",
+  "entries" : [ {
+    "type" : "feature",
+    "description" : "Improved CloudFormation language support with more reliable managed server installation, broader Node.js 18+ discovery, offline fallback, and startup recovery. Managed language-server files now use the standard AWS cache directory."
+  }, {
+    "type" : "removal",
+    "description" : "Removed support for 2025.1 and 2025.2 IDEs"
+  } ]
+}
