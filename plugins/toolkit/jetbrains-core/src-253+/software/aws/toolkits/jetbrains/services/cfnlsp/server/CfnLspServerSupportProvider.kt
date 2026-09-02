@@ -13,9 +13,9 @@ import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.platform.lsp.api.Lsp4jClient
+import com.intellij.platform.lsp.api.LspServerManager
 import com.intellij.platform.lsp.api.LspServerNotificationsHandler
 import com.intellij.platform.lsp.api.LspServerSupportProvider
-import com.intellij.platform.lsp.api.ProjectWideLspServerDescriptor
 import com.intellij.psi.codeStyle.CodeStyleSettings
 import org.eclipse.lsp4j.ConfigurationItem
 import org.eclipse.lsp4j.MessageParams
@@ -24,17 +24,19 @@ import org.jetbrains.annotations.TestOnly
 import software.aws.toolkit.core.utils.getLogger
 import software.aws.toolkit.core.utils.info
 import software.aws.toolkit.core.utils.warn
+import software.aws.toolkit.jetbrains.AwsPlugin
+import software.aws.toolkit.jetbrains.AwsToolkit
 import software.aws.toolkit.jetbrains.settings.AwsSettings
 import software.aws.toolkit.jetbrains.settings.DefaultAwsSettings
 import software.aws.toolkit.jetbrains.utils.notifyError
+import software.aws.toolkits.jetbrains.core.lsp.LspInstallException
+import software.aws.toolkits.jetbrains.core.lsp.LspProcessLauncher
 import software.aws.toolkits.jetbrains.core.lsp.NodeRuntimeResolver
 import software.aws.toolkits.jetbrains.services.cfnlsp.CfnCredentialsService
-import software.aws.toolkits.jetbrains.services.cfnlsp.CfnLspExtensionConfig
 import software.aws.toolkits.jetbrains.services.cfnlsp.CfnLspServerProtocol
 import software.aws.toolkits.jetbrains.services.cfnlsp.CfnNodePromptState
 import software.aws.toolkits.jetbrains.settings.CfnLspSettings
 import software.aws.toolkits.resources.AwsToolkitBundle.message
-import java.nio.file.Files
 import java.nio.file.Path
 
 internal val CFN_SUPPORTED_EXTENSIONS = setOf("yaml", "yml", "json", "template", "cfn", "txt")
@@ -56,11 +58,22 @@ internal class CfnLspServerSupportProvider : LspServerSupportProvider {
     }
 }
 
-class CfnLspServerDescriptor private constructor(project: Project) :
-    ProjectWideLspServerDescriptor(project, "AWS CloudFormation") {
-
-    private val installer = CfnLspInstaller()
-
+class CfnLspServerDescriptor private constructor(
+    project: Project,
+    private val installer: CfnLspInstaller = CfnLspInstaller(),
+) : LspProcessLauncher(
+    project,
+    "AWS CloudFormation",
+    invalidateAndReinstall = installer::invalidateResolvedInstallation,
+    restart = {
+        LspServerManager.getInstance(project)
+            .stopAndRestartIfNeeded(CfnLspServerSupportProvider::class.java)
+    },
+    // An LspInstallException (node missing, manifest/download/hash failures) is not fixed by wiping
+    // and re-downloading the server, so it must not trigger invalidate + reinstall. Only ordinary
+    // process-start failures are eligible for the single repair attempt.
+    shouldRepair = { it !is LspInstallException },
+) {
     override val lsp4jServerClass: Class<out LanguageServer> = CfnLspServerProtocol::class.java
 
     override fun isSupportedFile(file: VirtualFile) = file.isCfnTemplate()
@@ -70,10 +83,15 @@ class CfnLspServerDescriptor private constructor(project: Project) :
 
     override fun createCommandLine(): GeneralCommandLine {
         val serverPath = try {
-            installer.getServerPath()
-        } catch (e: CfnLspException) {
+            installer.getServerPath().also {
+                installer.cleanupAfterResolveWithLegacy()
+            }
+        } catch (e: LspInstallException) {
             LOG.warn(e) { "Failed to get CloudFormation LSP server" }
             notifyLspError(e)
+            throw e
+        } catch (e: Exception) {
+            LOG.warn(e) { "Failed to get CloudFormation LSP server" }
             throw e
         }
 
@@ -82,11 +100,7 @@ class CfnLspServerDescriptor private constructor(project: Project) :
         } catch (e: Exception) {
             LOG.warn(e) { "Failed to resolve Node.js runtime" }
             notifyNodeError()
-            throw (e as? CfnLspException) ?: CfnLspException(
-                message("cloudformation.lsp.error.node_not_found"),
-                CfnLspException.ErrorCode.NODE_NOT_FOUND,
-                e
-            )
+            throw e
         }
 
         LOG.info { "Starting CloudFormation LSP: node=$nodePath, server=$serverPath" }
@@ -95,30 +109,20 @@ class CfnLspServerDescriptor private constructor(project: Project) :
             .withWorkDirectory(serverPath.parent.toString())
     }
 
-    private fun resolveNodeRuntime(): Path {
-        val settings = CfnLspSettings.getInstance()
+    private fun resolveNodeRuntime(): Path =
+        NodeRuntimeResolver.resolve(
+            configuredPath = CfnLspSettings.getInstance().nodeRuntimePath,
+            nodeNotFoundMessage = message("cloudformation.lsp.error.node_not_found"),
+        )
 
-        if (settings.nodeRuntimePath.isNotBlank()) {
-            val configured = Path.of(settings.nodeRuntimePath)
-            if (Files.isExecutable(configured)) return configured
-            LOG.warn { "Configured Node.js path is not executable: $configured, falling back to auto-detection" }
-        }
-
-        return NodeRuntimeResolver.resolve()
-            ?: throw CfnLspException(
-                message("cloudformation.lsp.error.node_not_found"),
-                CfnLspException.ErrorCode.NODE_NOT_FOUND
-            )
-    }
-
-    private fun notifyLspError(e: CfnLspException) {
+    private fun notifyLspError(e: LspInstallException) {
         val content = when (e.errorCode) {
-            CfnLspException.ErrorCode.MANIFEST_FETCH_FAILED -> message("cloudformation.lsp.error.manifest_failed")
-            CfnLspException.ErrorCode.NO_COMPATIBLE_VERSION -> message("cloudformation.lsp.error.no_compatible_version")
-            CfnLspException.ErrorCode.DOWNLOAD_FAILED -> message("cloudformation.lsp.error.download_failed")
-            CfnLspException.ErrorCode.EXTRACTION_FAILED -> message("cloudformation.lsp.error.extraction_failed")
-            CfnLspException.ErrorCode.NODE_NOT_FOUND -> message("cloudformation.lsp.error.node_not_found")
-            CfnLspException.ErrorCode.HASH_VERIFICATION_FAILED -> message("cloudformation.lsp.error.hash_mismatch")
+            LspInstallException.ErrorCode.MANIFEST_FETCH_FAILED -> message("cloudformation.lsp.error.manifest_failed")
+            LspInstallException.ErrorCode.NO_COMPATIBLE_VERSION -> message("cloudformation.lsp.error.no_compatible_version")
+            LspInstallException.ErrorCode.DOWNLOAD_FAILED -> message("cloudformation.lsp.error.download_failed")
+            LspInstallException.ErrorCode.EXTRACTION_FAILED -> message("cloudformation.lsp.error.extraction_failed")
+            LspInstallException.ErrorCode.NODE_NOT_FOUND -> message("cloudformation.lsp.error.node_not_found")
+            LspInstallException.ErrorCode.HASH_VERIFICATION_FAILED -> message("cloudformation.lsp.error.hash_mismatch")
         }
 
         notifyError(
@@ -166,11 +170,12 @@ class CfnLspServerDescriptor private constructor(project: Project) :
         val settings = CfnLspSettings.getInstance()
         val credentialsService = CfnCredentialsService.getInstance(project)
 
+        val version = AwsToolkit.PLUGINS_INFO[AwsPlugin.TOOLKIT]?.version ?: "unknown"
         val clientId = AwsSettings.getInstance().clientId
         val clientInfo = mutableMapOf<String, Any>(
             "extension" to mapOf(
                 "name" to "toolkit-jetbrains",
-                "version" to CfnLspExtensionConfig.EXTENSION_VERSION
+                "version" to version
             )
         )
 
@@ -186,7 +191,7 @@ class CfnLspServerDescriptor private constructor(project: Project) :
                 "telemetryEnabled" to settings.isTelemetryEnabled,
                 "encryption" to mapOf(
                     "key" to credentialsService.encryptionKeyBase64,
-                    "mode" to CfnLspExtensionConfig.ENCRYPTION_MODE
+                    "mode" to "JWT"
                 )
             )
         )
@@ -244,8 +249,7 @@ class CfnLspServerDescriptor private constructor(project: Project) :
         )
     }
 
-    private fun String.toStringList(): List<String> =
-        split(",").map { it.trim() }.filter { it.isNotEmpty() }
+    private fun String.toStringList(): List<String> = split(",").map { it.trim() }.filter { it.isNotEmpty() }
 
     companion object {
         private val LOG = getLogger<CfnLspServerDescriptor>()
@@ -259,9 +263,8 @@ class CfnLspServerDescriptor private constructor(project: Project) :
     }
 }
 
-private class CfnLspNotificationsHandler(
-    private val delegate: LspServerNotificationsHandler,
-) : LspServerNotificationsHandler by delegate {
+private class CfnLspNotificationsHandler(private val delegate: LspServerNotificationsHandler) :
+    LspServerNotificationsHandler by delegate {
     override fun logMessage(params: MessageParams) {
         LOG.info { "CloudFormation language server [${params.type}]: ${params.message}" }
     }

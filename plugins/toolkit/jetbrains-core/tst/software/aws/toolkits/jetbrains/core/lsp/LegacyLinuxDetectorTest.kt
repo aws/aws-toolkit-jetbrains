@@ -1,7 +1,7 @@
 // Copyright 2025 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.services.cfnlsp.server
+package software.aws.toolkits.jetbrains.core.lsp
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
@@ -18,8 +18,7 @@ class LegacyLinuxDetectorTest {
             some other text
         """.trimIndent()
 
-        val detector = LegacyLinuxDetector()
-        val versions = detector.parseGlibcxxVersions(output)
+        val versions = LegacyLinuxDetector.parseGlibcxxVersions(output)
 
         assertThat(versions).containsExactlyInAnyOrder(
             listOf(3, 4),
@@ -31,8 +30,7 @@ class LegacyLinuxDetectorTest {
 
     @Test
     fun `parseGlibcxxVersions returns empty for no matches`() {
-        val detector = LegacyLinuxDetector()
-        val versions = detector.parseGlibcxxVersions("no versions here")
+        val versions = LegacyLinuxDetector.parseGlibcxxVersions("no versions here")
 
         assertThat(versions).isEmpty()
     }

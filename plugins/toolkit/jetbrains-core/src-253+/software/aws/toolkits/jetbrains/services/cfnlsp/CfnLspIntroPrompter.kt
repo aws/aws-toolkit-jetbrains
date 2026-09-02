@@ -24,7 +24,7 @@ internal class CfnLspIntroPrompter : ProjectActivity {
 
     private fun showPrompt(project: Project) {
         val notification = Notification(
-            CfnLspExtensionConfig.INTRO_NOTIFICATION_GROUP_ID,
+            "CloudFormation LSP Introduction",
             message("cloudformation.lsp.intro.prompt.title"),
             message("cloudformation.lsp.intro.prompt.message"),
             NotificationType.INFORMATION
