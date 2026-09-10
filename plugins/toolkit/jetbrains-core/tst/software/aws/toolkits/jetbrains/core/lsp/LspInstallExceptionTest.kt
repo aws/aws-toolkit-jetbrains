@@ -35,7 +35,7 @@ class LspInstallExceptionTest {
     }
 
     @Test
-    fun `error codes cover all failure scenarios including NODE_NOT_FOUND`() {
+    fun `error codes cover all installation and runtime failure scenarios`() {
         val errorCodes = LspInstallException.ErrorCode.entries.toTypedArray()
 
         assertThat(errorCodes).containsExactlyInAnyOrder(
@@ -45,6 +45,7 @@ class LspInstallExceptionTest {
             LspInstallException.ErrorCode.EXTRACTION_FAILED,
             LspInstallException.ErrorCode.HASH_VERIFICATION_FAILED,
             LspInstallException.ErrorCode.NODE_NOT_FOUND,
+            LspInstallException.ErrorCode.INCOMPATIBLE_GLIBC,
         )
     }
 

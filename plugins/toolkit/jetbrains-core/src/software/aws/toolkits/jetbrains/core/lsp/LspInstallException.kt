@@ -13,5 +13,6 @@ class LspInstallException(message: String, val errorCode: ErrorCode, cause: Thro
         EXTRACTION_FAILED,
         NODE_NOT_FOUND,
         HASH_VERIFICATION_FAILED,
+        INCOMPATIBLE_GLIBC,
     }
 }
