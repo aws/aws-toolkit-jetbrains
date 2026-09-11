@@ -52,7 +52,7 @@ internal class DefaultBoundedCommandRunner(
                 CommandOutput(exitCode = process.exitValue(), stdout = readBounded(outputFile), timedOut = false)
             } else {
                 process.destroyForcibly()
-                process.waitFor(terminationGraceSeconds, TimeUnit.SECONDS)
+                process.waitFor(TERMINATION_GRACE_SECONDS, TimeUnit.SECONDS)
                 CommandOutput(exitCode = -1, stdout = readBounded(outputFile), timedOut = true)
             }
         } catch (e: Exception) {
@@ -65,10 +65,10 @@ internal class DefaultBoundedCommandRunner(
 
     private fun readBounded(file: Path): String = try {
         file.toFile().inputStream().use { stream ->
-            val buffer = ByteArray(maxOutputBytes)
+            val buffer = ByteArray(MAX_OUTPUT_BYTES)
             var total = 0
-            while (total < maxOutputBytes) {
-                val read = stream.read(buffer, total, maxOutputBytes - total)
+            while (total < MAX_OUTPUT_BYTES) {
+                val read = stream.read(buffer, total, MAX_OUTPUT_BYTES - total)
                 if (read < 0) break
                 total += read
             }
@@ -80,7 +80,7 @@ internal class DefaultBoundedCommandRunner(
     }
 
     private companion object {
-        const val maxOutputBytes = 64 * 1024
-        const val terminationGraceSeconds = 1L
+        const val MAX_OUTPUT_BYTES = 64 * 1024
+        const val TERMINATION_GRACE_SECONDS = 1L
     }
 }
