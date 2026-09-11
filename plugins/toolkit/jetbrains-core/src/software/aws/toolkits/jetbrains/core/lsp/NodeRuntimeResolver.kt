@@ -43,6 +43,10 @@ internal fun buildWellKnownPaths(platform: Platform, home: Path): List<Path> {
             add(Path.of("C:/Program Files/nodejs/$exeName"))
             add(Path.of("C:/ProgramData/chocolatey/bin/$exeName"))
             add(home.resolve("scoop/apps/nodejs/current/$exeName"))
+        } else {
+            // Mise shims support processes that do not inherit shell activation, such as GUI-launched IDEs.
+            add(home.resolve(".local/share/mise/shims/$exeName"))
+            add(home.resolve(".local/share/rtx/shims/$exeName"))
         }
     }
 }
@@ -56,6 +60,17 @@ internal fun buildGlobPatterns(platform: Platform, home: Path, env: (String) -> 
         if (platform == Platform.MAC) {
             add("/opt/homebrew/Cellar/node*/*/bin/$exeName")
             add("/usr/local/Cellar/node*/*/bin/$exeName")
+        }
+
+        if (platform != Platform.WINDOWS) {
+            val dataHome = env("XDG_DATA_HOME")?.let { Path.of(it) } ?: home.resolve(".local/share")
+            val miseDataDirs = listOfNotNull(
+                env("MISE_DATA_DIR")?.let { Path.of(it) },
+                env("RTX_DATA_DIR")?.let { Path.of(it) },
+                dataHome.resolve("mise"),
+                dataHome.resolve("rtx"),
+            ).distinct()
+            miseDataDirs.forEach { add("$it/installs/node/*/bin/$exeName") }
         }
 
         // nvm
@@ -88,7 +103,7 @@ internal fun buildGlobPatterns(platform: Platform, home: Path, env: (String) -> 
 
 /**
  * Resolves a Node.js executable across system PATH, well-known install locations,
- * and version managers (nvm, fnm, volta). GUI-launched IDEs don't inherit shell
+ * and version managers (Mise/rtx, nvm, fnm, volta). GUI-launched IDEs don't inherit shell
  * PATH modifications, so we search common locations directly.
  */
 internal object NodeRuntimeResolver {
@@ -137,24 +152,24 @@ internal object NodeRuntimeResolver {
         autoDetect: (Int) -> Path? = ::detectAutomatically,
         isExecutable: (Path) -> Boolean = { Files.isExecutable(it) },
     ): Path = try {
-            resolveConfigured(configuredPath, isExecutable)
-                ?: autoDetect(minVersion)
-                ?: throw nodeNotFound(nodeNotFoundMessage)
-        } catch (e: LspInstallException) {
-            throw e
-        } catch (e: Exception) {
-            LOG.warn(e) { "Failed to resolve Node.js runtime; treating it as not found" }
-            throw nodeNotFound(nodeNotFoundMessage, e)
-        }
+        resolveConfigured(configuredPath, isExecutable)
+            ?: autoDetect(minVersion)
+            ?: throw nodeNotFound(nodeNotFoundMessage)
+    } catch (e: LspInstallException) {
+        throw e
+    } catch (e: Exception) {
+        LOG.warn(e) { "Failed to resolve Node.js runtime; treating it as not found" }
+        throw nodeNotFound(nodeNotFoundMessage, e)
+    }
 
     private fun detectAutomatically(minVersion: Int): Path? =
         resolveFromPath(minVersion) ?: resolveFromWellKnownLocations(minVersion)
 
     private fun resolveFromPath(minVersion: Int): Path? = PathEnvironmentVariableUtil.findAllExeFilesInPath(exeName)
-            .asSequence()
-            .map { it.toPath() }
-            .filter { Files.isRegularFile(it) && Files.isExecutable(it) }
-            .firstNotNullOfOrNull { it.takeIfVersionAtLeast(minVersion) }
+        .asSequence()
+        .map { it.toPath() }
+        .filter { Files.isRegularFile(it) && Files.isExecutable(it) }
+        .firstNotNullOfOrNull { it.takeIfVersionAtLeast(minVersion) }
 
     private fun resolveFromWellKnownLocations(minVersion: Int): Path? {
         val fromFixed = wellKnownPaths.asSequence()
