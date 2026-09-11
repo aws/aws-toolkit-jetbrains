@@ -37,12 +37,10 @@ import software.aws.toolkits.jetbrains.services.cfnlsp.CfnLspServerProtocol
 import software.aws.toolkits.jetbrains.services.cfnlsp.CfnNodePromptState
 import software.aws.toolkits.jetbrains.settings.CfnLspSettings
 import software.aws.toolkits.resources.AwsToolkitBundle.message
-import java.nio.file.Path
 
 internal val CFN_SUPPORTED_EXTENSIONS = setOf("yaml", "yml", "json", "template", "cfn", "txt")
 
-private fun VirtualFile.isCfnTemplate(): Boolean =
-    extension?.lowercase() in CFN_SUPPORTED_EXTENSIONS
+private fun VirtualFile.isCfnTemplate(): Boolean = extension?.lowercase() in CFN_SUPPORTED_EXTENSIONS
 
 // CfnLspServerSupportProvider must not be moved/renamed since we are hard-coding its class name
 internal class CfnLspServerSupportProvider : LspServerSupportProvider {
@@ -95,25 +93,31 @@ class CfnLspServerDescriptor private constructor(
             throw e
         }
 
-        val nodePath = try {
+        val launch = try {
             resolveNodeRuntime()
-        } catch (e: Exception) {
-            LOG.warn(e) { "Failed to resolve Node.js runtime" }
-            notifyNodeError()
+        } catch (e: LspInstallException) {
+            if (e.errorCode == LspInstallException.ErrorCode.NODE_NOT_FOUND) {
+                LOG.warn(e) { "Failed to resolve Node.js runtime" }
+                notifyNodeError()
+            } else {
+                LOG.warn(e) { "No compatible glibc runtime for CloudFormation LSP" }
+                notifyLspError(e)
+            }
             throw e
         }
 
-        LOG.info { "Starting CloudFormation LSP: node=$nodePath, server=$serverPath" }
+        LOG.info { "Starting CloudFormation LSP: executable=${launch.command.first()}, server=$serverPath" }
 
-        return GeneralCommandLine(nodePath.toString(), serverPath.toString(), "--stdio")
+        return GeneralCommandLine(launch.command)
+            .withParameters(serverPath.toString(), "--stdio")
             .withWorkDirectory(serverPath.parent.toString())
     }
 
-    private fun resolveNodeRuntime(): Path =
-        NodeRuntimeResolver.resolve(
-            configuredPath = CfnLspSettings.getInstance().nodeRuntimePath,
-            nodeNotFoundMessage = message("cloudformation.lsp.error.node_not_found"),
-        )
+    private fun resolveNodeRuntime() = NodeRuntimeResolver.resolveLaunchCommand(
+        configuredPath = CfnLspSettings.getInstance().nodeRuntimePath,
+        nodeNotFoundMessage = message("cloudformation.lsp.error.node_not_found"),
+        incompatibleGlibcMessage = message("cloudformation.lsp.error.incompatible_glibc"),
+    )
 
     private fun notifyLspError(e: LspInstallException) {
         val content = when (e.errorCode) {
@@ -123,6 +127,7 @@ class CfnLspServerDescriptor private constructor(
             LspInstallException.ErrorCode.EXTRACTION_FAILED -> message("cloudformation.lsp.error.extraction_failed")
             LspInstallException.ErrorCode.NODE_NOT_FOUND -> message("cloudformation.lsp.error.node_not_found")
             LspInstallException.ErrorCode.HASH_VERIFICATION_FAILED -> message("cloudformation.lsp.error.hash_mismatch")
+            LspInstallException.ErrorCode.INCOMPATIBLE_GLIBC -> message("cloudformation.lsp.error.incompatible_glibc")
         }
 
         notifyError(

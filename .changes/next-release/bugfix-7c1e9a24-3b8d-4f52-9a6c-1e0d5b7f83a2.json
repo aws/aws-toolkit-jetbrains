@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Fixed the CloudFormation Language Server failing to start on Linux hosts whose system glibc is older than 2.28. Node.js is now launched against a compatible glibc runtime when one is available, and a clear compatibility error is shown otherwise instead of repeatedly retrying."
+}

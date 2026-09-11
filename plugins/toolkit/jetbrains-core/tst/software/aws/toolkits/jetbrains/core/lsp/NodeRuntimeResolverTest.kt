@@ -39,6 +39,16 @@ class NodeRuntimeResolverTest {
     }
 
     @Test
+    fun `linux well-known paths include mise and legacy rtx shims`() {
+        val paths = buildWellKnownPaths(Platform.LINUX, home)
+
+        assertThat(paths).contains(
+            home.resolve(".local/share/mise/shims/node"),
+            home.resolve(".local/share/rtx/shims/node"),
+        )
+    }
+
+    @Test
     fun `windows well-known paths are valid`() {
         val paths = buildWellKnownPaths(Platform.WINDOWS, home)
         assertThat(paths).isNotEmpty
@@ -75,6 +85,39 @@ class NodeRuntimeResolverTest {
             fs.getPathMatcher("glob:$glob")
             Path.of(glob.substringBefore("*"))
         }
+    }
+
+    @Test
+    fun `mise and legacy rtx globs respect data directory environment variables`() {
+        val miseDataDir = Path.of("/custom/mise")
+        val rtxDataDir = Path.of("/custom/rtx")
+        val env: (String) -> String? = {
+            when (it) {
+                "MISE_DATA_DIR" -> miseDataDir.toString()
+                "RTX_DATA_DIR" -> rtxDataDir.toString()
+                else -> null
+            }
+        }
+
+        val patterns = buildGlobPatterns(Platform.LINUX, home, env)
+
+        assertThat(patterns).contains(
+            "$miseDataDir/installs/node/*/bin/node",
+            "$rtxDataDir/installs/node/*/bin/node",
+        )
+    }
+
+    @Test
+    fun `mise and legacy rtx globs use XDG data home`() {
+        val dataHome = Path.of("/custom/data")
+        val env: (String) -> String? = { if (it == "XDG_DATA_HOME") dataHome.toString() else null }
+
+        val patterns = buildGlobPatterns(Platform.LINUX, home, env)
+
+        assertThat(patterns).contains(
+            "${dataHome.resolve("mise")}/installs/node/*/bin/node",
+            "${dataHome.resolve("rtx")}/installs/node/*/bin/node",
+        )
     }
 
     @Test
@@ -202,6 +245,44 @@ class NodeRuntimeResolverTest {
         }.isInstanceOfSatisfying(LspInstallException::class.java) {
             assertThat(it.errorCode).isEqualTo(LspInstallException.ErrorCode.NODE_NOT_FOUND)
         }
+    }
+
+    @Test
+    fun `launch command adapts the resolved runtime`() {
+        val incompatibleGlibcMessage = "incompatible glibc"
+        var adaptedPath: Path? = null
+        var adaptedMessage: String? = null
+
+        val launch = NodeRuntimeResolver.resolveLaunchCommand(
+            configuredPath = "",
+            nodeNotFoundMessage = nodeNotFoundMessage,
+            incompatibleGlibcMessage = incompatibleGlibcMessage,
+            autoDetect = { autoDetected },
+            adaptLaunchCommand = { path, message ->
+                adaptedPath = path
+                adaptedMessage = message
+                NodeLaunchCommand(listOf("loader", path.toString()))
+            },
+        )
+
+        assertThat(launch.command).containsExactly("loader", autoDetected.toString())
+        assertThat(adaptedPath).isEqualTo(autoDetected)
+        assertThat(adaptedMessage).isEqualTo(incompatibleGlibcMessage)
+    }
+
+    @Test
+    fun `incompatible glibc error from launch adaptation is preserved`() {
+        val expected = LspInstallException("incompatible glibc", LspInstallException.ErrorCode.INCOMPATIBLE_GLIBC)
+
+        assertThatThrownBy {
+            NodeRuntimeResolver.resolveLaunchCommand(
+                configuredPath = "",
+                nodeNotFoundMessage = nodeNotFoundMessage,
+                incompatibleGlibcMessage = expected.message.orEmpty(),
+                autoDetect = { autoDetected },
+                adaptLaunchCommand = { _, _ -> throw expected },
+            )
+        }.isSameAs(expected)
     }
 
     private fun assertValidGlobs(patterns: List<String>) {
