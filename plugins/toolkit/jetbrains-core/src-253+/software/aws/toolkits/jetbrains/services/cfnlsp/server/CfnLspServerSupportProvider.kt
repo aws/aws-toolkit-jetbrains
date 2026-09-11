@@ -29,7 +29,6 @@ import software.aws.toolkit.jetbrains.AwsToolkit
 import software.aws.toolkit.jetbrains.settings.AwsSettings
 import software.aws.toolkit.jetbrains.settings.DefaultAwsSettings
 import software.aws.toolkit.jetbrains.utils.notifyError
-import software.aws.toolkits.jetbrains.core.lsp.LinuxGlibcNodeLauncher
 import software.aws.toolkits.jetbrains.core.lsp.LspInstallException
 import software.aws.toolkits.jetbrains.core.lsp.LspProcessLauncher
 import software.aws.toolkits.jetbrains.core.lsp.NodeRuntimeResolver
@@ -38,7 +37,6 @@ import software.aws.toolkits.jetbrains.services.cfnlsp.CfnLspServerProtocol
 import software.aws.toolkits.jetbrains.services.cfnlsp.CfnNodePromptState
 import software.aws.toolkits.jetbrains.settings.CfnLspSettings
 import software.aws.toolkits.resources.AwsToolkitBundle.message
-import java.nio.file.Path
 
 internal val CFN_SUPPORTED_EXTENSIONS = setOf("yaml", "yml", "json", "template", "cfn", "txt")
 
@@ -61,7 +59,6 @@ internal class CfnLspServerSupportProvider : LspServerSupportProvider {
 class CfnLspServerDescriptor private constructor(
     project: Project,
     private val installer: CfnLspInstaller = CfnLspInstaller(),
-    private val glibcLauncher: LinuxGlibcNodeLauncher = LinuxGlibcNodeLauncher(),
 ) : LspProcessLauncher(
     project,
     "AWS CloudFormation",
@@ -96,19 +93,16 @@ class CfnLspServerDescriptor private constructor(
             throw e
         }
 
-        val nodePath = try {
-            resolveNodeRuntime()
-        } catch (e: Exception) {
-            LOG.warn(e) { "Failed to resolve Node.js runtime" }
-            notifyNodeError()
-            throw e
-        }
-
         val launch = try {
-            glibcLauncher.resolveLaunchCommand(nodePath, message("cloudformation.lsp.error.incompatible_glibc"))
+            resolveNodeRuntime()
         } catch (e: LspInstallException) {
-            LOG.warn(e) { "No compatible glibc runtime for CloudFormation LSP" }
-            notifyLspError(e)
+            if (e.errorCode == LspInstallException.ErrorCode.NODE_NOT_FOUND) {
+                LOG.warn(e) { "Failed to resolve Node.js runtime" }
+                notifyNodeError()
+            } else {
+                LOG.warn(e) { "No compatible glibc runtime for CloudFormation LSP" }
+                notifyLspError(e)
+            }
             throw e
         }
 
@@ -119,9 +113,10 @@ class CfnLspServerDescriptor private constructor(
             .withWorkDirectory(serverPath.parent.toString())
     }
 
-    private fun resolveNodeRuntime(): Path = NodeRuntimeResolver.resolve(
+    private fun resolveNodeRuntime() = NodeRuntimeResolver.resolveLaunchCommand(
         configuredPath = CfnLspSettings.getInstance().nodeRuntimePath,
         nodeNotFoundMessage = message("cloudformation.lsp.error.node_not_found"),
+        incompatibleGlibcMessage = message("cloudformation.lsp.error.incompatible_glibc"),
     )
 
     private fun notifyLspError(e: LspInstallException) {

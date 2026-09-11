@@ -204,6 +204,44 @@ class NodeRuntimeResolverTest {
         }
     }
 
+    @Test
+    fun `launch command adapts the resolved runtime`() {
+        val incompatibleGlibcMessage = "incompatible glibc"
+        var adaptedPath: Path? = null
+        var adaptedMessage: String? = null
+
+        val launch = NodeRuntimeResolver.resolveLaunchCommand(
+            configuredPath = "",
+            nodeNotFoundMessage = nodeNotFoundMessage,
+            incompatibleGlibcMessage = incompatibleGlibcMessage,
+            autoDetect = { autoDetected },
+            adaptLaunchCommand = { path, message ->
+                adaptedPath = path
+                adaptedMessage = message
+                NodeLaunchCommand(listOf("loader", path.toString()))
+            },
+        )
+
+        assertThat(launch.command).containsExactly("loader", autoDetected.toString())
+        assertThat(adaptedPath).isEqualTo(autoDetected)
+        assertThat(adaptedMessage).isEqualTo(incompatibleGlibcMessage)
+    }
+
+    @Test
+    fun `incompatible glibc error from launch adaptation is preserved`() {
+        val expected = LspInstallException("incompatible glibc", LspInstallException.ErrorCode.INCOMPATIBLE_GLIBC)
+
+        assertThatThrownBy {
+            NodeRuntimeResolver.resolveLaunchCommand(
+                configuredPath = "",
+                nodeNotFoundMessage = nodeNotFoundMessage,
+                incompatibleGlibcMessage = expected.message.orEmpty(),
+                autoDetect = { autoDetected },
+                adaptLaunchCommand = { _, _ -> throw expected },
+            )
+        }.isSameAs(expected)
+    }
+
     private fun assertValidGlobs(patterns: List<String>) {
         assertThat(patterns).isNotEmpty
         patterns.forEach { glob ->

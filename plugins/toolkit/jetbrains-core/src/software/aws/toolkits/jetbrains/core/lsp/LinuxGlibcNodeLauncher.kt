@@ -34,9 +34,6 @@ internal enum class LinuxArch(val loaderName: String) {
     ARM64("ld-linux-aarch64.so.1"),
 }
 
-/** Structured launch command: [command] holds the Node.js invocation tokens, executable first. */
-internal data class NodeLaunchCommand(val command: List<String>)
-
 /** Minimal filesystem surface the launcher needs, extracted so candidate resolution can be tested off-host. */
 internal interface RuntimeFileSystem {
     fun realPathOrNull(path: Path): Path?

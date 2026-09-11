@@ -17,6 +17,9 @@ import java.nio.file.Path
 
 internal enum class Platform { MAC, LINUX, WINDOWS }
 
+/** A fully resolved Node.js invocation, including any platform compatibility launcher. */
+internal data class NodeLaunchCommand(val command: List<String>)
+
 private val BIN_DIR = mapOf(Platform.MAC to "bin/", Platform.LINUX to "bin/", Platform.WINDOWS to "")
 private val EXE_NAME = mapOf(Platform.MAC to "node", Platform.LINUX to "node", Platform.WINDOWS to "node.exe")
 
@@ -103,13 +106,29 @@ internal object NodeRuntimeResolver {
     private val globPatterns: List<String> by lazy { buildGlobPatterns(platform, home) { System.getenv(it) } }
 
     /**
+     * Resolves Node.js and returns its complete launch command. On Linux, the command is adapted to
+     * use a compatible glibc loader when the resolved runtime does not meet the required glibc floor.
+     */
+    fun resolveLaunchCommand(
+        configuredPath: String?,
+        nodeNotFoundMessage: String,
+        incompatibleGlibcMessage: String,
+        minVersion: Int = 18,
+        autoDetect: (Int) -> Path? = ::detectAutomatically,
+        isExecutable: (Path) -> Boolean = { Files.isExecutable(it) },
+        adaptLaunchCommand: (Path, String) -> NodeLaunchCommand =
+            LinuxGlibcNodeLauncher()::resolveLaunchCommand,
+    ): NodeLaunchCommand {
+        val nodePath = resolve(configuredPath, nodeNotFoundMessage, minVersion, autoDetect, isExecutable)
+        return adaptLaunchCommand(nodePath, incompatibleGlibcMessage)
+    }
+
+    /**
      * Resolves the Node.js runtime from an explicit [configuredPath] when one is set, otherwise from
      * [autoDetect], using [minVersion] (18 by default). Every configuration or resolution failure —
      * a syntactically malformed explicit path, an exception thrown by auto-detection, or no runtime
      * found — is normalized to an [LspInstallException] with
-     * [LspInstallException.ErrorCode.NODE_NOT_FOUND] and the original cause preserved. A missing
-     * runtime is thus reported as a typed install failure rather than being papered over, letting a
-     * launcher distinguish it from failures that reinstalling a server would fix.
+     * [LspInstallException.ErrorCode.NODE_NOT_FOUND] and the original cause preserved.
      */
     fun resolve(
         configuredPath: String?,
@@ -117,8 +136,7 @@ internal object NodeRuntimeResolver {
         minVersion: Int = 18,
         autoDetect: (Int) -> Path? = ::detectAutomatically,
         isExecutable: (Path) -> Boolean = { Files.isExecutable(it) },
-    ): Path =
-        try {
+    ): Path = try {
             resolveConfigured(configuredPath, isExecutable)
                 ?: autoDetect(minVersion)
                 ?: throw nodeNotFound(nodeNotFoundMessage)
@@ -132,8 +150,7 @@ internal object NodeRuntimeResolver {
     private fun detectAutomatically(minVersion: Int): Path? =
         resolveFromPath(minVersion) ?: resolveFromWellKnownLocations(minVersion)
 
-    private fun resolveFromPath(minVersion: Int): Path? =
-        PathEnvironmentVariableUtil.findAllExeFilesInPath(exeName)
+    private fun resolveFromPath(minVersion: Int): Path? = PathEnvironmentVariableUtil.findAllExeFilesInPath(exeName)
             .asSequence()
             .map { it.toPath() }
             .filter { Files.isRegularFile(it) && Files.isExecutable(it) }
