@@ -23,7 +23,7 @@ fun Project.isCi() : Boolean = providers.environmentVariable("CI").isPresent
 
 fun Project.jvmTarget(): Provider<JavaVersion> = withCurrentProfileName {
     when (it) {
-        "2026.2" -> JavaVersion.VERSION_25
+        "2026.2", "2026.3" -> JavaVersion.VERSION_25
         else -> JavaVersion.VERSION_21
     }
 }
@@ -31,7 +31,7 @@ fun Project.jvmTarget(): Provider<JavaVersion> = withCurrentProfileName {
 // https://plugins.jetbrains.com/docs/intellij/using-kotlin.html#stdlib-miscellaneous
 fun Project.kotlinTarget(): Provider<String> = withCurrentProfileName {
     when (it) {
-        "2025.3", "2026.1", "2026.2" -> KotlinVersionEnum.KOTLIN_2_1
+        "2025.3", "2026.1", "2026.2", "2026.3" -> KotlinVersionEnum.KOTLIN_2_1
         else -> error("not set")
     }.version
 }

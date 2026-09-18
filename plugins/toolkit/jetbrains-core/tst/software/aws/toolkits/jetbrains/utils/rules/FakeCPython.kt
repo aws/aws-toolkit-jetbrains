@@ -13,7 +13,7 @@ internal class FakeCPython(private val languageLevel: LanguageLevel) : CPythonSd
     @NotNull
     override fun getName(): String = "FakeCPython"
 
-    override fun getVersionString(sdkHome: String?) = "$name ${languageLevel.toPythonVersion()}"
-
+    // 2026.3 removed PythonSdkFlavor.getVersionString(String); tests get the version string from PyTestSdkType
+    // instead, so nothing relies on the flavor reporting it.
     override fun getLanguageLevel(sdk: Sdk) = languageLevel
 }

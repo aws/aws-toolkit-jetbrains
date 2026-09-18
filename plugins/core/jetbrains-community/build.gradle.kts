@@ -5,6 +5,7 @@ import dev.detekt.gradle.Detekt
 import dev.detekt.gradle.DetektCreateBaselineTask
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.IdeVersions
+import software.aws.toolkits.gradle.intellij.sdkBranchNumber
 import software.aws.toolkits.telemetry.generator.gradle.GenerateTelemetry
 
 plugins {
@@ -125,6 +126,12 @@ dependencies {
         if (version.startsWith("2025.3")) {
             bundledModule("intellij.platform.collaborationTools.auth.base")
             bundledModule("intellij.platform.collaborationTools.auth")
+        }
+
+        // 2026.3 moved the VCS implementation out of the platform's core lib/ into the bundled platform-vcs-plugin,
+        // so the patch APIs used by TextUtils (PatchReader, GenericPatchApplier) have to be requested explicitly.
+        if ((sdkBranchNumber(version) ?: 0) >= 263) {
+            bundledModule("intellij.platform.vcs.impl")
         }
     }
 }
