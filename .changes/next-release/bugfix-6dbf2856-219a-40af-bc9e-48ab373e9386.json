@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Fix IDE error reported when cancelling an AWS sign-in started from 'Reconnect' in the connection menu ([#5972](https://github.com/aws/aws-toolkit-jetbrains/issues/5972))"
+}
