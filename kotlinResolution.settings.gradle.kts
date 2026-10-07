@@ -16,6 +16,10 @@ dependencyResolutionManagement {
                     "1.10.2-intellij-1"
                 }
 
+                "2026.3" -> {
+                    "1.10.2-intellij-3"
+                }
+
                 else -> { error("not set") }
             }
 
@@ -27,6 +31,8 @@ dependencyResolutionManagement {
                 "2025.3" -> "2.2.20"
                 "2026.1" -> "2.3.20"
                 "2026.2" -> "2.4.0"
+                // 2026.3 is still EAP and bundles an RC stdlib; bump to the release once it GAs
+                "2026.3" -> "2.4.20-RC3"
                 else -> { error("not set") }
             }
 

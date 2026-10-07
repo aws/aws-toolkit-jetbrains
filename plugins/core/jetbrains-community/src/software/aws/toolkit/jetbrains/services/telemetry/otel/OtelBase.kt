@@ -94,7 +94,9 @@ abstract class AbstractSpanBuilder<
         return this as BuilderType
     }
 
-    override fun setAttribute(key: String, value: String): BuilderType {
+    // 2026.3 bundles an OpenTelemetry API that annotates the attribute values `@Nullable`; earlier SDKs leave them
+    // unannotated (platform types), which accept either nullability, so the nullable form overrides both.
+    override fun setAttribute(key: String, value: String?): BuilderType {
         delegate.setAttribute(key, value)
         return this as BuilderType
     }
@@ -114,9 +116,9 @@ abstract class AbstractSpanBuilder<
         return this as BuilderType
     }
 
-    override fun <V : Any?> setAttribute(
-        key: AttributeKey<V?>,
-        value: V & Any,
+    override fun <V : Any> setAttribute(
+        key: AttributeKey<V>,
+        value: V?,
     ): BuilderType {
         delegate.setAttribute(key, value)
         return this as BuilderType

@@ -1,6 +1,9 @@
 // Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// Restricted to <= 2026.2: 2026.3 removed PyDetectedSdk and detectSystemWideSdks in favor of the suspend-based
+// SystemPythonService. The only test here is already skipped on every supported IDE (it needs a heavy project on
+// baseline < 232), so it is not ported rather than rewritten against the new API.
 package software.aws.toolkits.jetbrains.core.execution
 
 import com.intellij.execution.ExecutorRegistry

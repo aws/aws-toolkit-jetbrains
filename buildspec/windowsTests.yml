@@ -47,8 +47,9 @@ phases:
 
         # Rider is very expensive (spikes our CI jobs to 50% CPU, so let it do the prep work in parallel, but run tests later
         # --no-parallel: plugin 2.16 cached layout index is shared; parallel test tasks resolve bundled plugins against wrong IDE (fatal on Gradle 9)
-        # jetbrains-rider is excluded from the 2026.2 build graph (settings.gradle.kts), so don't reference its tasks for that profile
-        if ("$Env:ALTERNATIVE_IDE_PROFILE_NAME" -eq "2026.2") {
+        # jetbrains-rider is excluded from the 2026.3 build graph (settings.gradle.kts), so don't reference its tasks
+        # for that profile. 2026.2 stays on this path as well, matching how it shipped.
+        if ("$Env:ALTERNATIVE_IDE_PROFILE_NAME" -eq "2026.2" -or "$Env:ALTERNATIVE_IDE_PROFILE_NAME" -eq "2026.3") {
           ./gradlew -PideProfileName="$Env:ALTERNATIVE_IDE_PROFILE_NAME" check --no-parallel --info --console plain --continue --stacktrace
           if ($LastExitCode -ne 0) {
             Write-Host "Command failed with exit code $LastExitCode"

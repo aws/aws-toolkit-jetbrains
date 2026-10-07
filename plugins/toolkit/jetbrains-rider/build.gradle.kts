@@ -81,7 +81,7 @@ dependencies {
             // 2026.2 split the Rider backend/rd-client APIs (Solution/workspace model, LifetimedProjectComponent,
             // RdDispatcher, CSharpLanguage, project-model extensions) into productModuleV2 modules that are no longer
             // on the default compile classpath, so declare them explicitly. Symbols are unchanged from 2026.1.
-            "2026.2" -> {
+            "2026.2", "2026.3" -> {
                 bundledModule("intellij.rider")
                 bundledModule("intellij.rider.rdclient.dotnet")
                 bundledModule("intellij.rider.languages")

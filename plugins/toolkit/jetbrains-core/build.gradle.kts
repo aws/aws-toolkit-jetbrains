@@ -11,6 +11,7 @@ import software.aws.toolkits.gradle.changelog.tasks.GeneratePluginChangeLog
 import software.aws.toolkits.gradle.findFolders
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.IdeVersions
+import software.aws.toolkits.gradle.intellij.sdkBranchNumber
 import software.aws.toolkits.gradle.isCi
 import java.io.StringWriter
 import java.nio.file.Path
@@ -36,6 +37,14 @@ dependencies {
     intellijPlatform {
         bundledModule("intellij.platform.vcs.dvcs.impl")
         bundledModule("intellij.libraries.microba")
+
+        // 2026.3 pulled these out of the platform's core classpath (VCS moved into the bundled platform-vcs-plugin,
+        // remote-server impl split out of app.jar), so the clone dialog and RemoteServer/DeployToServer APIs have to
+        // be requested explicitly.
+        if ((sdkBranchNumber(ideProfile.community.sdkVersion) ?: 0) >= 263) {
+            bundledModule("intellij.platform.vcs.impl")
+            bundledModule("intellij.platform.remoteServers.impl")
+        }
     }
     implementation(project(":plugin-core"))
 }

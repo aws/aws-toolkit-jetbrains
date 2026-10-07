@@ -7,6 +7,8 @@ import org.jetbrains.intellij.platform.gradle.tasks.PrepareSandboxTask
 import software.aws.toolkits.gradle.findFolders
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.IdeVersions
+import software.aws.toolkits.gradle.intellij.isUnifiedIdea
+import software.aws.toolkits.gradle.intellij.sdkBranchNumber
 import software.aws.toolkits.gradle.intellij.toolkitIntelliJ
 
 val ideProfile = IdeVersions.ideProfile(project)
@@ -95,7 +97,12 @@ configurations {
                 // jcef became a bundled plugin the community/ultimate profiles depend on (2026.2); it leaks
                 // transitively via jetbrains-community testFixtures and can't resolve as IU against the RD/GW SDK
                 exclude(group = "bundledPlugin", module = "com.intellij.modules.jcef")
-                if (project.name.contains("jetbrains-rider")) {
+                if (sdkBranchNumber(ideProfile.community.sdkVersion).let { it != null && it >= 263 }) {
+                    // 2026.3 serves most of the platform itself (debugger, VCS, remote servers, ...) as
+                    // `bundledModule` product modules instead of app.jar, so a blanket exclude strips the platform
+                    // off the test classpath. Community and ultimate both resolve against the unified IU SDK from
+                    // 2025.3 on, so there are no IC-flavored artifacts left to exclude here.
+                } else if (project.name.contains("jetbrains-rider")) {
                     // Rider needs its own RD-flavored bundled modules (declared in its build.gradle.kts for 2026.2)
                     // on the test classpath, so we can't blanket-exclude the group. Instead drop only the modules
                     // that leak transitively from jetbrains-community/-core and resolve with IU coordinates.
@@ -142,7 +149,7 @@ dependencies {
                 IdeFlavor.IU -> intellijIdeaUltimate(sdkVersion) { useInstaller.set(false) }
                 IdeFlavor.RD -> rider(sdkVersion) { useInstaller.set(false) }
                 else -> {
-                    if (sdkVersion.startsWith("2025.3") || sdkVersion.startsWith("2026.")) {
+                    if (isUnifiedIdea(sdkVersion)) {
                         intellijIdeaUltimate(sdkVersion) { useInstaller.set(false) }
                     } else {
                         intellijIdeaCommunity(sdkVersion) { useInstaller.set(false) }
@@ -168,8 +175,7 @@ dependencies {
         plugins(toolkitIntelliJ.productProfile().map { it.marketplacePlugins })
 
         // OAuth modules split in 2025.3+ - must be explicitly bundled
-        if (sdkVersion.contains("253") || sdkVersion.startsWith("2025.3") ||
-            sdkVersion.startsWith("2026.")) {
+        if (isUnifiedIdea(sdkVersion)) {
             bundledModule("intellij.platform.collaborationTools")
             bundledModule("intellij.platform.collaborationTools.auth.base")
             bundledModule("intellij.platform.collaborationTools.auth")

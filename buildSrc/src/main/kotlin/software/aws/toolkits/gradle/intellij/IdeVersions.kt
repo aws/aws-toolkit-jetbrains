@@ -158,6 +158,62 @@ object IdeVersions {
                 rdGenVersion = "2026.2.5",
                 nugetVersion = "2026.2.0"
             )
+        ),
+        Profile(
+            name = "2026.3",
+            gateway = ProductProfile(
+                // Gateway has no per-build EAP publication for 263; the branch EAP-candidate snapshot is the
+                // newest available. jetbrains-gateway is excluded from the 2026.3 graph (settings.gradle.kts),
+                // so this is only read by the release-maturity radar.
+                sdkVersion = "263.5153-EAP-CANDIDATE-SNAPSHOT",
+                bundledPlugins = listOf("org.jetbrains.plugins.terminal")
+            ),
+            community = ProductProfile(
+                // IDEA 2026.3 is still EAP, so there is no marketing-form coordinate — pin the published EAP
+                // build. Switch to "2026.3" once it GAs.
+                sdkVersion = "263.5153.40-EAP-SNAPSHOT",
+                bundledPlugins = commonPlugins + listOf(
+                    "com.intellij.java",
+                    "com.intellij.gradle",
+                    "org.jetbrains.idea.maven",
+                    "com.intellij.properties",
+                    // JCEF split into its own bundled plugin ("com.intellij.modules.jcef") in 2026.2.
+                    // Needed on the compile classpath; runtime edge declared via <depends> in plugin.xml.
+                    "com.intellij.modules.jcef"
+                ),
+                marketplacePlugins = listOf(
+                    "org.toml.lang:263.5153.37",
+                    "PythonCore:263.5153.40",
+                    "Docker:263.5153.34",
+                    "com.intellij.modules.json:263.5153.40"
+                )
+            ),
+            ultimate = ProductProfile(
+                sdkVersion = "263.5153.40-EAP-SNAPSHOT",
+                bundledPlugins = commonPlugins + listOf(
+                    "JavaScript",
+                    "JavaScriptDebugger",
+                    "com.intellij.database",
+                    // JCEF split into its own bundled plugin ("com.intellij.modules.jcef") in 2026.2.
+                    // Needed on the compile classpath; runtime edge declared via <depends> in plugin.xml.
+                    "com.intellij.modules.jcef"
+                ),
+                marketplacePlugins = listOf(
+                    "Pythonid:263.5153.40",
+                    "org.jetbrains.plugins.go:263.5153.40",
+                    "com.intellij.modules.json:263.5153.40"
+                )
+            ),
+            rider = RiderProfile(
+                // Rider 2026.3 is still EAP and its closed-source backend API hasn't stabilized; the
+                // jetbrains-rider module is excluded from the 2026.3 build in settings.gradle.kts, so this entry
+                // is currently unused. Re-enable the module and switch to "2026.3" / "2026.3.0" once Rider GAs.
+                sdkVersion = "2026.3-EAP3-SNAPSHOT",
+                bundledPlugins = commonPlugins,
+                netFrameworkTarget = "net472",
+                rdGenVersion = "2026.3.0",
+                nugetVersion = "2026.3.0-eap02"
+            )
         )
     ).associateBy { it.name }
 
@@ -218,6 +274,26 @@ object IdeVersions {
 enum class ReleaseChannel(val rank: Int) {
     EAP(1), BETA(2), RC(3), STABLE(4),
 }
+
+/**
+ * Branch number of an SDK coordinate, regardless of which form it takes. SDK coordinates are published in
+ * marketing form once a release GAs ("2026.2") but only in branch form while it is still EAP
+ * ("263.5153.40-EAP-SNAPSHOT", "2026.3-EAP3-SNAPSHOT"), so anything that needs to compare platform versions
+ * has to normalize first. Returns null when the coordinate isn't in either form.
+ */
+fun sdkBranchNumber(sdkVersion: String): Int? {
+    Regex("""^(\d{4})\.(\d+)""").find(sdkVersion)?.destructured?.let { (year, minor) ->
+        return (year.toInt() % 100) * 10 + minor.toInt()
+    }
+    return Regex("""^(\d{3})(?:[.\-]|$)""").find(sdkVersion)?.groupValues?.get(1)?.toInt()
+}
+
+/**
+ * True when [sdkVersion] targets 2025.3 (branch 253) or newer, where IntelliJ IDEA is unified (there is no
+ * separate Community edition to resolve) and the collaboration-tools OAuth modules ship as separate bundled
+ * modules that must be declared explicitly.
+ */
+fun isUnifiedIdea(sdkVersion: String): Boolean = (sdkBranchNumber(sdkVersion) ?: 0) >= 253
 
 /**
  * Classifies an SDK coordinate string into a [ReleaseChannel].

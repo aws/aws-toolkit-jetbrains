@@ -170,7 +170,18 @@ file("plugins").listFiles()?.forEach root@ {
             if (it.name == "jetbrains-gateway") {
                 when (providers.gradleProperty("ideProfileName").get()) {
                     // buildSrc is evaluated after settings so we can't key off of IdeVersions.kt
-                    "2025.3", "2026.1", "2026.2" -> {
+                    "2025.3", "2026.1", "2026.2", "2026.3" -> {
+                        return@forEach
+                    }
+                }
+            }
+
+            if (it.name == "jetbrains-rider") {
+                when (providers.gradleProperty("ideProfileName").get()) {
+                    // Rider 2026.3 is still EAP; its closed-source backend API has not stabilized and there is no
+                    // GA SDK/NuGet to build against yet. IU/IC already compile cleanly against 263 - re-enable
+                    // this module in a follow-up once Rider 2026.3 GAs (see the 2026.2 rollout for the pattern).
+                    "2026.3" -> {
                         return@forEach
                     }
                 }
