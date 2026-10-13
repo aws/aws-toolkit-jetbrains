@@ -1,0 +1,27 @@
+<!-- Copyright 2026 Amazon.com, Inc. or its affiliates. All Rights Reserved. -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
+<!--
+  Loaded only when com.intellij.modules.lsp is present (paid JetBrains IDEs,
+  2025.3+). In Community editions the plugin still loads; CDK language features
+  are simply absent. Mirrors aws.toolkit.cloudformation.lsp.xml.
+-->
+<idea-plugin>
+    <extensions defaultExtensionNs="com.intellij">
+        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.CdkLspSettings"/>
+
+        <postStartupActivity implementation="software.aws.toolkits.jetbrains.services.cdklsp.CdkLspStartupActivity"/>
+
+        <platform.lsp.serverSupportProvider
+            implementation="software.aws.toolkits.jetbrains.services.cdklsp.server.CdkLspServerSupportProvider"/>
+
+        <!-- CodeLens bridge: the platform LSP API does not surface codeLens. A
+             frontend codeVisionProvider (not daemon-bound) lets us recompute the
+             lenses on demand via CodeVisionHost.invalidateProvider after the
+             auto-synth toggle, without requiring an editor edit. -->
+        <codeInsight.codeVisionProvider
+            implementation="software.aws.toolkits.jetbrains.services.cdklsp.CdkCodeLensProvider"/>
+
+        <notificationGroup id="aws.cdk.lsp" displayType="STICKY_BALLOON"/>
+    </extensions>
+</idea-plugin>
