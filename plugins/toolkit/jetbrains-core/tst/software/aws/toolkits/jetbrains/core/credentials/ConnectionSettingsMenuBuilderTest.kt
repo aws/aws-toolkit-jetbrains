@@ -6,21 +6,40 @@ package software.aws.toolkits.jetbrains.core.credentials
 import com.intellij.openapi.actionSystem.ActionGroup
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.Separator
+import com.intellij.openapi.actionSystem.impl.SimpleDataContext
+import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.util.Ref
+import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.ProjectRule
 import com.intellij.testFramework.RuleChain
 import com.intellij.testFramework.TestActionEvent
+import com.intellij.testFramework.replaceService
+import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatCode
 import org.junit.Rule
 import org.junit.Test
+import org.mockito.kotlin.any
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.doThrow
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
+import software.aws.toolkit.core.TokenConnectionSettings
 import software.aws.toolkit.core.credentials.CredentialIdentifier
+import software.aws.toolkit.core.credentials.ToolkitBearerTokenProvider
 import software.aws.toolkit.core.region.AwsRegion
 import software.aws.toolkit.core.utils.test.aString
+import software.aws.toolkit.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkit.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkit.jetbrains.core.credentials.MockAwsConnectionManager.ProjectAccountSettingsManagerRule
 import software.aws.toolkit.jetbrains.core.credentials.MockCredentialManagerRule
+import software.aws.toolkit.jetbrains.core.credentials.ToolkitConnectionManager
+import software.aws.toolkit.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
+import software.aws.toolkit.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
 import software.aws.toolkit.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkit.jetbrains.core.region.MockRegionProviderRule
+import software.aws.toolkit.jetbrains.core.region.US_EAST_1
 import software.aws.toolkit.jetbrains.utils.satisfiesKt
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsMenuBuilder.Companion.connectionSettingsMenuBuilder
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsMenuBuilder.SwitchCredentialsAction
@@ -32,6 +51,7 @@ class ConnectionSettingsMenuBuilderTest {
     private val regionProviderRule = MockRegionProviderRule()
     private val credentialManagerRule = MockCredentialManagerRule()
     private val settingsManagerRule = ProjectAccountSettingsManagerRule(projectRule)
+    private val disposableRule = DisposableRule()
 
     @Rule
     @JvmField
@@ -39,7 +59,8 @@ class ConnectionSettingsMenuBuilderTest {
         projectRule,
         regionProviderRule,
         credentialManagerRule,
-        settingsManagerRule
+        settingsManagerRule,
+        disposableRule
     )
 
     @Test
@@ -320,6 +341,30 @@ class ConnectionSettingsMenuBuilderTest {
 
         assertThat(titleAction).isEmpty()
         assertThat(credentialsActions).hasSize(CredentialManager.getInstance().getCredentialIdentifiers().size)
+    }
+
+    @Test
+    fun `cancelling the reconnect login does not throw or switch the connection`() {
+        val tokenProvider = mock<BearerTokenProvider> {
+            on { state() } doReturn BearerTokenAuthState.NOT_AUTHENTICATED
+            on { reauthenticate() } doThrow ProcessCanceledException()
+        }
+        val connectionSettings = TokenConnectionSettings(ToolkitBearerTokenProvider(tokenProvider), US_EAST_1)
+        val connection = mock<AwsBearerTokenConnection> {
+            on { label } doReturn aString()
+            on { startUrl } doReturn aString()
+            on { getConnectionSettings() } doReturn connectionSettings
+        }
+        val connectionManager = mock<ToolkitConnectionManager>()
+        projectRule.project.replaceService(ToolkitConnectionManager::class.java, connectionManager, disposableRule.disposable)
+
+        val reconnect = connectionSettingsMenuBuilder().IndividualIdentityActionGroup(connection)
+            .getChildren()
+            .single { it.templateText == message("credentials.individual_identity.reconnect") }
+        val event = TestActionEvent(SimpleDataContext.getProjectContext(projectRule.project))
+
+        assertThatCode { runInEdtAndWait { reconnect.actionPerformed(event) } }.doesNotThrowAnyException()
+        verify(connectionManager, never()).switchConnection(any())
     }
 
     private fun ActionGroup.getChildren(): Array<AnAction> = this.getChildren(TestActionEvent())

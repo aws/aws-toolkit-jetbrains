@@ -10,6 +10,7 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.actionSystem.Separator
+import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
 import software.aws.toolkit.core.credentials.CredentialIdentifier
@@ -252,7 +253,12 @@ class ConnectionSettingsMenuBuilder private constructor() {
             addAll(
                 object : DumbAwareAction(message("credentials.individual_identity.reconnect")) {
                     override fun actionPerformed(e: AnActionEvent) {
-                        reauthConnectionIfNeeded(e.project, value, isReAuth = true, reauthSource = ReauthSource.TOOLKIT)
+                        try {
+                            reauthConnectionIfNeeded(e.project, value, isReAuth = true, reauthSource = ReauthSource.TOOLKIT)
+                        } catch (_: ProcessCanceledException) {
+                            // User cancelled the login. The popup runs this action from its dispose(), which must not throw it.
+                            return
+                        }
 
                         e.project?.let { ToolkitConnectionManager.getInstance(it).switchConnection(value) }
                     }
