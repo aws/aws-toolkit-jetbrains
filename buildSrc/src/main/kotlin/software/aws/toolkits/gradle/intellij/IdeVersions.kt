@@ -165,13 +165,13 @@ object IdeVersions {
                 // Gateway has no per-build EAP publication for 263; the branch EAP-candidate snapshot is the
                 // newest available. jetbrains-gateway is excluded from the 2026.3 graph (settings.gradle.kts),
                 // so this is only read by the release-maturity radar.
-                sdkVersion = "263.5153-EAP-CANDIDATE-SNAPSHOT",
+                sdkVersion = "263.7307-EAP-CANDIDATE-SNAPSHOT",
                 bundledPlugins = listOf("org.jetbrains.plugins.terminal")
             ),
             community = ProductProfile(
-                // IDEA 2026.3 is still EAP, so there is no marketing-form coordinate — pin the published EAP
+                // IDEA 2026.3 is at RC, so there is no marketing-form coordinate yet — pin the published RC
                 // build. Switch to "2026.3" once it GAs.
-                sdkVersion = "263.5153.40-EAP-SNAPSHOT",
+                sdkVersion = "263.7307.112-EAP-SNAPSHOT",
                 bundledPlugins = commonPlugins + listOf(
                     "com.intellij.java",
                     "com.intellij.gradle",
@@ -182,14 +182,14 @@ object IdeVersions {
                     "com.intellij.modules.jcef"
                 ),
                 marketplacePlugins = listOf(
-                    "org.toml.lang:263.5153.37",
-                    "PythonCore:263.5153.40",
-                    "Docker:263.5153.34",
-                    "com.intellij.modules.json:263.5153.40"
+                    "org.toml.lang:263.7307.112",
+                    "PythonCore:263.7307.112",
+                    "Docker:263.7307.117",
+                    "com.intellij.modules.json:263.7307.112"
                 )
             ),
             ultimate = ProductProfile(
-                sdkVersion = "263.5153.40-EAP-SNAPSHOT",
+                sdkVersion = "263.7307.112-EAP-SNAPSHOT",
                 bundledPlugins = commonPlugins + listOf(
                     "JavaScript",
                     "JavaScriptDebugger",
@@ -199,20 +199,20 @@ object IdeVersions {
                     "com.intellij.modules.jcef"
                 ),
                 marketplacePlugins = listOf(
-                    "Pythonid:263.5153.40",
-                    "org.jetbrains.plugins.go:263.5153.40",
-                    "com.intellij.modules.json:263.5153.40"
+                    "Pythonid:263.7307.112",
+                    "org.jetbrains.plugins.go:263.7307.112",
+                    "com.intellij.modules.json:263.7307.112"
                 )
             ),
             rider = RiderProfile(
                 // Rider 2026.3 is still EAP and its closed-source backend API hasn't stabilized; the
                 // jetbrains-rider module is excluded from the 2026.3 build in settings.gradle.kts, so this entry
                 // is currently unused. Re-enable the module and switch to "2026.3" / "2026.3.0" once Rider GAs.
-                sdkVersion = "2026.3-EAP3-SNAPSHOT",
+                sdkVersion = "2026.3-EAP9-SNAPSHOT",
                 bundledPlugins = commonPlugins,
                 netFrameworkTarget = "net472",
                 rdGenVersion = "2026.3.0",
-                nugetVersion = "2026.3.0-eap02"
+                nugetVersion = "2026.3.0-eap09"
             )
         )
     ).associateBy { it.name }
@@ -278,7 +278,7 @@ enum class ReleaseChannel(val rank: Int) {
 /**
  * Branch number of an SDK coordinate, regardless of which form it takes. SDK coordinates are published in
  * marketing form once a release GAs ("2026.2") but only in branch form while it is still EAP
- * ("263.5153.40-EAP-SNAPSHOT", "2026.3-EAP3-SNAPSHOT"), so anything that needs to compare platform versions
+ * ("263.7307.112-EAP-SNAPSHOT", "2026.3-EAP9-SNAPSHOT"), so anything that needs to compare platform versions
  * has to normalize first. Returns null when the coordinate isn't in either form.
  */
 fun sdkBranchNumber(sdkVersion: String): Int? {
