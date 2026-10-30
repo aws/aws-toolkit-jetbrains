@@ -140,7 +140,7 @@ private fun createDebugProcess(
             ).also {
                 it.positionConverter = PathMapper.PositionConverter(PathMapper(mappings))
                 console.attachToProcess(handler)
-                PyDebugRunner.initDebugConsoleView(environment.project, it, console, it.processHandler, session)
+                PyDebugRunner.initDebugConsole(environment.project, it, console, it.processHandler, session)
             }
         }
     }

@@ -15,7 +15,7 @@ import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.execution.runners.ProgramRunner
 import com.intellij.json.JsonLanguage
 import com.intellij.openapi.application.runInEdt
-import com.intellij.psi.search.GlobalSearchScopes
+import com.intellij.psi.search.ExecutionSearchScopes
 import software.amazon.awssdk.core.SdkBytes
 import software.amazon.awssdk.services.lambda.LambdaClient
 import software.amazon.awssdk.services.lambda.model.LogType
@@ -37,7 +37,7 @@ class RemoteLambdaState(
 
     init {
         val project = environment.project
-        val searchScope = GlobalSearchScopes.executionScope(project, environment.runProfile)
+        val searchScope = ExecutionSearchScopes.executionScope(project, environment.runProfile)
         consoleBuilder = TextConsoleBuilderFactory.getInstance().createBuilder(project, searchScope)
     }
 
