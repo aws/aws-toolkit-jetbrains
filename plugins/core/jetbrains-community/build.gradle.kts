@@ -132,6 +132,8 @@ dependencies {
         // so the patch APIs used by TextUtils (PatchReader, GenericPatchApplier) have to be requested explicitly.
         if ((sdkBranchNumber(version) ?: 0) >= 263) {
             bundledModule("intellij.platform.vcs.impl")
+            bundledModule("intellij.platform.builtInServer.impl")
+            bundledModule("intellij.platform.ide.updateChecker")
         }
     }
 }

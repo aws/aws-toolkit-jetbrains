@@ -13,8 +13,8 @@ import com.intellij.execution.configurations.RemoteConnection
 import com.intellij.execution.impl.ConsoleViewImpl
 import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.lang.java.JavaLanguage
+import com.intellij.psi.search.ExecutionSearchScopes
 import com.intellij.psi.search.GlobalSearchScope
-import com.intellij.psi.search.GlobalSearchScopes
 import com.intellij.xdebugger.XDebugProcess
 import com.intellij.xdebugger.XDebugProcessStarter
 import com.intellij.xdebugger.XDebugSession
@@ -132,7 +132,7 @@ private class RemotePortDebugEnvironment(private val environment: ExecutionEnvir
         return DefaultExecutionResult(consoleView, process)
     }
 
-    override fun getSearchScope(): GlobalSearchScope = GlobalSearchScopes.executionScope(environment.project, environment.runProfile)
+    override fun getSearchScope(): GlobalSearchScope = ExecutionSearchScopes.executionScope(environment.project, environment.runProfile)
     override fun isRemote(): Boolean = true
     override fun getRemoteConnection(): RemoteConnection = connection
     override fun getPollTimeout(): Long = DebugEnvironment.LOCAL_START_TIMEOUT.toLong()

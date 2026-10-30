@@ -88,7 +88,7 @@ class DownloadCodeForSchemaDialog(
 
     private fun getContentRootOfCurrentFile(): String? {
         // Get the currently open files (plural in case they are split)
-        val selectedFiles = FileEditorManager.getInstance(project).getSelectedFiles()
+        val selectedFiles = FileEditorManager.getInstance(project).selectedFiles
         if (selectedFiles.isNotEmpty()) {
             // return the content root of the first selected file
             return ProjectFileIndex.getInstance(project).getContentRootForFile(selectedFiles.first())?.path

@@ -10,7 +10,6 @@ import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.ui.JBColor
 import com.intellij.util.ui.JBFont
 import com.intellij.util.ui.MacUIUtil
-import org.jdesktop.swingx.graphics.ColorUtilities
 import software.amazon.awssdk.services.codecatalyst.model.CodeCatalystException
 import software.aws.toolkit.core.ClientConnectionSettings
 import software.aws.toolkit.core.utils.getLogger
@@ -119,9 +118,24 @@ class CawsLetterBadge(connectionSettings: ClientConnectionSettings<*>) : JLabel(
             val hue = hue(string) / 360f
 
             return JBColor(
-                ColorUtilities.HSLtoRGB(hue, saturation, luminosity),
-                ColorUtilities.HSLtoRGB(hue, saturation, luminosity_dark)
+                hslToRgb(hue, saturation, luminosity),
+                hslToRgb(hue, saturation, luminosity_dark)
             )
+        }
+
+        private fun hslToRgb(h: Float, s: Float, l: Float): Color {
+            val q = if (l < 0.5f) l * (1 + s) else l + s - l * s
+            val p = 2 * l - q
+            fun channel(t: Float): Float {
+                val tt = (t + 1f) % 1f
+                return when {
+                    tt < 1f / 6 -> p + (q - p) * 6 * tt
+                    tt < 1f / 2 -> q
+                    tt < 2f / 3 -> p + (q - p) * (2f / 3 - tt) * 6
+                    else -> p
+                }
+            }
+            return Color(channel(h + 1f / 3), channel(h), channel(h - 1f / 3))
         }
     }
 }

@@ -44,6 +44,9 @@ dependencies {
         if ((sdkBranchNumber(ideProfile.community.sdkVersion) ?: 0) >= 263) {
             bundledModule("intellij.platform.vcs.impl")
             bundledModule("intellij.platform.remoteServers.impl")
+            bundledModule("intellij.platform.remoteServers")
+            bundledModule("intellij.platform.remoteServers.agent.rt")
+            bundledModule("intellij.platform.collaborationTools.shared")
         }
     }
     implementation(project(":plugin-core"))
