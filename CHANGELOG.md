@@ -1,3 +1,7 @@
+# _4.9_ (2026-11-02)
+- **(Feature)** Add support for 2026.3
+- **(Deprecation)** Support for IDEs based on the 2025.3 platform is being deprecated and will be removed in an upcoming release. The minimum supported version will be 2026.1.
+
 # _4.8_ (2026-09-02)
 - **(Feature)** Improved CloudFormation language support with more reliable managed server installation, broader Node.js 18+ discovery, offline fallback, and startup recovery. Managed language-server files now use the standard AWS cache directory.
 - **(Removal)** Removed support for 2025.1 and 2025.2 IDEs

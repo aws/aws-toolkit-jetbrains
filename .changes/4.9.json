@@ -1,0 +1,11 @@
+{
+  "date" : "2026-11-02",
+  "version" : "4.9",
+  "entries" : [ {
+    "type" : "feature",
+    "description" : "Add support for 2026.3"
+  }, {
+    "type" : "deprecation",
+    "description" : "Support for IDEs based on the 2025.3 platform is being deprecated and will be removed in an upcoming release. The minimum supported version will be 2026.1."
+  } ]
+}
