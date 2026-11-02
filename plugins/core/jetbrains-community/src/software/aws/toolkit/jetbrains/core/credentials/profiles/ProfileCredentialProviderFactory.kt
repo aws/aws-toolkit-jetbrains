@@ -7,6 +7,7 @@ import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.util.messages.Topic
@@ -133,7 +134,12 @@ class ProfileCredentialsIdentifierSso @TestOnly constructor(
                                     scopes = session.scopes.toList()
                                 )
                             )
-                            reauthConnectionIfNeeded(e.project, connection, reauthSource = ReauthSource.TOOLKIT)
+                            try {
+                                reauthConnectionIfNeeded(e.project, connection, reauthSource = ReauthSource.TOOLKIT)
+                            } catch (_: ProcessCanceledException) {
+                                // User cancelled the login; nothing above this EDT action handles the exception.
+                                return
+                            }
                             RefreshConnectionAction().actionPerformed(e)
                         }
                     }
