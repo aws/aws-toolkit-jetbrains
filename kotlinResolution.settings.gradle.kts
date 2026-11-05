@@ -31,7 +31,7 @@ dependencyResolutionManagement {
                 "2025.3" -> "2.2.20"
                 "2026.1" -> "2.3.20"
                 "2026.2" -> "2.4.0"
-                // 2026.3 is at RC and bundles an RC stdlib; bump to the release once it GAs
+                // 2026.3 GA still bundles an RC stdlib
                 "2026.3" -> "2.4.21-RC"
                 else -> { error("not set") }
             }
