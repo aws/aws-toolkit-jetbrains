@@ -18,7 +18,7 @@ jobs:
     strategy:
       matrix:
         build_target: [ ':plugin-toolkit:intellij-standalone:buildPlugin' ]
-        version: [ '2025.3', '2026.1', '2026.2', '2026.3' ]
+        version: [ '2026.1', '2026.2', '2026.3' ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

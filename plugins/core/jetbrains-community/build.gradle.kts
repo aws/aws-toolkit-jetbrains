@@ -121,12 +121,7 @@ dependencies {
     testRuntimeOnly(project(":plugin-core:sdk-codegen"))
 
     intellijPlatform {
-        // Required for collaboration auth credentials in 2025.3+
         val version = IdeVersions.ideProfile(project).ultimate.sdkVersion
-        if (version.startsWith("2025.3")) {
-            bundledModule("intellij.platform.collaborationTools.auth.base")
-            bundledModule("intellij.platform.collaborationTools.auth")
-        }
 
         // 2026.3 moved the VCS implementation out of the platform's core lib/ into the bundled platform-vcs-plugin,
         // so the patch APIs used by TextUtils (PatchReader, GenericPatchApplier) have to be requested explicitly.
