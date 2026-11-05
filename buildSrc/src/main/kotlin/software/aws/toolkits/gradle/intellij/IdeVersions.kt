@@ -162,16 +162,11 @@ object IdeVersions {
         Profile(
             name = "2026.3",
             gateway = ProductProfile(
-                // Gateway has no per-build EAP publication for 263; the branch EAP-candidate snapshot is the
-                // newest available. jetbrains-gateway is excluded from the 2026.3 graph (settings.gradle.kts),
-                // so this is only read by the release-maturity radar.
-                sdkVersion = "263.7307-EAP-CANDIDATE-SNAPSHOT",
+                sdkVersion = "2026.3",
                 bundledPlugins = listOf("org.jetbrains.plugins.terminal")
             ),
             community = ProductProfile(
-                // IDEA 2026.3 is at RC, so there is no marketing-form coordinate yet — pin the published RC
-                // build. Switch to "2026.3" once it GAs.
-                sdkVersion = "263.7307.112-EAP-SNAPSHOT",
+                sdkVersion = "2026.3",
                 bundledPlugins = commonPlugins + listOf(
                     "com.intellij.java",
                     "com.intellij.gradle",
@@ -183,13 +178,13 @@ object IdeVersions {
                 ),
                 marketplacePlugins = listOf(
                     "org.toml.lang:263.7307.112",
-                    "PythonCore:263.7307.112",
-                    "Docker:263.7307.117",
-                    "com.intellij.modules.json:263.7307.112"
+                    "PythonCore:263.7307.200",
+                    "Docker:263.7307.215",
+                    "com.intellij.modules.json:263.7307.200"
                 )
             ),
             ultimate = ProductProfile(
-                sdkVersion = "263.7307.112-EAP-SNAPSHOT",
+                sdkVersion = "2026.3",
                 bundledPlugins = commonPlugins + listOf(
                     "JavaScript",
                     "JavaScriptDebugger",
@@ -199,20 +194,20 @@ object IdeVersions {
                     "com.intellij.modules.jcef"
                 ),
                 marketplacePlugins = listOf(
-                    "Pythonid:263.7307.112",
-                    "org.jetbrains.plugins.go:263.7307.112",
-                    "com.intellij.modules.json:263.7307.112"
+                    "Pythonid:263.7307.200",
+                    "org.jetbrains.plugins.go:263.7307.200",
+                    "com.intellij.modules.json:263.7307.200"
                 )
             ),
             rider = RiderProfile(
-                // Rider 2026.3 is still EAP and its closed-source backend API hasn't stabilized; the
+                // Rider 2026.3 is still at RC and its closed-source backend API hasn't stabilized; the
                 // jetbrains-rider module is excluded from the 2026.3 build in settings.gradle.kts, so this entry
                 // is currently unused. Re-enable the module and switch to "2026.3" / "2026.3.0" once Rider GAs.
-                sdkVersion = "2026.3-EAP9-SNAPSHOT",
+                sdkVersion = "2026.3-RC1-SNAPSHOT",
                 bundledPlugins = commonPlugins,
                 netFrameworkTarget = "net472",
                 rdGenVersion = "2026.3.0",
-                nugetVersion = "2026.3.0-eap09"
+                nugetVersion = "2026.3.0-rc01"
             )
         )
     ).associateBy { it.name }
