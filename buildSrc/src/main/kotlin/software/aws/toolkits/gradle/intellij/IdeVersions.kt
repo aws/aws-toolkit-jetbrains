@@ -27,49 +27,6 @@ object IdeVersions {
 
     private val ideProfiles = listOf(
         Profile(
-            name = "2025.3",
-            gateway = ProductProfile(
-                sdkVersion = "2025.3",
-                bundledPlugins = listOf("org.jetbrains.plugins.terminal")
-            ),
-            community = ProductProfile(
-                sdkVersion = "2025.3",
-                bundledPlugins = commonPlugins + listOf(
-                    "com.intellij.java",
-                    "com.intellij.gradle",
-                    "org.jetbrains.idea.maven",
-                    "com.intellij.properties"
-                ),
-                marketplacePlugins = listOf(
-                    "org.toml.lang:253.28294.334",
-                    "PythonCore:253.29346.138",
-                    "Docker:253.29346.125",
-                    "com.intellij.modules.json:253.28294.251"
-                )
-            ),
-            ultimate = ProductProfile(
-                sdkVersion = "2025.3",
-                bundledPlugins = commonPlugins + listOf(
-                    "JavaScript",
-                    "JavaScriptDebugger",
-                    "com.intellij.database",
-                    "com.jetbrains.codeWithMe"
-                ),
-                marketplacePlugins = listOf(
-                    "Pythonid:253.29346.138",
-                    "org.jetbrains.plugins.go:253.29346.50",
-                    "com.intellij.modules.json:253.28294.251"
-                )
-            ),
-            rider = RiderProfile(
-                sdkVersion = "2025.3",
-                bundledPlugins = commonPlugins,
-                netFrameworkTarget = "net472",
-                rdGenVersion = "2025.3.1",
-                nugetVersion = "2025.3.0"
-            )
-        ),
-        Profile(
             name = "2026.1",
             gateway = ProductProfile(
                 sdkVersion = "2026.1",
