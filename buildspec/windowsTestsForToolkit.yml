@@ -47,7 +47,7 @@ phases:
 
          # Rider is very expensive (spikes our CI jobs to 50% CPU, so let it do the prep work in parallel, but run tests later
          # --no-parallel: plugin 2.16 cached layout index is shared; parallel test tasks resolve bundled plugins against wrong IDE (fatal on Gradle 9)
-         # jetbrains-rider is excluded from the 2026.3 build graph (settings.gradle.kts), so don't reference its tasks for that profile
+         # 2026.2 and 2026.3 take the non-gating path below (jetbrains-rider is in the build graph for both)
         if ("$Env:ALTERNATIVE_IDE_PROFILE_NAME" -eq "2026.2" -or "$Env:ALTERNATIVE_IDE_PROFILE_NAME" -eq "2026.3") {
           # 2026.2+ runs on the bare-app test model (upstream removed ApplicationExtension in 262), so the test
           # sandbox no longer loads our plugin.xml: a large set of service/extension-point/PSI-dependent unit tests

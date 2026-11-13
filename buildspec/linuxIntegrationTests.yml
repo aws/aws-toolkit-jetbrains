@@ -39,7 +39,7 @@ phases:
       # (test, instrumentCode) run on the launcher JVM, so JAVA_HOME must match the compiled bytecode version
       # or they fail to load classes
       # --no-parallel: plugin 2.16 cached layout index is shared; parallel test tasks resolve bundled plugins against wrong IDE (fatal on Gradle 9)
-      # jetbrains-rider is excluded from the 2026.3 build graph (settings.gradle.kts), so don't reference its tasks for that profile
+      # 2026.2 and 2026.3 run the non-gating path below, which includes jetbrains-rider tasks
       - |
         REQUIRED_JDK=$(./gradlew -q printJvmTarget -PideProfileName=$ALTERNATIVE_IDE_PROFILE_NAME | grep -Eo '^[0-9]+$' | tail -1)
         export JAVA_HOME=/usr/lib/jvm/java-${REQUIRED_JDK}-amazon-corretto.x86_64

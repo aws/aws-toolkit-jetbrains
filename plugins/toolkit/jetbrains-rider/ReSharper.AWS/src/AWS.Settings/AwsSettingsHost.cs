@@ -22,7 +22,12 @@ namespace AWS.Settings
         {
             var model = solution.GetProtocolSolution().GetAwsSettingModel();
 
+            #if PROFILE_2026_3
+            // 2026.3 made ToDataContext() an error-level obsolete in favour of ToDataContext2()
+            var contextBoundSettingsStoreLive = settingsStore.BindToContextLive(lifetime, ContextRange.Smart(solution.ToDataContext2()));
+            #else
             var contextBoundSettingsStoreLive = settingsStore.BindToContextLive(lifetime, ContextRange.Smart(solution.ToDataContext()));
+            #endif
 
             model.ShowLambdaGutterMarks.Advise(lifetime, isEnabled =>
             {

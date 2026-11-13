@@ -69,6 +69,17 @@ dependencies {
                 bundledModule("intellij.rd.client.base")
             }
         }
+
+        // 2026.3 moved the debugger (XDebugProcessStarter, DefaultDebugExecutor) out of the core classpath into the
+        // intellij.platform.debugger product module, DotNetDebugProcess's base class into intellij.rd.client.debugger,
+        // and XmlLikeFileType (supertype of CsprojFileType) into the xml-plugin's psi modules, so they have to be
+        // requested explicitly.
+        if (providers.gradleProperty("ideProfileName").get() == "2026.3") {
+            bundledModule("intellij.platform.debugger")
+            bundledModule("intellij.rd.client.debugger")
+            bundledModule("intellij.xml.psi")
+            bundledModule("intellij.xml.psi.impl")
+        }
     }
 
     implementation(project(":plugin-toolkit:jetbrains-core"))
