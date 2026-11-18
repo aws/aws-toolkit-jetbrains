@@ -1,3 +1,6 @@
+# _4.10_ (2026-11-18)
+- **(Removal)** Removed support for 2025.3 IDEs
+
 # _4.9_ (2026-11-02)
 - **(Feature)** Add support for 2026.3
 - **(Deprecation)** Support for IDEs based on the 2025.3 platform is being deprecated and will be removed in an upcoming release. The minimum supported version will be 2026.1.
