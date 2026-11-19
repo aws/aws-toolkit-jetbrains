@@ -1,0 +1,4 @@
+{
+    "type": "bugfix",
+    "description": "Fix Rider .NET Lambda features (gutter icons, handler completion, .NET runtime in run configurations) missing since 3.88: the plugin's .NET backend is bundled again"
+}

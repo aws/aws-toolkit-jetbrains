@@ -6,11 +6,13 @@ import com.jetbrains.rd.generator.gradle.RdGenPlugin
 import com.jetbrains.rd.generator.gradle.RdGenTask
 import dev.detekt.gradle.Detekt
 import dev.detekt.gradle.DetektCreateBaselineTask
+import org.gradle.process.ExecOperations
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import org.jetbrains.intellij.platform.gradle.tasks.PrepareSandboxTask
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.IdeVersions
 import java.nio.file.Path
+import javax.inject.Inject
 
 buildscript {
     // Cannot be removed or else it will fail to compile
@@ -68,6 +70,17 @@ dependencies {
                 bundledModule("intellij.rd.client")
                 bundledModule("intellij.rd.client.base")
             }
+        }
+
+        // 2026.3 moved the debugger (XDebugProcessStarter, DefaultDebugExecutor) out of the core classpath into the
+        // intellij.platform.debugger product module, DotNetDebugProcess's base class into intellij.rd.client.debugger,
+        // and XmlLikeFileType (supertype of CsprojFileType) into the xml-plugin's psi modules, so they have to be
+        // requested explicitly.
+        if (providers.gradleProperty("ideProfileName").get() == "2026.3") {
+            bundledModule("intellij.platform.debugger")
+            bundledModule("intellij.rd.client.debugger")
+            bundledModule("intellij.xml.psi")
+            bundledModule("intellij.xml.psi.impl")
         }
     }
 
@@ -276,6 +289,12 @@ val prepareNuGetConfig = tasks.register("prepareNuGetConfig") {
     }
 }
 
+// Gradle's documented way to get ExecOperations in a build script.
+// Do not use providers.exec here: it is lazy and only runs when its result is read (see #5914).
+interface InjectedExecOps {
+    @get:Inject val execOps: ExecOperations
+}
+
 val buildReSharperPlugin = tasks.register("buildReSharperPlugin") {
     group = backendGroup
     description = "Builds the full ReSharper backend plugin solution"
@@ -284,16 +303,13 @@ val buildReSharperPlugin = tasks.register("buildReSharperPlugin") {
     inputs.dir(resharperPluginPath)
     outputs.dir(resharperBuildPath)
 
+    val execOps = objects.newInstance<InjectedExecOps>().execOps
+    val solutionPath = "${resharperPluginPath.canonicalPath}/ReSharper.AWS.sln"
+
     doLast {
-        val arguments = listOf(
-            "build",
-            "--verbosity",
-            "normal",
-            "${resharperPluginPath.canonicalPath}/ReSharper.AWS.sln"
-        )
-        project.providers.exec {
+        execOps.exec {
             executable = "dotnet"
-            args = arguments
+            args = listOf("build", "--verbosity", "normal", solutionPath)
         }
     }
 }

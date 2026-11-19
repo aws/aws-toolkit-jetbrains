@@ -102,6 +102,15 @@ configurations {
                     // `bundledModule` product modules instead of app.jar, so a blanket exclude strips the platform
                     // off the test classpath. Community and ultimate both resolve against the unified IU SDK from
                     // 2025.3 on, so there are no IC-flavored artifacts left to exclude here.
+                    if (project.name.contains("jetbrains-rider")) {
+                        // jetbrains-community testFixtures still leak these IU-coordinate modules onto the Rider
+                        // test classpath, where they can't resolve against the RD SDK.
+                        listOf(
+                            "intellij.platform.vcs.impl",
+                            "intellij.platform.builtInServer.impl",
+                            "intellij.platform.ide.updateChecker",
+                        ).forEach { exclude(group = "bundledModule", module = it) }
+                    }
                 } else if (project.name.contains("jetbrains-rider")) {
                     // Rider needs its own RD-flavored bundled modules (declared in its build.gradle.kts for 2026.2)
                     // on the test classpath, so we can't blanket-exclude the group. Instead drop only the modules
