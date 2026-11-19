@@ -97,6 +97,12 @@ dependencies {
     }
 
     project.findProject(":plugin-toolkit:jetbrains-rider")?.let {
+        // Same reason as jetbrains-ultimate above: RD.xml -> ext-rider.xml (Lambda hosts, .NET runtime group,
+        // gutter icons under resharper/) is pulled in via <xi:include href="/META-INF/RD.xml">, which can't see
+        // lib/modules/. Left there, the Rider frontend never loads the module and gutter actions do nothing.
+        intellijPlatform {
+            pluginComposedModule(project(":plugin-toolkit:jetbrains-rider"))
+        }
         implementation(it)
         resharperDlls(project(":plugin-toolkit:jetbrains-rider", configuration = "resharperDlls"))
     }
