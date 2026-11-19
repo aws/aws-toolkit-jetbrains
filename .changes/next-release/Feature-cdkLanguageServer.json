@@ -1,0 +1,4 @@
+{
+    "type": "feature",
+    "description": "CDK: Language server support for CDK apps in paid JetBrains IDEs (2025.3+) - diagnostics, hover, template-to-source navigation, and construct/synth CodeLens, backed by the `cdk lsp` CLI."
+}
