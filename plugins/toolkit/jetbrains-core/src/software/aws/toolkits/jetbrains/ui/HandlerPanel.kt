@@ -16,8 +16,6 @@ import software.aws.toolkit.jetbrains.utils.ui.validationInfo
 import software.aws.toolkits.jetbrains.services.lambda.Lambda.findPsiElementsForHandler
 import software.aws.toolkits.jetbrains.services.lambda.completion.HandlerCompletionProvider
 import software.aws.toolkits.resources.message
-import java.awt.event.ComponentAdapter
-import java.awt.event.ComponentEvent
 import javax.swing.JPanel
 
 class HandlerPanel(private val project: Project) : JPanel(MigLayout("novisualpadding, ins 0, fillx, hidemode 3")) {
@@ -26,6 +24,9 @@ class HandlerPanel(private val project: Project) : JPanel(MigLayout("novisualpad
     private val handlerWithCompletion = TextFieldWithCompletion(project, handlerCompletionProvider, "", true, true, true, true)
 
     private var runtime: Runtime? = null
+
+    // The field that currently holds the user's handler text
+    private var activeHandler: EditorTextField? = null
 
     val handler: EditorTextField
         get() = if (handlerCompletionProvider.isCompletionSupported) {
@@ -71,32 +72,21 @@ class HandlerPanel(private val project: Project) : JPanel(MigLayout("novisualpad
 
     private fun initSimpleHandler() {
         simpleHandler.toolTipText = message("lambda.function.handler.tooltip")
-        simpleHandler.addComponentListener(
-            object : ComponentAdapter() {
-                override fun componentShown(e: ComponentEvent?) {
-                    super.componentShown(e)
-                    simpleHandler.text = handlerWithCompletion.text
-                }
-            }
-        )
     }
 
     private fun initHandlerWithCompletion() {
         handlerWithCompletion.toolTipText = message("lambda.function.handler.tooltip")
-        handlerWithCompletion.addComponentListener(
-            object : ComponentAdapter() {
-                override fun componentShown(e: ComponentEvent?) {
-                    super.componentShown(e)
-                    handlerWithCompletion.text = simpleHandler.text
-                }
-            }
-        )
     }
 
     private fun switchCompletion() {
-        val isCompletionSupported = handlerCompletionProvider.isCompletionSupported
-        handlerWithCompletion.isVisible = isCompletionSupported
-        simpleHandler.isVisible = !isCompletionSupported
+        val target = handler
+        // Carry the text over synchronously. A componentShown listener is not enough: Swing queues that event, so it
+        // runs after callers such as LocalLambdaRunSettingsEditor.resetEditorFrom have set handler.text, and wipes it.
+        activeHandler?.let { if (it !== target) target.text = it.text }
+        activeHandler = target
+
+        handlerWithCompletion.isVisible = target === handlerWithCompletion
+        simpleHandler.isVisible = target === simpleHandler
     }
 
     fun validateHandler(handlerMustExist: Boolean): ValidationInfo? {
