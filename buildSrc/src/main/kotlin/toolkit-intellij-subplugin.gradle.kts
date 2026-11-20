@@ -7,7 +7,6 @@ import org.jetbrains.intellij.platform.gradle.tasks.PrepareSandboxTask
 import software.aws.toolkits.gradle.findFolders
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.IdeVersions
-import software.aws.toolkits.gradle.intellij.isUnifiedIdea
 import software.aws.toolkits.gradle.intellij.sdkBranchNumber
 import software.aws.toolkits.gradle.intellij.toolkitIntelliJ
 
@@ -82,10 +81,10 @@ tasks.processResources {
     duplicatesStrategy = DuplicatesStrategy.WARN
 }
 
-// Plugin 2.8+ strictly resolves bundled plugin/module artifacts. Community-edition (IC) bundled
-// plugins/modules leak transitively into non-IC modules and can't resolve against IU/RD/GW SDKs.
+// Plugin 2.8+ strictly resolves bundled plugin/module artifacts. Bundled plugins/modules from the `community`
+// profile leak transitively into the ultimate/rider/gateway modules and can't resolve against their SDKs.
 // Match amazon-q-jetbrains approach: exclude at configuration time (not afterEvaluate), and blanket-exclude
-// all bundledModule artifacts for non-IC modules.
+// all bundledModule artifacts for those modules.
 configurations {
     if (project.name.contains("jetbrains-ultimate") || project.name.contains("jetbrains-rider") || project.name.contains("jetbrains-gateway")) {
         listOf("testCompileClasspath", "testRuntimeClasspath", "testFixturesApi").forEach { configName ->
@@ -138,10 +137,10 @@ tasks.processTestResources {
 // Run after the project has been evaluated so that the extension (intellijToolkit) has been configured
 intellijPlatform {
     instrumentCode = true
-    // Keep per-project sandbox isolation. This project builds multiple IDE flavors (IC, IU, RD, GW)
+    // Keep per-project sandbox isolation. This project builds multiple IDE profiles (community, ultimate, RD, GW)
     // in one Gradle invocation. The shared sandbox (plugin 2.13+ default) resolves bundled plugins
-    // against a single IDE, breaking non-IC modules (e.g. com.intellij.database not found when
-    // root is IC). Per-project sandbox gives each module its own resolution context.
+    // against a single IDE, breaking modules that need other bundled plugins (e.g. com.intellij.database not found
+    // when root uses the community profile). Per-project sandbox gives each module its own resolution context.
     sandboxContainer.set(layout.buildDirectory.dir("idea-sandbox"))
 }
 
@@ -153,17 +152,10 @@ dependencies {
         if (!project.name.contains("jetbrains-gateway")) {
             // Named helpers (match amazon-q-jetbrains pattern) — interact better with plugin 2.14+
             // auto-inheritance detection than generic create(type, version).
-            // Starting with 2025.3, IntelliJ IDEA is unified (no separate Community edition).
+            // IntelliJ IDEA is a single unified distribution since 2025.3 (no separate Community edition).
             when (toolkitIntelliJ.ideFlavor.get()) {
-                IdeFlavor.IU -> intellijIdeaUltimate(sdkVersion) { useInstaller.set(false) }
                 IdeFlavor.RD -> rider(sdkVersion) { useInstaller.set(false) }
-                else -> {
-                    if (isUnifiedIdea(sdkVersion)) {
-                        intellijIdeaUltimate(sdkVersion) { useInstaller.set(false) }
-                    } else {
-                        intellijIdeaCommunity(sdkVersion) { useInstaller.set(false) }
-                    }
-                }
+                else -> intellijIdeaUltimate(sdkVersion) { useInstaller.set(false) }
             }
         } else {
             create(IntelliJPlatformType.Gateway, sdkVersion)
@@ -184,11 +176,9 @@ dependencies {
         plugins(toolkitIntelliJ.productProfile().map { it.marketplacePlugins })
 
         // OAuth modules split in 2025.3+ - must be explicitly bundled
-        if (isUnifiedIdea(sdkVersion)) {
-            bundledModule("intellij.platform.collaborationTools")
-            bundledModule("intellij.platform.collaborationTools.auth.base")
-            bundledModule("intellij.platform.collaborationTools.auth")
-        }
+        bundledModule("intellij.platform.collaborationTools")
+        bundledModule("intellij.platform.collaborationTools.auth.base")
+        bundledModule("intellij.platform.collaborationTools.auth")
 
         testFramework(TestFrameworkType.Plugin.Java)
         testFramework(TestFrameworkType.Platform)

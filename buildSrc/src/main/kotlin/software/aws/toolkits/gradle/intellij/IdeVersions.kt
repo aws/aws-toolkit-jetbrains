@@ -11,6 +11,8 @@ import org.gradle.api.provider.ProviderFactory
 enum class IdeFlavor {
     GW,
     /* free */
+    // IC no longer ships as a separate IDE (unified into IntelliJ IDEA since 2025.3); it only selects the
+    // `community` profile (plugins available without an Ultimate subscription). The IDE resolved is always IU.
     AI, IC, PC,
     /* paid */
     /* RR is 'non-commerical free' but treat as paid */
@@ -236,13 +238,6 @@ fun sdkBranchNumber(sdkVersion: String): Int? {
     }
     return Regex("""^(\d{3})(?:[.\-]|$)""").find(sdkVersion)?.groupValues?.get(1)?.toInt()
 }
-
-/**
- * True when [sdkVersion] targets 2025.3 (branch 253) or newer, where IntelliJ IDEA is unified (there is no
- * separate Community edition to resolve) and the collaboration-tools OAuth modules ship as separate bundled
- * modules that must be declared explicitly.
- */
-fun isUnifiedIdea(sdkVersion: String): Boolean = (sdkBranchNumber(sdkVersion) ?: 0) >= 253
 
 /**
  * Classifies an SDK coordinate string into a [ReleaseChannel].

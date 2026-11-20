@@ -7,7 +7,6 @@ import org.jetbrains.intellij.platform.gradle.tasks.PatchPluginXmlTask
 import org.jetbrains.intellij.platform.gradle.tasks.aware.SplitModeAware
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.IdeVersions
-import software.aws.toolkits.gradle.intellij.isUnifiedIdea
 import software.aws.toolkits.gradle.intellij.toolkitIntelliJ
 
 // publish-root should imply publishing-conventions, but we keep separate so that gateway always has the GW flavor
@@ -75,25 +74,13 @@ dependencies {
 
             // prefer versions declared in IdeVersions
             toolkitIntelliJ.apply {
-                val defaultFlavor = if (isUnifiedIdea(version().get())) {
-                    IdeFlavor.IU  // Use unified IntelliJ IDEA for 2025.3+
-                } else {
-                    IdeFlavor.IC  // Use Community for older versions
-                }
-                ideFlavor.set(IdeFlavor.values().firstOrNull { it.name == runIdeVariant.orNull } ?: defaultFlavor)
+                ideFlavor.set(IdeFlavor.values().firstOrNull { it.name == runIdeVariant.orNull } ?: IdeFlavor.IU)
             }
 
             val sdkVersion = toolkitIntelliJ.version().get()
             when (toolkitIntelliJ.ideFlavor.get()) {
-                IdeFlavor.IU -> intellijIdeaUltimate(sdkVersion) { useInstaller.set(false) }
                 IdeFlavor.RD -> rider(sdkVersion) { useInstaller.set(false) }
-                else -> {
-                    if (isUnifiedIdea(sdkVersion)) {
-                        intellijIdeaUltimate(sdkVersion) { useInstaller.set(false) }
-                    } else {
-                        intellijIdeaCommunity(sdkVersion) { useInstaller.set(false) }
-                    }
-                }
+                else -> intellijIdeaUltimate(sdkVersion) { useInstaller.set(false) }
             }
             jetbrainsRuntime()
         }

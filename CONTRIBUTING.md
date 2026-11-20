@@ -89,12 +89,7 @@ If ran using the Debug feature, a debugger will be auto-attached to the sandbox 
 ### Running manually
 
   ```
-  # IntelliJ IDEA Community
-  ./gradlew :plugin-toolkit:intellij-standalone:runIde -PrunIdeVariant=IC
-  ./gradlew :plugin-amazonq:runIde -PrunIdeVariant=IC
-  ./gradlew :sandbox-all:runIde -PrunIdeVariant=IC
-
-  # IntelliJ IDEA Ultimate
+  # IntelliJ IDEA
   ./gradlew :plugin-toolkit:intellij-standalone:runIde -PrunIdeVariant=IU
   ./gradlew :plugin-amazonq:runIde -PrunIdeVariant=IU
   ./gradlew :sandbox-all:runIde -PrunIdeVariant=IU
