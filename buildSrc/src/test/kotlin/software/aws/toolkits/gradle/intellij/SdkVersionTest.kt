@@ -39,9 +39,4 @@ class SdkVersionTest(private val sdkVersion: String, private val expected: Int?)
     fun `normalizes SDK coordinate to a branch number`() {
         assertThat(sdkBranchNumber(sdkVersion)).isEqualTo(expected)
     }
-
-    @Test
-    fun `treats 253 and newer as unified IntelliJ IDEA`() {
-        assertThat(isUnifiedIdea(sdkVersion)).isEqualTo((expected ?: 0) >= 253)
-    }
 }

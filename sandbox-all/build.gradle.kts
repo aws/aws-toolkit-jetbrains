@@ -14,7 +14,7 @@ plugins {
 
 toolkitIntelliJ.apply {
     val runIdeVariant = providers.gradleProperty("runIdeVariant")
-    ideFlavor.set(IdeFlavor.values().firstOrNull { it.name == runIdeVariant.orNull } ?: IdeFlavor.IC)
+    ideFlavor.set(IdeFlavor.values().firstOrNull { it.name == runIdeVariant.orNull } ?: IdeFlavor.IU)
 }
 
 tasks.named<VerifyPluginTask>("verifyPlugin") {

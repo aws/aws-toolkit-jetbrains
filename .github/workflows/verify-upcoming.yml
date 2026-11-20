@@ -152,7 +152,7 @@ jobs:
           echo "Branch $BRANCH — overall channel $MIN_CHANNEL; per-product:"
           echo "$PRODUCTS"
 
-      # Compare EACH product against ITS OWN JetBrains product feed. IDEA Ultimate/Community (IIU/IIC),
+      # Compare EACH product against ITS OWN JetBrains product feed. IntelliJ IDEA (IIU),
       # Rider (RD), and Gateway (GW) release on independent schedules for the same branch — IDEA reaching GA
       # does NOT imply Rider's or Gateway's GA exists yet — so each product is measured against its own feed's
       # highest channel for the branch. A product is "behind" only if our pin is below its own upstream max.
@@ -169,7 +169,6 @@ jobs:
           feed_code() {
             case "$1" in
               ultimate) echo "IIU";;
-              community) echo "IIC";;
               rider) echo "RD";;
               gateway) echo "GW";;
               *) echo "";;
@@ -177,7 +176,7 @@ jobs:
           }
           # printf (not echo) to round-trip the JSON without mangling embedded control chars.
           FEED=$(curl -fsSL --max-time 30 \
-            "https://data.services.jetbrains.com/products/releases?code=IIU,IIC,RD,GW&type=eap,beta,rc,release&latest=false")
+            "https://data.services.jetbrains.com/products/releases?code=IIU,RD,GW&type=eap,beta,rc,release&latest=false")
 
           BEHIND=""
           UPTODATE=""
